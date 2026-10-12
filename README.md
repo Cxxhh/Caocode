@@ -1,3 +1,41 @@
+# Caocode
+
+基于 [BaoCode](https://github.com/baocode-dev/baocode) 的新 IDE 工程，目标是将代理
+执行底层迁移到 Codex CLI 的 `codex app-server`，继续使用现有编辑器、终端和
+Flutter 桌面界面。已完成开发环境与 Windows 编译基线，默认代理已接入 Codex。
+当前支持对话、图片、审批、会话保存与恢复；迁移范围见
+[迁移说明](docs/caocode-migration.md)。
+
+在 WSL 开发源码，从终端启动 Windows 开发窗口：
+
+```bash
+cd /home/noxae/Documents/Caocode
+./setup.sh
+./dev.sh
+```
+
+首次启动自动构建 Debug，之后修改 Dart 代码，回到终端按 `r` 增量同步并热重载；
+`R` 热重启，`q` 退出。开发完成后用 `./build.sh` 生成 Windows Release 程序。
+`./build.sh --sync-only` 只同步，`./build.sh --debug` 单独构建 Debug。
+同步按内容校验，只复制变更文件，保留 Windows 依赖和编译缓存。
+开发环境、同步规则和检查命令见 [开发说明](docs/caocode-environment.md)。
+
+| 路径 | 用途 |
+| --- | --- |
+| 工程根目录 | 本地派生工程，保留上游 Git 历史，开发分支 `caocode/main` |
+| `reference/baocode` | 固定版本的独立上游参考仓库 |
+| `lib/` | Flutter 应用及代理内核 |
+| `packages/` | 编辑器、终端、PTY 和远程模块 |
+| `tool/caocode/` | 初始化、增量同步、开发启动、Windows 编译及 Codex 协议检查 |
+| `C:\Users\11914\Documents\Caocode` | Windows 构建副本 |
+
+上游基线和 Flutter 版本固定在 [toolchain.json](tool/caocode/toolchain.json)。
+当前为本地派生仓库，远程 `upstream` 指向原工程。
+
+---
+
+以下为上游 BaoCode 项目说明。原始参考副本见 `reference/baocode/README.md`。
+
 # BaoCode
 
 An awesome, easy-to-use desktop UI for [Claude Code](https://github.com/anthropics/claude-code), with a millisecond-fast IDE built in.

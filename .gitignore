@@ -63,3 +63,9 @@ app.*.map.json
 
 # npm dependencies of the extension host code generators.
 tool/exthost_codegen/node_modules/
+
+# Caocode: independent upstream checkout and local environment reports.
+/reference/
+/.caocode/
+/.caocode-sync.json
+__pycache__/

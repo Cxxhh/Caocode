@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+project_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+flutter_sdk="${CAOCODE_FLUTTER_SDK:-${XDG_DATA_HOME:-$HOME/.local/share}/caocode/flutter-3.47.5}"
+if [[ ! -x "$flutter_sdk/bin/flutter" ]]; then
+    printf 'Flutter SDK 尚未安装，请先运行 ./setup.sh\n' >&2
+    exit 1
+fi
+export PATH="$flutter_sdk/bin:$PATH"
+cd "$project_root"
+exec "$flutter_sdk/bin/flutter" "$@"
