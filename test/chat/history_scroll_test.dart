@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:super_sliver_list/super_sliver_list.dart';
 import 'package:baocode/chat/chat_feed.dart';
 import 'package:baocode/chat/chat_history_view.dart';
 import 'package:baocode/chat/chat_models.dart';
@@ -103,6 +104,75 @@ Future<void> _wheelUp(WidgetTester tester, double by) async {
 Finder _text(String text) => find.textContaining(text, findRichText: true);
 
 void main() {
+  testWidgets('mouse wheel moves over frames and accumulates rapid notches', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      _Feed([for (var n = 0; n < 40; n++) ..._turn(n, steps: 0)]),
+    );
+    await tester.pumpAndSettle();
+    final position = _position(tester);
+    final start = position.pixels;
+    void wheel() => tester.binding.handlePointerEvent(
+      PointerScrollEvent(
+        kind: PointerDeviceKind.mouse,
+        position: tester.getCenter(find.byType(ChatHistoryView)),
+        scrollDelta: const Offset(0, -60),
+      ),
+    );
+    wheel();
+    expect(position.pixels, start);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 32));
+    expect(position.pixels, lessThan(start));
+    expect(position.pixels, greaterThan(start - 132));
+    wheel();
+    await tester.pumpAndSettle();
+    expect(position.pixels, closeTo(start - 264, 1));
+
+    wheel();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 16));
+    position.jumpTo(start - 400);
+    await tester.pumpAndSettle();
+    expect(position.pixels, closeTo(start - 400, 1));
+  });
+
+  testWidgets(
+    'scrollbar dragging keeps the message subtree and tracks the pointer',
+    (tester) async {
+      await _pump(tester, _Feed([for (var n = 0; n < 100; n++) ..._turn(n)]));
+      await tester.pumpAndSettle();
+      final list = tester.widget<SuperListView>(find.byType(SuperListView));
+      final position = _position(tester);
+      final start = position.pixels;
+      final rect = tester.getRect(find.byType(ChatHistoryView));
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      addTearDown(mouse.removePointer);
+      final at = Offset(rect.right - 5, rect.bottom - 20);
+      await mouse.addPointer(location: at);
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<SuperListView>(find.byType(SuperListView)),
+        same(list),
+      );
+      await mouse.down(at);
+      for (var step = 1; step <= 8; step++) {
+        await mouse.moveTo(at - Offset(0, step * 45));
+        await tester.pump(const Duration(milliseconds: 16));
+        expect(tester.takeException(), isNull);
+        expect(
+          tester.widget<SuperListView>(find.byType(SuperListView)),
+          same(list),
+        );
+      }
+      await mouse.up();
+      await tester.pumpAndSettle();
+      expect(position.pixels, lessThan(start / 2));
+    },
+  );
+
   testWidgets('folded work counts for nothing before it is laid out', (
     tester,
   ) async {

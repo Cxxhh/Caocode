@@ -18,7 +18,7 @@ import 'mermaid_code_block.dart';
 /// `SelectionArea` selects and copies it): headings, paragraphs, lists
 /// (and task lists), code blocks, quotes, tables, rules, and inline
 /// strong, emphasis, strikethrough, code, links and TeX math.
-class MarkdownView extends StatelessWidget {
+class MarkdownView extends StatefulWidget {
   const MarkdownView(this.data, {super.key, this.style});
 
   final String data;
@@ -49,16 +49,63 @@ class MarkdownView extends StatelessWidget {
     encodeHtml: false,
   );
 
-  static final _document = document();
+  // A message can leave the virtual viewport and be built again while the
+  // scrollbar is dragged. Keep parsed documents across those visits, bounded
+  // by both count and source size. Each document owns its link definitions.
+  static final _parsed = <String, List<md.Node>>{};
+  static int _cachedCharacters = 0;
+  static const _maxCachedCharacters = 2 * 1024 * 1024;
+  static const _maxCachedMessages = 256;
+
+  static List<md.Node> _parse(String data) {
+    if (_parsed.remove(data) case final nodes?) {
+      _parsed[data] = nodes;
+      return nodes;
+    }
+    final nodes = document().parse(data);
+    if (data.length > _maxCachedCharacters) return nodes;
+    _parsed[data] = nodes;
+    _cachedCharacters += data.length;
+    while (_parsed.length > _maxCachedMessages ||
+        _cachedCharacters > _maxCachedCharacters) {
+      final oldest = _parsed.keys.first;
+      _parsed.remove(oldest);
+      _cachedCharacters -= oldest.length;
+    }
+    return nodes;
+  }
+
+  @override
+  State<MarkdownView> createState() => _MarkdownViewState();
+}
+
+class _MarkdownViewState extends State<MarkdownView> {
+  late List<md.Node> _nodes;
+
+  @override
+  void initState() {
+    super.initState();
+    _nodes = MarkdownView._parse(widget.data);
+  }
+
+  @override
+  void didUpdateWidget(MarkdownView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.data != widget.data) {
+      _nodes = MarkdownView._parse(widget.data);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final nodes = _document.parse(data);
     // In a chat whose files open (see FileOpenScope): links to them, and
     // inline code naming one once it is known to be there.
     final files = FileOpenScope.maybeOf(context);
     if (files == null) {
-      return MarkdownBlocks(nodes: nodes, style: style ?? baseStyle);
+      return MarkdownBlocks(
+        nodes: _nodes,
+        style: widget.style ?? MarkdownView.baseStyle,
+      );
     }
     Widget? icon(FileLink? link) {
       final path = link == null ? null : files.resolve(link.path);
@@ -75,12 +122,14 @@ class MarkdownView extends StatelessWidget {
       codeIcon: (code) => icon(FileLink.parseText(code)),
     );
     Widget blocks(BuildContext context) => MarkdownBlocks(
-      nodes: nodes,
-      style: style ?? baseStyle,
+      nodes: _nodes,
+      style: widget.style ?? MarkdownView.baseStyle,
       options: options,
     );
     // Code is a link, and a link's icon a file's, once the file is found.
-    if (!data.contains('`') && !data.contains('](')) return blocks(context);
+    if (!widget.data.contains('`') && !widget.data.contains('](')) {
+      return blocks(context);
+    }
     return ListenableBuilder(
       listenable: files.existence,
       builder: (context, _) => blocks(context),

@@ -91,11 +91,24 @@ class _ChatHistoryViewState extends State<ChatHistoryView>
   /// Whether a turn was under way, as last seen: to tell when it ends.
   bool _wasLive = false;
 
-  void _refold() => _folds = StepFolds.of(
-    _feed.itemCount,
-    _feed.itemAt,
-    live: _feed.isStreaming,
-  );
+  List<int?> _turnMessages = const [];
+
+  void _refold() {
+    final count = _feed.itemCount;
+    _folds = StepFolds.of(count, _feed.itemAt, live: _feed.isStreaming);
+    int? prompt;
+    _turnMessages = List<int?>.generate(count, (index) {
+      if (_feed.itemAt(index) is UserMessageItem) prompt = index;
+      return prompt;
+    });
+  }
+
+  void _setHistoryState(VoidCallback change) {
+    setState(() {
+      change();
+      _builtList = null;
+    });
+  }
 
   bool _isFoldOpen(StepFold fold) =>
       _foldOpen[fold.key] ??
@@ -105,7 +118,7 @@ class _ChatHistoryViewState extends State<ChatHistoryView>
     for (var index = fold.start; index < fold.end; index++) {
       _animateItem(index);
     }
-    setState(() => _foldOpen[fold.key] = !_isFoldOpen(fold));
+    _setHistoryState(() => _foldOpen[fold.key] = !_isFoldOpen(fold));
   }
 
   StepRow _rowAt(int index) =>
@@ -237,7 +250,7 @@ class _ChatHistoryViewState extends State<ChatHistoryView>
       AnimationController(vsync: this, duration: _motionDuration)
         ..addStatusListener((status) {
           if (status == AnimationStatus.completed && _handoffIndex != null) {
-            setState(() => _handoffIndex = null);
+            _setHistoryState(() => _handoffIndex = null);
           }
         });
 
@@ -384,6 +397,7 @@ class _ChatHistoryViewState extends State<ChatHistoryView>
   @override
   void didUpdateWidget(ChatHistoryView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _builtList = null;
     if (oldWidget.feed != widget.feed) {
       oldWidget.feed.removeListener(_handleSessionChanged);
       widget.feed.addListener(_handleSessionChanged);
@@ -398,6 +412,13 @@ class _ChatHistoryViewState extends State<ChatHistoryView>
       _seeItems();
       _resumeEditing();
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _builtList = null;
+    _scrollController.animateWheel = !MediaQuery.disableAnimationsOf(context);
   }
 
   // --- Keys ------------------------------------------------------------------
@@ -477,7 +498,7 @@ class _ChatHistoryViewState extends State<ChatHistoryView>
   void _toggle(int index) {
     // A thought opens with its own motion.
     if (_feed.itemAt(index) is! ThinkingItem) _animateItem(index);
-    setState(() => _expanded[index] = !_isExpanded(index));
+    _setHistoryState(() => _expanded[index] = !_isExpanded(index));
   }
 
   /// A trackpad (macOS) scrolls the list as a pan gesture, with no press
@@ -502,7 +523,7 @@ class _ChatHistoryViewState extends State<ChatHistoryView>
     }
     // Back at the bottom: the turn read meanwhile folds.
     if (_atBottom && _unfoldedTurns.isNotEmpty) {
-      setState(_unfoldedTurns.clear);
+      _setHistoryState(_unfoldedTurns.clear);
     }
     _syncEdgeFades();
     _scheduleStickyUpdate();
@@ -639,7 +660,11 @@ class _ChatHistoryViewState extends State<ChatHistoryView>
     final sliver = _findSliver();
     if (sliver == null || !sliver.attached) return;
     for (var child = sliver.firstChild; child != null;) {
-      if (child.hasSize && _indexOf(child) < _feed.itemCount) yield child;
+      if (child.hasSize &&
+          child.size.height > 0 &&
+          _indexOf(child) < _feed.itemCount) {
+        yield child;
+      }
       child = sliver.childAfter(child);
     }
   }
@@ -739,6 +764,7 @@ class _ChatHistoryViewState extends State<ChatHistoryView>
   }
 
   void _handleSessionChanged() {
+    _builtList = null;
     final startedStreaming = _feed.isStreaming && !_wasLive;
     final ended = _wasLive && !_feed.isStreaming;
     _wasLive = _feed.isStreaming;
@@ -775,7 +801,7 @@ class _ChatHistoryViewState extends State<ChatHistoryView>
       _feed.editing = (index: index, draft: ComposerDraft());
     }
     _editorClose.stop();
-    setState(() {
+    _setHistoryState(() {
       _closingIndex = null;
       _editingIndex = index;
       _editingText = item.text;
@@ -821,7 +847,7 @@ class _ChatHistoryViewState extends State<ChatHistoryView>
           _editorFrom != null &&
           !MediaQuery.disableAnimationsOf(context);
       _editorReveal.stop();
-      setState(() {
+      _setHistoryState(() {
         _editingIndex = null;
         _closingIndex = close ? index : null;
         _closingFrom = _editorOpened;
@@ -832,7 +858,7 @@ class _ChatHistoryViewState extends State<ChatHistoryView>
 
   void _setEditorHeight(double height) {
     if (height == _editorHeight || _editingIndex == null) return;
-    setState(() => _editorHeight = height);
+    _setHistoryState(() => _editorHeight = height);
     _editorMoved.value++;
   }
 
@@ -895,7 +921,7 @@ class _ChatHistoryViewState extends State<ChatHistoryView>
       UserMessageStyle.current.value == UserMessageStyle.sticky;
 
   void _handleStyleChanged() {
-    setState(() {});
+    _setHistoryState(() {});
     _editorMoved.value++;
     _scheduleStickyUpdate();
   }
@@ -936,10 +962,9 @@ class _ChatHistoryViewState extends State<ChatHistoryView>
     }
     if (passed != null || first == null) return passed;
     // Scrolled past long ago: above the laid-out items.
-    for (var index = first - 1; index >= 0; index--) {
-      if (_feed.itemAt(index) is UserMessageItem) return index;
-    }
-    return null;
+    return first > 0 && first <= _turnMessages.length
+        ? _turnMessages[first - 1]
+        : null;
   }
 
   /// Top of the laid-out message [index] (below its gap), relative to the
@@ -1260,7 +1285,7 @@ class _ChatHistoryViewState extends State<ChatHistoryView>
   void _submitEdit(int index, ComposerMessage message) {
     _feed.editing = null;
     if (!_scrolledPast(index)) _animateItem(index);
-    setState(() {
+    _setHistoryState(() {
       _editingIndex = null;
       _closingIndex = null;
       // Everything after the message is replaced; so are its steps.
@@ -1421,6 +1446,10 @@ class _ChatHistoryViewState extends State<ChatHistoryView>
   /// shown each frame.
   Widget? _built;
 
+  /// Overlay, scrollbar hover and edge fade changes do not rebuild messages.
+  /// A feed, fold, editor or column change invalidates this subtree instead.
+  Widget? _builtList;
+
   @override
   Widget build(BuildContext context) {
     _built = null;
@@ -1430,6 +1459,7 @@ class _ChatHistoryViewState extends State<ChatHistoryView>
         final gutter = chatGutter(constraints.maxWidth);
         final right = math.max(0.0, inset - gutter);
         if (_built == null || gutter != _gutter || right != _columnRight) {
+          if (gutter != _gutter || right != _columnRight) _builtList = null;
           _gutter = gutter;
           _columnRight = right;
           _built = _buildHistory(context);
@@ -1510,7 +1540,7 @@ class _ChatHistoryViewState extends State<ChatHistoryView>
                             ]),
                             // Its bar is the one around the selection, above; not a second
                             // one of the platform's own.
-                            child: ScrollConfiguration(
+                            child: _builtList ??= ScrollConfiguration(
                               behavior: ScrollConfiguration.of(context)
                                   .copyWith(scrollbars: false),
                               child: SuperListView.builder(
@@ -1519,6 +1549,7 @@ class _ChatHistoryViewState extends State<ChatHistoryView>
                                 itemCount: _feed.itemCount,
                                 extentEstimation: _estimateExtent,
                                 cacheExtent: 900,
+                                delayPopulatingCacheArea: true,
                                 padding: EdgeInsets.fromLTRB(
                                   _gutter,
                                   20,
@@ -1526,6 +1557,15 @@ class _ChatHistoryViewState extends State<ChatHistoryView>
                                   24,
                                 ),
                                 itemBuilder: (context, index) {
+                                  // A closed fold can span hundreds of items.
+                                  // Its invisible rows need no column, padding
+                                  // or animation render objects.
+                                  if (_isHidden(index) &&
+                                      !_motions.containsKey(index)) {
+                                    return const SizedBox(
+                                      width: double.infinity,
+                                    );
+                                  }
                                   return ChatColumn(
                                     maxWidth: widget.maxContentWidth,
                                     right: _columnRight,
@@ -1669,6 +1709,7 @@ class _JumpToBottomButton extends StatelessWidget {
 /// that is off the bottom.
 class _BottomAnchoredScrollController extends ScrollController {
   bool anchored = true;
+  bool animateWheel = true;
 
   /// The device of the scroll signal being handled (set before the list
   /// handles it), so only mouse wheels get sped up.
@@ -1701,13 +1742,69 @@ class _BottomAnchoredScrollPosition extends ScrollPositionWithSingleContext {
   /// transcript slow to move through. Trackpads keep their native 1:1 feel,
   /// whether they arrive as pan gestures or (on the web) as scroll signals.
   static const wheelSpeed = 2.2;
+  static const wheelDuration = Duration(milliseconds: 160);
+  double? _wheelTarget;
+  bool _wheelToEnd = false;
 
   @override
-  void pointerScroll(double delta) => super.pointerScroll(
-    controller.signalKind == PointerDeviceKind.mouse
-        ? delta * wheelSpeed
-        : delta,
-  );
+  void pointerScroll(double delta) {
+    if (controller.signalKind != PointerDeviceKind.mouse) {
+      super.pointerScroll(delta);
+      return;
+    }
+    final distance = delta * wheelSpeed;
+    if (!controller.animateWheel || delta == 0) {
+      super.pointerScroll(distance);
+      return;
+    }
+    final previous = _wheelTarget;
+    final from = previous != null && (previous - pixels).sign == distance.sign
+        ? previous
+        : pixels;
+    final target = (from + distance).clamp(
+      minScrollExtent,
+      maxScrollExtent,
+    );
+    if (target == pixels && _wheelTarget == null) return;
+    // Leave the bottom before the first animated frame, so layout cannot
+    // anchor the wheel movement back to the end. Successive notches add to
+    // the destination instead of discarding the movement still in flight.
+    controller.anchored = false;
+    _wheelTarget = target;
+    _wheelToEnd = distance > 0 && target >= maxScrollExtent;
+    updateUserScrollDirection(
+      distance > 0 ? ScrollDirection.reverse : ScrollDirection.forward,
+    );
+    unawaited(
+      super.animateTo(
+        target,
+        duration: wheelDuration,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+  }
+
+  @override
+  void goBallistic(double velocity) {
+    if (activity is DrivenScrollActivity &&
+        _wheelTarget != null &&
+        _wheelToEnd) {
+      // The virtual list can refine its extent during the animation. Finish
+      // at the actual end so the completed turn can fold and stay anchored.
+      jumpTo(maxScrollExtent);
+      return;
+    }
+    super.goBallistic(velocity);
+  }
+
+  @override
+  void beginActivity(ScrollActivity? newActivity) {
+    if (newActivity is! DrivenScrollActivity) {
+      _wheelTarget = null;
+      _wheelToEnd = false;
+    }
+    super.beginActivity(newActivity);
+  }
 
   @override
   void jumpTo(double value) {

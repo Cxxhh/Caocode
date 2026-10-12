@@ -178,6 +178,7 @@ void main() {
       await tester.sendEventToBinding(pointer.scroll(const Offset(0, -200)));
       await tester.pump();
     }
+    await tester.pumpAndSettle();
     expect(_text('Fix the bug'), findsWidgets);
 
     feed.update(
@@ -192,7 +193,7 @@ void main() {
       await tester.sendEventToBinding(pointer.scroll(const Offset(0, 400)));
       await tester.pump();
     }
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(_text('Worked for 30s'), findsOneWidget);
     expect(find.byType(StepsFoldLine), findsNothing);
     expect(_text('Done, fixed.'), findsOneWidget);

@@ -24,6 +24,45 @@ List<TextSpan> leaves(WidgetTester tester) {
 }
 
 void main() {
+  testWidgets('message rebuilds and virtual remounts reuse parsed markdown', (
+    tester,
+  ) async {
+    const data = '**cached message**\n\n```dart\nfinal answer = 42;\n```';
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: MarkdownView(data))),
+    );
+    final nodes = tester
+        .widget<MarkdownBlocks>(find.byType(MarkdownBlocks))
+        .nodes;
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: MarkdownView(data, style: TextStyle(fontSize: 16)),
+        ),
+      ),
+    );
+    expect(
+      tester.widget<MarkdownBlocks>(find.byType(MarkdownBlocks)).nodes,
+      same(nodes),
+    );
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: MarkdownView(data))),
+    );
+    expect(
+      tester.widget<MarkdownBlocks>(find.byType(MarkdownBlocks)).nodes,
+      same(nodes),
+    );
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: MarkdownView('updated message'))),
+    );
+    expect(find.text('updated message', findRichText: true), findsOneWidget);
+    expect(
+      tester.widget<MarkdownBlocks>(find.byType(MarkdownBlocks)).nodes,
+      isNot(same(nodes)),
+    );
+  });
+
   group('links', () {
     testWidgets('every word of a web link is tappable', (tester) async {
       await pumpMarkdown(
