@@ -7,6 +7,7 @@ import '../l10n/l10n.dart';
 import '../theme/app_theme.dart';
 import 'chat_column.dart';
 import 'chat_keys.dart';
+import 'widgets/chat_minimap.dart';
 import 'widgets/hover_builder.dart';
 import '../ide/ide_back_button.dart';
 
@@ -77,6 +78,7 @@ class SubagentHeader extends StatelessWidget {
     required this.onBack,
     this.backFocusNode,
     this.maxContentWidth = 720,
+    this.minimap = false,
   });
 
   /// The subagents from the outermost to this one.
@@ -86,6 +88,10 @@ class SubagentHeader extends StatelessWidget {
   final ValueChanged<int> onBack;
   final FocusNode? backFocusNode;
   final double maxContentWidth;
+
+  /// Whether the conversation under it has a minimap, which its column
+  /// leaves room for (see [ChatColumn.room]).
+  final bool minimap;
 
   @override
   Widget build(BuildContext context) {
@@ -97,12 +103,16 @@ class SubagentHeader extends StatelessWidget {
       child: ChatColumn(
         maxWidth: maxContentWidth + 48,
         right: math.max(0, ChatColumnInset.of(context) - 24),
+        // Level with the history's, its padding as wide as its margin.
+        room: minimap ? ChatMinimap.room - 24 : 0,
+        roomFrom: ChatMinimap.roomFrom + 48,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 6, 24, 4),
           child: Row(
             children: [
-              IdeBackButton.icon(
+              IdeBackButton.compact(
                 label: context.l10n.chatBack,
+                text: context.l10n.chatConversation,
                 // Esc, unless rebound (see ChatCommandIds.closeSubagent).
                 hover: ChatKeys.titleWithKey(
                   context.l10n.chatBack,
@@ -112,14 +122,9 @@ class SubagentHeader extends StatelessWidget {
                 focusNode: backFocusNode,
                 onTap: () => onBack(trail.length - 1),
               ),
-              const SizedBox(width: 4),
-              _Crumb(
-                label: context.l10n.chatConversation,
-                onTap: () => onBack(0),
-              ),
               for (final (i, label) in trail.indexed) ...[
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
                   child: Icon(
                     Icons.chevron_right_rounded,
                     size: 15,

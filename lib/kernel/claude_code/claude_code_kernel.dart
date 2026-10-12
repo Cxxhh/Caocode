@@ -648,7 +648,11 @@ class ClaudeCodeKernel
     _translator.begin();
   }
 
-  void _endTurn({required bool interrupted, Duration? worked}) {
+  void _endTurn({
+    required bool interrupted,
+    Duration? worked,
+    TurnUsage? usage,
+  }) {
     final turn = _turn;
     if (turn == null) return;
     _turn = null;
@@ -657,11 +661,28 @@ class ClaudeCodeKernel
       null => null,
     };
     _translator.settle();
+    // As streamed, where it was: the agent's own requests, timed.
+    if (_translator.turnUsage case final streamed?) {
+      usage = TurnUsage(
+        inputTokens: streamed.inputTokens,
+        outputTokens: streamed.outputTokens,
+        tokensPerSecond: streamed.tokensPerSecond,
+        costUsd: usage?.costUsd,
+      );
+    }
     for (final id in _permissions.keys) {
       emit(InteractionResolved(nextSeq, id));
     }
     _permissions.clear();
-    emit(TurnEnded(nextSeq, turn, interrupted: interrupted, worked: worked));
+    emit(
+      TurnEnded(
+        nextSeq,
+        turn,
+        interrupted: interrupted,
+        worked: worked,
+        usage: usage,
+      ),
+    );
   }
 
   @override
@@ -1441,8 +1462,13 @@ class ClaudeCodeKernel
   }
 
   void _result(Map<String, Object?> message) {
+    // The session's cost so far: the turn's is what it grew by (all of it
+    // when it fell, the CLI having started over).
+    double? turnCost;
     if (message['total_cost_usd'] case final num cost) {
+      final before = _cost ?? 0;
       _cost = cost.toDouble();
+      turnCost = _cost! >= before ? _cost! - before : _cost;
       _reportStats();
     }
     // The models' own windows: the conversation's may be less (see
@@ -1474,6 +1500,24 @@ class ClaudeCodeKernel
       worked: switch (message['duration_ms']) {
         final num ms => Duration(milliseconds: ms.round()),
         _ => null,
+      },
+      // Its tokens as the result counts them, for when none streamed (its
+      // API time is the session's, too coarse for a speed).
+      usage: switch (message['usage']) {
+        final Map<Object?, Object?> usage => TurnUsage(
+          inputTokens:
+              [
+                'input_tokens',
+                'cache_creation_input_tokens',
+                'cache_read_input_tokens',
+              ].fold<int>(
+                0,
+                (sum, key) => sum + ((usage[key] as num?) ?? 0).toInt(),
+              ),
+          outputTokens: (usage['output_tokens'] as num?)?.toInt(),
+          costUsd: turnCost,
+        ),
+        _ => TurnUsage(costUsd: turnCost),
       },
     );
     unawaited(_refreshContext());

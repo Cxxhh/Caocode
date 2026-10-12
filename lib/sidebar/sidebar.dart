@@ -2579,7 +2579,8 @@ class StatusIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (status) {
-      ThreadStatus.running => const PixelLoader.agent(),
+      // A little under the list's text, as its dots are.
+      ThreadStatus.running => const PixelLoader.agent(size: 12),
       ThreadStatus.needsInput => _Dot(needsInputColor),
       ThreadStatus.unread => _Dot(AppColors.accent),
       ThreadStatus.idle => const SizedBox.shrink(),

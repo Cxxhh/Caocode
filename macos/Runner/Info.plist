@@ -74,5 +74,11 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>BaoCode lets the phones paired with it find it on the local network.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_baocode._tcp</string>
+	</array>
 </dict>
 </plist>

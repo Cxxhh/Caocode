@@ -45,6 +45,7 @@ final class TurnEnded extends KernelEvent {
     this.turnId, {
     this.interrupted = false,
     this.worked,
+    this.usage,
   });
 
   final String turnId;
@@ -53,6 +54,9 @@ final class TurnEnded extends KernelEvent {
   /// How long the turn took, when known: kept on the message that began
   /// it, unless it was [interrupted].
   final Duration? worked;
+
+  /// What it spent, when known: kept with [worked].
+  final TurnUsage? usage;
 }
 
 /// Adds the item [id], or replaces it. A [streaming] item is still being

@@ -132,7 +132,12 @@ class Transcript {
         if (_endedTurns.contains(turnId)) return false;
         activeTurn = turnId;
         _activeUnprompted = unprompted;
-      case TurnEnded(:final turnId, :final interrupted, :final worked):
+      case TurnEnded(
+        :final turnId,
+        :final interrupted,
+        :final worked,
+        :final usage,
+      ):
         if (!_endedTurns.add(turnId)) return false;
         lastTurnUnprompted = activeTurn == turnId && _activeUnprompted;
         if (activeTurn == turnId) activeTurn = null;
@@ -141,7 +146,7 @@ class Transcript {
         lastTurnInterrupted = interrupted;
         _pending.clear();
         _settleStreaming();
-        if (!interrupted && worked != null) _timeTurn(turnId, worked);
+        if (!interrupted && worked != null) _timeTurn(turnId, worked, usage);
       case ItemUpserted(:final id, :final item, :final streaming):
         _put(id, item);
         streaming ? _streaming.add(id) : _streaming.remove(id);
@@ -263,12 +268,13 @@ class Transcript {
     return true;
   }
 
-  /// Keeps how long turn [id] took on the message that began it.
-  void _timeTurn(String id, Duration worked) {
+  /// Keeps how long turn [id] took, and what it spent, on the message that
+  /// began it.
+  void _timeTurn(String id, Duration worked, TurnUsage? usage) {
     final index = _indexOf[id];
     if (index == null) return;
     if (_items[index] case final UserMessageItem message) {
-      _items[index] = message.copyWith(worked: worked);
+      _items[index] = message.copyWith(worked: worked, usage: usage);
     }
   }
 

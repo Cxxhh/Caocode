@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:baocode/chat/chat_screen.dart';
 import 'package:baocode/chat/chat_session.dart';
 import 'package:baocode/chat/chat_width.dart';
+import 'package:baocode/chat/widgets/chat_minimap.dart';
 import 'package:baocode/chat/composer/composer.dart';
 import 'package:baocode/ide/ide_color_theme_picker.dart';
 import 'package:baocode/settings/pages/appearance_page.dart';
@@ -55,15 +56,64 @@ void main() {
     expect(width(), 1200);
     ChatWidth.current.value = double.infinity;
     await tester.pump();
-    // The window's width but its margins.
+    // The window's width but its margins, the minimap's room in them.
+    expect(width(), 1800 - 2 * ChatMinimap.room);
+    // Without the minimap (Appearance), the room is the column's again: but
+    // its margins.
+    ChatMinimap.enabled.value = false;
+    addTearDown(() => ChatMinimap.enabled.value = true);
+    await tester.pump();
     expect(width(), 1800 - 2 * 24);
+  });
+
+  test('settings.json\'s chat.minimap: unset is on, only off is written', () {
+    expect(ChatMinimap.parse(null), isTrue);
+    expect(ChatMinimap.parse('x'), isTrue);
+    expect(ChatMinimap.parse(false), isFalse);
+    expect(ChatMinimap.setting(true), isNull);
+    expect(ChatMinimap.setting(false), isFalse);
+  });
+
+  test('settings.json\'s chat.minimapGlass: a step, unset or not a number '
+      'is 75%, only another is written', () {
+    expect(ChatMinimap.parseGlass(null), 0.75);
+    expect(ChatMinimap.parseGlass('x'), 0.75);
+    expect(ChatMinimap.parseGlass(0), 0);
+    expect(ChatMinimap.parseGlass(0.6), 0.5);
+    expect(ChatMinimap.parseGlass(9), 1.5);
+    expect(ChatMinimap.glassSetting(0.75), isNull);
+    expect(ChatMinimap.glassSetting(1), 1);
+    expect(ChatMinimap.glassSetting(0.25), 0.25);
+  });
+
+  test('settings.json\'s chat.minimapElasticity: a level\'s name, unset or '
+      'another is subtle, only another level is written', () {
+    expect(ChatMinimap.parseElasticity(null), ChatMinimapElasticity.subtle);
+    expect(ChatMinimap.parseElasticity('x'), ChatMinimapElasticity.subtle);
+    expect(ChatMinimap.parseElasticity('off'), ChatMinimapElasticity.off);
+    expect(ChatMinimap.parseElasticity('bouncy'), ChatMinimapElasticity.bouncy);
+    expect(ChatMinimap.elasticitySetting(ChatMinimapElasticity.subtle), isNull);
+    expect(ChatMinimap.elasticitySetting(ChatMinimapElasticity.off), 'off');
+    // Off, the edges go together; more of it, the edge behind lags more.
+    expect(
+      ChatMinimapElasticity.off.leading,
+      ChatMinimapElasticity.off.trailing,
+    );
+    double lag(ChatMinimapElasticity level) =>
+        1 / level.trailing - 1 / level.leading;
+    for (var i = 1; i < ChatMinimapElasticity.values.length; i++) {
+      expect(
+        lag(ChatMinimapElasticity.values[i]),
+        greaterThan(lag(ChatMinimapElasticity.values[i - 1])),
+      );
+    }
   });
 
   testWidgets('the slider picks a step, applied at once and kept in '
       'settings.json; the default is not written', (tester) async {
     // Tall enough for the whole page: one scrolled to its lower part trips
     // the semantics check as the code preview leaves the list's cache.
-    tester.view.physicalSize = const Size(900, 1400);
+    tester.view.physicalSize = const Size(900, 2000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final data = (await tester.runAsync(

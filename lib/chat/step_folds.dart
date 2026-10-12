@@ -36,10 +36,10 @@ typedef StepRow = ({StepFold? work, StepFold? steps, bool item});
 /// the agent's words stand apart: they break a run. A plan's card is never
 /// folded.
 class StepFolds {
-  StepFolds._(this._steps, this._work, this._liveEnd);
+  StepFolds._(this._steps, this._work, this._liveEnd, this._turnEnds);
 
   /// Nothing folded.
-  static final none = StepFolds._(const [], const [], null);
+  static final none = StepFolds._(const [], const [], null, const {});
 
   /// Folds the [count] items given by [itemAt]. While [live], the last turn
   /// is under way: it does not fold yet.
@@ -51,6 +51,7 @@ class StepFolds {
     final items = [for (var i = 0; i < count; i++) itemAt(i)];
     final steps = List<StepFold?>.filled(count, null);
     final work = List<StepFold?>.filled(count, null);
+    final turnEnds = <int, int>{};
 
     for (var start = 0; start < count;) {
       if (!isQuickStep(items[start])) {
@@ -79,12 +80,21 @@ class StepFolds {
       if (live && t == prompts.length - 1) break;
       final prompt = prompts[t];
       final worked = (items[prompt] as UserMessageItem).worked;
-      if (worked == null) continue;
       var last = t + 1 < prompts.length ? prompts[t + 1] - 1 : count - 1;
       while (last > prompt && items[last] is UserMessageItem) {
         last--;
       }
-      if (last <= prompt || items[last] is! AssistantTextItem) continue;
+      // Restored Codex turns have no duration, but their answers still
+      // have a copy button. Only measured turns show usage without an answer.
+      if (last > prompt &&
+          (worked != null || items[last] is AssistantTextItem)) {
+        turnEnds[last] = prompt;
+      }
+      if (worked == null ||
+          last <= prompt ||
+          items[last] is! AssistantTextItem) {
+        continue;
+      }
       // The answer: the words after its last step, thoughts among them.
       var answer = last;
       for (var i = last; i > prompt; i--) {
@@ -115,11 +125,18 @@ class StepFolds {
 
     var liveEnd = count;
     if (count > 0 && items[count - 1] is LiveStatusItem) liveEnd--;
-    return StepFolds._(steps, work, live ? liveEnd : null);
+    return StepFolds._(steps, work, live ? liveEnd : null, turnEnds);
   }
 
   final List<StepFold?> _steps;
   final List<StepFold?> _work;
+
+  /// For the last item of a finished turn with an answer or a duration,
+  /// its prompt's index.
+  final Map<int, int> _turnEnds;
+
+  /// The prompt of the finished turn item [index] ends, if it ends one.
+  int? turnEndingAt(int index) => _turnEnds[index];
 
   /// Where the live turn's items end (before its status row); null when
   /// no turn is under way.

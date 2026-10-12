@@ -12,6 +12,7 @@ import 'package:bao_editor/monaco/flutter/language_assets.dart';
 
 import 'chat/chat_width.dart';
 import 'chat/user_message_style.dart';
+import 'chat/widgets/chat_minimap.dart';
 import 'chat/widgets/pixel_loader.dart';
 import 'customize/customization_store.dart';
 import 'extensions/theme_extensions.dart';
@@ -31,6 +32,7 @@ import 'kernel/codex/codex_path_setting.dart';
 import 'kernel/codex/codex_process.dart';
 import 'kernel/commit_attribution.dart';
 import 'keybindings/keybindings_sync.dart';
+import 'link/link_host.dart';
 import 'keybindings/keymap.dart';
 import 'keybindings/vscode_import.dart';
 import 'l10n/l10n.dart';
@@ -156,6 +158,9 @@ Future<void> _startApplication(
       files.settings,
       () => files.settings[UserMessageStyle.settingKey],
     );
+    // Settings → Appearance: whether the conversation has a minimap, how
+    // opaque its glass is and how much it stretches.
+    ChatMinimap.follow(files.settings, (key) => files.settings[key]);
     // Settings → Appearance: what an agent and a subagent show running.
     PixelLoaderRole.follow(files.settings, (key) => files.settings[key]);
     // Settings → Appearance: the code's font, size and ligatures, and the
@@ -181,6 +186,12 @@ Future<void> _startApplication(
     l10n: () =>
         lookupAppLocalizations(locale.locale ?? AppLocale.systemLocale()),
   )..load();
+  // The phones paired with this computer (Settings → Mobile): listening
+  // for them, if they are allowed to connect.
+  final link = kIsWeb
+      ? null
+      : LinkHost(workspace: workspace, customizations: CustomizationStore());
+  unawaited(link?.load());
   // The first frame is in the kept theme, restored from storage as VS Code
   // does before the workbench shows; its file is read after. The setting
   // is settings.json's `workbench.colorTheme`, the theme's colors the
@@ -264,6 +275,7 @@ Future<void> _startApplication(
       installs: VsCodeInstalls.current(),
       updates: _startUpdates(files),
       workspace: workspace,
+      link: link,
     );
     _startTelemetry(files);
   }

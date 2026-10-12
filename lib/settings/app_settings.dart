@@ -9,6 +9,8 @@ import '../keybindings/keybindings_editing.dart';
 import '../keybindings/keybindings_sync.dart';
 import '../keybindings/keymap.dart';
 import '../keybindings/vscode_import.dart';
+import '../l10n/l10n.dart';
+import '../link/link_host.dart';
 import '../theme/workbench_theme.dart' show WorkbenchThemeService;
 import '../tips/builtin_tips.dart';
 import '../tips/feature_tip.dart';
@@ -21,9 +23,11 @@ import 'pages/data_dir_page.dart';
 import 'pages/general_page.dart';
 import 'pages/keybindings_page.dart';
 import 'pages/codex_page.dart';
+import 'pages/mobile_page.dart';
 import 'pages/language_page.dart';
 import 'pages/network_page.dart';
 import 'pages/notifications_page.dart';
+import 'pages/settings_widgets.dart' show SettingsPage;
 import 'pages/updates_page.dart';
 import 'settings_dialog.dart';
 import 'user_settings.dart';
@@ -42,6 +46,7 @@ class AppSettings {
     this.updates,
     this.workspace,
     this.claudeStatus,
+    this.link,
   }) : keybindings = keybindings ?? KeybindingService.instance;
 
   final AppLocale locale;
@@ -66,6 +71,10 @@ class AppSettings {
   /// Updating the app: Settings → Updates, Check for Updates; none where
   /// the build does not update itself.
   final UpdateController? updates;
+
+  /// The link with the phones paired, for Settings → Mobile; none under
+  /// test, nor on the web.
+  final LinkHost? link;
 
   /// The Claude Code that runs on this machine, for Settings → General;
   /// none under test, where it is not looked for.
@@ -123,6 +132,15 @@ class AppSettings {
         return CodexSettingsPage(settings: files?.settings);
       case SettingsSection.network:
         return NetworkSettingsPage(settings: files?.settings);
+      case SettingsSection.mobile:
+        return switch (link) {
+          final link? => MobileSettingsPage(host: link),
+          null => SettingsPage(
+            title: context.l10n.settingsSectionMobile,
+            description: context.l10n.mobileSettingsDescription,
+            children: const [],
+          ),
+        };
       case SettingsSection.notifications:
         return NotificationsSettingsPage(settings: files?.settings);
       case SettingsSection.language:

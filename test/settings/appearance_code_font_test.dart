@@ -1,5 +1,6 @@
 import 'package:bao_editor/monaco/flutter/editor_surface.dart';
 import 'package:baocode/chat/user_message_style.dart';
+import 'package:baocode/chat/widgets/chat_minimap.dart';
 import 'package:baocode/chat/widgets/pixel_loader.dart';
 import 'package:baocode/ide/ide_color_theme_picker.dart';
 import 'package:baocode/settings/pages/appearance_page.dart';
@@ -18,6 +19,9 @@ void main() {
     CodeFont.uiScale.value = CodeFont.defaultUiScale;
     CodeFont.terminalSize.value = null;
     UserMessageStyle.current.value = UserMessageStyle.sticky;
+    ChatMinimap.enabled.value = true;
+    ChatMinimap.glass.value = ChatMinimap.defaultGlass;
+    ChatMinimap.elasticity.value = ChatMinimap.defaultElasticity;
     for (final role in PixelLoaderRole.values) {
       role.style.value = PixelLoaderStyle.fill;
       role.speed.value = role.defaultSpeed;
@@ -25,7 +29,7 @@ void main() {
   });
 
   Future<_RecordingSettings> pumpPage(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(900, 1400);
+    tester.view.physicalSize = const Size(900, 2000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final settings = _RecordingSettings();
@@ -98,6 +102,60 @@ void main() {
     expect(UserMessageStyle.current.value, UserMessageStyle.bubble);
     expect(settings.written.containsKey(UserMessageStyle.settingKey), isTrue);
     expect(settings.written[UserMessageStyle.settingKey], isNull);
+    await leave(tester);
+  });
+
+  testWidgets('the minimap\'s glass opacity is kept in settings.json, the '
+      'default removed from it; no slider with the minimap off', (
+    tester,
+  ) async {
+    final settings = await pumpPage(tester);
+    Finder slider() => find.byWidgetPredicate(
+      (widget) =>
+          widget is SettingsSlider &&
+          widget.semanticLabel.startsWith('Minimap glass opacity'),
+    );
+    expect(tester.widget<SettingsSlider>(slider()).label, '75%');
+    tester
+        .widget<SettingsSlider>(slider())
+        .onChanged(ChatMinimap.glassSteps.indexOf(0.5));
+    await tester.pump();
+    expect(ChatMinimap.glass.value, 0.5);
+    expect(settings.written[ChatMinimap.glassKey], 0.5);
+    expect(tester.widget<SettingsSlider>(slider()).label, '50%');
+    tester
+        .widget<SettingsSlider>(slider())
+        .onChanged(ChatMinimap.glassSteps.indexOf(0.75));
+    await tester.pump();
+    expect(settings.written.containsKey(ChatMinimap.glassKey), isTrue);
+    expect(settings.written[ChatMinimap.glassKey], isNull);
+
+    ChatMinimap.enabled.value = false;
+    await tester.pump();
+    expect(slider(), findsNothing);
+    await leave(tester);
+  });
+
+  testWidgets('the minimap\'s glass elasticity is kept in settings.json, the '
+      'default removed from it', (tester) async {
+    final settings = await pumpPage(tester);
+    SettingsSlider slider() => tester.widget<SettingsSlider>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is SettingsSlider &&
+            widget.semanticLabel.startsWith('Minimap glass elasticity'),
+      ),
+    );
+    expect(slider().label, 'Subtle');
+    slider().onChanged(ChatMinimapElasticity.bouncy.index);
+    await tester.pump();
+    expect(ChatMinimap.elasticity.value, ChatMinimapElasticity.bouncy);
+    expect(settings.written[ChatMinimap.elasticityKey], 'bouncy');
+    expect(slider().label, 'Bouncy');
+    slider().onChanged(ChatMinimapElasticity.subtle.index);
+    await tester.pump();
+    expect(settings.written.containsKey(ChatMinimap.elasticityKey), isTrue);
+    expect(settings.written[ChatMinimap.elasticityKey], isNull);
     await leave(tester);
   });
 

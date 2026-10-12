@@ -2364,6 +2364,22 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
     return thread;
   }
 
+  /// A new agent in [project] for something other than the window to send
+  /// to (a paired phone): listed, not shown, the window left as it is. An
+  /// untouched new agent there that does not show is reused.
+  AgentThread startAgent(Project project) {
+    for (final thread in _threads) {
+      if (thread.project == project &&
+          _isUntouched(thread) &&
+          !_grid.contains(thread)) {
+        return thread;
+      }
+    }
+    final thread = _newThread(project);
+    notifyListeners();
+    return thread;
+  }
+
   /// A new, empty agent in [project], listed here but not shown.
   AgentThread _newThread(Project project) {
     final kernel = _preferredKernel;

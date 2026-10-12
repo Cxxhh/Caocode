@@ -42,6 +42,7 @@ import 'package:baocode/theme/app_theme.dart';
 Future<ChatSession> pumpScreen(
   WidgetTester tester, {
   int historyCount = 16,
+  bool embedded = false,
 }) async {
   final session = ChatSession(historyCount: historyCount);
   addTearDown(session.dispose);
@@ -49,7 +50,7 @@ Future<ChatSession> pumpScreen(
     MaterialApp(
       theme: buildAppTheme(),
       localizationsDelegates: const [FlutterQuillLocalizations.delegate],
-      home: ChatScreen(session: session),
+      home: ChatScreen(session: session, embedded: embedded),
     ),
   );
   await tester.pump();
@@ -1879,7 +1880,9 @@ void main() {
     testWidgets("the editor's own scrolling leaves the history scrollbar", (
       tester,
     ) async {
-      await pumpScreen(tester, historyCount: 40);
+      // In a pane of the IDE's, where the history has its scrollbar (in the
+      // agents' window, its minimap stands in for it).
+      await pumpScreen(tester, historyCount: 40, embedded: true);
       final position = tester
           .state<ScrollableState>(
             find

@@ -13,6 +13,7 @@ class UserMessageItem extends ChatItem {
     this.queued = false,
     this.images = const [],
     this.worked,
+    this.usage,
   });
 
   final String text;
@@ -28,12 +29,45 @@ class UserMessageItem extends ChatItem {
   /// (not stopped): the work before its answer folds into that.
   final Duration? worked;
 
-  UserMessageItem copyWith({Duration? worked}) => UserMessageItem(
-    text: text,
-    queued: queued,
-    images: images,
-    worked: worked ?? this.worked,
-  );
+  /// What its turn spent, kept with [worked], when the kernel said.
+  final TurnUsage? usage;
+
+  UserMessageItem copyWith({Duration? worked, TurnUsage? usage}) =>
+      UserMessageItem(
+        text: text,
+        queued: queued,
+        images: images,
+        worked: worked ?? this.worked,
+        usage: usage ?? this.usage,
+      );
+}
+
+/// What a turn spent, as its kernel reported at its end.
+class TurnUsage {
+  const TurnUsage({
+    this.inputTokens,
+    this.outputTokens,
+    this.tokensPerSecond,
+    this.costUsd,
+  });
+
+  /// Tokens the model read, all its requests together, the prompt cache's
+  /// among them.
+  final int? inputTokens;
+
+  /// Tokens it wrote, all its requests together.
+  final int? outputTokens;
+
+  /// How fast it wrote, while it did.
+  final double? tokensPerSecond;
+
+  /// What the turn cost, in dollars.
+  final double? costUsd;
+
+  /// Read and written, when either is known.
+  int? get totalTokens => inputTokens == null && outputTokens == null
+      ? null
+      : (inputTokens ?? 0) + (outputTokens ?? 0);
 }
 
 /// A picture sent with a message.

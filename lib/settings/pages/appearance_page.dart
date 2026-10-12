@@ -9,6 +9,7 @@ import 'package:flutter/material.dart' hide ColorScheme;
 import '../../chat/chat_keys.dart';
 import '../../chat/chat_width.dart';
 import '../../chat/user_message_style.dart';
+import '../../chat/widgets/chat_minimap.dart';
 import '../../chat/widgets/pixel_loader.dart';
 import '../../ide/ide_code_editor.dart';
 import '../../ide/ide_color_theme_picker.dart';
@@ -161,6 +162,31 @@ class AppearanceSettingsPage extends StatelessWidget {
     _keep(UserMessageStyle.settingKey, style.setting);
   }
 
+  void _selectMinimap(bool on) {
+    ChatMinimap.enabled.value = on;
+    _keep(ChatMinimap.settingKey, ChatMinimap.setting(on));
+  }
+
+  void _selectMinimapGlass(double opacity) {
+    ChatMinimap.glass.value = opacity;
+    _keep(ChatMinimap.glassKey, ChatMinimap.glassSetting(opacity));
+  }
+
+  void _selectMinimapElasticity(ChatMinimapElasticity level) {
+    ChatMinimap.elasticity.value = level;
+    _keep(ChatMinimap.elasticityKey, ChatMinimap.elasticitySetting(level));
+  }
+
+  static String elasticityName(
+    BuildContext context,
+    ChatMinimapElasticity level,
+  ) => switch (level) {
+    ChatMinimapElasticity.off => context.l10n.minimapElasticityOff,
+    ChatMinimapElasticity.subtle => context.l10n.minimapElasticitySubtle,
+    ChatMinimapElasticity.medium => context.l10n.minimapElasticityMedium,
+    ChatMinimapElasticity.bouncy => context.l10n.minimapElasticityBouncy,
+  };
+
   static String loaderStyleName(BuildContext context, PixelLoaderStyle style) {
     final l10n = context.l10n;
     return switch (style) {
@@ -312,6 +338,9 @@ class AppearanceSettingsPage extends StatelessWidget {
         changes,
         ChatWidth.current,
         UserMessageStyle.current,
+        ChatMinimap.enabled,
+        ChatMinimap.glass,
+        ChatMinimap.elasticity,
         for (final role in PixelLoaderRole.values) ...[role.style, role.speed],
         CodeFont.families,
         CodeFont.size,
@@ -323,6 +352,12 @@ class AppearanceSettingsPage extends StatelessWidget {
         final widthStep = ChatWidth.stepOf(ChatWidth.current.value);
         final widthShown = widthName(context, ChatWidth.steps[widthStep]);
         final styleShown = _styleName(context, UserMessageStyle.current.value);
+        final glass = ChatMinimap.glass.value;
+        final glassShown = '${(glass * 100).round()}%';
+        final elasticityShown = elasticityName(
+          context,
+          ChatMinimap.elasticity.value,
+        );
         final families = CodeFont.families.value;
         final sizeStep = _nearest(CodeFont.sizeSteps, CodeFont.size.value);
         final sizeShown = '${CodeFont.size.value.round()}';
@@ -407,6 +442,45 @@ class AppearanceSettingsPage extends StatelessWidget {
                     ]),
                   ),
                 ),
+                SettingsSwitchRow(
+                  label: l10n.appearanceSettingsMinimap,
+                  description: l10n.appearanceSettingsMinimapDescription,
+                  value: ChatMinimap.enabled.value,
+                  onChanged: _selectMinimap,
+                ),
+                if (ChatMinimap.enabled.value)
+                  SettingsRow(
+                    label: l10n.appearanceSettingsMinimapGlass,
+                    description: l10n.appearanceSettingsMinimapGlassDescription,
+                    trailing: SettingsSlider(
+                      step: ChatMinimap.glassSteps.indexOf(glass),
+                      count: ChatMinimap.glassSteps.length,
+                      label: glassShown,
+                      semanticLabel: l10n.appearanceSettingsMinimapGlassLabel(
+                        glassShown,
+                      ),
+                      onChanged: (step) =>
+                          _selectMinimapGlass(ChatMinimap.glassSteps[step]),
+                    ),
+                  ),
+                if (ChatMinimap.enabled.value)
+                  SettingsRow(
+                    label: l10n.appearanceSettingsMinimapElasticity,
+                    description:
+                        l10n.appearanceSettingsMinimapElasticityDescription,
+                    trailing: SettingsSlider(
+                      step: ChatMinimap.elasticity.value.index,
+                      count: ChatMinimapElasticity.values.length,
+                      label: elasticityShown,
+                      semanticLabel: l10n
+                          .appearanceSettingsMinimapElasticityLabel(
+                            elasticityShown,
+                          ),
+                      onChanged: (step) => _selectMinimapElasticity(
+                        ChatMinimapElasticity.values[step],
+                      ),
+                    ),
+                  ),
               ],
             ),
             SettingsCard(

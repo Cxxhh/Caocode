@@ -4130,6 +4130,54 @@ abstract class AppLocalizations {
   /// **'thought {duration}'**
   String stepsThought(String duration);
 
+  /// Hint of the button at the end of a finished turn that copies its answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy reply'**
+  String get turnCopy;
+
+  /// No description provided for @turnCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get turnCopied;
+
+  /// How fast the model wrote in a turn, in tokens a second, e.g. "100 tok/s".
+  ///
+  /// In en, this message translates to:
+  /// **'{speed} tok/s'**
+  String turnSpeed(String speed);
+
+  /// The tokens a turn read and wrote, all its requests together, e.g. "12.3k tokens".
+  ///
+  /// In en, this message translates to:
+  /// **'{tokens} tokens'**
+  String turnTokens(String tokens);
+
+  /// No description provided for @turnTokensHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This turn: read {input} (cache included), wrote {output}'**
+  String turnTokensHint(String input, String output);
+
+  /// No description provided for @turnSpeedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Output speed'**
+  String get turnSpeedHint;
+
+  /// No description provided for @turnDurationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Time this turn took'**
+  String get turnDurationHint;
+
+  /// No description provided for @turnCostHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost of this turn'**
+  String get turnCostHint;
+
   /// A finished turn's work, folded before its answer, e.g. "Worked for 4m 32s".
   ///
   /// In en, this message translates to:
@@ -11385,6 +11433,78 @@ abstract class AppLocalizations {
   /// **'Your messages: {style}'**
   String appearanceSettingsUserMessageStyleLabel(String style);
 
+  /// No description provided for @appearanceSettingsMinimap.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation Minimap'**
+  String get appearanceSettingsMinimap;
+
+  /// No description provided for @appearanceSettingsMinimapDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'A minimap of the whole conversation at the left of its column, where you are in it shown as you scroll; click or drag it to get somewhere. It stands in for the scrollbar, and is not shown in a window too narrow for it. Off: the scrollbar.'**
+  String get appearanceSettingsMinimapDescription;
+
+  /// No description provided for @appearanceSettingsMinimapGlass.
+  ///
+  /// In en, this message translates to:
+  /// **'Glass Opacity'**
+  String get appearanceSettingsMinimapGlass;
+
+  /// No description provided for @appearanceSettingsMinimapGlassDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'How much the liquid glass over where you are in the minimap shows: its tint, shadow and light. At 0% only the part in view stands out.'**
+  String get appearanceSettingsMinimapGlassDescription;
+
+  /// No description provided for @appearanceSettingsMinimapGlassLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimap glass opacity: {opacity}'**
+  String appearanceSettingsMinimapGlassLabel(String opacity);
+
+  /// No description provided for @appearanceSettingsMinimapElasticity.
+  ///
+  /// In en, this message translates to:
+  /// **'Glass Elasticity'**
+  String get appearanceSettingsMinimapElasticity;
+
+  /// No description provided for @appearanceSettingsMinimapElasticityDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'How much the liquid glass stretches as it follows you scrolling, its edge ahead leading, and gathers itself where it stops.'**
+  String get appearanceSettingsMinimapElasticityDescription;
+
+  /// No description provided for @appearanceSettingsMinimapElasticityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimap glass elasticity: {level}'**
+  String appearanceSettingsMinimapElasticityLabel(String level);
+
+  /// No description provided for @minimapElasticityOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get minimapElasticityOff;
+
+  /// No description provided for @minimapElasticitySubtle.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtle'**
+  String get minimapElasticitySubtle;
+
+  /// No description provided for @minimapElasticityMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get minimapElasticityMedium;
+
+  /// No description provided for @minimapElasticityBouncy.
+  ///
+  /// In en, this message translates to:
+  /// **'Bouncy'**
+  String get minimapElasticityBouncy;
+
   /// No description provided for @appearanceSettingsCodeFont.
   ///
   /// In en, this message translates to:
@@ -12884,6 +13004,294 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{name} has changed since it was made. Undo deletes it anyway?'**
   String explorerUndoCreateChanged(String name);
+
+  /// No description provided for @settingsSectionMobile.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile'**
+  String get settingsSectionMobile;
+
+  /// No description provided for @settingsMobileKeywords.
+  ///
+  /// In en, this message translates to:
+  /// **'phone iphone android ios pair qr code remote lan'**
+  String get settingsMobileKeywords;
+
+  /// No description provided for @mobileSettingsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow and drive this computer\'s agents from BaoCode on your phone, over the local network or the internet. What goes between them is end-to-end encrypted.'**
+  String get mobileSettingsDescription;
+
+  /// No description provided for @mobileAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Phones to Connect'**
+  String get mobileAllow;
+
+  /// No description provided for @mobileAllowDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Phones paired with this computer connect to it directly.'**
+  String get mobileAllowDescription;
+
+  /// No description provided for @mobileStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get mobileStatus;
+
+  /// No description provided for @mobileStatusOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get mobileStatusOff;
+
+  /// No description provided for @mobileStatusStarting.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting…'**
+  String get mobileStatusStarting;
+
+  /// No description provided for @mobileStatusListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening on port {port}'**
+  String mobileStatusListening(int port);
+
+  /// No description provided for @mobileStatusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not listen: {error}'**
+  String mobileStatusFailed(String error);
+
+  /// No description provided for @mobileAddresses.
+  ///
+  /// In en, this message translates to:
+  /// **'Addresses'**
+  String get mobileAddresses;
+
+  /// No description provided for @mobileAddressesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Where phones reach this computer, in the order they try them: the local network first, then the internet.'**
+  String get mobileAddressesDescription;
+
+  /// No description provided for @mobileAddressesNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No network found.'**
+  String get mobileAddressesNone;
+
+  /// No description provided for @mobileAddressesRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get mobileAddressesRefresh;
+
+  /// No description provided for @mobilePort.
+  ///
+  /// In en, this message translates to:
+  /// **'Port'**
+  String get mobilePort;
+
+  /// No description provided for @mobilePortDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The port phones connect to. Forward it on the router to reach this computer from the internet.'**
+  String get mobilePortDescription;
+
+  /// No description provided for @mobilePortInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Not a port: {text}. Enter a number from 1 to 65535.'**
+  String mobilePortInvalid(String text);
+
+  /// No description provided for @mobilePublicAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Public Address'**
+  String get mobilePublicAddress;
+
+  /// No description provided for @mobilePublicAddressDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'A domain or IP this computer can be reached at from the internet (with the port forwarded), put in the QR code; several separated by commas. Public IPv6 addresses are found by themselves.'**
+  String get mobilePublicAddressDescription;
+
+  /// No description provided for @mobileRelay.
+  ///
+  /// In en, this message translates to:
+  /// **'Relay'**
+  String get mobileRelay;
+
+  /// No description provided for @mobileRelayDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach this computer through BaoCode\'s relay when none of its addresses can be reached. Coming later.'**
+  String get mobileRelayDescription;
+
+  /// No description provided for @mobileRelayUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Available Yet'**
+  String get mobileRelayUnavailable;
+
+  /// No description provided for @mobilePair.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair a Phone'**
+  String get mobilePair;
+
+  /// No description provided for @mobilePairDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan the code with BaoCode on the phone (Me → Paired computers → Pair a computer), or pick this computer under Nearby Computers there.'**
+  String get mobilePairDescription;
+
+  /// No description provided for @mobilePairShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Show QR Code'**
+  String get mobilePairShow;
+
+  /// No description provided for @mobilePairCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get mobilePairCancel;
+
+  /// No description provided for @mobilePairNewCode.
+  ///
+  /// In en, this message translates to:
+  /// **'New Code'**
+  String get mobilePairNewCode;
+
+  /// No description provided for @mobilePairCopyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Link'**
+  String get mobilePairCopyLink;
+
+  /// No description provided for @mobilePairCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get mobilePairCopied;
+
+  /// No description provided for @mobilePairExpires.
+  ///
+  /// In en, this message translates to:
+  /// **'Good for {minutes} min, once. A phone that cannot scan it can paste the link instead.'**
+  String mobilePairExpires(int minutes);
+
+  /// No description provided for @mobilePairExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'This code has expired.'**
+  String get mobilePairExpired;
+
+  /// No description provided for @mobilePairVerifyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare with {name}'**
+  String mobilePairVerifyTitle(String name);
+
+  /// No description provided for @mobilePairVerifyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Check that the phone shows the same code, then confirm on the phone.'**
+  String get mobilePairVerifyBody;
+
+  /// No description provided for @mobilePairMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Codes Don\'t Match'**
+  String get mobilePairMismatch;
+
+  /// No description provided for @mobilePaired.
+  ///
+  /// In en, this message translates to:
+  /// **'Paired with {name}.'**
+  String mobilePaired(String name);
+
+  /// No description provided for @mobilePhones.
+  ///
+  /// In en, this message translates to:
+  /// **'Paired Phones'**
+  String get mobilePhones;
+
+  /// No description provided for @mobilePhonesNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No phone is paired yet.'**
+  String get mobilePhonesNone;
+
+  /// No description provided for @mobilePhoneConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get mobilePhoneConnected;
+
+  /// No description provided for @mobilePhoneLastSeen.
+  ///
+  /// In en, this message translates to:
+  /// **'Last connected {time}'**
+  String mobilePhoneLastSeen(String time);
+
+  /// No description provided for @mobilePhoneRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get mobilePhoneRemove;
+
+  /// No description provided for @mobileThisComputerKey.
+  ///
+  /// In en, this message translates to:
+  /// **'This Computer\'s Key'**
+  String get mobileThisComputerKey;
+
+  /// No description provided for @mobileThisComputerKeyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The phone shows it too: the same key on both means no one is in between.'**
+  String get mobileThisComputerKeyDescription;
+
+  /// No description provided for @mobileDiscoverable.
+  ///
+  /// In en, this message translates to:
+  /// **'Find on the Local Network'**
+  String get mobileDiscoverable;
+
+  /// No description provided for @mobileDiscoverableDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Phones paired with this computer find it on the local network, even after its address changes; while you pair one, new phones list it under Nearby Computers.'**
+  String get mobileDiscoverableDescription;
+
+  /// No description provided for @mobilePairNearbyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Phones on this network can also pick this computer under Nearby Computers.'**
+  String get mobilePairNearbyHint;
+
+  /// No description provided for @mobilePairRequestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} Wants to Pair'**
+  String mobilePairRequestTitle(String name);
+
+  /// No description provided for @mobilePairRequestBody.
+  ///
+  /// In en, this message translates to:
+  /// **'It found this computer nearby. Allow it only if the phone shows the same code.'**
+  String get mobilePairRequestBody;
+
+  /// No description provided for @mobilePairAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow'**
+  String get mobilePairAllow;
 }
 
 class _AppLocalizationsDelegate

@@ -302,7 +302,9 @@ void main() {
     await eventually(() => files.settings['workbench.colorTheme'] == 'Red');
     expect(store.preferences['colorThemeData'], isA<String>());
 
-    await files.settings.writeText('{\n  "workbench.colorTheme": "Kimbie Dark"\n}');
+    await files.settings.writeText(
+      '{\n  "workbench.colorTheme": "Kimbie Dark"\n}',
+    );
     await eventually(() => themes.colorThemeId == 'Kimbie Dark');
     expect(
       File(files.settings.path).readAsStringSync(),

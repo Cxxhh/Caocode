@@ -3,7 +3,8 @@
 主源码位于 `/home/noxae/Documents/Caocode`；Windows 构建副本位于
 `C:\Users\11914\Documents\Caocode`。工程根目录是基于 BaoCode 的本地派生仓库，
 保留原始历史，分支为 `caocode/main`，远程 `upstream` 指向原仓库。
-`reference/baocode` 为独立参考副本，固定在 `075939cf5a243b46a38d645bc59116c87ba0b13d`。
+`reference/baocode` 为独立参考副本，固定在 BaoCode 1.1.0 的
+`cfc83bb62154cb91795df4026ce39a62da84d036`。
 当前没有创建 GitHub 远程 fork，也没有推送代码。
 
 ## 初始化与编译
@@ -59,6 +60,7 @@ Flutter `3.47.5` / Dart `3.13.4` 与上游 CI 相同。WSL SDK 位于
 `C:\Users\11914\develop\flutter-3.47.5`。脚本自动设置自身进程的 PATH。
 Windows 需要 PowerShell 7、Git，以及 Visual Studio 的 C++ 桌面工具链。
 脚本自动为本地 Flutter 插件创建目录联接，无需管理员符号链接权限。
+依赖刷新后重新读取插件清单，为新增插件及没有原生构建的插件补齐联接。
 Windows 引擎资源通过 `curl.exe` 从 Flutter 官方资源地址下载并缓存，首次解压后
 按引擎版本复用，以处理当前 Dart 下载器的连接和文件占用问题。
 `setup.sh` 不自动安装 Visual Studio 或 Android SDK。

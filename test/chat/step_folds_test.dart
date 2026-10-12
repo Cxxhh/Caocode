@@ -240,4 +240,37 @@ void main() {
       expect(commandAction(command), StepAction.run, reason: command);
     }
   });
+
+  group('turn ends', () {
+    test('a finished turn ends at its last item, queued messages aside', () {
+      const queued = UserMessageItem(text: 'Next', queued: true);
+      final items = [_prompt(), _read, _answer, _prompt(), _read, queued];
+      final folds = _fold(items);
+      expect(
+        [for (var i = 0; i < items.length; i++) folds.turnEndingAt(i)],
+        [null, null, 0, null, 3, null],
+      );
+    });
+
+    test('a restored untimed answer ends, while the live turn does not', () {
+      final items = [_prompt(null), _answer, _prompt(), _read];
+      final folds = _fold(items, live: true);
+      expect(folds.turnEndingAt(1), 0);
+      expect(folds.turnEndingAt(3), isNull);
+    });
+
+    test('untimed work without an answer has no footer', () {
+      final items = [_prompt(null), _read];
+      expect(_fold(items).turnEndingAt(1), isNull);
+    });
+  });
+
+  test("a turn's tokens are what it read and wrote", () {
+    expect(
+      const TurnUsage(inputTokens: 1200, outputTokens: 300).totalTokens,
+      1500,
+    );
+    expect(const TurnUsage(outputTokens: 300).totalTokens, 300);
+    expect(const TurnUsage(costUsd: 0.1).totalTokens, isNull);
+  });
 }

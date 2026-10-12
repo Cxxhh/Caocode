@@ -6,8 +6,8 @@ import '../theme/codicons.dart';
 import 'ide_hover.dart';
 
 /// The way back out of a page: "← Back" atop the settings' sidebar,
-/// "← Models" over a provider's page. [IdeBackButton.icon] is the arrow
-/// alone, with its words on hover (over a subagent's conversation).
+/// "← Models" over a provider's page. [IdeBackButton.compact] is a small
+/// capsule, "← Conversation" over a subagent's conversation.
 class IdeBackButton extends StatelessWidget {
   /// The arrow and [label], muted, on a row's hover.
   const IdeBackButton({
@@ -15,19 +15,22 @@ class IdeBackButton extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.expand = false,
-  }) : hover = null,
+  }) : text = null,
+       hover = null,
        focusNode = null,
-       _iconOnly = false;
+       _compact = false;
 
-  /// The arrow alone; [hover] (else [label]) shows hovered.
-  const IdeBackButton.icon({
+  /// The arrow and [text] in one small capsule, lit on hover or focus;
+  /// [hover] (else [label]) shows hovered.
+  const IdeBackButton.compact({
     super.key,
     required this.label,
+    required this.text,
     required this.onTap,
     this.hover,
     this.focusNode,
   }) : expand = false,
-       _iconOnly = true;
+       _compact = true;
 
   final String label;
   final VoidCallback onTap;
@@ -35,18 +38,21 @@ class IdeBackButton extends StatelessWidget {
   /// As wide as it is let be (a sidebar's row), else as its words.
   final bool expand;
 
-  /// What the arrow alone says hovered: [label] with its key, say.
+  /// What the compact one reads beside its arrow.
+  final String? text;
+
+  /// What the compact one says hovered: [label] with its key, say.
   final String? hover;
   final FocusNode? focusNode;
 
-  final bool _iconOnly;
+  final bool _compact;
 
   /// The arrow's size, as the sidebars' icons.
   static const _iconSize = 15.0;
 
   @override
   Widget build(BuildContext context) {
-    if (_iconOnly) return _buildIcon(context);
+    if (_compact) return _Compact(this);
     return Semantics(
       button: true,
       label: label,
@@ -88,24 +94,78 @@ class IdeBackButton extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildIcon(BuildContext context) {
+class _Compact extends StatefulWidget {
+  const _Compact(this.button);
+
+  final IdeBackButton button;
+
+  @override
+  State<_Compact> createState() => _CompactState();
+}
+
+class _CompactState extends State<_Compact> {
+  bool _hovered = false;
+  bool _focused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final button = widget.button;
     return IdeHover(
-      message: hover ?? label,
-      child: IconButton(
-        focusNode: focusNode,
-        onPressed: onTap,
-        tooltip: null,
-        visualDensity: VisualDensity.compact,
-        iconSize: _iconSize,
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints.tightFor(width: 26, height: 26),
-        style: IconButton.styleFrom(
-          hoverColor: AppColors.hover,
-          foregroundColor: AppColors.textMuted,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+      message: button.hover ?? button.label,
+      child: Semantics(
+        button: true,
+        label: button.label,
+        excludeSemantics: true,
+        child: FocusableActionDetector(
+          focusNode: button.focusNode,
+          mouseCursor: SystemMouseCursors.click,
+          onShowHoverHighlight: (on) => setState(() => _hovered = on),
+          onShowFocusHighlight: (on) => setState(() => _focused = on),
+          actions: {
+            ActivateIntent: CallbackAction<ActivateIntent>(
+              onInvoke: (_) => button.onTap(),
+            ),
+          },
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: button.onTap,
+            child: Container(
+              height: 26,
+              // The arrow where it sat alone in a 26 wide square.
+              padding: const EdgeInsets.only(left: 5.5, right: 8),
+              decoration: BoxDecoration(
+                color: _hovered || _focused ? AppColors.hover : null,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Codicons.arrowLeft,
+                    size: IdeBackButton._iconSize,
+                    color: AppColors.textMuted,
+                  ),
+                  const SizedBox(width: 5),
+                  Flexible(
+                    child: Text(
+                      button.text!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _hovered || _focused
+                            ? AppColors.text
+                            : AppColors.textMuted,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
-        icon: Semantics(label: label, child: const Icon(Codicons.arrowLeft)),
       ),
     );
   }

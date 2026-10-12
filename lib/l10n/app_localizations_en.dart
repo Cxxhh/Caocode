@@ -2243,6 +2243,36 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get turnCopy => 'Copy reply';
+
+  @override
+  String get turnCopied => 'Copied';
+
+  @override
+  String turnSpeed(String speed) {
+    return '$speed tok/s';
+  }
+
+  @override
+  String turnTokens(String tokens) {
+    return '$tokens tokens';
+  }
+
+  @override
+  String turnTokensHint(String input, String output) {
+    return 'This turn: read $input (cache included), wrote $output';
+  }
+
+  @override
+  String get turnSpeedHint => 'Output speed';
+
+  @override
+  String get turnDurationHint => 'Time this turn took';
+
+  @override
+  String get turnCostHint => 'Cost of this turn';
+
+  @override
   String turnWorked(String duration) {
     return 'Worked for $duration';
   }
@@ -6902,6 +6932,49 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get appearanceSettingsMinimap => 'Conversation Minimap';
+
+  @override
+  String get appearanceSettingsMinimapDescription =>
+      'A minimap of the whole conversation at the left of its column, where you are in it shown as you scroll; click or drag it to get somewhere. It stands in for the scrollbar, and is not shown in a window too narrow for it. Off: the scrollbar.';
+
+  @override
+  String get appearanceSettingsMinimapGlass => 'Glass Opacity';
+
+  @override
+  String get appearanceSettingsMinimapGlassDescription =>
+      'How much the liquid glass over where you are in the minimap shows: its tint, shadow and light. At 0% only the part in view stands out.';
+
+  @override
+  String appearanceSettingsMinimapGlassLabel(String opacity) {
+    return 'Minimap glass opacity: $opacity';
+  }
+
+  @override
+  String get appearanceSettingsMinimapElasticity => 'Glass Elasticity';
+
+  @override
+  String get appearanceSettingsMinimapElasticityDescription =>
+      'How much the liquid glass stretches as it follows you scrolling, its edge ahead leading, and gathers itself where it stops.';
+
+  @override
+  String appearanceSettingsMinimapElasticityLabel(String level) {
+    return 'Minimap glass elasticity: $level';
+  }
+
+  @override
+  String get minimapElasticityOff => 'Off';
+
+  @override
+  String get minimapElasticitySubtle => 'Subtle';
+
+  @override
+  String get minimapElasticityMedium => 'Medium';
+
+  @override
+  String get minimapElasticityBouncy => 'Bouncy';
+
+  @override
   String get appearanceSettingsCodeFont => 'Code Font';
 
   @override
@@ -7837,4 +7910,177 @@ class AppLocalizationsEn extends AppLocalizations {
   String explorerUndoCreateChanged(String name) {
     return '$name has changed since it was made. Undo deletes it anyway?';
   }
+
+  @override
+  String get settingsSectionMobile => 'Mobile';
+
+  @override
+  String get settingsMobileKeywords =>
+      'phone iphone android ios pair qr code remote lan';
+
+  @override
+  String get mobileSettingsDescription =>
+      'Follow and drive this computer\'s agents from BaoCode on your phone, over the local network or the internet. What goes between them is end-to-end encrypted.';
+
+  @override
+  String get mobileAllow => 'Allow Phones to Connect';
+
+  @override
+  String get mobileAllowDescription =>
+      'Phones paired with this computer connect to it directly.';
+
+  @override
+  String get mobileStatus => 'Status';
+
+  @override
+  String get mobileStatusOff => 'Off';
+
+  @override
+  String get mobileStatusStarting => 'Starting…';
+
+  @override
+  String mobileStatusListening(int port) {
+    return 'Listening on port $port';
+  }
+
+  @override
+  String mobileStatusFailed(String error) {
+    return 'Could not listen: $error';
+  }
+
+  @override
+  String get mobileAddresses => 'Addresses';
+
+  @override
+  String get mobileAddressesDescription =>
+      'Where phones reach this computer, in the order they try them: the local network first, then the internet.';
+
+  @override
+  String get mobileAddressesNone => 'No network found.';
+
+  @override
+  String get mobileAddressesRefresh => 'Refresh';
+
+  @override
+  String get mobilePort => 'Port';
+
+  @override
+  String get mobilePortDescription =>
+      'The port phones connect to. Forward it on the router to reach this computer from the internet.';
+
+  @override
+  String mobilePortInvalid(String text) {
+    return 'Not a port: $text. Enter a number from 1 to 65535.';
+  }
+
+  @override
+  String get mobilePublicAddress => 'Public Address';
+
+  @override
+  String get mobilePublicAddressDescription =>
+      'A domain or IP this computer can be reached at from the internet (with the port forwarded), put in the QR code; several separated by commas. Public IPv6 addresses are found by themselves.';
+
+  @override
+  String get mobileRelay => 'Relay';
+
+  @override
+  String get mobileRelayDescription =>
+      'Reach this computer through BaoCode\'s relay when none of its addresses can be reached. Coming later.';
+
+  @override
+  String get mobileRelayUnavailable => 'Not Available Yet';
+
+  @override
+  String get mobilePair => 'Pair a Phone';
+
+  @override
+  String get mobilePairDescription =>
+      'Scan the code with BaoCode on the phone (Me → Paired computers → Pair a computer), or pick this computer under Nearby Computers there.';
+
+  @override
+  String get mobilePairShow => 'Show QR Code';
+
+  @override
+  String get mobilePairCancel => 'Cancel';
+
+  @override
+  String get mobilePairNewCode => 'New Code';
+
+  @override
+  String get mobilePairCopyLink => 'Copy Link';
+
+  @override
+  String get mobilePairCopied => 'Copied';
+
+  @override
+  String mobilePairExpires(int minutes) {
+    return 'Good for $minutes min, once. A phone that cannot scan it can paste the link instead.';
+  }
+
+  @override
+  String get mobilePairExpired => 'This code has expired.';
+
+  @override
+  String mobilePairVerifyTitle(String name) {
+    return 'Compare with $name';
+  }
+
+  @override
+  String get mobilePairVerifyBody =>
+      'Check that the phone shows the same code, then confirm on the phone.';
+
+  @override
+  String get mobilePairMismatch => 'Codes Don\'t Match';
+
+  @override
+  String mobilePaired(String name) {
+    return 'Paired with $name.';
+  }
+
+  @override
+  String get mobilePhones => 'Paired Phones';
+
+  @override
+  String get mobilePhonesNone => 'No phone is paired yet.';
+
+  @override
+  String get mobilePhoneConnected => 'Connected';
+
+  @override
+  String mobilePhoneLastSeen(String time) {
+    return 'Last connected $time';
+  }
+
+  @override
+  String get mobilePhoneRemove => 'Remove';
+
+  @override
+  String get mobileThisComputerKey => 'This Computer\'s Key';
+
+  @override
+  String get mobileThisComputerKeyDescription =>
+      'The phone shows it too: the same key on both means no one is in between.';
+
+  @override
+  String get mobileDiscoverable => 'Find on the Local Network';
+
+  @override
+  String get mobileDiscoverableDescription =>
+      'Phones paired with this computer find it on the local network, even after its address changes; while you pair one, new phones list it under Nearby Computers.';
+
+  @override
+  String get mobilePairNearbyHint =>
+      'Phones on this network can also pick this computer under Nearby Computers.';
+
+  @override
+  String mobilePairRequestTitle(String name) {
+    return '$name Wants to Pair';
+  }
+
+  @override
+  String get mobilePairRequestBody =>
+      'It found this computer nearby. Allow it only if the phone shows the same code.';
+
+  @override
+  String get mobilePairAllow => 'Allow';
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:super_sliver_list/super_sliver_list.dart';
 import 'package:baocode/chat/chat_feed.dart';
@@ -7,6 +8,7 @@ import 'package:baocode/chat/chat_history_view.dart';
 import 'package:baocode/chat/chat_models.dart';
 import 'package:baocode/chat/chat_session.dart';
 import 'package:baocode/chat/composer/composer_draft.dart';
+import 'package:baocode/chat/widgets/turn_footer.dart';
 import 'package:baocode/theme/app_theme.dart';
 
 /// A conversation held in a list, changed by hand.
@@ -104,6 +106,72 @@ Future<void> _wheelUp(WidgetTester tester, double by) async {
 Finder _text(String text) => find.textContaining(text, findRichText: true);
 
 void main() {
+  testWidgets('a folded last step keeps the completed turn statistics', (
+    tester,
+  ) async {
+    final feed = _Feed(const [
+      UserMessageItem(
+        text: 'Inspect the project',
+        worked: Duration(seconds: 65),
+        usage: TurnUsage(inputTokens: 1200, outputTokens: 300),
+      ),
+      ToolCallItem(kind: ToolKind.read, target: 'a.dart'),
+      ToolCallItem(kind: ToolKind.grep, target: 'callback'),
+    ]);
+    await _pump(tester, feed);
+    expect(find.byType(TurnFooter), findsOneWidget);
+    expect(find.textContaining('1.5k'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(TurnFooter),
+        matching: find.byType(GestureDetector),
+      ),
+      findsNothing,
+    );
+  });
+
+  testWidgets('an untimed restored answer can be copied without false stats', (
+    tester,
+  ) async {
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied = (call.arguments as Map)['text'] as String;
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    final feed = _Feed(const [
+      UserMessageItem(text: 'Explain the change'),
+      ThinkingItem(
+        text: 'Check callbacks',
+        tokens: 0,
+        summarized: true,
+        streaming: false,
+      ),
+      AssistantTextItem('The first part.'),
+      AssistantTextItem('The final part.'),
+    ]);
+    await _pump(tester, feed);
+    final footer = find.byType(TurnFooter);
+    expect(footer, findsOneWidget);
+    expect(find.textContaining('1s'), findsNothing);
+    await tester.tap(
+      find.descendant(of: footer, matching: find.byType(GestureDetector)),
+    );
+    await tester.pump();
+    expect(copied, 'The first part.\n\nThe final part.');
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('mouse wheel moves over frames and accumulates rapid notches', (
     tester,
   ) async {

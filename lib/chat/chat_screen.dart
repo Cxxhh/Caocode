@@ -11,6 +11,7 @@ import '../remote/remote_status.dart' show ClaudeInstallBanner, SshHostBanner;
 import '../theme/app_theme.dart';
 import '../workspace/title_bar_double_click.dart';
 import 'agent_view.dart';
+import 'chat_column.dart';
 import 'chat_feed.dart';
 import 'chat_history_view.dart';
 import 'chat_keys.dart';
@@ -32,6 +33,7 @@ import 'panels/todo_panel.dart';
 import 'side_panel/file_link.dart';
 import 'side_panel/file_open.dart';
 import 'widgets/agent_step.dart';
+import 'widgets/chat_minimap.dart';
 import 'widgets/code_citation.dart';
 import 'widgets/inline_rename_field.dart';
 
@@ -164,6 +166,10 @@ class _ChatScreenState extends State<ChatScreen>
   /// As wide as the setting lets the column grow (see [ChatWidth]).
   double get _maxContentWidth => ChatWidth.current.value;
 
+  /// Whether the conversation has a minimap: in the agents' window, not a
+  /// pane of the IDE's, unless turned off (see [ChatMinimap.enabled]).
+  bool get _minimap => !widget.embedded && ChatMinimap.enabled.value;
+
   void _widthChanged() => setState(() {});
 
   late final ChatSession _session = widget.session ?? ChatSession();
@@ -284,6 +290,7 @@ class _ChatScreenState extends State<ChatScreen>
     _session.addListener(_followPlan);
     _restoreAgents();
     ChatWidth.current.addListener(_widthChanged);
+    ChatMinimap.enabled.addListener(_widthChanged);
     if (widget.autofocus) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _composerKey.currentState?.focus();
@@ -302,6 +309,7 @@ class _ChatScreenState extends State<ChatScreen>
     _session.removeListener(_checkStarting);
     _session.removeListener(_followPlan);
     ChatWidth.current.removeListener(_widthChanged);
+    ChatMinimap.enabled.removeListener(_widthChanged);
     _existence?.dispose();
     _keyScope.dispose();
     for (final layer in _layers) {
@@ -422,7 +430,11 @@ class _ChatScreenState extends State<ChatScreen>
     final bar = SizedBox(
       height: AppMetrics.titleBarHeight,
       child: CustomMultiChildLayout(
-        delegate: _TitleBarLayout(inset: inset, maxWidth: _maxContentWidth),
+        delegate: _TitleBarLayout(
+          inset: inset,
+          maxWidth: _maxContentWidth,
+          minimap: _minimap,
+        ),
         children: [
           if (widget.leading case final leading?)
             LayoutId(id: _TitleBarSlot.leading, child: leading),
@@ -635,6 +647,7 @@ class _ChatScreenState extends State<ChatScreen>
                         key: _historyKey,
                         feed: _session,
                         maxContentWidth: _maxContentWidth,
+                        minimap: _minimap,
                         onOpenAgent: _openAgent,
                         onSetGoal: _setGoal,
                       ),
@@ -648,6 +661,7 @@ class _ChatScreenState extends State<ChatScreen>
                             child: SingleChildScrollView(
                               child: _ConversationColumn(
                                 maxWidth: _maxContentWidth,
+                                minimap: _minimap,
                                 child: build(context, const SizedBox.shrink()),
                               ),
                             ),
@@ -675,6 +689,7 @@ class _ChatScreenState extends State<ChatScreen>
             // width: a pane being resized does not build the composer anew.
             builder: (context, _) => _ConversationColumn(
               maxWidth: _maxContentWidth,
+              minimap: _minimap,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -751,6 +766,7 @@ class _ChatScreenState extends State<ChatScreen>
             onBack: _back,
             backFocusNode: layer.backFocus,
             maxContentWidth: _maxContentWidth,
+            minimap: _minimap,
           ),
         ),
         Expanded(
@@ -758,6 +774,7 @@ class _ChatScreenState extends State<ChatScreen>
             key: layer.historyKey,
             feed: layer.feed,
             maxContentWidth: _maxContentWidth,
+            minimap: _minimap,
             onOpenAgent: _openAgent,
             onSetGoal: _setGoal,
           ),
@@ -835,20 +852,39 @@ enum _TitleBarSlot { leading, title }
 
 /// The width of the conversation's column (the history's text, the
 /// composer) in a screen [width] wide: [chatGutter] in from either side, and
-/// no wider than [maxWidth], in the middle.
-double _columnWidth(double width, double maxWidth) =>
-    math.max(0, math.min(width - 2 * chatGutter(width), maxWidth));
+/// no wider than [maxWidth], in the middle. With a [minimap], narrower to
+/// leave it its room where the column can (see [ChatColumn.room]).
+double _columnWidth(double width, double maxWidth, {required bool minimap}) =>
+    math.max(
+      0,
+      math.min(
+        width - 2 * chatGutter(width),
+        RenderChatColumn.roomy(
+          width,
+          maxWidth,
+          room: minimap ? ChatMinimap.room : 0,
+          roomFrom: ChatMinimap.roomFrom,
+        ),
+      ),
+    );
 
 /// The title bar's [_TitleBarSlot.leading] at [inset], clear of the traffic
 /// lights; the title and the buttons after it across the conversation's
 /// column, clear of the leading.
 class _TitleBarLayout extends MultiChildLayoutDelegate {
-  _TitleBarLayout({required this.inset, required this.maxWidth});
+  _TitleBarLayout({
+    required this.inset,
+    required this.maxWidth,
+    required this.minimap,
+  });
 
   final double inset;
 
   /// The conversation's column's at most.
   final double maxWidth;
+
+  /// Whether the column leaves a minimap its room.
+  final bool minimap;
 
   /// Between the leading and the title.
   static const _gap = 6.0;
@@ -870,7 +906,8 @@ class _TitleBarLayout extends MultiChildLayoutDelegate {
       );
       start += leading.width + _gap;
     }
-    final column = (size.width - _columnWidth(size.width, maxWidth)) / 2;
+    final column =
+        (size.width - _columnWidth(size.width, maxWidth, minimap: minimap)) / 2;
     final left = math.max(start, column);
     final width = math.max(
       0.0,
@@ -885,32 +922,49 @@ class _TitleBarLayout extends MultiChildLayoutDelegate {
 
   @override
   bool shouldRelayout(_TitleBarLayout oldDelegate) =>
-      oldDelegate.inset != inset || oldDelegate.maxWidth != maxWidth;
+      oldDelegate.inset != inset ||
+      oldDelegate.maxWidth != maxWidth ||
+      oldDelegate.minimap != minimap;
 }
 
 /// [child] across the conversation's column (see [_columnWidth]), level
 /// with the history's text, with 12 under it at any width. Worked out as it
 /// is laid out, so a new width only lays [child] out again.
 class _ConversationColumn extends SingleChildRenderObjectWidget {
-  const _ConversationColumn({required this.maxWidth, required super.child});
+  const _ConversationColumn({
+    required this.maxWidth,
+    required this.minimap,
+    required super.child,
+  });
 
   final double maxWidth;
+  final bool minimap;
 
   @override
   _RenderConversationColumn createRenderObject(BuildContext context) =>
-      _RenderConversationColumn(maxWidth);
+      _RenderConversationColumn(maxWidth, minimap);
 
   @override
   void updateRenderObject(
     BuildContext context,
     _RenderConversationColumn renderObject,
   ) {
-    renderObject.maxWidth = maxWidth;
+    renderObject
+      ..maxWidth = maxWidth
+      ..minimap = minimap;
   }
 }
 
 class _RenderConversationColumn extends RenderShiftedBox {
-  _RenderConversationColumn(this._maxWidth) : super(null);
+  _RenderConversationColumn(this._maxWidth, this._minimap) : super(null);
+
+  bool get minimap => _minimap;
+  bool _minimap;
+  set minimap(bool value) {
+    if (value == _minimap) return;
+    _minimap = value;
+    markNeedsLayout();
+  }
 
   double get maxWidth => _maxWidth;
   double _maxWidth;
@@ -922,7 +976,8 @@ class _RenderConversationColumn extends RenderShiftedBox {
 
   static const _bottom = 12.0;
 
-  double _width(double width) => _columnWidth(width, _maxWidth);
+  double _width(double width) =>
+      _columnWidth(width, _maxWidth, minimap: _minimap);
 
   BoxConstraints _childConstraints(BoxConstraints constraints) {
     return BoxConstraints.tightFor(width: _width(constraints.maxWidth))

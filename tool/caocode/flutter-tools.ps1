@@ -8,7 +8,8 @@ function Initialize-CaocodePluginJunctions([string]$Root) {
     New-Item -ItemType Directory -Path $links -Force | Out-Null
     $created = 0
     foreach ($plugin in $metadata.plugins.windows) {
-        if (-not $plugin.native_build -or -not (Test-Path -LiteralPath $plugin.path)) { continue }
+        # Flutter links every plugin, including ones without a native build.
+        if (-not (Test-Path -LiteralPath $plugin.path)) { continue }
         $link = Join-Path $links $plugin.name
         if (Test-Path -LiteralPath $link) {
             $item = Get-Item -LiteralPath $link -Force
@@ -28,11 +29,19 @@ function Initialize-CaocodePluginJunctions([string]$Root) {
 function Invoke-CaocodePubGet([string]$Flutter, [string]$Root) {
     Initialize-CaocodePluginJunctions $Root | Out-Null
     & $Flutter pub get
-    if ($LASTEXITCODE -eq 0) { return }
+    if ($LASTEXITCODE -eq 0) {
+        # pub get refreshes the metadata. New plugins need junctions before
+        # the following build attempts to create privileged symlinks.
+        Initialize-CaocodePluginJunctions $Root | Out-Null
+        return
+    }
     if ((Initialize-CaocodePluginJunctions $Root) -gt 0) {
         Write-Output '已创建 Windows 插件目录联接，重新获取依赖。'
         & $Flutter pub get
-        if ($LASTEXITCODE -eq 0) { return }
+        if ($LASTEXITCODE -eq 0) {
+            Initialize-CaocodePluginJunctions $Root | Out-Null
+            return
+        }
     }
     throw 'Windows 依赖安装失败'
 }

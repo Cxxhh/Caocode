@@ -26,31 +26,59 @@ class ChatColumnInset extends InheritedWidget {
 /// left stays where it would be without, level with the composer's, which
 /// is always in the middle. Worked out as it is laid out, so a new width
 /// only lays [child] out again.
+///
+/// It keeps [room] clear either side (for the conversation's minimap) as
+/// long as it is still at least [roomFrom] wide that way, narrower than
+/// [maxWidth] if need be; in less width it gives the room up.
 class ChatColumn extends SingleChildRenderObjectWidget {
   const ChatColumn({
     super.key,
     required this.maxWidth,
     this.right = 0,
+    this.room = 0,
+    this.roomFrom = 0,
     super.child,
   });
 
   final double maxWidth;
   final double right;
+  final double room;
+  final double roomFrom;
 
   @override
   RenderChatColumn createRenderObject(BuildContext context) =>
-      RenderChatColumn(maxWidth, right);
+      RenderChatColumn(maxWidth, right)
+        ..room = room
+        ..roomFrom = roomFrom;
 
   @override
   void updateRenderObject(BuildContext context, RenderChatColumn renderObject) {
     renderObject
       ..maxWidth = maxWidth
-      ..right = right;
+      ..right = right
+      ..room = room
+      ..roomFrom = roomFrom;
   }
 }
 
 class RenderChatColumn extends RenderShiftedBox {
   RenderChatColumn(this._maxWidth, this._right) : super(null);
+
+  double get room => _room;
+  double _room = 0;
+  set room(double value) {
+    if (value == _room) return;
+    _room = value;
+    markNeedsLayout();
+  }
+
+  double get roomFrom => _roomFrom;
+  double _roomFrom = 0;
+  set roomFrom(double value) {
+    if (value == _roomFrom) return;
+    _roomFrom = value;
+    markNeedsLayout();
+  }
 
   double get maxWidth => _maxWidth;
   double _maxWidth;
@@ -73,8 +101,13 @@ class RenderChatColumn extends RenderShiftedBox {
     double width, {
     required double maxWidth,
     double right = 0,
+    double room = 0,
+    double roomFrom = 0,
   }) {
-    final centered = math.max(0.0, math.min(maxWidth, width));
+    final centered = math.max(
+      0.0,
+      math.min(roomy(width, maxWidth, room: room, roomFrom: roomFrom), width),
+    );
     final left = (width - centered) / 2;
     return (
       left: left,
@@ -82,13 +115,31 @@ class RenderChatColumn extends RenderShiftedBox {
     );
   }
 
+  /// [maxWidth], or less in [width] to keep [room] clear either side while
+  /// that leaves at least [roomFrom].
+  static double roomy(
+    double width,
+    double maxWidth, {
+    required double room,
+    required double roomFrom,
+  }) {
+    final spared = width - 2 * room;
+    return room > 0 && spared >= roomFrom
+        ? math.min(maxWidth, spared)
+        : maxWidth;
+  }
+
+  ({double left, double width}) _place(double width) => place(
+    width,
+    maxWidth: _maxWidth,
+    right: _right,
+    room: _room,
+    roomFrom: _roomFrom,
+  );
+
   BoxConstraints _childConstraints(BoxConstraints constraints) =>
       BoxConstraints(
-        maxWidth: place(
-          constraints.maxWidth,
-          maxWidth: _maxWidth,
-          right: _right,
-        ).width,
+        maxWidth: _place(constraints.maxWidth).width,
         maxHeight: constraints.maxHeight,
       );
 
@@ -101,17 +152,11 @@ class RenderChatColumn extends RenderShiftedBox {
 
   @override
   double computeMinIntrinsicHeight(double width) =>
-      child?.getMinIntrinsicHeight(
-        place(width, maxWidth: _maxWidth, right: _right).width,
-      ) ??
-      0;
+      child?.getMinIntrinsicHeight(_place(width).width) ?? 0;
 
   @override
   double computeMaxIntrinsicHeight(double width) =>
-      child?.getMaxIntrinsicHeight(
-        place(width, maxWidth: _maxWidth, right: _right).width,
-      ) ??
-      0;
+      child?.getMaxIntrinsicHeight(_place(width).width) ?? 0;
 
   @override
   double computeMinIntrinsicWidth(double height) =>
@@ -129,11 +174,7 @@ class RenderChatColumn extends RenderShiftedBox {
       size = constraints.constrain(Size(width, 0));
       return;
     }
-    final (:left, width: column) = place(
-      width,
-      maxWidth: _maxWidth,
-      right: _right,
-    );
+    final (:left, width: column) = _place(width);
     child.layout(_childConstraints(constraints), parentUsesSize: true);
     // Narrower than the column, in its middle.
     (child.parentData! as BoxParentData).offset = Offset(

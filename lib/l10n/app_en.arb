@@ -1322,6 +1322,43 @@
       }
     }
   },
+  "turnCopy": "Copy reply",
+  "@turnCopy": {
+    "description": "Hint of the button at the end of a finished turn that copies its answer."
+  },
+  "turnCopied": "Copied",
+  "turnSpeed": "{speed} tok/s",
+  "@turnSpeed": {
+    "description": "How fast the model wrote in a turn, in tokens a second, e.g. \"100 tok/s\".",
+    "placeholders": {
+      "speed": {
+        "type": "String"
+      }
+    }
+  },
+  "turnTokens": "{tokens} tokens",
+  "@turnTokens": {
+    "description": "The tokens a turn read and wrote, all its requests together, e.g. \"12.3k tokens\".",
+    "placeholders": {
+      "tokens": {
+        "type": "String"
+      }
+    }
+  },
+  "turnTokensHint": "This turn: read {input} (cache included), wrote {output}",
+  "@turnTokensHint": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "output": {
+        "type": "String"
+      }
+    }
+  },
+  "turnSpeedHint": "Output speed",
+  "turnDurationHint": "Time this turn took",
+  "turnCostHint": "Cost of this turn",
   "turnWorked": "Worked for {duration}",
   "@turnWorked": {
     "description": "A finished turn's work, folded before its answer, e.g. \"Worked for 4m 32s\".",
@@ -4876,6 +4913,32 @@
       }
     }
   },
+  "appearanceSettingsMinimap": "Conversation Minimap",
+  "appearanceSettingsMinimapDescription": "A minimap of the whole conversation at the left of its column, where you are in it shown as you scroll; click or drag it to get somewhere. It stands in for the scrollbar, and is not shown in a window too narrow for it. Off: the scrollbar.",
+  "appearanceSettingsMinimapGlass": "Glass Opacity",
+  "appearanceSettingsMinimapGlassDescription": "How much the liquid glass over where you are in the minimap shows: its tint, shadow and light. At 0% only the part in view stands out.",
+  "appearanceSettingsMinimapGlassLabel": "Minimap glass opacity: {opacity}",
+  "@appearanceSettingsMinimapGlassLabel": {
+    "placeholders": {
+      "opacity": {
+        "type": "String"
+      }
+    }
+  },
+  "appearanceSettingsMinimapElasticity": "Glass Elasticity",
+  "appearanceSettingsMinimapElasticityDescription": "How much the liquid glass stretches as it follows you scrolling, its edge ahead leading, and gathers itself where it stops.",
+  "appearanceSettingsMinimapElasticityLabel": "Minimap glass elasticity: {level}",
+  "@appearanceSettingsMinimapElasticityLabel": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "minimapElasticityOff": "Off",
+  "minimapElasticitySubtle": "Subtle",
+  "minimapElasticityMedium": "Medium",
+  "minimapElasticityBouncy": "Bouncy",
   "appearanceSettingsCodeFont": "Code Font",
   "appearanceSettingsCodeFontDescription": "The font code is drawn in: in the editor, the terminal, the chat and the previews. Family names in order, separated by commas, or a preset.",
   "appearanceSettingsCodeFontDefault": "Default",
@@ -5677,5 +5740,109 @@
         "type": "String"
       }
     }
-  }
+  },
+  "settingsSectionMobile": "Mobile",
+  "settingsMobileKeywords": "phone iphone android ios pair qr code remote lan",
+  "mobileSettingsDescription": "Follow and drive this computer's agents from BaoCode on your phone, over the local network or the internet. What goes between them is end-to-end encrypted.",
+  "mobileAllow": "Allow Phones to Connect",
+  "mobileAllowDescription": "Phones paired with this computer connect to it directly.",
+  "mobileStatus": "Status",
+  "mobileStatusOff": "Off",
+  "mobileStatusStarting": "Starting…",
+  "mobileStatusListening": "Listening on port {port}",
+  "@mobileStatusListening": {
+    "placeholders": {
+      "port": {
+        "type": "int"
+      }
+    }
+  },
+  "mobileStatusFailed": "Could not listen: {error}",
+  "@mobileStatusFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "mobileAddresses": "Addresses",
+  "mobileAddressesDescription": "Where phones reach this computer, in the order they try them: the local network first, then the internet.",
+  "mobileAddressesNone": "No network found.",
+  "mobileAddressesRefresh": "Refresh",
+  "mobilePort": "Port",
+  "mobilePortDescription": "The port phones connect to. Forward it on the router to reach this computer from the internet.",
+  "mobilePortInvalid": "Not a port: {text}. Enter a number from 1 to 65535.",
+  "@mobilePortInvalid": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "mobilePublicAddress": "Public Address",
+  "mobilePublicAddressDescription": "A domain or IP this computer can be reached at from the internet (with the port forwarded), put in the QR code; several separated by commas. Public IPv6 addresses are found by themselves.",
+  "mobileRelay": "Relay",
+  "mobileRelayDescription": "Reach this computer through BaoCode's relay when none of its addresses can be reached. Coming later.",
+  "mobileRelayUnavailable": "Not Available Yet",
+  "mobilePair": "Pair a Phone",
+  "mobilePairDescription": "Scan the code with BaoCode on the phone (Me → Paired computers → Pair a computer), or pick this computer under Nearby Computers there.",
+  "mobilePairShow": "Show QR Code",
+  "mobilePairCancel": "Cancel",
+  "mobilePairNewCode": "New Code",
+  "mobilePairCopyLink": "Copy Link",
+  "mobilePairCopied": "Copied",
+  "mobilePairExpires": "Good for {minutes} min, once. A phone that cannot scan it can paste the link instead.",
+  "@mobilePairExpires": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "mobilePairExpired": "This code has expired.",
+  "mobilePairVerifyTitle": "Compare with {name}",
+  "@mobilePairVerifyTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mobilePairVerifyBody": "Check that the phone shows the same code, then confirm on the phone.",
+  "mobilePairMismatch": "Codes Don't Match",
+  "mobilePaired": "Paired with {name}.",
+  "@mobilePaired": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mobilePhones": "Paired Phones",
+  "mobilePhonesNone": "No phone is paired yet.",
+  "mobilePhoneConnected": "Connected",
+  "mobilePhoneLastSeen": "Last connected {time}",
+  "@mobilePhoneLastSeen": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mobilePhoneRemove": "Remove",
+  "mobileThisComputerKey": "This Computer's Key",
+  "mobileThisComputerKeyDescription": "The phone shows it too: the same key on both means no one is in between.",
+  "mobileDiscoverable": "Find on the Local Network",
+  "mobileDiscoverableDescription": "Phones paired with this computer find it on the local network, even after its address changes; while you pair one, new phones list it under Nearby Computers.",
+  "mobilePairNearbyHint": "Phones on this network can also pick this computer under Nearby Computers.",
+  "mobilePairRequestTitle": "{name} Wants to Pair",
+  "@mobilePairRequestTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mobilePairRequestBody": "It found this computer nearby. Allow it only if the phone shows the same code.",
+  "mobilePairAllow": "Allow"
 }

@@ -44,7 +44,10 @@ class ClaudeTranslator {
   }
 
   /// A turn was sent: the agent is at work from now, before the CLI says so.
-  void begin() => _report(_waiting());
+  void begin() {
+    _resetUsage();
+    _report(_waiting());
+  }
 
   KernelActivity _waiting() =>
       KernelActivity(KernelActivityKind.waiting, DateTime.now());
@@ -59,6 +62,21 @@ class ClaudeTranslator {
   /// Since when the model has been at the next block: its message's start,
   /// else the last block's end.
   DateTime? _blockSince;
+
+  /// The current message's usage, as its start and its last delta said.
+  Map<String, Object?> _messageUsage = {};
+
+  /// When it streamed its first block, and its last delta.
+  DateTime? _firstOut;
+  DateTime? _lastOut;
+
+  /// The turn's requests so far (the agent's own, not its subagents'):
+  /// tokens read and written, and, for how fast it wrote, the tokens of
+  /// those that streamed and how long they took.
+  int _turnInput = 0;
+  int _turnOutput = 0;
+  int _streamedTokens = 0;
+  Duration _streaming = Duration.zero;
 
   /// Streamed text and thought blocks, per message and kind, in order,
   /// until the whole message claims them.
@@ -290,6 +308,8 @@ class ClaudeTranslator {
   /// call left unanswered shows as failed, unless a subagent at work in the
   /// background (which goes on) made it.
   void settle() {
+    // A message cut off: what it had used still counts.
+    if (_messageUsage.isNotEmpty) _endMessage();
     for (final id in [..._thoughts.keys]) {
       _completeThought(id, null);
     }
@@ -344,10 +364,20 @@ class ClaudeTranslator {
   void _streamEvent(Map<String, Object?> event) {
     switch (event['type']) {
       case 'message_start':
-        _messageId = _map(event['message'])['id'] as String?;
+        final message = _map(event['message']);
+        _messageId = message['id'] as String?;
         _streamed.clear();
         _blockSince = DateTime.now();
+        _messageUsage = {..._map(message['usage'])};
+        _firstOut = _lastOut = null;
+      case 'message_delta':
+        for (final MapEntry(:key, :value) in _map(event['usage']).entries) {
+          if (value is num) _messageUsage[key] = value;
+        }
+      case 'message_stop':
+        _endMessage();
       case 'content_block_start':
+        _firstOut ??= DateTime.now();
         final index = event['index'] as int;
         final block = _map(event['content_block']);
         final id = '$_messageId:$index';
@@ -386,6 +416,7 @@ class ClaudeTranslator {
         // block (holding back a thought until it is done).
         _report(null);
       case 'content_block_delta':
+        _lastOut = DateTime.now();
         final id = _streamed[event['index']];
         if (id == null) return;
         final delta = _map(event['delta']);
@@ -423,6 +454,43 @@ class ClaudeTranslator {
         }
     }
   }
+
+  /// Adds the message ended to the turn's usage.
+  void _endMessage() {
+    int count(String key) => (_messageUsage[key] as num?)?.toInt() ?? 0;
+    final output = count('output_tokens');
+    _turnInput +=
+        count('input_tokens') +
+        count('cache_creation_input_tokens') +
+        count('cache_read_input_tokens');
+    _turnOutput += output;
+    // One that came all at once says nothing of the speed.
+    if ((_firstOut, _lastOut) case (final first?, final last?)
+        when last.isAfter(first)) {
+      _streamedTokens += output;
+      _streaming += last.difference(first);
+    }
+    _messageUsage = {};
+    _firstOut = _lastOut = null;
+  }
+
+  void _resetUsage() {
+    _messageUsage = {};
+    _firstOut = _lastOut = null;
+    _turnInput = _turnOutput = _streamedTokens = 0;
+    _streaming = Duration.zero;
+  }
+
+  /// What the turn's requests spent, as streamed; null when none streamed.
+  TurnUsage? get turnUsage => _turnInput == 0 && _turnOutput == 0
+      ? null
+      : TurnUsage(
+          inputTokens: _turnInput,
+          outputTokens: _turnOutput,
+          tokensPerSecond: _streaming > Duration.zero && _streamedTokens > 0
+              ? _streamedTokens / (_streaming.inMicroseconds / 1000000)
+              : null,
+        );
 
   void _completeThought(String id, String? whole) {
     final streamed = _thoughts.remove(id)?.toString() ?? '';
