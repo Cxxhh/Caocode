@@ -4328,6 +4328,108 @@ abstract class AppLocalizations {
   /// **'No checks: edits and commands run without asking'**
   String get composerApprovalFullAccessDetail;
 
+  /// No description provided for @composerCodexApprovalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How should Codex actions be approved?'**
+  String get composerCodexApprovalTitle;
+
+  /// No description provided for @composerCodexApprovalDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask for approval'**
+  String get composerCodexApprovalDefault;
+
+  /// No description provided for @composerCodexApprovalDefaultDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Always ask before editing external files or using the internet'**
+  String get composerCodexApprovalDefaultDetail;
+
+  /// No description provided for @composerCodexApprovalAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve for me'**
+  String get composerCodexApprovalAuto;
+
+  /// No description provided for @composerCodexApprovalAutoDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Only ask for actions detected as potentially unsafe'**
+  String get composerCodexApprovalAutoDetail;
+
+  /// No description provided for @composerCodexApprovalFullAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Full access'**
+  String get composerCodexApprovalFullAccess;
+
+  /// No description provided for @composerCodexApprovalFullAccessDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Unrestricted access to the internet and any file on your computer'**
+  String get composerCodexApprovalFullAccessDetail;
+
+  /// No description provided for @composerCodexApprovalCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom (config.toml)'**
+  String get composerCodexApprovalCustom;
+
+  /// No description provided for @composerCodexApprovalCustomDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses permissions defined in config.toml'**
+  String get composerCodexApprovalCustomDetail;
+
+  /// No description provided for @composerEffortNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get composerEffortNone;
+
+  /// No description provided for @composerEffortMinimal.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimal'**
+  String get composerEffortMinimal;
+
+  /// No description provided for @composerEffortLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get composerEffortLow;
+
+  /// No description provided for @composerEffortMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get composerEffortMedium;
+
+  /// No description provided for @composerEffortHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get composerEffortHigh;
+
+  /// No description provided for @composerEffortExtraHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra high'**
+  String get composerEffortExtraHigh;
+
+  /// No description provided for @composerEffortUltra.
+  ///
+  /// In en, this message translates to:
+  /// **'Ultra'**
+  String get composerEffortUltra;
+
+  /// No description provided for @composerEffortMaximum.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum'**
+  String get composerEffortMaximum;
+
   /// No description provided for @composerContextUsage.
   ///
   /// In en, this message translates to:

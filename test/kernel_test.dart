@@ -1439,10 +1439,7 @@ void main() {
       final items = {for (final (id, item) in transcript.liveItems) id: item};
       final look = items['a1']! as AgentItem;
       expect(look.status, CommandStatus.failed);
-      expect(
-        (look.children.single as ToolCallItem).status,
-        ToolStatus.failed,
-      );
+      expect((look.children.single as ToolCallItem).status, ToolStatus.failed);
       expect((items['b1']! as TerminalItem).status, CommandStatus.failed);
       final watch = items['a2']! as AgentItem;
       expect(watch.status, CommandStatus.running);
@@ -4186,16 +4183,21 @@ exec /bin/sh -c "\$command"
 
     test('translates items, and asks leave to run a command', () async {
       kernel.model.select('gpt-5.5');
-      kernel.mode.select('ask');
+      kernel.permission.select('default');
       kernel.send(const KernelTurn(id: 't1', text: 'hi'));
       await pumpEventQueue();
       expect(server.written.map((m) => m['method']), [
         'initialize',
+        'initialized',
+        'model/list',
+        'config/read',
         'thread/start',
         'turn/start',
       ]);
       final turnStart = server.written.last['params'] as Map;
-      expect(turnStart['sandboxPolicy'], {'type': 'readOnly'});
+      expect((turnStart['sandboxPolicy'] as Map)['type'], 'workspaceWrite');
+      expect(turnStart['approvalPolicy'], 'on-request');
+      expect(turnStart['approvalsReviewer'], 'user');
       expect(turnStart['model'], 'gpt-5.5');
 
       notify('item/completed', {
@@ -4272,7 +4274,9 @@ exec /bin/sh -c "\$command"
     test('declares no background tasks and no undo', () {
       expect(kernel, isNot(isA<RunsBackgroundTasks>()));
       expect(kernel, isNot(isA<RevertsChanges>()));
-      expect(kernel, isA<SelectsMode>());
+      expect(kernel, isNot(isA<SelectsMode>()));
+      expect(kernel, isA<SelectsPermission>());
+      expect(kernel, isA<SelectsEffort>());
     });
   });
 }

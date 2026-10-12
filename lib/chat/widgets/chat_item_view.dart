@@ -64,11 +64,19 @@ class ChatItemView extends StatelessWidget {
         onEdit: onEdit,
       ),
       AssistantTextItem(:final text) => AssistantText(text),
-      ThinkingItem(:final text, :final seconds, :final startedAt) =>
+      ThinkingItem(
+        :final text,
+        :final seconds,
+        :final startedAt,
+        :final streaming,
+        :final summarized,
+      ) =>
         ThinkingSection(
           text: text,
           seconds: seconds,
           startedAt: startedAt,
+          streaming: streaming,
+          summarized: summarized,
           expanded: expanded,
           onToggle: onToggle ?? () {},
         ),
@@ -159,16 +167,22 @@ String chatItemPlainText(
         else if (line.isNotEmpty)
           inline(line),
     ].join('\n'),
-    ThinkingItem(:final text, :final seconds) => switch (thoughtSummary(text)) {
-      (:final title, :final body) => [
-        title,
-        if (expanded && body.isNotEmpty) body,
-      ].join('\n'),
-      null => [
-        thinkingTitle(seconds: seconds, l10n: strings),
-        if (expanded) text.trimRight(),
-      ].join('\n'),
-    },
+    ThinkingItem(
+      :final text,
+      :final seconds,
+      :final streaming,
+      :final summarized,
+    ) =>
+      switch (thoughtSummary(text, plainText: summarized)) {
+        (:final title, :final body) => [
+          title,
+          if (expanded && body.isNotEmpty) body,
+        ].join('\n'),
+        null => [
+          thinkingTitle(seconds: seconds, streaming: streaming, l10n: strings),
+          if (expanded) text.trimRight(),
+        ].join('\n'),
+      },
     ToolCallItem(
       :final kind,
       :final target,

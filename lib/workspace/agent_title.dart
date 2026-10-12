@@ -6,6 +6,7 @@
 
 import '../chat/chat_models.dart';
 import '../kernel/claude_code/claude_haiku.dart';
+import '../kernel/codex/ask_codex.dart';
 import '../l10n/l10n.dart';
 import '../models/model_providers.dart';
 
@@ -50,8 +51,30 @@ const _system =
     'no quotes, Markdown or trailing period. When the message is only a '
     'link or reference, name what it points at.';
 
-/// Claude Haiku's title for [message], through Claude Code; null when it
-/// gives none (e.g. Claude Code is not there).
+/// A title generated through the configured Codex CLI.
+Future<String?> codexAgentTitle(
+  String message, {
+  String? model,
+  String? location,
+}) async {
+  var text = message.trim();
+  if (text.length > agentTitleMessageBudget) {
+    text = '${text.substring(0, agentTitleMessageBudget)}…';
+  }
+  try {
+    return cleanAgentTitle(
+      await askCodex(
+        _system,
+        '<message>\n$text\n</message>',
+        model: model,
+        location: location,
+      ),
+    );
+  } on Object {
+    return null;
+  }
+}
+
 Future<String?> claudeAgentTitle(
   String message, {
   String? model,

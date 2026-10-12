@@ -58,6 +58,64 @@ String describe(Transcript transcript) => [
 ].join('\n');
 
 void main() {
+  test(
+    'summary metadata survives deltas and unknown duration stays completed',
+    () {
+      final transcript = Transcript()
+        ..apply(
+          const ItemUpserted(
+            1,
+            'summary',
+            ThinkingItem(text: '检查', tokens: 2, summarized: true),
+            streaming: true,
+          ),
+        )
+        ..apply(const TextDelta(2, 'summary', 2, '接口'));
+      final live = transcript.itemAt(0) as ThinkingItem;
+      expect(live.summarized, isTrue);
+      expect(live.streaming, isTrue);
+      transcript
+        ..apply(
+          const ItemCompleted(
+            3,
+            'summary',
+            item: ThinkingItem(
+              text: '检查接口',
+              tokens: 4,
+              summarized: true,
+              streaming: false,
+            ),
+          ),
+        )
+        ..apply(const TurnEnded(4, 'old'));
+      final completed = transcript.itemAt(0) as ThinkingItem;
+      expect(completed.streaming, isFalse);
+      expect(completed.seconds, isNull);
+      expect(completed.summarized, isTrue);
+    },
+  );
+
+  test(
+    'restoring a history batch settles once and preserves event semantics',
+    () {
+      final separately = Transcript();
+      final together = Transcript();
+      final events = turn();
+      for (final event in events) {
+        separately.apply(event);
+      }
+      final restored = HistoryReplayed(16, events);
+      expect(together.apply(restored), isTrue);
+      expect(describe(together), describe(separately));
+      expect(together.version, 1);
+      expect(together.lastSeq, 16);
+      expect(together.apply(restored), isFalse);
+      expect(together.apply(events.last), isFalse);
+      expect(together.apply(const TurnStarted(17, 'next')), isTrue);
+      expect(together.activeTurn, 'next');
+    },
+  );
+
   test('applies a turn', () {
     final transcript = Transcript();
     for (final event in turn()) {

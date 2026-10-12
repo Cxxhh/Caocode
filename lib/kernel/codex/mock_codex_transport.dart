@@ -50,6 +50,37 @@ class MockCodexTransport implements CodexTransport {
     switch (method) {
       case 'initialize':
         _respond(id, {'userAgent': 'codex-mock'});
+      case 'initialized':
+        return;
+      case 'model/list':
+        _respond(id, {
+          'data': [
+            for (final (model, label) in [
+              ('gpt-5.5-codex', 'GPT-5.5 Codex'),
+              ('gpt-5.5', 'GPT-5.5'),
+              ('gpt-5.5-mini', 'GPT-5.5 mini'),
+            ])
+              {
+                'model': model,
+                'displayName': label,
+                'isDefault': model == 'gpt-5.5-codex',
+                'defaultReasoningEffort': 'medium',
+                'supportedReasoningEfforts': [
+                  for (final level in ['low', 'medium', 'high'])
+                    {'reasoningEffort': level},
+                ],
+              },
+          ],
+        });
+      case 'config/read':
+        _respond(id, {
+          'config': {
+            'model': 'gpt-5.5-codex',
+            'model_reasoning_effort': 'medium',
+            'approval_policy': 'on-request',
+            'sandbox_mode': 'workspace-write',
+          },
+        });
       case 'thread/start':
         _respond(id, {
           'thread': {'id': _threadId},

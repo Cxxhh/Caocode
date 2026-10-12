@@ -1651,14 +1651,18 @@ class ChatComposerState extends State<ChatComposer>
     final mode = session.modes;
     final permission = session.permissions;
     final model = session.models;
+    final effort = model == null || session.kernel.id != 'codex'
+        ? null
+        : session
+              .modelSettings(model.selected.id)
+              .where((setting) => setting.kind == KernelChoiceKind.effort)
+              .firstOrNull;
     final context = session.context;
     final l10n = this.context.l10n;
-    KernelOption localized(KernelOption option) => localizedKernelOption(
-      l10n,
-      session.kernel.id,
-      KernelChoiceKind.permission,
-      option,
-    );
+    KernelOption localized(
+      KernelOption option, [
+      KernelChoiceKind kind = KernelChoiceKind.permission,
+    ]) => localizedKernelOption(l10n, session.kernel.id, kind, option);
     // The pickers' and the ring's hovers, with the keys that do the same in
     // the input.
     const input = {ChatContextKeys.inChatInput: true};
@@ -1702,13 +1706,16 @@ class ChatComposerState extends State<ChatComposer>
                   ],
                   if (permission != null) ...[
                     ComposerPicker(
+                      key: mode == null ? _modePickerKey : null,
                       options: [
                         for (final option in permission.options)
                           localized(option),
                       ],
                       selected: localized(permission.selected),
                       // `context` is the session's here.
-                      title: l10n.composerApprovalTitle(session.kernel.label),
+                      title: session.kernel.id == 'codex'
+                          ? l10n.composerCodexApprovalTitle
+                          : l10n.composerApprovalTitle(session.kernel.label),
                       menuWidth: 290,
                       tapRegionGroupId: widget.tapRegionGroupId,
                       focusNode: _focusNode,
@@ -1729,8 +1736,13 @@ class ChatComposerState extends State<ChatComposer>
                         for (final setting in session.modelSettings(option.id))
                           ModelSettingChoice(
                             kind: setting.kind,
-                            options: setting.options,
-                            selected: setting.selected,
+                            options: [
+                              for (final option in setting.options)
+                                localized(option, setting.kind),
+                            ],
+                            selected: setting.selected == null
+                                ? null
+                                : localized(setting.selected!, setting.kind),
                             onSelected: (choice) => unawaited(
                               _switchModel(
                                 option,
@@ -1760,6 +1772,25 @@ class ChatComposerState extends State<ChatComposer>
                         _switchModel(option, () => model.onSelected(option)),
                       ),
                     ),
+                  if (effort != null) ...[
+                    const SizedBox(width: 2),
+                    ComposerPicker(
+                      options: [
+                        for (final option in effort.options)
+                          localized(option, effort.kind),
+                      ],
+                      selected: localized(
+                        effort.selected ?? effort.options.first,
+                        effort.kind,
+                      ),
+                      title: l10n.composerSettingEffort,
+                      tooltip: l10n.composerSettingEffort,
+                      menuWidth: 260,
+                      tapRegionGroupId: widget.tapRegionGroupId,
+                      focusNode: _focusNode,
+                      onSelected: effort.onSelected,
+                    ),
+                  ],
                 ],
               ),
             ),

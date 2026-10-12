@@ -2284,6 +2284,57 @@ class AppLocalizationsZh extends AppLocalizations {
   String get composerApprovalFullAccessDetail => '不做任何检查，编辑和命令直接执行';
 
   @override
+  String get composerCodexApprovalTitle => '应如何批准 Codex 操作？';
+
+  @override
+  String get composerCodexApprovalDefault => '请求批准';
+
+  @override
+  String get composerCodexApprovalDefaultDetail => '编辑外部文件和使用互联网时始终询问';
+
+  @override
+  String get composerCodexApprovalAuto => '帮我批准';
+
+  @override
+  String get composerCodexApprovalAutoDetail => '仅对检测到的风险操作请求批准';
+
+  @override
+  String get composerCodexApprovalFullAccess => '完全访问权限';
+
+  @override
+  String get composerCodexApprovalFullAccessDetail => '可不受限制地访问互联网和你电脑上的任何文件';
+
+  @override
+  String get composerCodexApprovalCustom => '自定义 (config.toml)';
+
+  @override
+  String get composerCodexApprovalCustomDetail => '使用 config.toml 中定义的权限';
+
+  @override
+  String get composerEffortNone => '不推理';
+
+  @override
+  String get composerEffortMinimal => '极低';
+
+  @override
+  String get composerEffortLow => '低';
+
+  @override
+  String get composerEffortMedium => '中';
+
+  @override
+  String get composerEffortHigh => '高';
+
+  @override
+  String get composerEffortExtraHigh => '极高';
+
+  @override
+  String get composerEffortUltra => '超高';
+
+  @override
+  String get composerEffortMaximum => '最高';
+
+  @override
   String get composerContextUsage => '上下文用量';
 
   @override

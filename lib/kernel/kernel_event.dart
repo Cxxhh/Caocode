@@ -13,6 +13,14 @@ sealed class KernelEvent {
   final int seq;
 }
 
+/// Earlier events restored together, so listeners see the completed history
+/// once rather than treating every old item as new live output.
+final class HistoryReplayed extends KernelEvent {
+  const HistoryReplayed(super.seq, this.events);
+
+  final List<KernelEvent> events;
+}
+
 final class TurnStarted extends KernelEvent {
   const TurnStarted(super.seq, this.turnId, {this.unprompted = false});
 

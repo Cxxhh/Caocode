@@ -10,3 +10,8 @@ abstract interface class CodexTransport {
 
   void close();
 }
+
+/// A local process has finished closing once its stdin/stdout and child exit.
+abstract interface class CodexTransportLifecycle {
+  Future<void> get stopped;
+}

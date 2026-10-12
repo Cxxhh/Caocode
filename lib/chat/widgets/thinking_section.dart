@@ -16,17 +16,25 @@ import 'wheel_latch.dart';
 String thinkingTitle({
   required int? seconds,
   Duration? elapsed,
+  bool? streaming,
   AppLocalizations? l10n,
-}) => switch (thinkingParts(seconds, elapsed: elapsed, l10n: l10n)) {
+}) => switch (thinkingParts(
+  seconds,
+  elapsed: elapsed,
+  streaming: streaming,
+  l10n: l10n,
+)) {
   (final verb, final object) => StepHeader.text(verb, object),
 };
 
 (String, String) thinkingParts(
   int? seconds, {
   Duration? elapsed,
+  bool? streaming,
   AppLocalizations? l10n,
 }) {
   final strings = l10n ?? englishLocalizations;
+  if (streaming == false && seconds == null) return (strings.stepThought, '');
   return switch ((seconds, elapsed)) {
     (null, final elapsed?) => (
       strings.stepThinking,
@@ -47,10 +55,20 @@ String thinkingTitle({
 /// A summarized thought (OpenAI's, say) in its parts: its first line, all
 /// bold (`**Planning the fix**`), is its title, the rest its body. While it
 /// streams the title may lack its closing stars. Null for a thought whose
-/// first line is not a bold one.
-({String title, String body})? thoughtSummary(String text) {
+/// first line is not a bold one, unless [plainText] allows its first line as
+/// the heading of a provider summary.
+({String title, String body})? thoughtSummary(
+  String text, {
+  bool plainText = false,
+}) {
   final match = _summaryTitle.firstMatch(text.trimLeft());
-  if (match == null) return null;
+  if (match == null) {
+    if (!plainText || text.trim().isEmpty) return null;
+    final lines = text.trim().split(RegExp(r'\r?\n'));
+    final title = lines.first.replaceFirst(RegExp(r'^#{1,6}\s+'), '').trim();
+    if (title.isEmpty) return null;
+    return (title: title, body: lines.skip(1).join('\n').trim());
+  }
   final title = match[1]!.trim();
   if (title.isEmpty) return null;
   final body = match[2]?.trim() ?? '';
@@ -63,7 +81,7 @@ final _summaryTitle = RegExp(
 );
 final _partTitle = RegExp(r'^\*\*([^*\n]+)\*\*[ \t]*$', multiLine: true);
 
-/// Collapsible thought. While it streams ([seconds] is null) its text sits
+/// Collapsible thought. While it streams its text sits
 /// in a box of limited height that follows the newest lines, fading out at
 /// the top over earlier ones; once done it shows in full.
 class ThinkingSection extends StatefulWidget {
@@ -74,10 +92,14 @@ class ThinkingSection extends StatefulWidget {
     required this.expanded,
     required this.onToggle,
     this.startedAt,
+    this.streaming,
+    this.summarized = false,
   });
 
   final String text;
   final int? seconds;
+  final bool? streaming;
+  final bool summarized;
 
   /// When it began: while it streams, its time so far counts up.
   final DateTime? startedAt;
@@ -98,7 +120,7 @@ class _ThinkingSectionState extends State<ThinkingSection> {
   final ScrollController _scrollController = ScrollController();
   bool _contentAbove = false;
 
-  bool get _streaming => widget.seconds == null;
+  bool get _streaming => widget.streaming ?? widget.seconds == null;
 
   /// Ticks the time shown while it streams.
   Timer? _clock;
@@ -119,7 +141,8 @@ class _ThinkingSectionState extends State<ThinkingSection> {
   }
 
   /// A summarized thought's title and body, or null for a thought in full.
-  ({String title, String body})? get _summary => thoughtSummary(widget.text);
+  ({String title, String body})? get _summary =>
+      thoughtSummary(widget.text, plainText: widget.summarized);
 
   /// What it shows open: a summarized thought's body, else its text, without
   /// the blank lines thoughts end with.
@@ -206,6 +229,7 @@ class _ThinkingSectionState extends State<ThinkingSection> {
     }
     final (verb, object) = thinkingParts(
       widget.seconds,
+      streaming: _streaming,
       elapsed: switch (widget.startedAt) {
         final start? when _streaming => DateTime.now().difference(start),
         _ => null,

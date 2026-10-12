@@ -1,12 +1,12 @@
 // Generate Commit Message, as the sparkle in VS Code's Source Control input
 // does it (with Copilot): the diff of what the commit would take, cut to
 // fit, and the repository's recent messages for its conventions, to a small
-// model: Claude Haiku, through Claude Code.
+// model through the Codex CLI configured for the project.
 
 import 'package:path/path.dart' as p;
 
-import '../../kernel/claude_code/claude_haiku.dart';
-import '../../models/model_providers.dart';
+import '../../kernel/codex/ask_codex.dart';
+import '../../kernel/codex/codex_rpc.dart';
 
 /// The most diff the model is given, in characters.
 const ideCommitDiffBudget = 4000;
@@ -39,8 +39,7 @@ class IdeCommitMessageException implements Exception {
   String toString() => message;
 }
 
-/// Claude Haiku through the `claude` CLI: one turn, no tools, no session
-/// kept.
+/// Codex CLI: one read-only turn, with no persistent session.
 ///
 /// It runs where [location] is (the project's): on its host for a remote
 /// one.
@@ -50,21 +49,16 @@ Future<String> ideClaudeCommitMessage(
   String? location,
 }) async {
   try {
-    // The auxiliary model; automatic, new sessions' default.
-    final models = ModelProviders.current;
-    final auxiliary = models.auxiliary(models.defaultModel);
-    final reply = await askClaudeHaiku(
+    final reply = await askCodex(
       prompt.system,
       prompt.user,
       cancel: cancel,
-      model: auxiliary.model,
-      exact: auxiliary.exact,
       location: location,
     );
     return ideCleanCommitMessage(reply);
-  } on ClaudeHaikuCancelled {
+  } on CodexCancelled {
     throw const IdeCommitMessageCancelled();
-  } on ClaudeHaikuException catch (error) {
+  } on CodexRpcException catch (error) {
     throw IdeCommitMessageException(error.message);
   }
 }

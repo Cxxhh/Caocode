@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:math' as math;
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
@@ -7,6 +7,10 @@ import '../../chat/chat_models.dart';
 import '../agent_kernel.dart';
 import '../kernel_event.dart';
 import '../kernel_types.dart';
+import 'codex_catalog.dart';
+import 'codex_choices.dart';
+import 'codex_process.dart';
+import 'codex_rpc.dart';
 import 'codex_transport.dart';
 
 /// Adapts `codex app-server` to [AgentKernel]. Codex keeps no background
@@ -18,76 +22,288 @@ class CodexKernel
     implements
         AgentKernel,
         SelectsModel,
-        SelectsMode,
+        SelectsPermission,
+        SelectsEffort,
+        QueuesMessages,
         ProvidesCommands,
         ReportsContext,
         RewindsConversation,
+        RenamesSession,
         AcceptsImages {
-  CodexKernel(this.descriptor, this._transport) {
-    _subscription = _transport.messages.listen(_receive);
+  CodexKernel(
+    this.descriptor,
+    this._transport, {
+    KernelContext context = const KernelContext(),
+    this.reconnect,
+  }) : _context = context {
+    _threadId = context.resume?.id;
+    model.reported = context.settings['model'];
+    if (codexPermissionOptions.any(
+      (option) => option.id == context.settings['permission'],
+    )) {
+      permission.reported = context.settings['permission'];
+    }
+    _connect();
   }
 
   @override
   final KernelDescriptor descriptor;
-  final CodexTransport _transport;
-  late final StreamSubscription<Map<String, Object?>> _subscription;
+  CodexTransport _transport;
+  final KernelContext _context;
+  final CodexTransport Function()? reconnect;
+  late CodexRpcClient _rpc;
+  late StreamSubscription<Map<String, Object?>> _subscription;
 
   @override
-  late final KernelChoiceSource model = LocalChoice(
-    _models,
+  late final LocalChoice model = LocalChoice(const [
+    KernelOption('default', 'CLI 默认', Icons.bolt_rounded, '使用 Codex CLI 的模型配置'),
+  ], onChanged: (_) => emitInfoChanged());
+
+  @override
+  late final LocalChoice permission = LocalChoice(
+    codexPermissionOptions,
     onChanged: (_) => emitInfoChanged(),
   );
 
   @override
-  late final KernelChoiceSource mode = LocalChoice(
-    _modes,
-    onChanged: (_) => emitInfoChanged(),
+  late final CodexEffort effort = CodexEffort(
+    model,
+    _context.settings,
+    emitInfoChanged,
   );
+  Map _config = const {};
 
   @override
-  KernelHealth get health => KernelHealth.ready;
+  KernelHealth get health => _health;
+  KernelHealth _health = KernelHealth.idle;
+  bool _disposed = false;
+  bool _released = false;
+  bool _historyLoaded = false;
+  bool _replaying = false;
+  List<KernelEvent>? _replayEvents;
+  String? _pendingName;
+  final List<KernelTurn> _queue = [];
+  bool _startingTurn = false;
+  Future<void>? _preparing;
+  Future<void>? _openingThread;
+  Future<void> _shutdown = Future.value();
+  int _generation = 0;
+
+  void _connect() {
+    final generation = ++_generation;
+    _rpc = CodexRpcClient(_transport);
+    _subscription = _rpc.messages.listen(
+      (message) {
+        if (generation == _generation) _receive(message);
+      },
+      onError: (Object error, StackTrace stack) {
+        if (generation == _generation) _failed(error, stack);
+      },
+    );
+  }
 
   @override
-  String? get sessionId => null;
+  String? get sessionId => _threadId;
 
   @override
-  Future<void> get stopped => Future.value();
+  Future<void> get stopped => _shutdown;
 
   @override
-  void prepare() {}
+  void prepare() {
+    // A chat attaches while Flutter mounts its view. Notify the workspace only
+    // after that build finishes, so starting the CLI cannot invalidate it.
+    unawaited(Future<void>.microtask(_ready).catchError((Object _) {}));
+  }
 
   @override
-  void release() {}
+  void release() {
+    if (_turn != null || _disposed || _released || reconnect == null) return;
+    _released = true;
+    _generation++;
+    _rpc.close();
+    _shutdown = _rpc.stopped;
+    unawaited(_subscription.cancel());
+    _preparing = null;
+    _openingThread = null;
+    _health = KernelHealth.idle;
+    _serverTurn = null;
+    emitInfoChanged();
+  }
 
   @override
-  void restart() {}
+  void restart() {
+    if (_disposed || reconnect == null) return;
+    cancel();
+    release();
+    prepare();
+  }
 
-  static const _models = [
-    KernelOption(
-      'gpt-5.5-codex',
-      'GPT-5.5 Codex',
-      Icons.bolt_rounded,
-      'Tuned for coding',
-    ),
-    KernelOption('gpt-5.5', 'GPT-5.5', Icons.bolt_rounded, 'General purpose'),
-    KernelOption('gpt-5.5-mini', 'GPT-5.5 mini', Icons.bolt_rounded, 'Fastest'),
-  ];
+  Future<void> _ready() async {
+    if (_disposed) throw const CodexRpcException('会话已关闭');
+    if (_released) {
+      await _shutdown;
+      if (_disposed) return;
+      if (_released) {
+        _released = false;
+        _transport = reconnect!();
+        _connect();
+      }
+    }
+    final generation = _generation;
+    await (_preparing ??= _prepare(generation, _rpc).catchError((
+      Object error,
+      StackTrace stack,
+    ) {
+      if (generation == _generation) _failed(error, stack);
+      throw error;
+    }));
+  }
 
-  /// Modes are its approval and sandbox policies.
-  static const _modes = [
-    KernelOption(
-      'agent',
-      'Agent',
-      Icons.all_inclusive_rounded,
-      'Edit the workspace, ask before commands',
-    ),
-    KernelOption(
-      'ask',
-      'Ask',
-      Icons.chat_bubble_outline_rounded,
-      'Read-only: answer questions',
-    ),
-  ];
+  Future<void> _prepare(int generation, CodexRpcClient rpc) async {
+    _health = const KernelHealth(KernelHealthStatus.starting);
+    emitInfoChanged();
+    await rpc.initialize();
+    if (_disposed || _released || generation != _generation) return;
+    // Fetching model metadata must not hold up the saved conversation.
+    await Future.wait([
+      _resumeThread(generation, rpc),
+      _loadModels(generation, rpc),
+      _loadConfig(generation, rpc),
+    ]);
+    if (_disposed || _released || generation != _generation) return;
+    _health = KernelHealth.ready;
+    emitInfoChanged();
+    _takeNext();
+  }
+
+  Future<void> _loadModels(int generation, CodexRpcClient rpc) async {
+    final models = await rpc.request('model/list', {'limit': 100});
+    if (_disposed || _released || generation != _generation) return;
+    final data = (models['data'] as List? ?? const []).whereType<Map>();
+    effort.loadModels(data);
+    model.options = [
+      const KernelOption(
+        'default',
+        'CLI 默认',
+        Icons.bolt_rounded,
+        '使用 Codex CLI 的模型配置',
+      ),
+      for (final raw in data)
+        if (raw['model'] is String)
+          KernelOption(
+            raw['model'] as String,
+            raw['displayName'] as String? ?? raw['model'] as String,
+            Icons.bolt_rounded,
+            raw['description'] as String? ?? '',
+          ),
+    ];
+    emitInfoChanged();
+  }
+
+  Future<Map> _readConfig() async {
+    final result = await _request('config/read', {
+      'includeLayers': false,
+      if (_context.cwd != null) 'cwd': codexServerPath(_context.cwd),
+    });
+    return result['config'] as Map? ?? const {};
+  }
+
+  Future<void> _loadConfig(int generation, CodexRpcClient rpc) async {
+    final result = await rpc.request('config/read', {
+      'includeLayers': false,
+      if (_context.cwd != null) 'cwd': codexServerPath(_context.cwd),
+    });
+    if (_disposed || _released || generation != _generation) return;
+    _config = result['config'] as Map? ?? const {};
+    effort.configure(_config);
+  }
+
+  Future<void> _resumeThread(int generation, CodexRpcClient rpc) async {
+    if (_threadId case final id?) {
+      final resumed = await rpc.request('thread/resume', {
+        'threadId': id,
+        if (_context.cwd != null) 'cwd': codexServerPath(_context.cwd),
+      });
+      if (_disposed || _released || generation != _generation) return;
+      if (!_historyLoaded) {
+        _replay((resumed['thread'] as Map?) ?? const {});
+        _historyLoaded = true;
+      }
+    }
+  }
+
+  void _failed(Object error, [StackTrace? stack]) {
+    if (_disposed || _released) return;
+    _health = KernelHealth(KernelHealthStatus.failed, message: '$error');
+    emitInfoChanged();
+    if (_turn case final turn?) {
+      emit(
+        ItemUpserted(
+          nextSeq,
+          'error:$turn',
+          NoticeItem(NoticeKind.error, '$error'),
+        ),
+      );
+      _endTurn(turn, interrupted: false);
+    }
+  }
+
+  void _replay(Map thread) {
+    final events = _replayEvents = <KernelEvent>[];
+    _replaying = true;
+    try {
+      for (final raw in thread['turns'] as List? ?? const []) {
+        final turn = raw as Map;
+        final id = turn['id'] as String;
+        emit(TurnStarted(nextSeq, id));
+        for (final rawItem in turn['items'] as List? ?? const []) {
+          final item = (rawItem as Map).cast<String, Object?>();
+          if (item['type'] == 'userMessage') {
+            final text = <String>[];
+            for (final rawContent in item['content'] as List? ?? const []) {
+              final content = rawContent as Map;
+              if (content['type'] == 'text' &&
+                  content['text'] is String &&
+                  !(content['text'] as String).startsWith(
+                    '<caocode_context>',
+                  )) {
+                text.add(content['text'] as String);
+              }
+            }
+            emit(
+              ItemUpserted(nextSeq, id, UserMessageItem(text: text.join('\n'))),
+            );
+          } else if (item['type'] == 'reasoning') {
+            // A saved reasoning item has its final summary, but no recorded
+            // duration. Replaying a start would time the replay itself.
+            _itemCompleted(item);
+          } else {
+            _itemStarted(item);
+            _itemCompleted(item);
+          }
+        }
+        emit(
+          TurnEnded(nextSeq, id, interrupted: turn['status'] == 'interrupted'),
+        );
+      }
+    } finally {
+      _replaying = false;
+      _replayEvents = null;
+    }
+    if (events.isNotEmpty) {
+      emit(HistoryReplayed(nextSeq, List.unmodifiable(events)));
+    }
+  }
+
+  @override
+  void emit(KernelEvent event) {
+    final replay = _replayEvents;
+    if (replay != null) {
+      replay.add(event);
+    } else {
+      super.emit(event);
+    }
+  }
 
   @override
   final List<KernelCommand> commands = const [
@@ -107,15 +323,11 @@ class CodexKernel
       Icons.description_outlined,
     ),
     KernelCommand('diff', 'Show the git diff', Icons.difference_outlined),
-    KernelCommand('new', 'Start a new chat', Icons.add_comment_outlined),
   ];
 
   @override
   int get contextWindow => 272000;
 
-  int _requests = 0;
-  final Map<Object, Completer<Map<String, Object?>>> _responses = {};
-  bool _initialized = false;
   String? _threadId;
 
   /// Ours, and the server's for the same turn once it says.
@@ -139,23 +351,40 @@ class CodexKernel
 
   /// Pending approvals: our request id → the server's JSON-RPC id.
   final Map<String, Object?> _approvals = {};
+  final Map<String, List<String>> _questions = {};
+  final Map<String, Map<String, Object?>> _permissions = {};
 
   // --- Commands -------------------------------------------------------------
 
   Future<Map<String, Object?>> _request(
     String method,
     Map<String, Object?> params,
-  ) {
-    final id = ++_requests;
-    final response = Completer<Map<String, Object?>>();
-    _responses[id] = response;
-    _transport.write({'id': id, 'method': method, 'params': params});
-    return response.future;
-  }
+  ) => _rpc.request(method, params);
 
   @override
   void send(KernelTurn turn) {
+    if (_disposed) return;
     if (!_sentTurns.add(turn.id)) return;
+    if (_turn != null || _serverTurn != null || _startingTurn) {
+      if (turn.now) {
+        _queue.insert(0, turn);
+      } else {
+        _queue.add(turn);
+      }
+      emit(
+        ItemUpserted(
+          nextSeq,
+          turn.id,
+          UserMessageItem(text: turn.text, images: turn.images, queued: true),
+        ),
+      );
+      if (turn.now) cancel();
+      return;
+    }
+    _begin(turn);
+  }
+
+  void _begin(KernelTurn turn) {
     _turn = turn.id;
     _turnStarted = DateTime.now();
     emit(TurnStarted(nextSeq, turn.id));
@@ -166,41 +395,156 @@ class CodexKernel
         UserMessageItem(text: turn.text, images: turn.images),
       ),
     );
-    unawaited(_start(turn));
+    _startingTurn = true;
+    unawaited(
+      _start(turn)
+          .catchError((Object error, StackTrace stack) {
+            if (_turn == turn.id) _failed(error, stack);
+          })
+          .whenComplete(() {
+            _startingTurn = false;
+            _takeNext();
+          }),
+    );
+  }
+
+  void _takeNext() {
+    if (_disposed ||
+        _turn != null ||
+        _serverTurn != null ||
+        _startingTurn ||
+        _health.status == KernelHealthStatus.failed ||
+        _queue.isEmpty) {
+      return;
+    }
+    _begin(_queue.removeAt(0));
+  }
+
+  @override
+  Future<bool> cancelQueued(String turnId) async {
+    final index = _queue.indexWhere((turn) => turn.id == turnId);
+    if (index < 0) return false;
+    _queue.removeAt(index);
+    emit(ItemRemoved(nextSeq, turnId));
+    return true;
+  }
+
+  @override
+  void sendQueuedNow(String turnId) {
+    final index = _queue.indexWhere((turn) => turn.id == turnId);
+    if (index < 0) return;
+    _queue.insert(0, _queue.removeAt(index));
+    cancel();
+    _takeNext();
   }
 
   Future<void> _start(KernelTurn turn) async {
-    if (!_initialized) {
-      _initialized = true;
-      await _request('initialize', {
-        'clientInfo': {'name': 'baocode', 'version': '1.0.0'},
-      });
-    }
+    await _ready();
+    if (_turn != turn.id || _disposed) return;
     if (_threadId == null) {
-      final started = await _request('thread/start', {'model': model.selected});
-      _threadId = (started['thread'] as Map)['id'] as String;
+      await (_openingThread ??= _openThread());
     }
-    final readOnly = mode.selected == 'ask';
+    if (_turn != turn.id || _disposed) return;
+    if (turn.text.trim() == '/compact') {
+      await _request('thread/compact/start', {'threadId': _threadId});
+      return;
+    }
+    final readOnly = ['/review', '/diff'].contains(turn.text.trim());
+    if (!readOnly && permission.selected == 'custom') {
+      _config = await _readConfig();
+      effort.configure(_config);
+      emitInfoChanged();
+    }
+    if (_turn != turn.id || _disposed) return;
     final started = await _request('turn/start', {
       'threadId': _threadId,
+      'summary': 'auto',
       'input': [
-        {'type': 'text', 'text': turn.text},
-        for (final note in turn.notes) {'type': 'text', 'text': note},
+        {
+          'type': 'text',
+          'text': switch (turn.text.trim()) {
+            '/review' => 'Review the uncommitted changes in this project. Do not modify files.',
+            '/diff' =>
+              'Show and explain the uncommitted Git diff. Do not modify files.',
+            '/init' =>
+              'Inspect this project and write an appropriate AGENTS.md.',
+            _ => turn.text,
+          },
+        },
+        for (final note in turn.notes)
+          {
+            'type': 'text',
+            'text': '<caocode_context>\n$note\n</caocode_context>',
+          },
+        for (final image in turn.images)
+          {
+            'type': 'image',
+            'url':
+                'data:${image.mediaType};base64,${base64Encode(image.bytes)}',
+          },
       ],
-      'model': model.selected,
-      'approvalPolicy': readOnly ? 'never' : 'on-request',
-      'sandboxPolicy': {'type': readOnly ? 'readOnly' : 'workspaceWrite'},
+      'model': ?effort.resolvedModel,
+      'effort': ?effort.selected,
+      if (_context.cwd != null) 'cwd': codexServerPath(_context.cwd),
+      ...readOnly
+          ? {
+              'approvalPolicy': 'never',
+              'approvalsReviewer': 'user',
+              'sandboxPolicy': {'type': 'readOnly'},
+            }
+          : codexPermissionParams(permission.selected, [
+              if (_context.cwd != null) codexServerPath(_context.cwd)!,
+              for (final path
+                  in _context.workspace?.call()?.folders ?? const <String>[])
+                codexServerPath(path)!,
+            ], _config),
     });
     _serverTurn ??= (started['turn'] as Map)['id'] as String;
     // Stopped before the server knew the turn: stop it there too.
     if (_turn != turn.id) _interrupt();
   }
 
+  Future<void> _openThread() async {
+    try {
+      final started = await _request('thread/start', {
+        if (_context.cwd != null) 'cwd': codexServerPath(_context.cwd),
+        'model': ?effort.resolvedModel,
+        if (_context.workspace?.call()?.instructions case final instructions?
+            when instructions.isNotEmpty)
+          'developerInstructions': instructions,
+      });
+      final thread = started['thread'] as Map;
+      _threadId = thread['id'] as String;
+      _historyLoaded = true;
+      CodexCatalog.remember(
+        _threadId!,
+        _context.cwd ?? thread['cwd'] as String?,
+      );
+      if (_pendingName case final name?) {
+        await _request('thread/name/set', {
+          'threadId': _threadId,
+          'name': name,
+        });
+        _pendingName = null;
+      }
+      emitInfoChanged();
+    } finally {
+      _openingThread = null;
+    }
+  }
+
   void _interrupt() {
+    final generation = _generation;
     final serverTurn = _serverTurn;
     if (serverTurn == null || _threadId == null) return;
     unawaited(
-      _request('turn/interrupt', {'threadId': _threadId, 'turnId': serverTurn}),
+      _request('turn/interrupt', {
+        'threadId': _threadId,
+        'turnId': serverTurn,
+      }).catchError((Object error) {
+        if (generation == _generation) _failed(error);
+        return <String, Object?>{};
+      }),
     );
   }
 
@@ -209,6 +553,39 @@ class CodexKernel
     if (!_approvals.containsKey(requestId)) return;
     final rpcId = _approvals.remove(requestId);
     emit(InteractionResolved(nextSeq, requestId));
+    if (_questions.remove(requestId) case final keys?) {
+      final picks = answer is QuestionAnswer && !answer.skipped
+          ? answer.picks
+          : const <List<String>>[];
+      _transport.write({
+        'id': rpcId,
+        'result': {
+          'answers': {
+            for (final (index, key) in keys.indexed)
+              key: {
+                'answers': index < picks.length ? picks[index] : <String>[],
+              },
+          },
+        },
+      });
+      return;
+    }
+    if (_permissions.remove(requestId) case final permissions?) {
+      final allowed =
+          answer is ApprovalAnswer && answer.decision != ApprovalDecision.deny;
+      _transport.write({
+        'id': rpcId,
+        'result': {
+          'permissions': allowed ? permissions : <String, Object?>{},
+          'scope':
+              answer is ApprovalAnswer &&
+                  answer.decision == ApprovalDecision.allowAlways
+              ? 'session'
+              : 'turn',
+        },
+      });
+      return;
+    }
     final decision = switch (answer) {
       ApprovalAnswer(decision: ApprovalDecision.allowOnce) => 'accept',
       ApprovalAnswer(decision: ApprovalDecision.allowAlways) =>
@@ -219,6 +596,32 @@ class CodexKernel
       'id': rpcId,
       'result': {'decision': decision},
     });
+  }
+
+  @override
+  void rename(String title) {
+    _pendingName = title;
+    if (_threadId == null) return;
+    unawaited(() async {
+      try {
+        await _ready();
+        await _request('thread/name/set', {
+          'threadId': _threadId,
+          'name': title,
+        });
+        if (_pendingName == title) _pendingName = null;
+      } on Object catch (error) {
+        if (!_disposed) {
+          emit(
+            ItemUpserted(
+              nextSeq,
+              'rename-error',
+              NoticeItem(NoticeKind.error, '无法重命名会话：$error'),
+            ),
+          );
+        }
+      }
+    }());
   }
 
   @override
@@ -237,9 +640,22 @@ class CodexKernel
     String? lastSeen,
   }) async {
     if (_threadId case final threadId? when turns > 0) {
-      unawaited(
-        _request('thread/rollback', {'threadId': threadId, 'numTurns': turns}),
-      );
+      try {
+        await _ready();
+        await _request('thread/rollback', {
+          'threadId': threadId,
+          'numTurns': turns,
+        });
+      } on Object catch (error) {
+        emit(
+          ItemUpserted(
+            nextSeq,
+            'rewind-error',
+            NoticeItem(NoticeKind.error, '无法回退会话：$error'),
+          ),
+        );
+        return false;
+      }
     }
     emit(Rewound(nextSeq, itemId: itemId, index: index));
     return true;
@@ -247,8 +663,11 @@ class CodexKernel
 
   @override
   void dispose() {
+    if (_disposed) return;
+    _disposed = true;
     unawaited(_subscription.cancel());
-    _transport.close();
+    _rpc.close();
+    _shutdown = _rpc.stopped;
     closeEvents();
   }
 
@@ -258,8 +677,10 @@ class CodexKernel
     final method = message['method'] as String?;
     final params = (message['params'] as Map?)?.cast<String, Object?>();
     if (method == null) {
-      final result = (message['result'] as Map?)?.cast<String, Object?>();
-      _responses.remove(message['id'])?.complete(result ?? const {});
+      return;
+    }
+    if (params?['threadId'] case final String threadId
+        when _threadId != null && threadId != _threadId) {
       return;
     }
     if (message.containsKey('id')) {
@@ -269,17 +690,76 @@ class CodexKernel
     switch (method) {
       case 'turn/started':
         _serverTurn = (params!['turn'] as Map)['id'] as String;
+        if (_turn == null) _interrupt();
       case 'turn/completed':
         final turn = params!['turn'] as Map;
         if (turn['id'] != _serverTurn) return;
         _serverTurn = null;
         if (_turn case final ours?) {
+          if (turn['status'] == 'failed') {
+            final error = turn['error'] as Map?;
+            emit(
+              ItemUpserted(
+                nextSeq,
+                'error:$ours',
+                NoticeItem(
+                  NoticeKind.error,
+                  error?['message'] as String? ?? 'Codex 回合执行失败',
+                ),
+              ),
+            );
+          }
           _endTurn(ours, interrupted: turn['status'] == 'interrupted');
+        }
+        _takeNext();
+      case 'error':
+        if (params?['willRetry'] != true) {
+          _failed(
+            CodexRpcException(
+              (params?['error'] as Map?)?['message'] as String? ??
+                  'Codex CLI 执行失败',
+            ),
+          );
+        }
+      case 'serverRequest/resolved':
+        final rpcId = params?['requestId'];
+        for (final id
+            in _approvals.keys
+                .where((id) => _approvals[id] == rpcId)
+                .toList()) {
+          _approvals.remove(id);
+          _questions.remove(id);
+          _permissions.remove(id);
+          emit(InteractionResolved(nextSeq, id));
+        }
+      case 'item/commandExecution/outputDelta':
+        final id = params?['itemId'] as String?;
+        final command = _commands[id];
+        if (command != null) {
+          final updated = {
+            ...command,
+            'aggregatedOutput':
+                '${command['aggregatedOutput'] ?? ''}${params?['delta'] ?? ''}',
+          };
+          _commands[id!] = updated;
+          emit(ItemUpserted(nextSeq, id, _commandItem(updated)));
         }
       case 'item/started':
         _itemStarted((params!['item'] as Map).cast<String, Object?>());
       case 'item/completed':
-        _itemCompleted((params!['item'] as Map).cast<String, Object?>());
+        final item = (params!['item'] as Map).cast<String, Object?>();
+        _itemCompleted(item);
+        if (item['type'] == 'contextCompaction' &&
+            _serverTurn == null &&
+            _turn != null) {
+          _endTurn(_turn!, interrupted: false);
+          _takeNext();
+        }
+      case 'thread/compacted':
+        if (_serverTurn == null && _turn != null) {
+          _endTurn(_turn!, interrupted: false);
+          _takeNext();
+        }
       case 'item/reasoning/summaryTextDelta':
         final id = params!['itemId'] as String;
         final buffer = _reasoning[id];
@@ -322,6 +802,62 @@ class CodexKernel
     String method,
     Map<String, Object?> params,
   ) {
+    if (method == 'item/tool/requestUserInput') {
+      final id = 'question:$rpcId';
+      final questions = [
+        for (final raw in params['questions'] as List? ?? const [])
+          (raw as Map).cast<String, Object?>(),
+      ];
+      _approvals[id] = rpcId;
+      _questions[id] = [
+        for (final question in questions) question['id'] as String,
+      ];
+      emit(
+        InteractionRequested(
+          nextSeq,
+          QuestionRequest(
+            id: id,
+            title: 'Codex 需要你的选择',
+            questions: [
+              for (final question in questions)
+                Question(
+                  prompt: question['question'] as String,
+                  header: question['header'] as String? ?? '',
+                  allowOther: question['isOther'] as bool? ?? true,
+                  options: [
+                    for (final raw in question['options'] as List? ?? const [])
+                      QuestionOption(
+                        (raw as Map)['label'] as String,
+                        description: raw['description'] as String? ?? '',
+                      ),
+                  ],
+                ),
+            ],
+          ),
+        ),
+      );
+      return;
+    }
+    if (method == 'item/permissions/requestApproval') {
+      final id = 'permission:$rpcId';
+      _approvals[id] = rpcId;
+      _permissions[id] =
+          (params['permissions'] as Map?)?.cast<String, Object?>() ?? {};
+      emit(
+        InteractionRequested(
+          nextSeq,
+          ApprovalRequest(
+            id: id,
+            toolName: 'permissions',
+            title: 'Codex 请求权限',
+            reason: params['reason'] as String?,
+            preview: CommandPreview(jsonEncode(params['permissions'])),
+            alwaysAllowLabel: '本次会话允许',
+          ),
+        ),
+      );
+      return;
+    }
     final (title, preview) = switch (method) {
       'item/commandExecution/requestApproval' => (
         'Run command',
@@ -330,7 +866,13 @@ class CodexKernel
       'item/fileChange/requestApproval' => ('Apply changes', null),
       _ => (null, null),
     };
-    if (title == null) return;
+    if (title == null) {
+      _transport.write({
+        'id': rpcId,
+        'error': {'code': -32601, 'message': 'Caocode 尚未支持此请求：$method'},
+      });
+      return;
+    }
     final id = 'approval:$rpcId';
     _approvals[id] = rpcId;
     emit(
@@ -358,7 +900,12 @@ class CodexKernel
           ItemUpserted(
             nextSeq,
             id,
-            ThinkingItem(text: '', tokens: 0, startedAt: DateTime.now()),
+            ThinkingItem(
+              text: '',
+              tokens: 0,
+              startedAt: DateTime.now(),
+              summarized: true,
+            ),
             streaming: true,
           ),
         );
@@ -386,9 +933,17 @@ class CodexKernel
         final buffer = _reasoning.remove(id);
         final clock = _reasoningClock.remove(id)?..stop();
         _reasoningPart.remove(id);
-        final text =
-            buffer?.toString() ??
-            (item['summary'] as List<Object?>? ?? const []).join('\n\n');
+        // Completed items are authoritative. An empty streaming buffer must
+        // not overwrite a restored summary; interrupted items can still use
+        // what arrived before the completion notification was lost.
+        final summary = item['summary'];
+        final text = summary is List
+            ? summary.whereType<String>().join('\n\n')
+            : buffer?.toString() ?? '';
+        if (text.trim().isEmpty) {
+          emit(ItemRemoved(nextSeq, id));
+          break;
+        }
         emit(
           ItemCompleted(
             nextSeq,
@@ -396,10 +951,11 @@ class CodexKernel
             item: ThinkingItem(
               text: text,
               tokens: text.length,
-              seconds: math.max(
-                1,
-                ((clock?.elapsedMilliseconds ?? 0) / 1000).round(),
-              ),
+              seconds: clock == null
+                  ? null
+                  : (clock.elapsedMilliseconds / 1000).round(),
+              streaming: false,
+              summarized: true,
             ),
           ),
         );
@@ -437,9 +993,12 @@ class CodexKernel
         (action as Map).cast<String, Object?>(),
     ];
     final output = item['aggregatedOutput'] as String?;
-    final done = item['status'] == 'completed' || item['status'] == 'failed';
+    final done = ['completed', 'failed', 'declined'].contains(item['status']);
     if (actions.isNotEmpty && actions.every((a) => a['type'] == 'read')) {
-      final path = actions.first['path'] as String;
+      final path = codexClientPath(
+        actions.first['path'] as String,
+        _context.cwd,
+      );
       return ToolCallItem(
         kind: ToolKind.read,
         target: path.split('/').last,
@@ -479,6 +1038,13 @@ class CodexKernel
     var newLine = 1;
     final hunk = RegExp(r'^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@');
     for (final line in diff.split('\n')) {
+      if (line.startsWith('+++ ') ||
+          line.startsWith('--- ') ||
+          line.startsWith('diff ') ||
+          line.startsWith('index ') ||
+          line.startsWith('\\ No newline')) {
+        continue;
+      }
       if (hunk.firstMatch(line) case final match?) {
         oldLine = int.parse(match.group(1)!);
         newLine = int.parse(match.group(2)!);
@@ -498,24 +1064,35 @@ class CodexKernel
           oldLine++;
       }
     }
-    final slash = path.lastIndexOf('/');
+    final displayPath = codexClientPath(
+      path,
+      _context.cwd,
+    ).replaceAll('\\', '/');
+    final slash = displayPath.lastIndexOf('/');
     emit(
       ItemUpserted(
         nextSeq,
         id,
         CodeDiffItem(
-          fileName: path.substring(slash + 1),
-          directory: slash < 0 ? '' : path.substring(0, slash),
+          fileName: displayPath.substring(slash + 1),
+          directory: slash < 0 ? '' : displayPath.substring(0, slash),
           lines: lines,
         ),
       ),
     );
-    emit(
-      FileEdited(
-        nextSeq,
-        FileChange(path: path, added: added, removed: removed),
-      ),
-    );
+    if (!_replaying) {
+      emit(
+        FileEdited(
+          nextSeq,
+          FileChange(
+            path: codexClientPath(path, _context.cwd),
+            added: added,
+            removed: removed,
+          ),
+          turnId: _turn,
+        ),
+      );
+    }
   }
 
   void _endTurn(String turn, {required bool interrupted}) {
@@ -535,6 +1112,8 @@ class CodexKernel
       emit(InteractionResolved(nextSeq, id));
     }
     _approvals.clear();
+    _questions.clear();
+    _permissions.clear();
     emit(
       TurnEnded(
         nextSeq,

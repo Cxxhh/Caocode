@@ -2364,6 +2364,62 @@ class AppLocalizationsEn extends AppLocalizations {
       'No checks: edits and commands run without asking';
 
   @override
+  String get composerCodexApprovalTitle =>
+      'How should Codex actions be approved?';
+
+  @override
+  String get composerCodexApprovalDefault => 'Ask for approval';
+
+  @override
+  String get composerCodexApprovalDefaultDetail =>
+      'Always ask before editing external files or using the internet';
+
+  @override
+  String get composerCodexApprovalAuto => 'Approve for me';
+
+  @override
+  String get composerCodexApprovalAutoDetail =>
+      'Only ask for actions detected as potentially unsafe';
+
+  @override
+  String get composerCodexApprovalFullAccess => 'Full access';
+
+  @override
+  String get composerCodexApprovalFullAccessDetail =>
+      'Unrestricted access to the internet and any file on your computer';
+
+  @override
+  String get composerCodexApprovalCustom => 'Custom (config.toml)';
+
+  @override
+  String get composerCodexApprovalCustomDetail =>
+      'Uses permissions defined in config.toml';
+
+  @override
+  String get composerEffortNone => 'None';
+
+  @override
+  String get composerEffortMinimal => 'Minimal';
+
+  @override
+  String get composerEffortLow => 'Low';
+
+  @override
+  String get composerEffortMedium => 'Medium';
+
+  @override
+  String get composerEffortHigh => 'High';
+
+  @override
+  String get composerEffortExtraHigh => 'Extra high';
+
+  @override
+  String get composerEffortUltra => 'Ultra';
+
+  @override
+  String get composerEffortMaximum => 'Maximum';
+
+  @override
   String get composerContextUsage => 'Context usage';
 
   @override

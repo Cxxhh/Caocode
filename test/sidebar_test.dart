@@ -189,7 +189,7 @@ void main() {
     final thread = workspace.selected;
     expect(thread.project.name, 'baocode');
     expect(chatTitle(tester), 'New Chat');
-    expect(find.text('Plan, build, anything'), findsOneWidget);
+    expect(thread.session.itemCount, 0);
 
     // Asking again reuses the untouched one.
     await tester.tap(inSidebar(find.text('New Chat')).first);
@@ -199,7 +199,7 @@ void main() {
     thread.session.send(const ComposerMessage(text: '整理一下测试\n第二行'));
     await tester.pump();
     expect(chatTitle(tester), '整理一下测试');
-    expect(find.text('Plan, build, anything'), findsNothing);
+    expect(thread.session.itemCount, greaterThan(0));
     expect(inSidebar(find.byType(PixelLoader)), findsOneWidget);
     thread.session.stop();
     await tester.pump(const Duration(seconds: 1));

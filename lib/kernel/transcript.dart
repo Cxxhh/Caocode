@@ -112,8 +112,22 @@ class Transcript {
   /// Applies [event]; returns whether anything changed.
   bool apply(KernelEvent event) {
     if (event.seq <= lastSeq) return false;
+    final changed = _applyEvent(event);
     lastSeq = event.seq;
+    if (changed) version++;
+    return changed;
+  }
+
+  bool _applyEvent(KernelEvent event) {
     switch (event) {
+      case HistoryReplayed(:final events):
+        var changed = false;
+        for (final earlier in events) {
+          if (earlier.seq <= lastSeq || earlier.seq >= event.seq) continue;
+          if (_applyEvent(earlier)) changed = true;
+          lastSeq = earlier.seq;
+        }
+        return changed;
       case TurnStarted(:final turnId, :final unprompted):
         if (_endedTurns.contains(turnId)) return false;
         activeTurn = turnId;
@@ -170,7 +184,6 @@ class Transcript {
       case KernelInfoChanged():
         return false;
     }
-    version++;
     return true;
   }
 
@@ -230,12 +243,20 @@ class Transcript {
     if (fresh <= 0) return false;
     final merged = current + delta.substring(delta.length - fresh);
     _items[index] = switch (item) {
-      ThinkingItem(:final tokens, :final seconds, :final startedAt) =>
+      ThinkingItem(
+        :final tokens,
+        :final seconds,
+        :final startedAt,
+        :final streaming,
+        :final summarized,
+      ) =>
         ThinkingItem(
           text: merged,
           tokens: math.max(tokens, deltaTokens ?? 0),
           seconds: seconds,
           startedAt: startedAt,
+          streaming: streaming,
+          summarized: summarized,
         ),
       _ => AssistantTextItem(merged),
     };
@@ -261,7 +282,8 @@ class Transcript {
         :final text,
         :final tokens,
         :final startedAt,
-        seconds: null,
+        :final summarized,
+        streaming: true,
       )) {
         final took = switch (startedAt) {
           final start? => DateTime.now().difference(start).inSeconds,
@@ -271,6 +293,8 @@ class Transcript {
           text: text,
           tokens: tokens,
           seconds: math.max(1, took),
+          streaming: false,
+          summarized: summarized,
         );
       }
     }

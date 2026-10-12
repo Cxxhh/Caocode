@@ -28,9 +28,8 @@ import 'icons/emoji_sheet.dart';
 import 'icons/icon_library.dart';
 import 'icons/icon_storage.dart';
 import 'icons/site_icons.dart';
-import 'kernel/claude_code/claude_onboarding.dart';
-import 'kernel/claude_code/claude_path_setting.dart';
-import 'kernel/claude_code/process_transport.dart';
+import 'kernel/codex/codex_path_setting.dart';
+import 'kernel/codex/codex_process.dart';
 import 'kernel/commit_attribution.dart';
 import 'keybindings/keybindings_sync.dart';
 import 'keybindings/keymap.dart';
@@ -51,7 +50,7 @@ import 'platform/shell_command.dart';
 import 'remote/project_host.dart';
 import 'remote/remote_claude.dart';
 import 'remote/ssh_host.dart';
-import 'search/claude_conversation_search.dart';
+import 'search/codex_conversation_search.dart';
 import 'search/conversation_search.dart';
 import 'settings/app_locale.dart';
 import 'settings/app_settings.dart';
@@ -98,7 +97,7 @@ Future<void> main(List<String> arguments) async {
     // What goes wrong unseen from here on, kept for the user to send.
     errors = ErrorLog(DataDirectory.current.logsDir)..install();
   }
-  unawaited(reapClaudeProcesses());
+  unawaited(reapCodexProcesses());
   unawaited(reapLspProcesses());
   unawaited(reapPtyProcesses());
   WidgetsFlutterBinding.ensureInitialized();
@@ -123,10 +122,10 @@ Future<void> main(List<String> arguments) async {
     // Read as each agent starts.
     CommitAttribution.current = () =>
         CommitAttribution.parse(files.settings[CommitAttribution.settingKey]);
-    // Settings → General → Claude Code: the build to run, read as each
+    // Settings → Models → Codex CLI: the build to run, read as each
     // agent starts.
-    ClaudePathSetting.current = () =>
-        ClaudePathSetting.parse(files.settings[ClaudePathSetting.settingKey]);
+    CodexPathSetting.current = () =>
+        CodexPathSetting.parse(files.settings[CodexPathSetting.settingKey]);
     // Settings → Models: the upstreams, kept in settings.json.
     ModelProviders.current = ModelProviders.settings(files.settings);
     // The upstreams' sites' icons, for those that show no other: in the
@@ -161,7 +160,6 @@ Future<void> main(List<String> arguments) async {
   // Emoji as pictures: fetched into the cache the first run, in the
   // background, through the proxy.
   EmojiSheet.start(EmojiSheetStore.cache());
-  await prepareClaudeOnboarding();
   final locale = AppLocale(storage: files?.argv);
   final workspace = Workspace(
     preferences: PreferenceStore.file(),
@@ -173,7 +171,7 @@ Future<void> main(List<String> arguments) async {
           ),
     // The data folder's icons/, the upstreams of models' pictures too.
     icons: IconLibrary.current = IconLibrary(storage: IconStorage.directory()),
-    titler: claudeAgentTitle,
+    titler: codexAgentTitle,
     l10n: () =>
         lookupAppLocalizations(locale.locale ?? AppLocale.systemLocale()),
   )..load();
@@ -258,7 +256,6 @@ Future<void> main(List<String> arguments) async {
       updates: _startUpdates(files),
       diagnostics: DiagnosticsUploader.platform(),
       workspace: workspace,
-      claudeStatus: localClaudeStatus,
     );
     _startTelemetry(files);
   }
@@ -301,10 +298,7 @@ Future<void> main(List<String> arguments) async {
     },
     // The default profile and the user's profiles are settings.json's.
     terminalBackend: TerminalBackend(settings: files?.settings),
-    // What Claude Code keeps: its sessions to search, its skills, agents,
-    // commands, rules, servers, hooks and plugins to customize.
-    conversations: ClaudeConversationSearch(),
-    customizations: CustomizationStore(),
+    conversations: CodexConversationSearch(),
   );
   // With windows, each is a view of its own (see [BaoCodeApp.build]).
   if (windows.started) {
@@ -318,6 +312,8 @@ Future<void> main(List<String> arguments) async {
 /// `update.mode` says, from baocode.dev, installed as the app quits. None
 /// where the build does not update itself.
 UpdateController? _startUpdates(SettingsFiles files) {
+  const enabled = bool.fromEnvironment('CAOCODE_ENABLE_UPSTREAM_SERVICES');
+  if (!enabled) return null;
   final platform = platformUpdates(
     updatesDirectory: DataDirectory.current.updatesDir,
   );
@@ -348,6 +344,8 @@ UpdateController? _startUpdates(SettingsFiles files) {
 /// as settings.json's `telemetry.telemetryLevel` allows. None in a debug
 /// build, or with `DO_NOT_TRACK` set.
 void _startTelemetry(SettingsFiles files) {
+  const enabled = bool.fromEnvironment('CAOCODE_ENABLE_UPSTREAM_SERVICES');
+  if (!enabled) return;
   final platform = platformTelemetry();
   if (platform == null) return;
   bool inFront() => switch (WidgetsBinding.instance.lifecycleState) {
@@ -471,7 +469,7 @@ class _BaoCodeAppState extends State<BaoCodeApp> {
         return AppExitResponse.cancel;
       }
       await Future.wait([
-        stopClaudeProcesses(),
+        stopCodexProcesses(),
         RemoteClaudeTransport.stopAll(),
         stopModelProxy(),
         stopLspProcesses(),
@@ -575,7 +573,7 @@ class _BaoCodeAppState extends State<BaoCodeApp> {
   /// A window's app: its own navigator, dialogs, overlay and focus; what
   /// it shows built anew as its folder changes.
   Widget _app(AppWindow window) => MaterialApp(
-    title: 'BaoCode',
+    title: 'Caocode',
     debugShowCheckedModeBanner: false,
     theme: buildAppTheme(),
     builder: (context, child) => ValueListenableBuilder<int>(

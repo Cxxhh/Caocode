@@ -10,7 +10,6 @@ import '../keybindings/keybindings_editing.dart';
 import '../keybindings/keybindings_sync.dart';
 import '../keybindings/keymap.dart';
 import '../keybindings/vscode_import.dart';
-import '../models/model_providers.dart';
 import '../theme/workbench_theme.dart' show WorkbenchThemeService;
 import '../tips/builtin_tips.dart';
 import '../tips/feature_tip.dart';
@@ -22,7 +21,7 @@ import 'pages/appearance_page.dart';
 import 'pages/data_dir_page.dart';
 import 'pages/general_page.dart';
 import 'pages/keybindings_page.dart';
-import 'pages/models_page.dart';
+import 'pages/codex_page.dart';
 import 'pages/language_page.dart';
 import 'pages/network_page.dart';
 import 'pages/notifications_page.dart';
@@ -126,10 +125,7 @@ class AppSettings {
           settings: files?.settings,
         );
       case SettingsSection.models:
-        return ModelsSettingsPage(
-          providers: ModelProviders.current,
-          workspace: workspace,
-        );
+        return CodexSettingsPage(settings: files?.settings);
       case SettingsSection.network:
         return NetworkSettingsPage(settings: files?.settings);
       case SettingsSection.notifications:

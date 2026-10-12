@@ -86,20 +86,25 @@ class ThinkingItem extends ChatItem {
     required this.tokens,
     this.seconds,
     this.startedAt,
-  });
+    this.summarized = false,
+    bool? streaming,
+  }) : streaming = streaming ?? seconds == null;
 
   final String text;
 
   /// Tokens thought so far (all of them, once done).
   final int tokens;
 
-  /// How long the thought took; null while it is still streaming.
+  /// How long the thought took, when measured. Restored summaries can be
+  /// completed without a recorded duration.
   final int? seconds;
 
   /// When it began, while it streams: its time so far shows live.
   final DateTime? startedAt;
 
-  bool get streaming => seconds == null;
+  /// Readable summary supplied by the provider, rather than a raw thought.
+  final bool summarized;
+  final bool streaming;
 }
 
 enum ToolKind {
