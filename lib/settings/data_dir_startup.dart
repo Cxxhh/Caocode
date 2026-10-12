@@ -28,7 +28,7 @@ Future<DataDirectory> recoverDataDirectory(DataDirectoryResolution problem) {
 }
 
 /// The small app shown before the real one when the data folder set by
-/// `BAOCODE_DATA_DIR` or `~/.baocode/config-dir.json` cannot be used (a drive
+/// `CAOCODE_DATA_DIR` or `~/.caocode/config-dir.json` cannot be used (a drive
 /// that is gone, a pointer that does not parse): try again, use the
 /// platform's default folder this time only (the pointer left as it is), or
 /// choose another folder (written to the pointer). The default is never

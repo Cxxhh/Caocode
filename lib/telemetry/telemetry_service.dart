@@ -9,7 +9,7 @@ import '../update/version.dart';
 /// usage data only at `all` (the default): `error`, `crash` and `off`,
 /// which VS Code's users may have brought along, are all off, as BaoCode
 /// sends no error or crash reports by itself (the diagnostic logs only as
-/// the user uploads them: lib/diagnostics/).
+/// the user explicitly provides them).
 abstract final class TelemetrySetting {
   static const settingKey = 'telemetry.telemetryLevel';
 

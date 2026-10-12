@@ -14,7 +14,6 @@ import 'chat/chat_width.dart';
 import 'chat/user_message_style.dart';
 import 'chat/widgets/pixel_loader.dart';
 import 'customize/customization_store.dart';
-import 'diagnostics/diagnostics_upload.dart';
 import 'extensions/theme_extensions.dart';
 import 'ide/git/git_repository.dart';
 import 'ide/git/repository_scan.dart';
@@ -44,9 +43,9 @@ import 'notifications/attention_host.dart';
 import 'notifications/attention_settings.dart';
 import 'platform/app_platform.dart';
 import 'platform/data_dir.dart';
-import 'platform/error_log.dart';
 import 'platform/open_requests.dart';
 import 'platform/shell_command.dart';
+import 'platform/startup_log.dart';
 import 'remote/project_host.dart';
 import 'remote/remote_claude.dart';
 import 'remote/ssh_host.dart';
@@ -82,10 +81,18 @@ import 'workspace/window_controls.dart';
 import 'workspace/workspace.dart';
 
 Future<void> main(List<String> arguments) async {
+  final startup = StartupLog();
+  await startup.run(() => _startApplication(arguments, startup));
+}
+
+Future<void> _startApplication(
+  List<String> arguments,
+  StartupLog startup,
+) async {
+  startup.stage = '解析应用数据目录';
   // All the app keeps is in its data folder: found first, once. One the
   // user set that cannot be used (a drive gone) is reported before the app
   // shows, never swapped for the default unasked.
-  ErrorLog? errors;
   if (!kIsWeb) {
     final resolution = resolveDataDirectory();
     if (resolution.ok) {
@@ -94,15 +101,11 @@ Future<void> main(List<String> arguments) async {
       WidgetsFlutterBinding.ensureInitialized();
       DataDirectory.current = await recoverDataDirectory(resolution);
     }
-    // What goes wrong unseen from here on, kept for the user to send.
-    errors = ErrorLog(DataDirectory.current.logsDir)..install();
   }
   unawaited(reapCodexProcesses());
   unawaited(reapLspProcesses());
   unawaited(reapPtyProcesses());
   WidgetsFlutterBinding.ensureInitialized();
-  // The Windows app's own logs go beside it.
-  if (errors != null) unawaited(errors.shareWithHost());
   // The editor's language packs are the language servers' (README.md in
   // lib/ide/lsp/packs).
   MonacoLanguageAssets.defaultPacks = () => LanguagePackRegistry.instance;
@@ -110,11 +113,13 @@ Future<void> main(List<String> arguments) async {
   // first frame, which is in their language and theme, and followed as
   // they change on disk.
   final files = kIsWeb ? null : SettingsFiles.instance;
+  startup.stage = '加载用户设置';
   await files?.load();
   files?.watch();
   if (files != null) {
     // Settings → Network: the proxy every request and Claude Code go
     // through, the system's by default; read before the first request.
+    startup.stage = '初始化网络代理';
     await startNetworkProxy(
       files.settings,
       (key) => files.settings[key],
@@ -160,6 +165,7 @@ Future<void> main(List<String> arguments) async {
   // Emoji as pictures: fetched into the cache the first run, in the
   // background, through the proxy.
   EmojiSheet.start(EmojiSheetStore.cache());
+  startup.stage = '恢复工作区';
   final locale = AppLocale(storage: files?.argv);
   final workspace = Workspace(
     preferences: PreferenceStore.file(),
@@ -182,6 +188,7 @@ Future<void> main(List<String> arguments) async {
   await workspace.restored;
   // The app's windows: the chat's, and the IDE's own, one per folder,
   // where the system can open them (see lib/window/).
+  startup.stage = '初始化窗口管理';
   final windows = AppWindows(
     host: ChannelWindowHost(),
     workspace: workspace,
@@ -205,6 +212,7 @@ Future<void> main(List<String> arguments) async {
         AttentionSettings.parse(files?.settings.values ?? const {}).tray,
   );
   await windows.start();
+  startup.stage = '恢复启动布局';
   // What shows at launch (settings.json's `workbench.mainWindow`): with
   // windows of the IDE's own, the chat's and those to open again; with
   // the IDE in the main window, its layout. Started for something (Open
@@ -223,6 +231,7 @@ Future<void> main(List<String> arguments) async {
   WindowControls.trackActiveView();
   // An older `code` script opened windows for `code --version`.
   unawaited(ShellCommand.refresh());
+  startup.stage = '恢复主题和快捷键';
   final ColorThemeStorage colorTheme = files == null
       ? workspace
       : ColorThemeSettings(settings: files.settings, state: workspace);
@@ -254,7 +263,6 @@ Future<void> main(List<String> arguments) async {
       sync: sync,
       installs: VsCodeInstalls.current(),
       updates: _startUpdates(files),
-      diagnostics: DiagnosticsUploader.platform(),
       workspace: workspace,
     );
     _startTelemetry(files);
@@ -277,6 +285,7 @@ Future<void> main(List<String> arguments) async {
     unawaited(themeExtensions.apply());
     themeExtensions.followIconThemeSetting(files!.settings);
   }
+  startup.stage = '初始化主窗口';
   final app = BaoCodeApp(
     windows: windows,
     workspace: workspace,
@@ -301,6 +310,7 @@ Future<void> main(List<String> arguments) async {
     conversations: CodexConversationSearch(),
   );
   // With windows, each is a view of its own (see [BaoCodeApp.build]).
+  startup.stage = '绘制主窗口首帧';
   if (windows.started) {
     runWidget(app);
   } else {

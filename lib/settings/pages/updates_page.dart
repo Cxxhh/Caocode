@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../diagnostics/diagnostics_upload.dart';
 import '../../ide/ide_button.dart';
 import '../../ide/ide_menu.dart';
 import '../../l10n/l10n.dart';
@@ -12,32 +11,20 @@ import '../../update/update_service.dart';
 import '../../update/update_settings.dart';
 import '../../update/version.dart';
 import '../user_settings.dart';
-import 'data_dir_page.dart';
-import 'diagnostics_dialog.dart';
 import 'settings_dropdown.dart';
 import 'settings_widgets.dart';
 
 /// Settings → Updates: the version running, when it last looked for
-/// another, what it found (Restart to Update), `update.mode`, uploading
-/// the diagnostic logs, and the new version's notes (this one's, where it
-/// is the newest).
+/// another, what it found (Restart to Update), `update.mode`, and the new
+/// version's notes (this one's, where it is the newest).
 class UpdatesSettingsPage extends StatefulWidget {
-  const UpdatesSettingsPage({
-    super.key,
-    this.updates,
-    this.settings,
-    this.diagnostics,
-  });
+  const UpdatesSettingsPage({super.key, this.updates, this.settings});
 
   /// None where the build does not update itself (a debug build).
   final UpdateController? updates;
 
   /// settings.json; none under test, where choices are not kept.
   final UserSettings? settings;
-
-  /// What uploads the diagnostic logs; none under test, where the card is
-  /// not shown.
-  final DiagnosticsUploader? diagnostics;
 
   static String modeName(BuildContext context, UpdateMode mode) {
     final l10n = context.l10n;
@@ -157,36 +144,6 @@ class _UpdatesSettingsPageState extends State<UpdatesSettingsPage> {
             ),
           ],
         ),
-        if (widget.diagnostics case final diagnostics?)
-          SettingsCard(
-            children: [
-              SettingsRow(
-                label: l10n.diagnosticsTitle,
-                description: l10n.diagnosticsDescription,
-                trailing: SettingsButtons(
-                  children: [
-                    if (DataDirectoryPage.canReveal)
-                      IdeButton(
-                        label: DataDirectoryPage.revealLabel(l10n),
-                        secondary: true,
-                        onPressed: () => unawaited(
-                          diagnostics.ensureFolder().then(
-                            DataDirectoryPage.revealFolder,
-                          ),
-                        ),
-                      ),
-                    IdeButton(
-                      label: l10n.diagnosticsUpload,
-                      secondary: true,
-                      onPressed: () => unawaited(
-                        showDiagnosticsDialog(context, diagnostics),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
         if (notes != null)
           SettingsGroup(
             title: l10n.updateReleaseNotesFor(noted!.version.marketing),

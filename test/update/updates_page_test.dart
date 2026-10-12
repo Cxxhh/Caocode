@@ -3,10 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
-import 'package:baocode/diagnostics/diagnostics_bundle.dart';
-import 'package:baocode/diagnostics/diagnostics_upload.dart';
 import 'package:baocode/ide/ide_button.dart';
-import 'package:baocode/ide/ide_input.dart';
 import 'package:baocode/l10n/l10n.dart';
 import 'package:baocode/settings/pages/settings_dropdown.dart';
 import 'package:baocode/settings/pages/updates_page.dart';
@@ -17,28 +14,6 @@ import 'package:baocode/update/update_settings.dart';
 import 'package:baocode/update/version.dart';
 
 import 'update_fakes.dart';
-
-/// Lists [logs]; answers an upload with [result], keeping what it was given.
-class _FakeDiagnostics extends DiagnosticsUploader {
-  _FakeDiagnostics(this.logList) : super(folder: '/logs');
-
-  final List<DiagnosticsLog> logList;
-  DiagnosticsResult result = const DiagnosticsUploaded('D7F3K2QX');
-  final uploads = <({String note, bool dumps})>[];
-
-  @override
-  Future<List<DiagnosticsLog>> logs() async => logList;
-
-  @override
-  Future<DiagnosticsResult> upload({
-    required String note,
-    required bool dumps,
-    String? locale,
-  }) async {
-    uploads.add((note: note, dumps: dumps));
-    return result;
-  }
-}
 
 void main() {
   final l10n = englishLocalizations;
@@ -213,50 +188,6 @@ void main() {
     );
     await choose(l10n.updateModeDefault);
     await settle(() => !settings.values.containsKey(UpdateMode.settingKey));
-  });
-
-  testWidgets('uploads the diagnostic logs with a note, shows the id', (
-    tester,
-  ) async {
-    final diagnostics = _FakeDiagnostics(const [
-      DiagnosticsLog('errors.log', 2048),
-      DiagnosticsLog('hangs/hang-20261011-090000-2.txt', 1024),
-      DiagnosticsLog('hangs/hang-20261011-090000-2.dmp', 1024 * 1024),
-    ]);
-    await show(
-      tester,
-      UpdatesSettingsPage(settings: settings, diagnostics: diagnostics),
-    );
-    expect(find.text(l10n.diagnosticsTitle), findsOneWidget);
-    await tester.tap(button(l10n.diagnosticsUpload));
-    await tester.pumpAndSettle();
-    expect(find.text(l10n.diagnosticsDialogTitle), findsOneWidget);
-    expect(find.text(l10n.diagnosticsFiles(2, '3.00KB')), findsOneWidget);
-    expect(find.text(l10n.diagnosticsDumps(1, '1.00MB')), findsOneWidget);
-
-    diagnostics.result = const DiagnosticsFailed(
-      DiagnosticsFailure.rateLimited,
-      status: 429,
-    );
-    await tester.enterText(find.byType(IdeInputBox), 'Froze on open');
-    await tester.tap(button(l10n.diagnosticsSend));
-    await tester.pumpAndSettle();
-    expect(find.text(l10n.diagnosticsRateLimited), findsOneWidget);
-    expect(diagnostics.uploads.single, (note: 'Froze on open', dumps: false));
-
-    diagnostics.result = const DiagnosticsUploaded('D7F3K2QX', omittedDumps: 1);
-    await tester.tap(find.text(l10n.diagnosticsDumps(1, '1.00MB')));
-    await tester.pump();
-    await tester.tap(button(l10n.diagnosticsRetry));
-    await tester.pumpAndSettle();
-    expect(diagnostics.uploads.last.dumps, isTrue);
-    expect(find.text(l10n.diagnosticsUploaded), findsOneWidget);
-    expect(find.text('D7F3K2QX'), findsOneWidget);
-    expect(find.text(l10n.diagnosticsOmittedDumps(1)), findsOneWidget);
-
-    await tester.tap(button(l10n.commonClose));
-    await tester.pumpAndSettle();
-    expect(find.text(l10n.diagnosticsDialogTitle), findsNothing);
   });
 
   testWidgets('no diagnostics card without an uploader', (tester) async {

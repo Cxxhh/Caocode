@@ -7,8 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:baocode/platform/data_dir.dart';
 import 'package:path/path.dart' as p;
 
-/// Where the data folder is found: `BAOCODE_DATA_DIR`, else the pointer in
-/// `~/.baocode`, else the platform's place. Every home is a temporary one.
+/// Where the data folder is found: `CAOCODE_DATA_DIR`, else the pointer in
+/// `~/.caocode`, else the platform's place. Every home is a temporary one.
 void main() {
   late Directory home;
   late Map<String, String> environment;
@@ -26,7 +26,7 @@ void main() {
   });
 
   File pointer() =>
-      File(p.join(home.path, '.baocode', 'config-dir.json'))
+      File(p.join(home.path, '.caocode', 'config-dir.json'))
         ..parent.createSync(recursive: true);
 
   Directory folder(String name) =>
@@ -47,7 +47,7 @@ void main() {
     );
     expect(
       resolution.pointerFile,
-      p.join(home.path, '.baocode', 'config-dir.json'),
+      p.join(home.path, '.caocode', 'config-dir.json'),
     );
   });
 
@@ -60,7 +60,7 @@ void main() {
       (pointed.path, DataDirectorySource.pointer),
     );
 
-    environment['BAOCODE_DATA_DIR'] = variable.path;
+    environment['CAOCODE_DATA_DIR'] = variable.path;
     expect(
       (resolve().path, resolve().source),
       (variable.path, DataDirectorySource.environment),
@@ -72,7 +72,7 @@ void main() {
     folder('Data/baocode');
     pointer().writeAsStringSync('{"dataDir": "~/Data/baocode"}');
     expect(resolve().path, p.join(home.path, 'Data', 'baocode'));
-    environment['BAOCODE_DATA_DIR'] = '~';
+    environment['CAOCODE_DATA_DIR'] = '~';
     expect(resolve().path, home.path);
     expect(expandDataDirectory(r'~\x', '/h'), p.join('/h', 'x'));
     expect(expandDataDirectory('/a/~', '/h'), '/a/~');
@@ -114,12 +114,12 @@ void main() {
     expect(Directory(gone).existsSync(), isFalse, reason: 'not made');
 
     final file = File(p.join(home.path, 'file'))..writeAsStringSync('');
-    environment['BAOCODE_DATA_DIR'] = file.path;
+    environment['CAOCODE_DATA_DIR'] = file.path;
     expect(resolve().problem, DataDirectoryProblem.missing);
 
     final readOnly = folder('ReadOnly');
     Process.runSync('chmod', ['555', readOnly.path]);
-    environment['BAOCODE_DATA_DIR'] = readOnly.path;
+    environment['CAOCODE_DATA_DIR'] = readOnly.path;
     resolution = resolve();
     expect(resolution.problem, DataDirectoryProblem.notWritable);
     expect(resolution.source, DataDirectorySource.environment);

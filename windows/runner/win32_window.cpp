@@ -5,11 +5,8 @@
 
 #include <algorithm>
 #include <chrono>
-#include <cstdarg>
-#include <cstdio>
 #include <string>
 
-#include "log_folder.h"
 #include "resource.h"
 
 namespace {
@@ -27,53 +24,6 @@ constexpr UINT_PTR kResyncTimer = 0x4243;
 constexpr UINT kResyncDelayMilliseconds = 300;
 constexpr UINT kMaxResyncDelayMilliseconds = 8000;
 constexpr int kMaxResyncAttempts = 8;
-
-// The most lines a run writes to window.log, and the size past which the
-// next run starts it anew (the old one kept as window.1.log).
-constexpr int kMaxLogLines = 300;
-constexpr ULONGLONG kMaxLogBytes = 1024 * 1024;
-
-// A line in the data folder's logs\window.log (see log_folder.h), for a
-// user to send: how the windows' content was kept in step with the engine
-// (see Win32Window::SizeContent).
-void LogContent(const char* format, ...) {
-  static int lines = 0;
-  static bool started = false;
-  if (lines >= kMaxLogLines) {
-    return;
-  }
-  const std::wstring folder = log_folder::Path();
-  if (folder.empty()) {
-    return;
-  }
-  const std::wstring path = folder + L"\\window.log";
-  if (!started) {
-    started = true;
-    WIN32_FILE_ATTRIBUTE_DATA data = {};
-    if (::GetFileAttributesExW(path.c_str(), GetFileExInfoStandard, &data) &&
-        ((static_cast<ULONGLONG>(data.nFileSizeHigh) << 32) |
-         data.nFileSizeLow) > kMaxLogBytes) {
-      ::MoveFileExW(path.c_str(), (folder + L"\\window.1.log").c_str(),
-                    MOVEFILE_REPLACE_EXISTING);
-    }
-  }
-  FILE* out = nullptr;
-  if (_wfopen_s(&out, path.c_str(), L"a") != 0 || out == nullptr) {
-    return;
-  }
-  SYSTEMTIME now = {};
-  ::GetLocalTime(&now);
-  std::fprintf(out, "%04u-%02u-%02u %02u:%02u:%02u.%03u ", now.wYear,
-               now.wMonth, now.wDay, now.wHour, now.wMinute, now.wSecond,
-               now.wMilliseconds);
-  va_list arguments;
-  va_start(arguments, format);
-  std::vfprintf(out, format, arguments);
-  va_end(arguments);
-  std::fputc('\n', out);
-  std::fclose(out);
-  lines++;
-}
 
 LONG WidthOf(const RECT& rect) {
   return rect.right - rect.left;
@@ -533,8 +483,6 @@ void Win32Window::SizeContent() {
   const RECT client = GetClientArea();
   const long long waited = MoveContent(client);
   if (waited >= kEngineResizeWait.count() && !resync_pending_) {
-    LogContent("%p: content %ldx%ld waited %lldms for a frame: resync pending",
-               window_handle_, WidthOf(client), HeightOf(client), waited);
     resync_pending_ = true;
   }
   // Pending, a quick move clears nothing: back to the size of the engine's
@@ -589,11 +537,6 @@ void Win32Window::ResyncContent() {
     // engine still waits for, and presents once it can) until a later try.
     resync_attempts_++;
     const bool again = resync_attempts_ < kMaxResyncAttempts;
-    LogContent("%p: resync %d: content %ldx%ld waited %lldms for a frame: %s",
-               window_handle_, resync_attempts_, WidthOf(shorter),
-               HeightOf(shorter), waited,
-               again ? "tried again later"
-                     : "tried again as the window is shown or activated");
     if (again) {
       ScheduleResync((std::min)(kMaxResyncDelayMilliseconds,
                                 kResyncDelayMilliseconds << resync_attempts_));
@@ -602,12 +545,8 @@ void Win32Window::ResyncContent() {
   }
   // Presented: the engine's surface is no longer the client's size, so the
   // move back is one it waits for too.
-  const long long back = MoveContent(client);
+  MoveContent(client);
   resync_pending_ = false;
-  LogContent("%p: resynced: content %ldx%ld in %lldms, back to %ldx%ld in "
-             "%lldms",
-             window_handle_, WidthOf(shorter), HeightOf(shorter), waited,
-             WidthOf(client), HeightOf(client), back);
 }
 
 HWND Win32Window::GetHandle() {

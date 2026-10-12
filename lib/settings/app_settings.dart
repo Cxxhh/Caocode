@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 
-import '../diagnostics/diagnostics_upload.dart';
 import '../kernel/claude_code/claude_path_setting.dart';
 import '../keybindings/import_dialog.dart';
 import '../keybindings/keybinding_service.dart';
@@ -41,7 +40,6 @@ class AppSettings {
     this.sync,
     this.installs,
     this.updates,
-    this.diagnostics,
     this.workspace,
     this.claudeStatus,
   }) : keybindings = keybindings ?? KeybindingService.instance;
@@ -68,9 +66,6 @@ class AppSettings {
   /// Updating the app: Settings → Updates, Check for Updates; none where
   /// the build does not update itself.
   final UpdateController? updates;
-
-  /// Uploads the diagnostic logs, from Settings → Updates; none under test.
-  final DiagnosticsUploader? diagnostics;
 
   /// The Claude Code that runs on this machine, for Settings → General;
   /// none under test, where it is not looked for.
@@ -148,11 +143,7 @@ class AppSettings {
           ),
         );
       case SettingsSection.updates:
-        return UpdatesSettingsPage(
-          updates: updates,
-          settings: files?.settings,
-          diagnostics: diagnostics,
-        );
+        return UpdatesSettingsPage(updates: updates, settings: files?.settings);
       case SettingsSection.dataDirectory:
         return const DataDirectoryPage();
     }

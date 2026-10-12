@@ -82,7 +82,7 @@ void main() {
       p.relative(entity.path, from: path),
   ]..sort();
 
-  File pointer() => File(p.join(home, '.baocode', 'config-dir.json'));
+  File pointer() => File(p.join(home, '.caocode', 'config-dir.json'));
 
   group('check', () {
     test(

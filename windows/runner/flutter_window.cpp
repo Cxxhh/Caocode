@@ -6,9 +6,7 @@
 #include <utility>
 
 #include "flutter/generated_plugin_registrant.h"
-#include "hang_watchdog.h"
 
-static_assert(AppWindows::kCloseMessage != hang_watchdog::kPingMessage);
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project,
                              std::vector<std::string> open_paths)
@@ -45,9 +43,6 @@ bool FlutterWindow::OnCreate() {
       flutter_controller_->engine()->messenger();
   HostView(messenger, flutter_controller_->view()->GetNativeWindow(),
            "baocode/window", "baocode/drop");
-
-  // The data folder's logs\, which Flutter names (see log_folder.h).
-  logs_ = log_folder::Listen(messenger);
 
   // Paths the app is asked to open (see open_requests.dart): those it was
   // started with first, then those a second copy of it hands this window
@@ -104,7 +99,6 @@ void FlutterWindow::OnDestroy() {
   }
   open_requests_ = nullptr;
   attention_ = nullptr;
-  logs_ = nullptr;
   if (flutter_controller_) {
     // Native child destruction can re-enter this window's message handler.
     auto controller = std::move(flutter_controller_);
@@ -134,12 +128,6 @@ LRESULT
 FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
                               WPARAM const wparam,
                               LPARAM const lparam) noexcept {
-  // The watchdog's ping (see hang_watchdog.h): this thread takes messages.
-  if (message == hang_watchdog::kPingMessage) {
-    hang_watchdog::Answer();
-    return 0;
-  }
-
   if (message == AppWindows::kCloseMessage) {
     if (app_windows_ != nullptr) {
       app_windows_->ClosePendingWindows();

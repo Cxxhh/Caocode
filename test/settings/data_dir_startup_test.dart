@@ -173,7 +173,7 @@ void main() {
           onResolved: (_) {},
         ),
       );
-      expect(find.textContaining('BAOCODE_DATA_DIR'), findsOneWidget);
+      expect(find.textContaining('CAOCODE_DATA_DIR'), findsOneWidget);
       expect(find.text('Choose Another Folder…'), findsNothing);
     });
   });

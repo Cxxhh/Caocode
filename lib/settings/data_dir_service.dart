@@ -107,7 +107,7 @@ Future<T> retryWhileInUse<T>(
 
 /// Moving the data directory: checking a folder, copying the app's data
 /// there (or using what is there), and pointing the next run at it through
-/// `~/.baocode/config-dir.json`, written last. The run that made the change
+/// `~/.caocode/config-dir.json`, written last. The run that made the change
 /// keeps its folder until the app restarts; the next one offers to remove
 /// what is left in the old one ([previousDirectory], [removeOldData]).
 ///
@@ -125,7 +125,7 @@ class DataDirectoryService {
 
   /// The user's home; under `flutter test` (and no [environment] given) a
   /// temporary folder instead, as [DataDirectory.current] is, so no test
-  /// reads or writes the user's `~/.baocode`.
+  /// reads or writes the user's `~/.caocode`.
   static String _defaultHome(Map<String, String>? environment) {
     if (environment == null &&
         Platform.environment.containsKey('FLUTTER_TEST')) {
@@ -139,13 +139,13 @@ class DataDirectoryService {
   final Map<String, String> environment;
   final String home;
 
-  /// `~/.baocode/config-dir.json`.
+  /// `~/.caocode/config-dir.json`.
   String get pointerFile => DataDirectoryPointer.fileIn(home);
 
   /// The platform's place for the data.
   String get defaultPath => DataDirectory.defaultPath(environment);
 
-  /// Whether `BAOCODE_DATA_DIR` decides the folder, whatever is chosen here.
+  /// Whether `CAOCODE_DATA_DIR` decides the folder, whatever is chosen here.
   bool get setByEnvironment =>
       environment[DataDirectory.environmentVariable]?.trim().isNotEmpty ??
       false;
