@@ -55,6 +55,12 @@ class AppVersion implements Comparable<AppVersion> {
     if (preRelease.isNotEmpty) '-${preRelease.join('.')}',
   ].join();
 
+  /// Caocode's public version and GitHub tag; numeric versions remain semver.
+  String get display =>
+      '$major.$minor.${patch}c${preRelease.isEmpty ? '' : '-${preRelease.join('.')}'}';
+
+  String get releaseTag => 'v$display';
+
   @override
   int compareTo(AppVersion other) {
     for (final (a, b) in [
@@ -107,6 +113,6 @@ class AppVersion implements Comparable<AppVersion> {
 
 /// The version this app is: pubspec.yaml's `version`, which
 /// test/update/version_test.dart keeps this in step with.
-const appVersionString = '1.1.0+11';
+const appVersionString = '1.1.0+12';
 
 final AppVersion currentAppVersion = AppVersion.parse(appVersionString);

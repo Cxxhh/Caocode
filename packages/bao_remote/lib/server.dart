@@ -1,4 +1,4 @@
-/// The server of a remote project (see bin/baocode_server.dart).
+/// The server of a remote project (see bin/caocode_server.dart).
 library;
 
 export 'protocol.dart';

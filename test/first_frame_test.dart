@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_feed.dart';
-import 'package:baocode/chat/chat_history_view.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/composer/composer.dart';
-import 'package:baocode/chat/composer/composer_draft.dart';
-import 'package:baocode/chat/widgets/user_message_bubble.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:caocode/chat/chat_feed.dart';
+import 'package:caocode/chat/chat_history_view.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/chat_screen.dart';
+import 'package:caocode/chat/chat_session.dart';
+import 'package:caocode/chat/composer/composer.dart';
+import 'package:caocode/chat/composer/composer_draft.dart';
+import 'package:caocode/chat/widgets/user_message_bubble.dart';
+import 'package:caocode/theme/app_theme.dart';
 
 /// A conversation whose last turn is long: its message is far from the end,
 /// and stuck to the top as the list opens there. Dense with text, for what

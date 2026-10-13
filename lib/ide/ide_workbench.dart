@@ -125,7 +125,7 @@ class IdeWorkbench extends StatefulWidget {
     this.backLabel,
     this.editorBuilder,
     this.nativeEditorEnabled = const bool.fromEnvironment(
-      'BAOCODE_NATIVE_EDITOR',
+      'CAOCODE_NATIVE_EDITOR',
       defaultValue: true,
     ),
     this.commands = const [],
@@ -158,7 +158,7 @@ class IdeWorkbench extends StatefulWidget {
 
   /// Create Workspace...: the host's command, which asks for a workspace's
   /// name and folders.
-  static const createWorkspaceCommandId = 'baocode.workspace.create';
+  static const createWorkspaceCommandId = 'caocode.workspace.create';
 
   /// Add Folder to Workspace...: of a multi-folder workspace (see
   /// [IdeWorkspace.isMultiRoot]), the host asking for the folder.
@@ -3189,7 +3189,7 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
         run: _selectColorTheme,
       ),
       IdeCommand(
-        id: 'baocode.ide.toggleFormatOnSave',
+        id: 'caocode.ide.toggleFormatOnSave',
         category: 'Preferences',
         label: _formatOnSave
             ? 'Turn Off Format on Save'
@@ -3203,14 +3203,14 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
         enabled: widget.workspace.git != null,
       ),
       IdeCommand(
-        id: 'baocode.ide.retryLanguageServices',
+        id: 'caocode.ide.retryLanguageServices',
         category: 'Developer',
         label: 'Retry Language Services',
         enabled: active != null,
         run: () => unawaited(_editor?.retryLanguageServer()),
       ),
       IdeCommand(
-        id: 'baocode.ide.backToChat',
+        id: 'caocode.ide.backToChat',
         category: 'View',
         label: 'Back to Chat',
         run: () => unawaited(_back()),
@@ -3760,7 +3760,7 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
                             actions: [
                               for (final id in const [
                                 'workbench.action.files.openFolder',
-                                'baocode.remote.openFolder',
+                                'caocode.remote.openFolder',
                                 IdeWorkbench.createWorkspaceCommandId,
                                 'workbench.action.files.openFile',
                                 'workbench.action.files.newUntitledFile',
@@ -4377,7 +4377,7 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
                   IdeHover(
                     message: keys.titleWithKeybinding(
                       widget.backLabel ?? l10n.workspaceBackToChat,
-                      'baocode.ide.backToChat',
+                      'caocode.ide.backToChat',
                     ),
                     child: BackToChatButton(
                       label: widget.backLabel,
@@ -4435,7 +4435,7 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
         },
         tooltip: keys.titleWithKeybinding(
           l10n.wbRetryLanguageServices,
-          'baocode.ide.retryLanguageServices',
+          'caocode.ide.retryLanguageServices',
         ),
         onTap: () => unawaited(_editor?.retryLanguageServer()),
       ),
@@ -4634,7 +4634,7 @@ class _CommandCenter extends StatefulWidget {
 
   final String label;
 
-  /// `Search baocode (⌘P)`: upstream's `CommandCenterCenterViewItem
+  /// `Search caocode (⌘P)`: upstream's `CommandCenterCenterViewItem
   /// .getTooltip` (commandCenterControl.ts), but the window title after it.
   final String tooltip;
   final VoidCallback onTap;

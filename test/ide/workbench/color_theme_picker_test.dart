@@ -3,10 +3,10 @@ import 'package:flutter/material.dart' hide ColorScheme;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bao_editor/monaco/vs/platform/theme/common/theme.dart';
-import 'package:baocode/ide/ide_color_theme_picker.dart';
-import 'package:baocode/ide/ide_quick_input.dart';
-import 'package:baocode/ide/ide_workbench.dart';
-import 'package:baocode/theme/workbench_theme.dart'
+import 'package:caocode/ide/ide_color_theme_picker.dart';
+import 'package:caocode/ide/ide_quick_input.dart';
+import 'package:caocode/ide/ide_workbench.dart';
+import 'package:caocode/theme/workbench_theme.dart'
     show ColorThemeStorage, WorkbenchThemeService;
 
 import '../lsp_ui/fake_language_features.dart';

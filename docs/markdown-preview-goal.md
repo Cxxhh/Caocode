@@ -1,7 +1,7 @@
-# Goal：BaoCode 的 Markdown 预览、按块编辑和粘贴文件
+# Goal：Caocode 的 Markdown 预览、按块编辑和粘贴文件
 
 ## 背景
-BaoCode 是 Flutter 桌面应用（macOS / Windows），给 Claude Code 做 UI，并自带 IDE。
+Caocode 是 Flutter 桌面应用（macOS / Windows），给 Claude Code 做 UI，并自带 IDE。
 现在打开 `.md` 只能看到 Monaco 里的源码，读起来很不方便。聊天里已经有一个 Markdown 渲染器 `MarkdownView`（lib/chat/widgets/markdown_view.dart，基于 `markdown` 包），但它是为聊天写的：
 - 图片只显示成 `[alt]` 占位
 - 字号紧凑
@@ -157,7 +157,7 @@ BaoCode 是 Flutter 桌面应用（macOS / Windows），给 Claude Code 做 UI�
 - 工作区是共享的，别人正在同时修改这份 checkout。**在新的 git worktree 和分支上开发**，不要碰、不要提交、不要 stash 或 reset 主工作区里别人的改动。
 - 代码风格和周边保持一致：注释密度、`///` 文档注释的写法、命名、`*_io.dart` / `*_stub.dart` 的分层方式。
 - 在自己的分支上分步提交，commit message 末尾加：
-  `Co-Authored-By: BaoCode <noreply@baocode.dev>`
+  `Co-Authored-By: Caocode <noreply@caocode.dev>`
 
 ## 合并进 main（完成并通过测试后）
 main 的工作区里有别人未提交的改动，`git merge` 会拒绝，**不要 stash、不要 reset --hard**：

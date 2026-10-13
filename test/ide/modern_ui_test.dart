@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/ide_hover.dart';
-import 'package:baocode/ide/ide_modern_ui.dart';
-import 'package:baocode/ide/ide_status_bar.dart';
-import 'package:baocode/ide/lsp_ui/hover_markdown.dart';
-import 'package:baocode/theme/app_theme.dart';
-import 'package:baocode/theme/codicons.dart';
-import 'package:baocode/theme/workbench_theme.dart';
+import 'package:caocode/ide/ide_hover.dart';
+import 'package:caocode/ide/ide_modern_ui.dart';
+import 'package:caocode/ide/ide_status_bar.dart';
+import 'package:caocode/ide/lsp_ui/hover_markdown.dart';
+import 'package:caocode/theme/app_theme.dart';
+import 'package:caocode/theme/codicons.dart';
+import 'package:caocode/theme/workbench_theme.dart';
 
 import 'workbench/fake_files.dart';
 

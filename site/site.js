@@ -19,7 +19,7 @@ for (const button of document.querySelectorAll('[data-copy]')) {
 
 // A button's style to pick (/upstreams): copies the prompt above with that
 // button in it, its HTML as a site would write it: a link, its images from
-// baocode.dev, the import link for its href.
+// caocode.dev, the import link for its href.
 for (const pick of document.querySelectorAll('.pick')) {
   const hint = pick.dataset.hint;
   pick.addEventListener('click', async () => {
@@ -31,8 +31,8 @@ for (const pick of document.querySelectorAll('.pick')) {
     a.setAttribute('style', sample.getAttribute('style'));
     a.innerHTML = sample.innerHTML;
     for (const img of a.querySelectorAll('img')) {
-      img.setAttribute('src', 'https://baocode.dev' + img.getAttribute('src'));
-      img.setAttribute('srcset', img.getAttribute('srcset').replaceAll('/brand/', 'https://baocode.dev/brand/'));
+      img.setAttribute('src', 'https://caocode.dev' + img.getAttribute('src'));
+      img.setAttribute('srcset', img.getAttribute('srcset').replaceAll('/brand/', 'https://caocode.dev/brand/'));
     }
     const style = styles.dataset.template
       .replace('{url}', `${styles.dataset.page}#${pick.id}`)
@@ -59,7 +59,7 @@ for (const button of document.querySelectorAll('[data-sound]')) {
   });
 }
 
-// The release published on dl.baocode.dev, once its manifest loads: the
+// The release published on dl.caocode.dev, once its manifest loads: the
 // version, the day it was published, and each download's link (ending in its
 // hash, so a release redone is not served from the CDN's cache of the old
 // one) and size. Until then, and if it does not load, the page's own.
@@ -68,7 +68,7 @@ for (const button of document.querySelectorAll('[data-sound]')) {
   try {
     const ctl = new AbortController();
     setTimeout(() => ctl.abort(), 4000);
-    const res = await fetch('https://dl.baocode.dev/releases/latest.json', { signal: ctl.signal, cache: 'no-store' });
+    const res = await fetch('https://dl.caocode.dev/releases/latest.json', { signal: ctl.signal, cache: 'no-store' });
     const m = await res.json();
     const v = String(m.version).split('+')[0];
     const zh = document.documentElement.lang.startsWith('zh');
@@ -85,7 +85,7 @@ for (const button of document.querySelectorAll('[data-sound]')) {
       for (const a of document.querySelectorAll(`[data-file="${os}"]`)) {
         a.href = file.url;
         if (a.classList.contains('button')) a.title = `≈ ${Math.round(file.size / 1e6)} MB`;
-        if (a.hasAttribute('data-name')) a.textContent = `BaoCode ${v}`;
+        if (a.hasAttribute('data-name')) a.textContent = `Caocode ${v}`;
       }
       for (const el of document.querySelectorAll(`[data-size="${os}"]`)) {
         el.textContent = `≈ ${Math.round(file.size / 1e6)} MB`;

@@ -1,7 +1,11 @@
-# baocode.dev
+# Caocode 网站参考素材
 
-The BaoCode website, hosted on Cloudflare, with no build step: `site/` is
-served as it is, `/download` being `download.html`.
+`site/` 保留了上游静态页面、截图与样式，尚未作为 Caocode 的独立网站部署。
+其中旧功能展示不代表当前 Codex 版本的全部支持范围；当前项目介绍以根目录
+[README](../README.md) 为准，安装包和更新日志以
+[GitHub Releases](https://github.com/Cxxhh/Caocode/releases) 为准。
+
+下列说明用于维护参考素材：
 
 - English at the root, Chinese under `zh/` (`/zh/`, `/zh/download`,
   `/zh/changelog`); each page links to itself in the other language. A
@@ -11,7 +15,7 @@ served as it is, `/download` being `download.html`.
   `dart run tool/build_changelog.dart` from `release-notes/`. Edit those.
 
 - `import.html`, `import.js`: a site's one-click import of an upstream,
-  handed on to the app (`baocode://provider/import`); `upstreams.html`, how
+  handed on to the app (`caocode://provider/import`); `upstreams.html`, how
   a site adds it. See `docs/upstream-import.md`.
 - `shots/`: the screenshots on the page.
 - `sounds/`: the notification sound the page plays.

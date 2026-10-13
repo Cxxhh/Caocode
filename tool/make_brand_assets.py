@@ -1,5 +1,5 @@
-# Writes site/brand/: BaoCode's mark and app icon, for upstreams' "Import to
-# BaoCode" buttons (site/upstreams.html), as images only, no vector.
+# Writes site/brand/: Caocode's mark and app icon, for upstreams' "Import to
+# Caocode" buttons (site/upstreams.html), as images only, no vector.
 #
 #   python3 -m venv /tmp/brand && /tmp/brand/bin/pip install pillow
 #   /tmp/brand/bin/python tool/make_brand_assets.py site/brand
@@ -52,13 +52,13 @@ def icon(size):
 def main(out):
     os.makedirs(out, exist_ok=True)
     for name in os.listdir(out):
-        if name.startswith('baocode-'):
+        if name.startswith('caocode-'):
             os.remove(os.path.join(out, name))
     for name, color in COLORS.items():
         for h in MARK_HEIGHTS:
-            mark(color, h).save(f'{out}/baocode-mark-{name}-{h}.webp', lossless=True, quality=100, method=6)
+            mark(color, h).save(f'{out}/caocode-mark-{name}-{h}.webp', lossless=True, quality=100, method=6)
     for s in ICON_SIZES:
-        icon(s).save(f'{out}/baocode-icon-{s}.png', optimize=True)
+        icon(s).save(f'{out}/caocode-icon-{s}.png', optimize=True)
 
 
 if __name__ == '__main__':

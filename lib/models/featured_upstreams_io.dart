@@ -9,7 +9,7 @@ import 'featured_upstreams.dart';
 
 /// See [FeaturedUpstream.loader]: the list at [FeaturedUpstream.feed],
 /// through the app's proxy, as every [HttpClient], kept in the cache with
-/// its logos, which are got again when the list changes. Where baocode.dev
+/// its logos, which are got again when the list changes. Where caocode.dev
 /// does not answer, the list kept last time; none before the first.
 Future<List<FeaturedUpstream>> fetchFeaturedUpstreams({
   Uri? feed,

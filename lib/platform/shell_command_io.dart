@@ -39,7 +39,7 @@ Future<ProcessResult> _runProcess(
 
 /// The line a script of ours carries, by which it is told from another
 /// app's `code`.
-const shellCommandMarker = 'BaoCode shell command';
+const shellCommandMarker = 'Caocode shell command';
 
 /// Whether the file at [path] is a script of ours: the marker in its first
 /// lines (another app's may be a large binary, so only those are read).
@@ -85,7 +85,7 @@ bool _exists(String path) =>
 class MacShellCommand implements ShellCommandInstaller {
   MacShellCommand({
     this.target = '/usr/local/bin/code',
-    this.bundleId = 'dev.baocode.desktop',
+    this.bundleId = 'dev.caocode.desktop',
     ShellCommandRunner? run,
     Future<String?> Function()? searchPath,
     this.temporaryDirectory,
@@ -123,16 +123,16 @@ class MacShellCommand implements ShellCommandInstaller {
       '''
 #!/usr/bin/env bash
 # $shellCommandMarker
-# Opens files and folders in BaoCode (installed by BaoCode's "Install '${ShellCommand.name}' command in PATH").
+# Opens files and folders in Caocode (installed by Caocode's "Install '${ShellCommand.name}' command in PATH").
 for arg in "\$@"; do
   case "\${arg%%=*}" in
     --) break ;;
     ${CodeArgs.queryOptions.join('|')})
-      echo "${ShellCommand.name}: \$arg is not supported: BaoCode's ${ShellCommand.name} command only opens files and folders." >&2
+      echo "${ShellCommand.name}: \$arg is not supported: Caocode's ${ShellCommand.name} command only opens files and folders." >&2
       exit 1 ;;
   esac
 done
-tmp=\$(mktemp "\${TMPDIR:-/tmp}/baocode-XXXXXX") || exit 1
+tmp=\$(mktemp "\${TMPDIR:-/tmp}/caocode-XXXXXX") || exit 1
 request="\$tmp${CodeArgs.requestFileSuffix}"
 mv "\$tmp" "\$request" || exit 1
 {
@@ -203,7 +203,7 @@ exec open -b $bundleId "\$request"
   Future<void> _installAsAdministrator() async {
     final folder = await Directory(
       temporaryDirectory ?? Directory.systemTemp.path,
-    ).createTemp('baocode-shell-command');
+    ).createTemp('caocode-shell-command');
     try {
       final staged = File(p.join(folder.path, ShellCommand.name));
       await staged.writeAsString(script, flush: true);
@@ -275,7 +275,7 @@ String _said(ProcessResult result, String failure) {
 /// `%VARIABLES%`), and the machine's, as expanded.
 typedef WindowsPaths = ({String user, String machine});
 
-/// The Windows command: `code.cmd` in `%LOCALAPPDATA%\BaoCode\bin`, which
+/// The Windows command: `code.cmd` in `%LOCALAPPDATA%\Caocode\bin`, which
 /// starts the app with what it is given (the copy already running takes
 /// it, see windows/runner/main.cpp), and that folder on the user's PATH.
 ///
@@ -300,7 +300,7 @@ class WindowsShellCommand implements ShellCommandInstaller {
 
   static String _defaultBinDirectory(Map<String, String> environment) {
     final local = environment['LOCALAPPDATA'] ?? '';
-    return local.isEmpty ? '' : p.join(local, 'BaoCode', 'bin');
+    return local.isEmpty ? '' : p.join(local, 'Caocode', 'bin');
   }
 
   /// The folder the command goes in; empty when there is no
@@ -333,7 +333,7 @@ class WindowsShellCommand implements ShellCommandInstaller {
     'start "" "${executable.replaceAll('%', '%%')}" ${CodeArgs.windowsRequestFlag} "%CD%\\." %*',
     'exit /b 0',
     ':query',
-    'echo ${ShellCommand.name}: %~1 is not supported: BaoCode\'s ${ShellCommand.name} command only opens files and folders. 1>&2',
+    'echo ${ShellCommand.name}: %~1 is not supported: Caocode\'s ${ShellCommand.name} command only opens files and folders. 1>&2',
     'exit /b 1',
     '',
   ].join('\r\n');
@@ -498,7 +498,7 @@ $machine = [string][Environment]::GetEnvironmentVariable('Path', 'Machine')
     final result = await _powershell(
       r'''
 $ErrorActionPreference = 'Stop'
-$value = $env:BAOCODE_USER_PATH
+$value = $env:CAOCODE_USER_PATH
 $key = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Environment')
 if ($value) {
   $key.SetValue('Path', $value, [Microsoft.Win32.RegistryValueKind]::ExpandString)
@@ -506,11 +506,11 @@ if ($value) {
   $key.DeleteValue('Path', $false)
 }
 $key.Close()
-Add-Type -Namespace BaoCode -Name Native -MemberDefinition '[DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, UIntPtr wParam, string lParam, uint fuFlags, uint uTimeout, out UIntPtr lpdwResult);'
+Add-Type -Namespace Caocode -Name Native -MemberDefinition '[DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, UIntPtr wParam, string lParam, uint fuFlags, uint uTimeout, out UIntPtr lpdwResult);'
 $answer = [UIntPtr]::Zero
-[void][BaoCode.Native]::SendMessageTimeout([IntPtr]0xffff, 0x1A, [UIntPtr]::Zero, 'Environment', 2, 5000, [ref]$answer)
+[void][Caocode.Native]::SendMessageTimeout([IntPtr]0xffff, 0x1A, [UIntPtr]::Zero, 'Environment', 2, 5000, [ref]$answer)
 ''',
-      environment: {'BAOCODE_USER_PATH': value},
+      environment: {'CAOCODE_USER_PATH': value},
     );
     if (result.exitCode != 0) {
       throw ShellCommandException(_said(result, 'Could not change the PATH.'));

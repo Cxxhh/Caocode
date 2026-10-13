@@ -1,8 +1,8 @@
-// The keybindings BaoCode comes with, written as VS Code's Default Keyboard
+// The keybindings Caocode comes with, written as VS Code's Default Keyboard
 // Shortcuts (JSON) writes them, and the commands a keybinding may run.
 //
 // The keys are upstream's defaults for the same commands (VS Code
-// 6a598d4a13031703d483d103c1d934a36ad27971), but where BaoCode differs: ⌘J
+// 6a598d4a13031703d483d103c1d934a36ad27971), but where Caocode differs: ⌘J
 // toggles the chat (upstream: the panel), and ⌃9 / Alt+9 opens the last
 // editor as well as the ninth.
 
@@ -38,15 +38,15 @@ const toggleAutoSaveCommandId = 'workbench.action.toggleAutoSave';
 const checkForUpdatesCommandId = 'update.checkForUpdate';
 
 /// Show Setup Guide: the setup checklist back (see FeatureTipsController).
-const showSetupGuideCommandId = 'baocode.tips.showSetupGuide';
+const showSetupGuideCommandId = 'caocode.tips.showSetupGuide';
 
 /// Reset Feature Tips: forgets what was done with the tips, the checklist
 /// and their notifications showing again as at a first launch.
-const resetFeatureTipsCommandId = 'baocode.tips.reset';
+const resetFeatureTipsCommandId = 'caocode.tips.reset';
 
-/// Star BaoCode on GitHub: the ask StarPrompt makes after the first
+/// Star Caocode on GitHub: the ask StarPrompt makes after the first
 /// conversations, any time.
-const starOnGitHubCommandId = 'baocode.starOnGitHub';
+const starOnGitHubCommandId = 'caocode.starOnGitHub';
 
 /// A command a keybinding may run, as the Keyboard Shortcuts page lists it.
 @immutable
@@ -61,7 +61,7 @@ class CommandInfo {
   String get label => category == null ? title : '$category: $title';
 }
 
-/// Every command BaoCode has, by id: those a keybinding can run. One not
+/// Every command Caocode has, by id: those a keybinding can run. One not
 /// here (another editor's, in an imported `keybindings.json`) is kept but
 /// shown as not supported.
 final Map<String, CommandInfo> commandCatalog = {
@@ -150,7 +150,7 @@ final Map<String, CommandInfo> commandCatalog = {
     ),
     const CommandInfo(
       starOnGitHubCommandId,
-      'Star BaoCode on GitHub',
+      'Star Caocode on GitHub',
       category: 'Help',
     ),
     const CommandInfo(
@@ -379,17 +379,17 @@ final Map<String, CommandInfo> commandCatalog = {
       category: 'Preferences',
     ),
     const CommandInfo(
-      'baocode.ide.toggleFormatOnSave',
+      'caocode.ide.toggleFormatOnSave',
       'Toggle Format on Save',
       category: 'Preferences',
     ),
     const CommandInfo(
-      'baocode.ide.retryLanguageServices',
+      'caocode.ide.retryLanguageServices',
       'Retry Language Services',
       category: 'Developer',
     ),
     const CommandInfo(
-      'baocode.ide.backToChat',
+      'caocode.ide.backToChat',
       'Back to Chat',
       category: 'View',
     ),

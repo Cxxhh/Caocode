@@ -1,12 +1,12 @@
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/composer/composer_files.dart';
-import 'package:baocode/chat/composer/file_drop.dart';
-import 'package:baocode/ide/ide_editor.dart';
-import 'package:baocode/ide/ide_tab_bar.dart';
-import 'package:baocode/ide/ide_workbench.dart';
-import 'package:baocode/ide/markdown/markdown_paste.dart';
-import 'package:baocode/ide/markdown/markdown_preview.dart';
-import 'package:baocode/keybindings/keybinding_service.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/composer/composer_files.dart';
+import 'package:caocode/chat/composer/file_drop.dart';
+import 'package:caocode/ide/ide_editor.dart';
+import 'package:caocode/ide/ide_tab_bar.dart';
+import 'package:caocode/ide/ide_workbench.dart';
+import 'package:caocode/ide/markdown/markdown_paste.dart';
+import 'package:caocode/ide/markdown/markdown_preview.dart';
+import 'package:caocode/keybindings/keybinding_service.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 

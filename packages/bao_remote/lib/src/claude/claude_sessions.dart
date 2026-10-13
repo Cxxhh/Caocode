@@ -82,7 +82,7 @@ class ClaudeProjectSummary {
 class ClaudeSessions {
   const ClaudeSessions({required this.cacheFile, this.configDir, this.tempDir});
 
-  /// Where Claude Code keeps its state; by default `BAOCODE_CLAUDE_DATA_PATH`
+  /// Where Claude Code keeps its state; by default `CAOCODE_CLAUDE_DATA_PATH`
   /// as the login shell has it, else `CLAUDE_CONFIG_DIR`, else
   /// `<home>/.claude`.
   final String? configDir;

@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
-import 'package:baocode/ide/lsp/lsp_protocol.dart';
-import 'package:baocode/ide/lsp_ui/lsp_convert.dart';
+import 'package:caocode/ide/lsp/lsp_protocol.dart';
+import 'package:caocode/ide/lsp_ui/lsp_convert.dart';
 
 void main() {
   test('a remote host spells file URIs its own way', () {

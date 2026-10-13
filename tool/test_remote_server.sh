@@ -54,7 +54,7 @@ for arch in x64 arm64; do
     x64) platform=linux/amd64 machine=x86_64 ;;
     arm64) platform=linux/arm64 machine=aarch64 ;;
   esac
-  binary="$dir/baocode-server-linux-$arch"
+  binary="$dir/caocode-server-linux-$arch"
   if [ ! -f "$binary" ]; then
     echo "No $binary: build it first (dart run tool/build_remote_server.dart)" >&2
     exit 1
@@ -66,8 +66,8 @@ for arch in x64 arm64; do
     # into the moment below.
     container=$(
       docker create -i --platform "$platform" \
-        -v "$binary:/usr/local/bin/baocode-server:ro" \
-        "$image" baocode-server --data /tmp/baocode-server 2> /dev/null
+        -v "$binary:/usr/local/bin/caocode-server:ro" \
+        "$image" caocode-server --data /tmp/caocode-server 2> /dev/null
     )
     # The app's first requests, then a moment for the answers before stdin
     # ends (which ends the server, as a closed connection does).

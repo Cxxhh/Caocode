@@ -5,13 +5,13 @@ import 'dart:typed_data';
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
-import 'package:baocode/update/update_io.dart';
-import 'package:baocode/update/update_manifest.dart';
-import 'package:baocode/update/update_service.dart';
-import 'package:baocode/update/update_signature.dart';
-import 'package:baocode/update/version.dart';
+import 'package:caocode/update/update_io.dart';
+import 'package:caocode/update/update_manifest.dart';
+import 'package:caocode/update/update_service.dart';
+import 'package:caocode/update/update_signature.dart';
+import 'package:caocode/update/version.dart';
 
-/// A local server, in place of baocode.dev: what it serves by path, what it
+/// A local server, in place of caocode.dev: what it serves by path, what it
 /// was asked.
 class _Server {
   _Server._(this._server) {
@@ -98,7 +98,7 @@ void main() {
     final digest = sha256 ?? '${crypto.sha256.convert(content)}';
     final length = size ?? content.length;
     final asset = UpdateAsset(
-      url: server.url('BaoCode-setup.exe'),
+      url: server.url('Caocode-setup.exe'),
       size: length,
       sha256: digest,
       signature: UpdateSignature.sign(
@@ -124,8 +124,8 @@ void main() {
   setUp(() async {
     HttpOverrides.global = _RealHttp();
     server = await _Server.start();
-    server.files['BaoCode-setup.exe'] = bytes;
-    directory = await Directory.systemTemp.createTemp('baocode-updates');
+    server.files['Caocode-setup.exe'] = bytes;
+    directory = await Directory.systemTemp.createTemp('caocode-updates');
     backend = IoUpdateBackend(
       directory: directory.path,
       publicKey: publicKey,
@@ -166,10 +166,10 @@ void main() {
           progress.add(received);
         },
       );
-      expect(path, p.join(directory.path, '1.2.0+12', 'BaoCode-setup.exe'));
+      expect(path, p.join(directory.path, '1.2.0+12', 'Caocode-setup.exe'));
       expect(await File(path).readAsBytes(), bytes);
       expect(progress.last, bytes.length);
-      expect(files(), [p.join('1.2.0+12', 'BaoCode-setup.exe')]);
+      expect(files(), [p.join('1.2.0+12', 'Caocode-setup.exe')]);
     });
 
     test('finds a download made before without fetching it again', () async {
@@ -244,7 +244,7 @@ void main() {
       server.cutAt = 50 * 1024;
       await expectLater(backend.download(release()), throwsA(anything));
       final part = File(
-        p.join(directory.path, '1.2.0+12', 'BaoCode-setup.exe.part'),
+        p.join(directory.path, '1.2.0+12', 'Caocode-setup.exe.part'),
       );
       expect(await part.length(), 50 * 1024);
       server.cutAt = null;
@@ -256,7 +256,7 @@ void main() {
 
     test('starts over where the server cannot resume', () async {
       final part = File(
-        p.join(directory.path, '1.2.0+12', 'BaoCode-setup.exe.part'),
+        p.join(directory.path, '1.2.0+12', 'Caocode-setup.exe.part'),
       );
       await part.parent.create(recursive: true);
       await part.writeAsBytes(bytes.sublist(0, 1000));
@@ -266,10 +266,10 @@ void main() {
     });
 
     test('keeps only the newest version', () async {
-      server.files['BaoCode-setup.exe'] = bytes;
+      server.files['Caocode-setup.exe'] = bytes;
       await backend.download(release(version: '1.1.0'));
       await backend.download(release(version: '1.2.0+12'));
-      expect(files(), [p.join('1.2.0+12', 'BaoCode-setup.exe')]);
+      expect(files(), [p.join('1.2.0+12', 'Caocode-setup.exe')]);
     });
 
     test('cleans up what is installed by now', () async {

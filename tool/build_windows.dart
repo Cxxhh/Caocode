@@ -34,11 +34,11 @@ const _bundleRelative = r'build\windows\x64\runner\Release';
 const _installersRelative = r'build\installers';
 
 /// What has to be in the bundle for the app to start. A Release build that
-/// fails at the link step (a running baocode.exe holding the output file) still
-/// leaves a baocode.exe behind — but data\ is written by the install step that
+/// fails at the link step (a running caocode.exe holding the output file) still
+/// leaves a caocode.exe behind — but data\ is written by the install step that
 /// failure skipped, and the executable cannot start without it.
 const _required = [
-  'baocode.exe',
+  'caocode.exe',
   'flutter_windows.dll',
   // The VC++ runtime, carried rather than taken from System32, which may
   // be older than the build's (see windows/CMakeLists.txt).
@@ -149,7 +149,7 @@ Future<void> main(List<String> arguments) async {
     '/DBundleDir=${bundle.path}',
     '/DAppVersion=${version.full}',
     '/DOutDir=${installers.path}',
-    '${root.path}\\tool\\baocode.iss',
+    '${root.path}\\tool\\caocode.iss',
   ], root.path);
 
   // None when published already (--remote-release).
@@ -169,7 +169,7 @@ Future<void> main(List<String> arguments) async {
 
   _step('Done');
   final installer = File(
-    '${installers.path}\\BaoCode-${version.marketing}-setup.exe',
+    '${installers.path}\\Caocode-${version.marketing}c-setup.exe',
   );
   for (final file in [installer, ...servers]) {
     if (!file.existsSync()) continue;
@@ -180,7 +180,7 @@ Future<void> main(List<String> arguments) async {
     stdout
       ..writeln()
       ..writeln('The app downloads the remote server published:')
-      ..writeln('  https://dl.baocode.dev/releases/remote/$remoteVersion/');
+      ..writeln('  https://github.com/Cxxhh/Caocode/releases/download/server-$remoteVersion/');
   } else {
     stdout
       ..writeln()
@@ -190,7 +190,7 @@ Future<void> main(List<String> arguments) async {
       ..writeln('and package with --remote-release):')
       ..writeln(
         '  ${downloads.path}\\*  ->  '
-        'https://dl.baocode.dev/releases/remote/$remoteVersion/',
+        'https://github.com/Cxxhh/Caocode/releases/download/server-$remoteVersion/',
       );
   }
   stdout.writeln();
@@ -241,7 +241,7 @@ void _checkBundle(Directory directory, List<String> required) {
     '\n'
     'A Release build that failed at the link step leaves exactly this: the\n'
     'install step that writes data\\ never ran. If the build reported\n'
-    'LNK1104, a running baocode.exe is holding the output file — close it and\n'
+    'LNK1104, a running caocode.exe is holding the output file — close it and\n'
     'build again.',
   );
 }

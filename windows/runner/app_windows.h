@@ -23,7 +23,7 @@ class Attention;
 // One of the IDE's windows: a view of the engine the main window owns
 // (FlutterDesktopEngineCreateViewController), in a window of its own with
 // the main window's frame, header and channels (see ViewWindow) — those
-// named for its view: `baocode/window.<id>`, `baocode/drop.<id>`.
+// named for its view: `caocode/window.<id>`, `caocode/drop.<id>`.
 class IdeWindow : public ViewWindow {
  public:
   IdeWindow(FlutterDesktopEngineRef engine,
@@ -68,7 +68,7 @@ class IdeWindow : public ViewWindow {
   UINT taskbar_button_created_ = 0;
 };
 
-// The app's windows, for Flutter, over `baocode/windows` (the macOS app
+// The app's windows, for Flutter, over `caocode/windows` (the macOS app
 // answers the same in AppWindows.swift; see lib/window/window_host.dart):
 //
 //   start                         true: the engine takes views beside the

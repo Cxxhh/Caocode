@@ -1,7 +1,7 @@
-import 'package:baocode/ide/terminal/pty.dart';
-import 'package:baocode/ide/terminal/terminal_instance.dart';
-import 'package:baocode/ide/terminal/terminal_profiles.dart';
-import 'package:baocode/ide/terminal/terminal_shell.dart';
+import 'package:caocode/ide/terminal/pty.dart';
+import 'package:caocode/ide/terminal/terminal_instance.dart';
+import 'package:caocode/ide/terminal/terminal_profiles.dart';
+import 'package:caocode/ide/terminal/terminal_shell.dart';
 
 import 'fake_pty.dart';
 

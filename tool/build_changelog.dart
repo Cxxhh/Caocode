@@ -1,6 +1,6 @@
 // Writes the site's changelog from the release notes: site/changelog.html
-// (English, baocode.dev/changelog) and site/zh/changelog.html (Chinese,
-// baocode.dev/zh/changelog). Every version with notes in
+// (English, caocode.dev/changelog) and site/zh/changelog.html (Chinese,
+// caocode.dev/zh/changelog). Every version with notes in
 // release-notes/<x.y.z>.<en|zh>.md, newest first, each at #v<x.y.z>, which
 // the app's update notification links to (UpdateController.changelogUrl).
 // A version without notes in a language shows its English ones there, as
@@ -15,7 +15,7 @@
 // not what the notes make.
 import 'dart:io';
 
-import 'package:baocode/update/version.dart';
+import 'package:caocode/update/version.dart';
 import 'package:markdown/markdown.dart' as md;
 
 Future<void> main(List<String> arguments) async {
@@ -38,7 +38,7 @@ Map<AppVersion, Map<String, String>> readReleaseNotes(Directory root) {
   final directory = Directory('${root.path}/release-notes');
   final notes = <AppVersion, Map<String, String>>{};
   if (!directory.existsSync()) return notes;
-  final name = RegExp(r'^(\d+\.\d+\.\d+)\.(en|zh)\.md$');
+  final name = RegExp(r'^(\d+\.\d+\.\d+)c?\.(en|zh)\.md$');
   for (final file in directory.listSync().whereType<File>()) {
     final match = name.firstMatch(file.uri.pathSegments.last);
     if (match == null) continue;
@@ -67,9 +67,9 @@ enum _Page {
     language: 'en',
     htmlLang: 'en',
     home: '/',
-    title: 'BaoCode Changelog',
+    title: 'Caocode Changelog',
     heading: 'Changelog',
-    lead: 'What changed in each version of BaoCode.',
+    lead: 'What changed in each version of Caocode.',
     download: 'Download',
     empty: 'No versions yet.',
   ),
@@ -78,9 +78,9 @@ enum _Page {
     language: 'zh',
     htmlLang: 'zh-CN',
     home: '/zh/',
-    title: 'BaoCode 更新日志',
+    title: 'Caocode 更新日志',
     heading: '更新日志',
-    lead: 'BaoCode 每个版本的变化。',
+    lead: 'Caocode 每个版本的变化。',
     download: '下载',
     empty: '还没有版本。',
   );
@@ -138,8 +138,8 @@ String _html(_Page page, List<(AppVersion, String?)> releases) {
 <meta name="description" content="${page.lead}">
 <link rel="icon" href="/icon.png">
 <link rel="stylesheet" href="/style.css">
-<link rel="alternate" hreflang="en" href="https://baocode.dev${_Page.en.url}">
-<link rel="alternate" hreflang="zh" href="https://baocode.dev${_Page.zh.url}">
+<link rel="alternate" hreflang="en" href="https://caocode.dev${_Page.en.url}">
+<link rel="alternate" hreflang="zh" href="https://caocode.dev${_Page.zh.url}">
 </head>
 <body>
 <!-- Made by tool/build_changelog.dart from release-notes/: edit those, not this. -->
@@ -149,10 +149,10 @@ String _html(_Page page, List<(AppVersion, String?)> releases) {
   <symbol id="ic-github" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5c.08-1.25-.27-2.48-1-3.5c.28-1.15.28-2.35 0-3.5c0 0-1 0-3 1.5c-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5c-.39.49-.68 1.05-.85 1.65S8.93 17.38 9 18v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></g></symbol>
 </svg>
 <header class="top">
-  <a class="brand" href="${page.home}"><img src="/icon.png" alt="">BaoCode</a>
+  <a class="brand" href="${page.home}"><img src="/icon.png" alt="">Caocode</a>
   <a href="${page.home}download">${page.download}</a>
   <a href="${page.url}" aria-current="page">${page.heading}</a>
-  <a href="https://github.com/baocode-dev/baocode"><svg class="ic" aria-hidden="true"><use href="#ic-github"/></svg>GitHub</a>
+  <a href="https://github.com/Cxxhh/Caocode"><svg class="ic" aria-hidden="true"><use href="#ic-github"/></svg>GitHub</a>
   <a class="lang" href="${page.other.url}" hreflang="${page.other.language}" lang="${page.other.htmlLang}">${page.other.name}</a>
 </header>
 

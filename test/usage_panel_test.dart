@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/panels/context_usage_panel.dart';
-import 'package:baocode/ide/ide_hover.dart';
-import 'package:baocode/kernel/kernel_types.dart';
+import 'package:caocode/chat/panels/context_usage_panel.dart';
+import 'package:caocode/ide/ide_hover.dart';
+import 'package:caocode/kernel/kernel_types.dart';
 
 void main() {
   testWidgets('the plan limits show under the context, a row each', (

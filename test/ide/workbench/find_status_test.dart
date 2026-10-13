@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/ide_editor.dart';
-import 'package:baocode/ide/ide_find_widget.dart';
-import 'package:baocode/ide/ide_status_bar.dart';
-import 'package:baocode/theme/codicons.dart';
-import 'package:baocode/theme/app_theme.dart';
-import 'package:baocode/workspace/back_to_chat_button.dart';
-import 'package:baocode/workspace/pin_window_button.dart';
+import 'package:caocode/ide/ide_editor.dart';
+import 'package:caocode/ide/ide_find_widget.dart';
+import 'package:caocode/ide/ide_status_bar.dart';
+import 'package:caocode/theme/codicons.dart';
+import 'package:caocode/theme/app_theme.dart';
+import 'package:caocode/workspace/back_to_chat_button.dart';
+import 'package:caocode/workspace/pin_window_button.dart';
 
 import 'fake_files.dart';
 

@@ -6,9 +6,9 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/terminal/terminal_clipboard.dart';
-import 'package:baocode/ide/terminal/terminal_mouse.dart';
-import 'package:baocode/ide/terminal/terminal_selection.dart';
+import 'package:caocode/ide/terminal/terminal_clipboard.dart';
+import 'package:caocode/ide/terminal/terminal_mouse.dart';
+import 'package:caocode/ide/terminal/terminal_selection.dart';
 import 'package:bao_xterm/common/buffer/buffer_line.dart';
 import 'package:bao_xterm/common/buffer/types.dart';
 import 'package:bao_xterm/common/services/mouse_state_service.dart';

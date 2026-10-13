@@ -2,10 +2,10 @@ import 'dart:ui' show AppExitResponse;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/workspace/quit_confirmation.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:caocode/chat/chat_session.dart';
+import 'package:caocode/main.dart';
+import 'package:caocode/workspace/quit_confirmation.dart';
+import 'package:caocode/workspace/workspace.dart';
 
 /// The app with an agent at work (with nothing at work, a quit is not
 /// asked about: see `AppWindows.confirmQuit`).
@@ -14,7 +14,7 @@ Future<Workspace> _pumpApp(WidgetTester tester) async {
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   final workspace = Workspace.mock();
-  await tester.pumpWidget(BaoCodeApp(workspace: workspace));
+  await tester.pumpWidget(CaocodeApp(workspace: workspace));
   await tester.pump();
   workspace.selected.session.send(const ComposerMessage(text: 'Go on'));
   await tester.pump();
@@ -32,7 +32,7 @@ void main() {
     final workspace = await _pumpApp(tester);
     final response = tester.binding.handleRequestAppExit();
     await tester.pump();
-    expect(find.text('Quit BaoCode?'), findsOneWidget);
+    expect(find.text('Quit Caocode?'), findsOneWidget);
     expect(
       find.text('Running agents and terminals will be stopped.'),
       findsOneWidget,
@@ -41,7 +41,7 @@ void main() {
     await tester.tap(find.text('Cancel'));
     await tester.pump();
     expect(await response, AppExitResponse.cancel);
-    expect(find.text('Quit BaoCode?'), findsNothing);
+    expect(find.text('Quit Caocode?'), findsNothing);
     await _stop(tester, workspace);
   });
 
@@ -60,7 +60,7 @@ void main() {
     final first = tester.binding.handleRequestAppExit();
     await tester.pump();
     expect(await tester.binding.handleRequestAppExit(), AppExitResponse.cancel);
-    expect(find.text('Quit BaoCode?'), findsOneWidget);
+    expect(find.text('Quit Caocode?'), findsOneWidget);
 
     await tester.tap(find.text('Cancel'));
     await tester.pump();
@@ -74,7 +74,7 @@ void main() {
     final workspace = await _pumpApp(tester);
     QuitConfirmation.skipNext();
     expect(await tester.binding.handleRequestAppExit(), AppExitResponse.exit);
-    expect(find.text('Quit BaoCode?'), findsNothing);
+    expect(find.text('Quit Caocode?'), findsNothing);
     await _stop(tester, workspace);
   });
 }

@@ -66,10 +66,10 @@ IDI_APP_ICON            ICON                    "resources\\app_icon.ico"
 #define VERSION_AS_NUMBER 1,0,0,0
 #endif
 
-#if defined(FLUTTER_VERSION)
-#define VERSION_AS_STRING FLUTTER_VERSION
+#if defined(CAOCODE_VERSION)
+#define VERSION_AS_STRING CAOCODE_VERSION
 #else
-#define VERSION_AS_STRING "1.0.0"
+#define VERSION_AS_STRING "1.1.0c"
 #endif
 
 VS_VERSION_INFO VERSIONINFO
@@ -89,11 +89,11 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "BaoCode" "\0"
+            VALUE "CompanyName", "Caocode" "\0"
             VALUE "FileDescription", "Caocode" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "caocode" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 BaoCode. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 BaoCode and Caocode contributors." "\0"
             VALUE "OriginalFilename", "caocode.exe" "\0"
             VALUE "ProductName", "Caocode" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"

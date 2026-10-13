@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/ide_rows.dart';
+import 'package:caocode/ide/ide_rows.dart';
 
 void main() {
   test(

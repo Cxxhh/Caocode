@@ -5,11 +5,11 @@ library;
 
 import 'dart:io';
 
-import 'package:baocode/extensions/capabilities/capability_analysis.dart';
-import 'package:baocode/extensions/gallery/gallery_models.dart';
-import 'package:baocode/extensions/gallery/open_vsx_client.dart';
-import 'package:baocode/extensions/vsix/target_platform.dart';
-import 'package:baocode/extensions/vsix/vsix_reader.dart';
+import 'package:caocode/extensions/capabilities/capability_analysis.dart';
+import 'package:caocode/extensions/gallery/gallery_models.dart';
+import 'package:caocode/extensions/gallery/open_vsx_client.dart';
+import 'package:caocode/extensions/vsix/target_platform.dart';
+import 'package:caocode/extensions/vsix/vsix_reader.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -33,7 +33,7 @@ void main() {
     addTearDown(package.close);
     expect(package.manifest.id, 'esbenp.prettier-vscode');
     expect(package.manifest.engineCompatible, isTrue);
-    // A formatter, not a theme: BaoCode does not take it.
+    // A formatter, not a theme: Caocode does not take it.
     final report = analyzeExtensionPackage(package);
     expect(report.level, ExtensionCapabilityLevel.unsupported);
 

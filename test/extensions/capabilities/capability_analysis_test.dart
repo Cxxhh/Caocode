@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:baocode/extensions/capabilities/capability_analysis.dart';
-import 'package:baocode/extensions/vsix/vsix_reader.dart';
+import 'package:caocode/extensions/capabilities/capability_analysis.dart';
+import 'package:caocode/extensions/vsix/vsix_reader.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../ui/fake_backend.dart';

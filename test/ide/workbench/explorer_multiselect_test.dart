@@ -1,7 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/ide_explorer.dart';
+import 'package:caocode/ide/ide_explorer.dart';
 
 import 'fake_files.dart';
 

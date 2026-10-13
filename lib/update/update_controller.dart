@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../ide/ide_notifications.dart';
 import '../l10n/l10n.dart';
 import 'update_service.dart';
+import 'update_manifest.dart';
 import 'version.dart';
 
 /// What the app does with an update: Restart to Update (download, get it
@@ -32,12 +33,9 @@ class UpdateController {
   /// Opens a file in the app the system opens it with: the install's log.
   final Future<void> Function(String path)? openFile;
 
-  /// [version]'s notes on the site's changelog (tool/build_changelog.dart
-  /// makes it), the Chinese page for [languageCode] `zh`.
-  static Uri changelogUrl(AppVersion version, String languageCode) => Uri.parse(
-    'https://baocode.dev/${languageCode.startsWith('zh') ? 'zh/' : ''}'
-    'changelog#v${version.marketing}',
-  );
+  /// Each GitHub release contains both Chinese and English notes.
+  static Uri changelogUrl(AppVersion version, String languageCode) =>
+      Uri.parse('$releaseRepositoryUrl/releases/tag/${version.releaseTag}');
 
   bool _restarting = false;
 
@@ -75,7 +73,7 @@ class UpdateController {
         ? null
         : notifications.notify(
             IdeSeverity.info,
-            l10n.updateDownloading(release.version.marketing),
+            l10n.updateDownloading(release.version.display),
           );
     final problem = await restartToUpdate();
     if (downloading != null) notifications.close(downloading);
@@ -113,7 +111,7 @@ class UpdateController {
     UpdateOffer offer,
   ) {
     final release = offer.release;
-    final version = release.version.marketing;
+    final version = release.version.display;
     final hasNotes = release.manifest.notesFor(l10n.localeName) != null;
     return notifications.notify(
       offer.mandatory ? IdeSeverity.warning : IdeSeverity.info,
@@ -180,7 +178,7 @@ class UpdateController {
     final openFile = this.openFile;
     return notifications.notify(
       IdeSeverity.warning,
-      l10n.updateUnfinished(version.marketing, service.current.marketing),
+      l10n.updateUnfinished(version.display, service.current.display),
       sticky: true,
       primary: [
         IdeNotificationAction(

@@ -1,11 +1,11 @@
 # Caocode 开发环境
 
 主源码位于 `/home/noxae/Documents/Caocode`；Windows 构建副本位于
-`C:\Users\11914\Documents\Caocode`。工程根目录是基于 BaoCode 的本地派生仓库，
+`C:\Users\11914\Documents\Caocode`。工程根目录是基于上游桌面 IDE 的派生仓库，
 保留原始历史，分支为 `caocode/main`，远程 `upstream` 指向原仓库。
-`reference/baocode` 为独立参考副本，固定在 BaoCode 1.1.0 的
+`reference/baocode` 为独立参考副本，固定在上游 1.1.0 的
 `cfc83bb62154cb91795df4026ce39a62da84d036`。
-当前没有创建 GitHub 远程 fork，也没有推送代码。
+`origin` 指向 `https://github.com/Cxxhh/Caocode.git`，开发分支发布到远端 `main`。
 
 ## 初始化与编译
 
@@ -17,6 +17,7 @@
 ./flutterw analyze lib packages test tool  # WSL 静态检查，排除参考副本
 ./flutterw test test/kernel_test.dart  # 按修改范围选择测试
 ./build.sh                         # WSL 检查、增量同步、Windows Release 编译
+./build.sh --installer             # 独立目录编译并生成 Inno Setup 安装包
 ./build.sh --debug                 # Windows Debug 编译
 ./build.sh --sync-only             # 仅增量同步
 ./build.sh --doctor                # 检查 Windows 工具链
@@ -67,7 +68,8 @@ Windows 引擎资源通过 `curl.exe` 从 Flutter 官方资源地址下载并缓
 
 Windows 输出位于 `C:\Users\11914\Documents\Caocode\build\windows\x64\runner\Release\caocode.exe`。
 可执行文件和同目录的 DLL、`data` 文件夹需要一起保留。
-当前脚本生成可运行的目录，不生成 Inno Setup 安装包。
+`./build.sh --installer` 会在 `build/installers/` 生成 `Caocode-<公开版本>-setup.exe`，
+需要安装 Inno Setup 6。公开版本后缀为 `c`，具体约定见 [release.md](release.md)。
 
 可通过 `CAOCODE_FLUTTER_SDK` 指定 WSL SDK、`CAOCODE_WINDOWS_DIR` 指定 Windows
 挂载目录。Windows PowerShell 脚本支持 `-FlutterSdk` 指定 Windows SDK。

@@ -5,14 +5,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bao_editor/monaco/flutter/document_snapshot.dart';
-import 'package:baocode/ide/file_service.dart';
-import 'package:baocode/ide/ide_commands.dart';
-import 'package:baocode/ide/ide_find_widget.dart';
-import 'package:baocode/ide/ide_fuzzy.dart';
-import 'package:baocode/ide/ide_quick_open.dart';
-import 'package:baocode/ide/ide_status_bar.dart';
-import 'package:baocode/ide/ide_tab_bar.dart';
-import 'package:baocode/ide/project_tools.dart';
+import 'package:caocode/ide/file_service.dart';
+import 'package:caocode/ide/ide_commands.dart';
+import 'package:caocode/ide/ide_find_widget.dart';
+import 'package:caocode/ide/ide_fuzzy.dart';
+import 'package:caocode/ide/ide_quick_open.dart';
+import 'package:caocode/ide/ide_status_bar.dart';
+import 'package:caocode/ide/ide_tab_bar.dart';
+import 'package:caocode/ide/project_tools.dart';
 import 'package:bao_editor/monaco/flutter/keybinding_entry.dart';
 import 'package:path/path.dart' as p;
 
@@ -261,7 +261,7 @@ void main() {
   });
 
   test('local listing skips excluded folders and reads the branch', () async {
-    final dir = await Directory.systemTemp.createTemp('baocode-ide-index-');
+    final dir = await Directory.systemTemp.createTemp('caocode-ide-index-');
     addTearDown(() => dir.delete(recursive: true));
     final root = dir.path;
     Future<void> write(String relative, String text) async {

@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:bao_link/bao_link.dart';
-import 'package:baocode/link/link_platform.dart';
+import 'package:caocode/link/link_platform.dart';
 
 /// The machine, in memory: phones' sockets are put in [incoming]; what it
 /// advertises is in [advertised].

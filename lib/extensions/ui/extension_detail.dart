@@ -7,14 +7,14 @@
 // publisher, installs, rating, description, the actions, the version and
 // the pre-release choice), then Details (its README), Features (what it
 // contributes) and Changelog, beside what is known of it and its
-// capability in BaoCode.
+// capability in Caocode.
 //
 // Adapted from VS Code 6a598d4a13031703d483d103c1d934a36ad27971:
 // src/vs/workbench/contrib/extensions/browser/extensionEditor.ts and
 // media/extensionEditor.css.
 //
 // Deviations: the README is rendered by the app's markdown widgets (no
-// webview); the capability section is BaoCode's; Features lists the
+// webview); the capability section is Caocode's; Features lists the
 // contribution points with their items instead of a table per kind.
 
 import 'dart:async';

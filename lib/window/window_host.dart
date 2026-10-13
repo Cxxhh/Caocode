@@ -128,7 +128,7 @@ abstract class WindowHost {
   });
 }
 
-/// [WindowHost] over `baocode/windows` (MainFlutterWindow.swift,
+/// [WindowHost] over `caocode/windows` (MainFlutterWindow.swift,
 /// windows/runner/app_windows.cpp).
 ///
 ///   start                        whether windows can be opened (the
@@ -152,7 +152,7 @@ class ChannelWindowHost extends WindowHost {
   ChannelWindowHost({PlatformDispatcher? dispatcher})
     : _dispatcher = dispatcher ?? PlatformDispatcher.instance;
 
-  static const channel = MethodChannel('baocode/windows');
+  static const channel = MethodChannel('caocode/windows');
 
   final PlatformDispatcher _dispatcher;
 

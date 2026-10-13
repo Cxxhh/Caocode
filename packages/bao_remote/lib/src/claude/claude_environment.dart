@@ -18,7 +18,7 @@ abstract final class ClaudeEnvironment {
   /// Names the directory Claude Code keeps its state in (`projects`,
   /// `file-history`, …), e.g. a build's own; the installed `~/.claude`
   /// when unset.
-  static const dataPathVariable = 'BAOCODE_CLAUDE_DATA_PATH';
+  static const dataPathVariable = 'CAOCODE_CLAUDE_DATA_PATH';
 
   /// Keeps Claude Code to essential traffic: no request for the plan
   /// usage either.
@@ -88,7 +88,7 @@ abstract final class ClaudeEnvironment {
     String shell,
     List<String> flags,
   ) async {
-    const marker = '__BAOCODE_ENV__';
+    const marker = '__CAOCODE_ENV__';
     Process? process;
     try {
       process = await Process.start(shell, [

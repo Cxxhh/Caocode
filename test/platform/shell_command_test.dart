@@ -4,9 +4,9 @@ library;
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/platform/shell_command.dart';
-import 'package:baocode/platform/shell_command_io.dart';
-import 'package:baocode/window/code_args.dart';
+import 'package:caocode/platform/shell_command.dart';
+import 'package:caocode/platform/shell_command_io.dart';
+import 'package:caocode/window/code_args.dart';
 import 'package:path/path.dart' as p;
 
 /// The `code` command, installed into temporary folders only: what it
@@ -15,7 +15,7 @@ import 'package:path/path.dart' as p;
 void main() {
   late Directory root;
 
-  setUp(() => root = Directory.systemTemp.createTempSync('baocode-shell'));
+  setUp(() => root = Directory.systemTemp.createTempSync('caocode-shell'));
   tearDown(() {
     // Undo a read-only folder's mode, so it can go.
     for (final entity in root.listSync(recursive: true, followLinks: false)) {
@@ -56,7 +56,7 @@ void main() {
 
     test('refreshed, an older script of its own is written anew, keeping '
         'its mode; another app\'s is left', () async {
-      write(target, '#!/usr/bin/env bash\n# BaoCode shell command\nold\n');
+      write(target, '#!/usr/bin/env bash\n# Caocode shell command\nold\n');
       Process.runSync('chmod', ['755', target]);
       await command().refresh();
       expect(File(target).readAsStringSync(), command().script);
@@ -77,9 +77,9 @@ void main() {
       final script = File(target).readAsStringSync();
       expect(
         script,
-        startsWith('#!/usr/bin/env bash\n# BaoCode shell command\n'),
+        startsWith('#!/usr/bin/env bash\n# Caocode shell command\n'),
       );
-      expect(script, contains('open -b dev.baocode.desktop'));
+      expect(script, contains('open -b dev.caocode.desktop'));
       expect(File(target).statSync().modeString(), 'rwxr-xr-x');
       expect(ran.where((run) => run.first == 'osascript'), isEmpty);
     });
@@ -165,7 +165,7 @@ void main() {
       expect(
         root.listSync().where(
           (entity) =>
-              p.basename(entity.path).startsWith('baocode-shell-command'),
+              p.basename(entity.path).startsWith('caocode-shell-command'),
         ),
         isEmpty,
       );
@@ -252,8 +252,8 @@ void main() {
           expect(result.exitCode, 0);
           final opened = openedWith();
           expect(opened, hasLength(3));
-          expect(opened.take(2), ['-b', 'dev.baocode.desktop']);
-          expect(opened.last, endsWith('.baocode-cli'));
+          expect(opened.take(2), ['-b', 'dev.caocode.desktop']);
+          expect(opened.last, endsWith('.caocode-cli'));
           final request = CodeArgs.fromRequestFile(
             File(opened.last).readAsStringSync(),
           );
@@ -314,7 +314,7 @@ void main() {
     late Map<String, String> environment;
 
     setUp(() {
-      bin = p.join(root.path, 'Local', 'BaoCode', 'bin');
+      bin = p.join(root.path, 'Local', 'Caocode', 'bin');
       user = r'%ROOT%\tools;' + p.join(root.path, 'other');
       machine = p.join(root.path, 'System32');
       written = [];
@@ -323,7 +323,7 @@ void main() {
 
     WindowsShellCommand command() => WindowsShellCommand(
       binDirectory: bin,
-      executable: r'C:\Program Files\BaoCode %1\baocode.exe',
+      executable: r'C:\Program Files\Caocode %1\caocode.exe',
       environment: environment,
       run: (executable, arguments, {environment}) =>
           fail('no process to run: $executable'),
@@ -339,14 +339,14 @@ void main() {
       expect(
         command().script,
         '@echo off\r\n'
-        'REM BaoCode shell command\r\n'
+        'REM Caocode shell command\r\n'
         'for %%a in (${CodeArgs.queryOptions.join(' ')}) do '
         'if /i "%~1"=="%%a" goto query\r\n'
-        'start "" "C:\\Program Files\\BaoCode %%1\\baocode.exe" '
-        '--baocode-cli "%CD%\\." %*\r\n'
+        'start "" "C:\\Program Files\\Caocode %%1\\caocode.exe" '
+        '--caocode-cli "%CD%\\." %*\r\n'
         'exit /b 0\r\n'
         ':query\r\n'
-        'echo code: %~1 is not supported: BaoCode\'s code command only opens '
+        'echo code: %~1 is not supported: Caocode\'s code command only opens '
         'files and folders. 1>&2\r\n'
         'exit /b 1\r\n',
       );
@@ -367,7 +367,7 @@ void main() {
     });
 
     test('its folder found under a variable is its own', () async {
-      user = '%ROOT%/Local/BaoCode/bin;%ROOT%\\tools';
+      user = '%ROOT%/Local/Caocode/bin;%ROOT%\\tools';
       final shell = command();
       await shell.install();
       expect(written, isEmpty);

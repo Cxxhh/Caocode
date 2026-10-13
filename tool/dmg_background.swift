@@ -129,9 +129,9 @@ func draw(scale: CGFloat) -> NSBitmapImageRep {
     attributed.draw(
       in: NSRect(x: 0, y: top, width: size.width, height: fontSize * 1.6))
   }
-  line("将 BaoCode 拖到 Applications 文件夹即可完成安装",
+  line("将 Caocode 拖到 Applications 文件夹即可完成安装",
        fontSize: 14, weight: .medium, white: 0.24, top: 285)
-  line("Drag BaoCode to the Applications folder to install",
+  line("Drag Caocode to the Applications folder to install",
        fontSize: 12, weight: .regular, white: 0.50, top: 309)
 
   NSGraphicsContext.restoreGraphicsState()

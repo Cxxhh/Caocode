@@ -11,14 +11,14 @@
 // src/vs/editor/contrib/suggest/browser/suggestController.ts (the suggest
 // widget's keys, for the @ and / menu); the context keys are upstream's
 // (src/vs/workbench/contrib/chat/common/actions/chatContextKeys.ts) where
-// BaoCode has the same.
+// Caocode has the same.
 //
 // Deviations:
 // - New Chat starts a new agent, anywhere in the chat window (upstream: in
 //   the chat), on ⌘N/Ctrl+N only: its secondary ⌃L/Ctrl+L is Focus Chat
 //   Input's, which also has ⌘L/Ctrl+L, as Cursor has it. In the IDE, from
 //   its chat, ⌘N/Ctrl+N starts a chat there and ⌘W/Ctrl+W closes its tab
-//   (BaoCode's `baocode.chat.closeTab`), as Close Editor an editor's. From
+//   (Caocode's `caocode.chat.closeTab`), as Close Editor an editor's. From
 //   a subagent's conversation, Focus Chat Input goes back to the chat's.
 // - Cancel also takes a plain Escape in the input while a turn runs, as the
 //   agents' own terminals do; Accept and Skip need no focus in the chat (in
@@ -31,10 +31,10 @@
 //   menu; Add Context… types `@`, which lists the files and context to
 //   mention.
 // - The @ and / menu's keys are commands of their own
-//   (`baocode.chat.*Suggestion*`), not the editor's suggest widget's; the chat
+//   (`caocode.chat.*Suggestion*`), not the editor's suggest widget's; the chat
 //   history's are the list's (`list.focusDown`, …), which scroll it.
-// - BaoCode's own: the agents and the panes they show in, a prompt's options
-//   (`baocode.chat.*`), the side panel's pages and tabs: ⌘W/Ctrl+W closes
+// - Caocode's own: the agents and the panes they show in, a prompt's options
+//   (`caocode.chat.*`), the side panel's pages and tabs: ⌘W/Ctrl+W closes
 //   its tab in front while the focus is in it, as Close Editor (elsewhere
 //   Close Pane).
 
@@ -46,37 +46,37 @@ import 'package:bao_editor/monaco/flutter/keybinding_entry.dart';
 abstract final class ChatCommandIds {
   // The window's: its agents and panes.
   static const newChat = 'workbench.action.chat.newChat';
-  static const closePane = 'baocode.chat.closePane';
-  static const nextAgent = 'baocode.chat.nextAgent';
-  static const previousAgent = 'baocode.chat.previousAgent';
+  static const closePane = 'caocode.chat.closePane';
+  static const nextAgent = 'caocode.chat.nextAgent';
+  static const previousAgent = 'caocode.chat.previousAgent';
 
   /// Followed by 1 to 9: the agent at that place in the sidebar.
-  static const openAgentAtIndex = 'baocode.chat.openAgentAtIndex';
+  static const openAgentAtIndex = 'caocode.chat.openAgentAtIndex';
 
   /// Followed by 1 to 4: the pane at that place, row by row.
-  static const focusPane = 'baocode.chat.focusPane';
-  static const focusNextPane = 'baocode.chat.focusNextPane';
-  static const focusPreviousPane = 'baocode.chat.focusPreviousPane';
-  static const searchAgents = 'baocode.chat.searchAgents';
+  static const focusPane = 'caocode.chat.focusPane';
+  static const focusNextPane = 'caocode.chat.focusNextPane';
+  static const focusPreviousPane = 'caocode.chat.focusPreviousPane';
+  static const searchAgents = 'caocode.chat.searchAgents';
 
   /// The search palette, on everything: agents, what was said in them,
   /// files, actions, settings.
-  static const search = 'baocode.chat.search';
-  static const openIde = 'baocode.chat.openIde';
+  static const search = 'caocode.chat.search';
+  static const openIde = 'caocode.chat.openIde';
 
   /// The side panel at the right of the conversations: the focused
   /// agent's changes and the files opened from its conversation.
-  static const toggleSidePanel = 'baocode.chat.toggleSidePanel';
-  static const sidePanelChanges = 'baocode.chat.sidePanel.changes';
-  static const sidePanelFiles = 'baocode.chat.sidePanel.files';
-  static const sidePanelTerminal = 'baocode.chat.sidePanel.terminal';
+  static const toggleSidePanel = 'caocode.chat.toggleSidePanel';
+  static const sidePanelChanges = 'caocode.chat.sidePanel.changes';
+  static const sidePanelFiles = 'caocode.chat.sidePanel.files';
+  static const sidePanelTerminal = 'caocode.chat.sidePanel.terminal';
 
   /// Closes the side panel's tab in front, on its page shown; hides the
   /// panel where the page has none.
-  static const sidePanelCloseTab = 'baocode.chat.sidePanel.closeTab';
+  static const sidePanelCloseTab = 'caocode.chat.sidePanel.closeTab';
 
   /// The IDE's chat's: closes the tab shown.
-  static const closeTab = 'baocode.chat.closeTab';
+  static const closeTab = 'caocode.chat.closeTab';
 
   // A chat's (see ChatScreen).
   static const focusInput = 'workbench.action.chat.focusInput';
@@ -84,35 +84,35 @@ abstract final class ChatCommandIds {
   static const cancel = 'workbench.action.chat.cancel';
   static const acceptTool = 'workbench.action.chat.acceptTool';
   static const skipTool = 'workbench.action.chat.skipTool';
-  static const toggleContextPanel = 'baocode.chat.toggleContextPanel';
-  static const renameAgent = 'baocode.chat.renameAgent';
-  static const closeSubagent = 'baocode.chat.closeSubagent';
+  static const toggleContextPanel = 'caocode.chat.toggleContextPanel';
+  static const renameAgent = 'caocode.chat.renameAgent';
+  static const closeSubagent = 'caocode.chat.closeSubagent';
 
   // Its input's (see ChatComposer).
   static const submit = 'workbench.action.chat.submit';
   static const cancelEdit = 'workbench.edit.chat.cancel';
-  static const showPreviousPrompt = 'baocode.chat.showPreviousPrompt';
-  static const showNextPrompt = 'baocode.chat.showNextPrompt';
-  static const acceptPromptSuggestion = 'baocode.chat.acceptPromptSuggestion';
+  static const showPreviousPrompt = 'caocode.chat.showPreviousPrompt';
+  static const showNextPrompt = 'caocode.chat.showNextPrompt';
+  static const acceptPromptSuggestion = 'caocode.chat.acceptPromptSuggestion';
   static const openModePicker = 'workbench.action.chat.openModePicker';
-  static const nextMode = 'baocode.chat.nextMode';
+  static const nextMode = 'caocode.chat.nextMode';
   static const openModelPicker = 'workbench.action.chat.openModelPicker';
   static const attachContext = 'workbench.action.chat.attachContext';
-  static const selectNextSuggestion = 'baocode.chat.selectNextSuggestion';
-  static const selectPrevSuggestion = 'baocode.chat.selectPrevSuggestion';
+  static const selectNextSuggestion = 'caocode.chat.selectNextSuggestion';
+  static const selectPrevSuggestion = 'caocode.chat.selectPrevSuggestion';
   static const acceptSelectedSuggestion =
-      'baocode.chat.acceptSelectedSuggestion';
-  static const hideSuggestWidget = 'baocode.chat.hideSuggestWidget';
+      'caocode.chat.acceptSelectedSuggestion';
+  static const hideSuggestWidget = 'caocode.chat.hideSuggestWidget';
 
   // A prompt's options: a question, a tool's approval, a plan (see
   // InteractionPanel).
-  static const interactionFocusNext = 'baocode.chat.interaction.focusNext';
+  static const interactionFocusNext = 'caocode.chat.interaction.focusNext';
   static const interactionFocusPrevious =
-      'baocode.chat.interaction.focusPrevious';
-  static const interactionBack = 'baocode.chat.interaction.back';
-  static const interactionToggle = 'baocode.chat.interaction.toggle';
-  static const interactionAccept = 'baocode.chat.interaction.accept';
-  static const interactionDismiss = 'baocode.chat.interaction.dismiss';
+      'caocode.chat.interaction.focusPrevious';
+  static const interactionBack = 'caocode.chat.interaction.back';
+  static const interactionToggle = 'caocode.chat.interaction.toggle';
+  static const interactionAccept = 'caocode.chat.interaction.accept';
+  static const interactionDismiss = 'caocode.chat.interaction.dismiss';
 
   /// How many agents [openAgentAtIndex] reaches, and panes [focusPane].
   static const agentIndexes = 9;

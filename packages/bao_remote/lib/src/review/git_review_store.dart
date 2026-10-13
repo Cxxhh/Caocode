@@ -728,7 +728,7 @@ class GitReviewStore implements ReviewStore {
 
   @override
   Future<Uint8List?> merge(String path, ReviewBlob from, ReviewBlob to) async {
-    final temp = await Directory.systemTemp.createTemp('baocode-review-');
+    final temp = await Directory.systemTemp.createTemp('caocode-review-');
     try {
       final ours = p.join(temp.path, 'current');
       final base = p.join(temp.path, 'base');
@@ -763,7 +763,7 @@ class GitReviewStore implements ReviewStore {
     if (!_safeName.hasMatch(session) || session.endsWith('.lock')) {
       session = 'h${_folderName(session).split('-').last}';
     }
-    return 'refs/baocode/sessions/$session';
+    return 'refs/caocode/sessions/$session';
   }
 
   int _saves = 0;
@@ -801,10 +801,10 @@ class GitReviewStore implements ReviewStore {
       '-z',
     ], input: utf8.encode(entries.join()))).text.trim();
     const identity = {
-      'GIT_AUTHOR_NAME': 'baocode',
-      'GIT_AUTHOR_EMAIL': 'baocode@localhost',
-      'GIT_COMMITTER_NAME': 'baocode',
-      'GIT_COMMITTER_EMAIL': 'baocode@localhost',
+      'GIT_AUTHOR_NAME': 'caocode',
+      'GIT_AUTHOR_EMAIL': 'caocode@localhost',
+      'GIT_COMMITTER_NAME': 'caocode',
+      'GIT_COMMITTER_EMAIL': 'caocode@localhost',
     };
     final commit = (await _git(
       ['commit-tree', '--no-gpg-sign', '-F', '-', tree],

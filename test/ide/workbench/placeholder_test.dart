@@ -1,13 +1,13 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/file_service.dart';
-import 'package:baocode/ide/ide_editor.dart';
-import 'package:baocode/ide/ide_editor_placeholder.dart';
-import 'package:baocode/ide/ide_explorer.dart';
-import 'package:baocode/ide/ide_workbench.dart';
-import 'package:baocode/theme/codicons.dart';
-import 'package:baocode/workspace/editor_launcher.dart';
+import 'package:caocode/ide/file_service.dart';
+import 'package:caocode/ide/ide_editor.dart';
+import 'package:caocode/ide/ide_editor_placeholder.dart';
+import 'package:caocode/ide/ide_explorer.dart';
+import 'package:caocode/ide/ide_workbench.dart';
+import 'package:caocode/theme/codicons.dart';
+import 'package:caocode/workspace/editor_launcher.dart';
 
 import 'fake_files.dart';
 

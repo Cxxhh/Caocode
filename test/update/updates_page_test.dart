@@ -3,15 +3,15 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
-import 'package:baocode/ide/ide_button.dart';
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/settings/pages/settings_dropdown.dart';
-import 'package:baocode/settings/pages/updates_page.dart';
-import 'package:baocode/settings/user_settings.dart';
-import 'package:baocode/update/update_controller.dart';
-import 'package:baocode/update/update_service.dart';
-import 'package:baocode/update/update_settings.dart';
-import 'package:baocode/update/version.dart';
+import 'package:caocode/ide/ide_button.dart';
+import 'package:caocode/l10n/l10n.dart';
+import 'package:caocode/settings/pages/settings_dropdown.dart';
+import 'package:caocode/settings/pages/updates_page.dart';
+import 'package:caocode/settings/user_settings.dart';
+import 'package:caocode/update/update_controller.dart';
+import 'package:caocode/update/update_service.dart';
+import 'package:caocode/update/update_settings.dart';
+import 'package:caocode/update/version.dart';
 
 import 'update_fakes.dart';
 
@@ -21,7 +21,7 @@ void main() {
   late UserSettings settings;
 
   setUp(() async {
-    data = await Directory.systemTemp.createTemp('baocode-updates-page');
+    data = await Directory.systemTemp.createTemp('caocode-updates-page');
     settings = UserSettings(p.join(data.path, 'settings.json'));
     await settings.load();
   });
@@ -45,7 +45,7 @@ void main() {
     await show(tester, UpdatesSettingsPage(settings: settings));
     expect(find.text(l10n.updatesSettingsTitle), findsOneWidget);
     expect(
-      find.text('${currentAppVersion.marketing} · ${l10n.updateUnsupported}'),
+      find.text('${currentAppVersion.display} · ${l10n.updateUnsupported}'),
       findsOneWidget,
     );
     expect(
@@ -72,20 +72,20 @@ void main() {
       tester,
       UpdatesSettingsPage(updates: controller, settings: settings),
     );
-    expect(find.text('1.0.0 · ${l10n.updateNeverChecked}'), findsOneWidget);
+    expect(find.text('1.0.0c · ${l10n.updateNeverChecked}'), findsOneWidget);
 
     await tester.tap(button(l10n.updateCheckNow));
     await tester.pump();
     await tester.pump();
-    expect(find.text(l10n.updateAvailable('1.2.0')), findsOneWidget);
-    expect(find.text(l10n.updateReleaseNotesFor('1.2.0')), findsOneWidget);
+    expect(find.text(l10n.updateAvailable('1.2.0c')), findsOneWidget);
+    expect(find.text(l10n.updateReleaseNotesFor('1.2.0c')), findsOneWidget);
     expect(find.text('Faster startup.'), findsOneWidget);
     expect(find.textContaining('Last checked'), findsOneWidget);
 
     await tester.tap(button(l10n.updateRestartNow));
     await tester.pump();
     await tester.pump();
-    expect(find.text(l10n.updateReady('1.2.0')), findsOneWidget);
+    expect(find.text(l10n.updateReady('1.2.0c')), findsOneWidget);
     expect(service.armed, isTrue);
     expect(quits, 1);
     service.dispose();
@@ -111,7 +111,7 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(find.text(l10n.updateUpToDate), findsOneWidget);
-    expect(find.text(l10n.updateReleaseNotesFor('1.0.0')), findsOneWidget);
+    expect(find.text(l10n.updateReleaseNotesFor('1.0.0c')), findsOneWidget);
     expect(find.text('First release.'), findsOneWidget);
 
     // Not an older version's.

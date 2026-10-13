@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
-import 'package:baocode/search/claude_conversation_search.dart';
-import 'package:baocode/search/conversation_search.dart';
+import 'package:caocode/search/claude_conversation_search.dart';
+import 'package:caocode/search/conversation_search.dart';
 
 void main() {
   late Directory temp;

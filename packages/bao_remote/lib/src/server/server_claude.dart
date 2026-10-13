@@ -41,7 +41,7 @@ class ServerClaude {
   /// Names another build to run on the host instead of those installed,
   /// e.g. set in the user's environment there to try a fork. (In the app,
   /// it is a setting.)
-  static const pathVariable = 'BAOCODE_CLAUDE_PATH';
+  static const pathVariable = 'CAOCODE_CLAUDE_PATH';
 
   static ({String path, String undo})? _named(Map<String, String> env) =>
       switch (env[pathVariable]) {

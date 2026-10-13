@@ -1,9 +1,9 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart' show KeyEventResult;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/terminal/terminal_clipboard.dart';
-import 'package:baocode/ide/terminal/terminal_keyboard.dart';
-import 'package:baocode/ide/terminal/terminal_selection.dart';
+import 'package:caocode/ide/terminal/terminal_clipboard.dart';
+import 'package:caocode/ide/terminal/terminal_keyboard.dart';
+import 'package:caocode/ide/terminal/terminal_selection.dart';
 import 'package:bao_xterm/common/input/kitty_keyboard.dart';
 import 'package:bao_xterm/common/types.dart' show IKeyboardEvent;
 import 'package:bao_xterm/typings/xterm.dart' show IVtExtensions;

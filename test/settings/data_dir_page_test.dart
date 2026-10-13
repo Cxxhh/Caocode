@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/ide_button.dart';
-import 'package:baocode/platform/data_dir.dart';
-import 'package:baocode/settings/data_dir_service.dart';
-import 'package:baocode/settings/pages/data_dir_page.dart';
+import 'package:caocode/ide/ide_button.dart';
+import 'package:caocode/platform/data_dir.dart';
+import 'package:caocode/settings/data_dir_service.dart';
+import 'package:caocode/settings/pages/data_dir_page.dart';
 
 /// Moves as the page asks for them: nothing is copied, no file touched.
 class _FakeService extends DataDirectoryService {
@@ -13,7 +13,7 @@ class _FakeService extends DataDirectoryService {
     super.environment = const {'HOME': '/home/me'},
     this.targets = const {},
   }) : super(
-         current: DataDirectory('/data/baocode', source: source),
+         current: DataDirectory('/data/caocode', source: source),
          home: '/home/me',
        );
 
@@ -83,13 +83,13 @@ void main() {
     tester,
   ) async {
     final (:revealed, quits: _) = await pumpPage(tester, _FakeService());
-    expect(find.text('/data/baocode'), findsOneWidget);
+    expect(find.text('/data/caocode'), findsOneWidget);
     expect(
-      find.text('Set in /home/me/.baocode/config-dir.json.'),
+      find.text('Set in /home/me/.caocode/config-dir.json.'),
       findsOneWidget,
     );
     await tester.tap(find.text('Reveal in Finder'));
-    expect(revealed, ['/data/baocode']);
+    expect(revealed, ['/data/caocode']);
   }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
 
   testWidgets('Change shows the folder picked; Save copies the data there, '
@@ -98,32 +98,32 @@ void main() {
     final (revealed: _, :quits) = await pumpPage(
       tester,
       service,
-      picks: ['/Volumes/D/BaoCode'],
+      picks: ['/Volumes/D/Caocode'],
     );
     await tester.tap(find.text('Change…'));
     await tester.pumpAndSettle();
     expect(find.text('New folder'), findsOneWidget);
-    expect(find.text('/Volumes/D/BaoCode'), findsOneWidget);
+    expect(find.text('/Volumes/D/Caocode'), findsOneWidget);
     expect(find.text('Change…'), findsNothing);
     expect(service.migrated, isEmpty);
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
-    expect(service.migrated, ['/Volumes/D/BaoCode']);
+    expect(service.migrated, ['/Volumes/D/Caocode']);
     expect(
-      find.text('Restart BaoCode to use the new data folder'),
+      find.text('Restart Caocode to use the new data folder'),
       findsOneWidget,
     );
     await tester.tap(find.text('Quit Now').last);
     await tester.pumpAndSettle();
     expect(quits, ['quit']);
-    expect(find.text('After a restart: /Volumes/D/BaoCode'), findsOneWidget);
+    expect(find.text('After a restart: /Volumes/D/Caocode'), findsOneWidget);
   });
 
   testWidgets('on Windows, Quit Now quits as the tray icon\'s Quit does '
       '(the close button hides the window to it)', (tester) async {
     final calls = <MethodCall>[];
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      const MethodChannel('baocode/attention'),
+      const MethodChannel('caocode/attention'),
       (call) async {
         calls.add(call);
         return null;
@@ -133,7 +133,7 @@ void main() {
       MaterialApp(
         home: Material(
           child: DataDirectoryPage(
-            service: _FakeService()..pending = '/Volumes/D/BaoCode',
+            service: _FakeService()..pending = '/Volumes/D/Caocode',
           ),
         ),
       ),
@@ -145,13 +145,13 @@ void main() {
     expect(calls.map((call) => call.method), ['quit']);
   }, variant: TargetPlatformVariant.only(TargetPlatform.windows));
 
-  testWidgets('a folder with BaoCode data is used as it is; Later keeps '
+  testWidgets('a folder with Caocode data is used as it is; Later keeps '
       'running', (tester) async {
     final service = _FakeService(
       targets: {
         '/other': const DataDirectoryTarget(
           '/other',
-          contents: DataDirectoryContents.baocodeData,
+          contents: DataDirectoryContents.caocodeData,
         ),
       },
     );
@@ -193,7 +193,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
-    expect(find.text('/data/baocode'), findsOneWidget);
+    expect(find.text('/data/caocode'), findsOneWidget);
     expect(find.text('/empty'), findsNothing);
     // A picker closed without a folder.
     await tester.tap(find.text('Change…'));
@@ -216,20 +216,20 @@ void main() {
     expect(service.migrated, [service.defaultPath]);
   });
 
-  testWidgets('set by BAOCODE_DATA_DIR: nothing to change here', (
+  testWidgets('set by CAOCODE_DATA_DIR: nothing to change here', (
     tester,
   ) async {
     await pumpPage(
       tester,
       _FakeService(
         source: DataDirectorySource.environment,
-        environment: const {'HOME': '/home/me', 'BAOCODE_DATA_DIR': '/env'},
+        environment: const {'HOME': '/home/me', 'CAOCODE_DATA_DIR': '/env'},
       ),
     );
     expect(button(tester, 'Change…').onPressed, isNull);
     expect(button(tester, 'Reset to Default').onPressed, isNull);
     expect(
-      find.text('Set by the BAOCODE_DATA_DIR environment variable.'),
+      find.text('Set by the CAOCODE_DATA_DIR environment variable.'),
       findsOneWidget,
     );
   });

@@ -15,10 +15,10 @@
 // backend.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/terminal/links/links.dart';
-import 'package:baocode/ide/terminal/links/terminal_link_parsing.dart';
-import 'package:baocode/ide/terminal/links/terminal_link_resolver.dart';
-import 'package:baocode/ide/terminal/links/terminal_local_link_detector.dart';
+import 'package:caocode/ide/terminal/links/links.dart';
+import 'package:caocode/ide/terminal/links/terminal_link_parsing.dart';
+import 'package:caocode/ide/terminal/links/terminal_link_resolver.dart';
+import 'package:caocode/ide/terminal/links/terminal_local_link_detector.dart';
 import 'package:bao_xterm/headless/public/terminal.dart';
 import 'package:bao_xterm/typings/xterm_headless.dart' hide Terminal;
 

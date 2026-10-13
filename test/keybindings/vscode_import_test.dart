@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bao_editor/monaco/flutter/keybinding_entry.dart';
-import 'package:baocode/keybindings/keymap.dart';
-import 'package:baocode/keybindings/vscode_import.dart';
-import 'package:baocode/settings/jsonc.dart';
+import 'package:caocode/keybindings/keymap.dart';
+import 'package:caocode/keybindings/vscode_import.dart';
+import 'package:caocode/settings/jsonc.dart';
 import 'package:path/path.dart' as p;
 
 import 'fake_home.dart';
@@ -150,7 +150,7 @@ void main() {
     });
 
     test('nothing installed', () async {
-      final empty = await Directory.systemTemp.createTemp('baocode_empty_');
+      final empty = await Directory.systemTemp.createTemp('caocode_empty_');
       addTearDown(() => empty.delete(recursive: true));
       final detection = await VsCodeInstalls(
         home: empty.path,
@@ -187,7 +187,7 @@ void main() {
     });
 
     test('a built-in one is not written, only reported', () async {
-      final keymapsDir = p.join(home.path, 'baocode', 'keymaps');
+      final keymapsDir = p.join(home.path, 'caocode', 'keymaps');
       final catalog = KeymapCatalog(
         keymapsDir: keymapsDir,
         bundle: _DiskBundle(),
@@ -202,7 +202,7 @@ void main() {
     });
 
     test('another is written in the keymap format, and listed', () async {
-      final keymapsDir = p.join(home.path, 'baocode', 'keymaps');
+      final keymapsDir = p.join(home.path, 'caocode', 'keymaps');
       final catalog = KeymapCatalog(
         keymapsDir: keymapsDir,
         bundle: _DiskBundle(),
@@ -243,7 +243,7 @@ void main() {
     late String target;
 
     setUp(
-      () => target = p.join(home.path, 'baocode', 'User', 'keybindings.json'),
+      () => target = p.join(home.path, 'caocode', 'User', 'keybindings.json'),
     );
 
     String cursor() => p.join(support, 'Cursor', 'User', 'keybindings.json');

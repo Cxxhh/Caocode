@@ -1,4 +1,4 @@
-import 'package:baocode/chat/widgets/pixel_loader.dart';
+import 'package:caocode/chat/widgets/pixel_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

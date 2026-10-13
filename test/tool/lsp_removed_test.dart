@@ -1,4 +1,4 @@
-// 九.8: BaoCode's own LSP client is gone, the extensions serve languages.
+// 九.8: Caocode's own LSP client is gone, the extensions serve languages.
 // What docs/extension-host-goal.md's 七 lists is not in the repository, and
 // nothing imports or reads it. The `Lsp`-prefixed types of
 // lib/ide/language/language_types.dart stay (the editor's contracts, LSP's

@@ -1,7 +1,7 @@
 import Cocoa
 import FlutterMacOS
 
-/// The app's windows for Flutter, over `baocode/windows` (see
+/// The app's windows for Flutter, over `caocode/windows` (see
 /// lib/window/window_host.dart): the main one (the chat's, the engine's
 /// implicit view) and the IDE's beside it, each a view of the one engine.
 ///
@@ -18,7 +18,7 @@ import FlutterMacOS
 final class AppWindows: NSObject {
   static var shared: AppWindows?
 
-  private static let mainShownKey = "BaoCodeMainShownAtLaunch"
+  private static let mainShownKey = "CaocodeMainShownAtLaunch"
 
   /// Whether the main window shows at launch, as Flutter last said
   /// (`setMainShownAtLaunch`): not when only the IDE's windows come back.
@@ -51,7 +51,7 @@ final class AppWindows: NSObject {
     self.engine = engine
     self.main = main
     channel = FlutterMethodChannel(
-      name: "baocode/windows", binaryMessenger: engine.binaryMessenger)
+      name: "caocode/windows", binaryMessenger: engine.binaryMessenger)
     super.init()
     channel.setMethodCallHandler { [weak self] call, result in
       guard let self else {
@@ -93,7 +93,7 @@ final class AppWindows: NSObject {
     case "create":
       let arguments = call.arguments as? [String: Any] ?? [:]
       result(create(
-        title: arguments["title"] as? String ?? "BaoCode",
+        title: arguments["title"] as? String ?? "Caocode",
         frame: arguments["frame"] as? [String: Any],
         width: arguments["width"] as? Double))
     case "close":

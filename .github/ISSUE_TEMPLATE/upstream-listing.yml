@@ -1,13 +1,13 @@
-name: Let BaoCode list my site / 通知 BaoCode 收录我的站点
-description: Your site added BaoCode's one-click import; let us know, and it shows in Settings → Models. 你的站点已接入一键导入，通知我们后即在 设置 → 模型 中展示。
+name: Let Caocode list my site / 通知 Caocode 收录我的站点
+description: Your site added Caocode's one-click import; let us know, and it shows in Settings → Models. 你的站点已接入一键导入，通知我们后即在 设置 → 模型 中展示。
 title: "[Upstream] "
 labels: ["upstream-listing"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for adding the one-click import! How it works: https://baocode.dev/upstreams
-        感谢接入一键导入！接入说明：https://baocode.dev/zh/upstreams
+        Thanks for adding the one-click import! How it works: https://github.com/Cxxhh/Caocode/blob/main/docs/codex-providers.md
+        感谢接入一键导入！接入说明：https://github.com/Cxxhh/Caocode/blob/main/docs/codex-providers.md
 
         Listing is free, and so is staying listed for as long as the import keeps working. Once we've seen the import work, your card shows at once; we'll get in touch about your logo and anything else needed.
         收录免费，只要导入一直可用就一直展示。我们确认导入可用后，您的卡片立刻上线；我们会联系您确认 Logo 等素材。
@@ -59,7 +59,7 @@ body:
     id: import
     attributes:
       label: Where the import is / 一键导入的位置
-      description: Where a user finds the "Import to BaoCode" button or link, and a screenshot of it. 用户在哪里能找到“导入到 BaoCode”的按钮或链接，并附截图。
+      description: Where a user finds the "Import to Caocode" button or link, and a screenshot of it. 用户在哪里能找到“导入到 Caocode”的按钮或链接，并附截图。
     validations:
       required: true
   - type: textarea

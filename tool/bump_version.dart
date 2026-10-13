@@ -16,7 +16,7 @@
 // builds and publishes the release (.github/workflows/release.yml).
 import 'dart:io';
 
-import 'package:baocode/update/version.dart';
+import 'package:caocode/update/version.dart';
 
 import 'draft_release_notes.dart';
 
@@ -71,14 +71,12 @@ Future<void> main(List<String> arguments) async {
     ..writeln('  ${pubspec.path}')
     ..writeln('  ${source.path}')
     ..writeln();
-  draftReleaseNotes(Directory(root.path), next.marketing);
+  draftReleaseNotes(Directory(root.path), next.display);
   stdout
     ..writeln()
     ..writeln('Then commit, and publish with:')
     ..writeln()
-    ..writeln(
-      '  git tag v${next.marketing} && git push origin v${next.marketing}',
-    );
+    ..writeln('  git tag v${next.display} && git push origin v${next.display}');
 }
 
 Never _fail(String message) {

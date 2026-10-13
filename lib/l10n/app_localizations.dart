@@ -179,7 +179,7 @@ abstract class AppLocalizations {
   /// No description provided for @languageSettingsDescription.
   ///
   /// In en, this message translates to:
-  /// **'The language of BaoCode\'s menus, views and messages. Changes apply at once.'**
+  /// **'The language of Caocode\'s menus, views and messages. Changes apply at once.'**
   String get languageSettingsDescription;
 
   /// Follow System, with the language the system's resolves to, named in its own language.
@@ -2744,11 +2744,11 @@ abstract class AppLocalizations {
   /// **'Context Panel'**
   String get menuContextPanel;
 
-  /// No description provided for @menuAboutBaoCode.
+  /// No description provided for @menuAboutCaocode.
   ///
   /// In en, this message translates to:
-  /// **'About BaoCode'**
-  String get menuAboutBaoCode;
+  /// **'About Caocode'**
+  String get menuAboutCaocode;
 
   /// Tooltip.
   ///
@@ -3023,7 +3023,7 @@ abstract class AppLocalizations {
   /// No description provided for @aboutDescription.
   ///
   /// In en, this message translates to:
-  /// **'Agents run Claude Code as a local process; what they do — messages, tools, diffs and panels — is shown here.'**
+  /// **'Caocode is the Codex edition of the upstream desktop IDE. Agents run through the local Codex CLI; their messages, tool calls, code diffs and conversation panels are shown here.'**
   String get aboutDescription;
 
   /// The title of an agent before its first message names it.
@@ -4508,6 +4508,54 @@ abstract class AppLocalizations {
   /// **'Effort'**
   String get composerSettingEffort;
 
+  /// No description provided for @composerFastMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast mode'**
+  String get composerFastMode;
+
+  /// No description provided for @composerFastEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Fast (currently off)'**
+  String get composerFastEnable;
+
+  /// No description provided for @composerFastDisable.
+  ///
+  /// In en, this message translates to:
+  /// **'Disable Fast (currently on)'**
+  String get composerFastDisable;
+
+  /// No description provided for @composerFastOnDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Fast for subsequent messages. Availability and pricing depend on the provider.'**
+  String get composerFastOnDetail;
+
+  /// No description provided for @composerFastOffDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Use standard speed for subsequent messages'**
+  String get composerFastOffDetail;
+
+  /// No description provided for @composerFastChanging.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing Fast…'**
+  String get composerFastChanging;
+
+  /// No description provided for @composerFastUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast unavailable'**
+  String get composerFastUnavailable;
+
+  /// No description provided for @composerFastUnavailableDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'The current model or CLI configuration does not support Fast mode'**
+  String get composerFastUnavailableDetail;
+
   /// No description provided for @composerNoResults.
   ///
   /// In en, this message translates to:
@@ -5615,7 +5663,7 @@ abstract class AppLocalizations {
   /// No description provided for @generalSettingsTelemetryDescription.
   ///
   /// In en, this message translates to:
-  /// **'Once a day BaoCode is used, it sends a random install ID, its version, and your system and processor type, so we can tell how many people use it and come back. Nothing about you, your code, or what you do in BaoCode (telemetry.telemetryLevel).'**
+  /// **'Once a day Caocode is used, it sends a random install ID, its version, and your system and processor type, so we can tell how many people use it and come back. Nothing about you, your code, or what you do in Caocode (telemetry.telemetryLevel).'**
   String get generalSettingsTelemetryDescription;
 
   /// The commit attribution dropdown, as read out: its setting and the choice in effect.
@@ -5807,7 +5855,7 @@ abstract class AppLocalizations {
   /// No description provided for @trayShow.
   ///
   /// In en, this message translates to:
-  /// **'Show BaoCode'**
+  /// **'Show Caocode'**
   String get trayShow;
 
   /// Tray menu header over the agents waiting on the user.
@@ -5831,7 +5879,7 @@ abstract class AppLocalizations {
   /// No description provided for @trayQuit.
   ///
   /// In en, this message translates to:
-  /// **'Quit BaoCode'**
+  /// **'Quit Caocode'**
   String get trayQuit;
 
   /// Notification: the agent waits on the user.
@@ -8010,7 +8058,7 @@ abstract class AppLocalizations {
   /// No description provided for @kbUnknownContextKeys.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{BaoCode does not know the context key {keys}: this keybinding never applies.} other{BaoCode does not know the context keys {keys}: this keybinding never applies.}}'**
+  /// **'{count, plural, =1{Caocode does not know the context key {keys}: this keybinding never applies.} other{Caocode does not know the context keys {keys}: this keybinding never applies.}}'**
   String kbUnknownContextKeys(int count, String keys);
 
   /// No description provided for @kbChangeFailed.
@@ -8148,7 +8196,7 @@ abstract class AppLocalizations {
   /// No description provided for @kbCannotReadKey.
   ///
   /// In en, this message translates to:
-  /// **'BaoCode cannot read the key “{key}”: this keybinding never applies.'**
+  /// **'Caocode cannot read the key “{key}”: this keybinding never applies.'**
   String kbCannotReadKey(String key);
 
   /// No description provided for @kbNotSupported.
@@ -8160,7 +8208,7 @@ abstract class AppLocalizations {
   /// No description provided for @kbNotSupportedHover.
   ///
   /// In en, this message translates to:
-  /// **'BaoCode does not have this command: the keybinding is kept, but does nothing.'**
+  /// **'Caocode does not have this command: the keybinding is kept, but does nothing.'**
   String get kbNotSupportedHover;
 
   /// No description provided for @kbPressKeys.
@@ -8244,37 +8292,37 @@ abstract class AppLocalizations {
   /// No description provided for @dataDirAlreadyHolds.
   ///
   /// In en, this message translates to:
-  /// **'The folder already holds BaoCode data'**
+  /// **'The folder already holds Caocode data'**
   String get dataDirAlreadyHolds;
 
   /// No description provided for @dataDirMoveBack.
   ///
   /// In en, this message translates to:
-  /// **'Move BaoCode\'s data back to the default folder?'**
+  /// **'Move Caocode\'s data back to the default folder?'**
   String get dataDirMoveBack;
 
   /// No description provided for @dataDirMoveHere.
   ///
   /// In en, this message translates to:
-  /// **'Move BaoCode\'s data to this folder?'**
+  /// **'Move Caocode\'s data to this folder?'**
   String get dataDirMoveHere;
 
   /// No description provided for @dataDirUseAsIsDetail.
   ///
   /// In en, this message translates to:
-  /// **'After a restart BaoCode uses the data there as it is; nothing is copied, and the current folder keeps yours.'**
+  /// **'After a restart Caocode uses the data there as it is; nothing is copied, and the current folder keeps yours.'**
   String get dataDirUseAsIsDetail;
 
   /// No description provided for @dataDirCopyDetail.
   ///
   /// In en, this message translates to:
-  /// **'BaoCode copies its settings, keybindings, language servers and state there, and uses that folder after a restart.'**
+  /// **'Caocode copies its settings, keybindings, language servers and state there, and uses that folder after a restart.'**
   String get dataDirCopyDetail;
 
   /// No description provided for @dataDirOtherFiles.
   ///
   /// In en, this message translates to:
-  /// **'The folder holds other files: they stay, beside BaoCode\'s own.'**
+  /// **'The folder holds other files: they stay, beside Caocode\'s own.'**
   String get dataDirOtherFiles;
 
   /// No description provided for @dataDirUseItsData.
@@ -8316,13 +8364,13 @@ abstract class AppLocalizations {
   /// No description provided for @dataDirRestartTitle.
   ///
   /// In en, this message translates to:
-  /// **'Restart BaoCode to use the new data folder'**
+  /// **'Restart Caocode to use the new data folder'**
   String get dataDirRestartTitle;
 
   /// No description provided for @dataDirRestartDetail.
   ///
   /// In en, this message translates to:
-  /// **'BaoCode keeps using {current} until it restarts. The next start uses {next}, and offers to remove what is left in the old one.'**
+  /// **'Caocode keeps using {current} until it restarts. The next start uses {next}, and offers to remove what is left in the old one.'**
   String dataDirRestartDetail(String current, String next);
 
   /// No description provided for @dataDirTheNewFolder.
@@ -8334,7 +8382,7 @@ abstract class AppLocalizations {
   /// No description provided for @quitConfirmMessage.
   ///
   /// In en, this message translates to:
-  /// **'Quit BaoCode?'**
+  /// **'Quit Caocode?'**
   String get quitConfirmMessage;
 
   /// No description provided for @quitConfirmDetail.
@@ -8394,7 +8442,7 @@ abstract class AppLocalizations {
   /// No description provided for @dataDirDescription.
   ///
   /// In en, this message translates to:
-  /// **'Where BaoCode keeps your settings, keybindings, language servers and its own state. Other programs keep files there too (the web view\'s caches); BaoCode never moves or removes those.'**
+  /// **'Where Caocode keeps your settings, keybindings, language servers and its own state. Other programs keep files there too (the web view\'s caches); Caocode never moves or removes those.'**
   String get dataDirDescription;
 
   /// No description provided for @dataDirCurrentFolder.
@@ -8442,19 +8490,19 @@ abstract class AppLocalizations {
   /// No description provided for @dataDirSettingUnreadable.
   ///
   /// In en, this message translates to:
-  /// **'BaoCode\'s data folder setting cannot be read'**
+  /// **'Caocode\'s data folder setting cannot be read'**
   String get dataDirSettingUnreadable;
 
   /// No description provided for @dataDirCannotWrite.
   ///
   /// In en, this message translates to:
-  /// **'BaoCode cannot write to its data folder'**
+  /// **'Caocode cannot write to its data folder'**
   String get dataDirCannotWrite;
 
   /// No description provided for @dataDirUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'BaoCode\'s data folder is not available'**
+  /// **'Caocode\'s data folder is not available'**
   String get dataDirUnavailable;
 
   /// No description provided for @dataDirWhereEnv.
@@ -8466,7 +8514,7 @@ abstract class AppLocalizations {
   /// No description provided for @dataDirWhereFixPointer.
   ///
   /// In en, this message translates to:
-  /// **'Fix or delete {file} and try again; BaoCode changes it only if you choose another folder.'**
+  /// **'Fix or delete {file} and try again; Caocode changes it only if you choose another folder.'**
   String dataDirWhereFixPointer(String file);
 
   /// No description provided for @dataDirWherePointer.
@@ -8502,13 +8550,13 @@ abstract class AppLocalizations {
   /// No description provided for @dataDirRemoveOldTitle.
   ///
   /// In en, this message translates to:
-  /// **'Remove the data BaoCode left in its previous folder?'**
+  /// **'Remove the data Caocode left in its previous folder?'**
   String get dataDirRemoveOldTitle;
 
   /// No description provided for @dataDirRemoveOldDetail.
   ///
   /// In en, this message translates to:
-  /// **'BaoCode now keeps its data in {current}. Only its own items are removed from the previous folder ({items}); the folder and everything else in it stay.'**
+  /// **'Caocode now keeps its data in {current}. Only its own items are removed from the previous folder ({items}); the folder and everything else in it stay.'**
   String dataDirRemoveOldDetail(String current, String items);
 
   /// No description provided for @dataDirRemove.
@@ -8532,7 +8580,7 @@ abstract class AppLocalizations {
   /// No description provided for @dataDirRemoveOldInUseDetail.
   ///
   /// In en, this message translates to:
-  /// **'Files in {items} are in use, perhaps by another program. Everything else was removed; BaoCode offers to remove the rest the next time it starts.'**
+  /// **'Files in {items} are in use, perhaps by another program. Everything else was removed; Caocode offers to remove the rest the next time it starts.'**
   String dataDirRemoveOldInUseDetail(String items);
 
   /// No description provided for @impTitle.
@@ -8862,7 +8910,7 @@ abstract class AppLocalizations {
   /// No description provided for @shellCommandOccupied.
   ///
   /// In en, this message translates to:
-  /// **'{path} already runs another app\'s \'{name}\' command. Replace it with BaoCode\'s?'**
+  /// **'{path} already runs another app\'s \'{name}\' command. Replace it with Caocode\'s?'**
   String shellCommandOccupied(String path, String name);
 
   /// No description provided for @shellCommandReplace.
@@ -8892,7 +8940,7 @@ abstract class AppLocalizations {
   /// No description provided for @generalSettingsMainWindowDescription.
   ///
   /// In en, this message translates to:
-  /// **'What BaoCode opens to: the agents, or the IDE windows (as Restore Windows says), never both. By default, wherever it was left when it last quit.'**
+  /// **'What Caocode opens to: the agents, or the IDE windows (as Restore Windows says), never both. By default, wherever it was left when it last quit.'**
   String get generalSettingsMainWindowDescription;
 
   /// No description provided for @generalSettingsMainWindowLabel.
@@ -8934,7 +8982,7 @@ abstract class AppLocalizations {
   /// No description provided for @claudePathSettingDescription.
   ///
   /// In en, this message translates to:
-  /// **'Empty: the newest of the Claude Code installed on this machine and the one BaoCode downloaded (downloaded the first time there is none). A path: that one, always, e.g. one you built. (claudeCode.path)'**
+  /// **'Empty: the newest of the Claude Code installed on this machine and the one Caocode downloaded (downloaded the first time there is none). A path: that one, always, e.g. one you built. (claudeCode.path)'**
   String get claudePathSettingDescription;
 
   /// No description provided for @claudePathSettingHint.
@@ -8964,7 +9012,7 @@ abstract class AppLocalizations {
   /// No description provided for @claudePathInUseDownloaded.
   ///
   /// In en, this message translates to:
-  /// **'In use: Claude Code {version}, downloaded by BaoCode'**
+  /// **'In use: Claude Code {version}, downloaded by Caocode'**
   String claudePathInUseDownloaded(String version);
 
   /// No description provided for @claudePathMissing.
@@ -9246,7 +9294,7 @@ abstract class AppLocalizations {
   /// No description provided for @generalSettingsShellCommandDescription.
   ///
   /// In en, this message translates to:
-  /// **'Open files and folders in BaoCode from a terminal: \'code <path>\'. Installed at {location}.'**
+  /// **'Open files and folders in Caocode from a terminal: \'code <path>\'. Installed at {location}.'**
   String generalSettingsShellCommandDescription(String location);
 
   /// No description provided for @generalSettingsShellCommandInstalled.
@@ -9780,7 +9828,7 @@ abstract class AppLocalizations {
   /// No description provided for @modelsFeaturedNote.
   ///
   /// In en, this message translates to:
-  /// **'These sites are officially listed by BaoCode'**
+  /// **'These sites are officially listed by Caocode'**
   String get modelsFeaturedNote;
 
   /// No description provided for @modelsFeaturedNoteHow.
@@ -9894,7 +9942,7 @@ abstract class AppLocalizations {
   /// No description provided for @modelsImportInvalidDetail.
   ///
   /// In en, this message translates to:
-  /// **'It needs a base URL (http or https) and a protocol BaoCode knows. Ask the site for a new link, or add the upstream by hand in Settings → Models.'**
+  /// **'It needs a base URL (http or https) and a protocol Caocode knows. Ask the site for a new link, or add the upstream by hand in Settings → Models.'**
   String get modelsImportInvalidDetail;
 
   /// No description provided for @modelsAddProvider.
@@ -10842,7 +10890,7 @@ abstract class AppLocalizations {
   /// No description provided for @updatesSettingsDescription.
   ///
   /// In en, this message translates to:
-  /// **'BaoCode looks for new versions on baocode.dev.'**
+  /// **'Caocode checks the Cxxhh/Caocode GitHub releases for new versions.'**
   String get updatesSettingsDescription;
 
   /// No description provided for @updateCurrentVersion.
@@ -10878,37 +10926,37 @@ abstract class AppLocalizations {
   /// No description provided for @updateUpToDate.
   ///
   /// In en, this message translates to:
-  /// **'BaoCode is up to date.'**
+  /// **'Caocode is up to date.'**
   String get updateUpToDate;
 
   /// No description provided for @updateAvailable.
   ///
   /// In en, this message translates to:
-  /// **'BaoCode {version} is available.'**
+  /// **'Caocode {version} is available.'**
   String updateAvailable(String version);
 
   /// No description provided for @updateReady.
   ///
   /// In en, this message translates to:
-  /// **'BaoCode {version} has been downloaded. Restart to update.'**
+  /// **'Caocode {version} has been downloaded. Restart to update.'**
   String updateReady(String version);
 
   /// No description provided for @updateDownloading.
   ///
   /// In en, this message translates to:
-  /// **'Downloading BaoCode {version}…'**
+  /// **'Downloading Caocode {version}…'**
   String updateDownloading(String version);
 
   /// No description provided for @updateDownloadingProgress.
   ///
   /// In en, this message translates to:
-  /// **'Downloading BaoCode {version}… {percent}%'**
+  /// **'Downloading Caocode {version}… {percent}%'**
   String updateDownloadingProgress(String version, int percent);
 
   /// No description provided for @updateMandatory.
   ///
   /// In en, this message translates to:
-  /// **'This version of BaoCode is no longer supported. Update to {version} to keep using it.'**
+  /// **'This version of Caocode is no longer supported. Update to {version} to keep using it.'**
   String updateMandatory(String version);
 
   /// No description provided for @updateRestartNow.
@@ -10938,7 +10986,7 @@ abstract class AppLocalizations {
   /// No description provided for @updateFailed.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t update BaoCode: {error}'**
+  /// **'Couldn\'t update Caocode: {error}'**
   String updateFailed(String error);
 
   /// No description provided for @updateCheckFailed.
@@ -10956,13 +11004,13 @@ abstract class AppLocalizations {
   /// No description provided for @updateUnsupported.
   ///
   /// In en, this message translates to:
-  /// **'This build of BaoCode doesn\'t update itself.'**
+  /// **'This build of Caocode doesn\'t update itself.'**
   String get updateUnsupported;
 
   /// No description provided for @updateManual.
   ///
   /// In en, this message translates to:
-  /// **'BaoCode can\'t update itself here ({reason}). Download the new version from baocode.dev.'**
+  /// **'Caocode can\'t update itself here ({reason}). Download the new version from the Cxxhh/Caocode GitHub releases.'**
   String updateManual(String reason);
 
   /// No description provided for @updateOpenDownloadPage.
@@ -10974,7 +11022,7 @@ abstract class AppLocalizations {
   /// No description provided for @updateUnfinished.
   ///
   /// In en, this message translates to:
-  /// **'BaoCode {version} wasn\'t installed: this is still {current}. Try again from Settings > Updates, or download it from baocode.dev.'**
+  /// **'Caocode {version} wasn\'t installed: this is still {current}. Try again from Settings > Updates, or download it from the Cxxhh/Caocode GitHub releases.'**
   String updateUnfinished(String version, String current);
 
   /// No description provided for @updateShowLog.
@@ -11004,7 +11052,7 @@ abstract class AppLocalizations {
   /// No description provided for @updateModeDescription.
   ///
   /// In en, this message translates to:
-  /// **'Whether BaoCode looks for new versions by itself (update.mode).'**
+  /// **'Whether Caocode looks for new versions by itself (update.mode).'**
   String get updateModeDescription;
 
   /// The update mode dropdown, as read out.
@@ -11040,7 +11088,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Send BaoCode\'s error logs to its developers to help track down a problem. Nothing is sent until you upload.'**
+  /// **'Send Caocode\'s error logs to its developers to help track down a problem. Nothing is sent until you upload.'**
   String get diagnosticsDescription;
 
   /// No description provided for @diagnosticsUpload.
@@ -11112,7 +11160,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsUploadedDetail.
   ///
   /// In en, this message translates to:
-  /// **'Give this ID to BaoCode\'s developers so they can find these logs.'**
+  /// **'Give this ID to Caocode\'s developers so they can find these logs.'**
   String get diagnosticsUploadedDetail;
 
   /// No description provided for @diagnosticsOmittedDumps.
@@ -11634,13 +11682,13 @@ abstract class AppLocalizations {
   /// No description provided for @generalSettingsContextMenuDescription.
   ///
   /// In en, this message translates to:
-  /// **'Adds \"Open with BaoCode\" (a new agent) and \"Open with Fast Ide\" (a new IDE window) to the context menu of files, folders and a folder\'s background.'**
+  /// **'Adds \"Open with Caocode\" (a new agent) and \"Open with Fast Ide\" (a new IDE window) to the context menu of files, folders and a folder\'s background.'**
   String get generalSettingsContextMenuDescription;
 
   /// No description provided for @generalSettingsContextMenuMacNote.
   ///
   /// In en, this message translates to:
-  /// **'Finder\'s own setting is in System Settings\' extensions, where the BaoCode extension can also be turned on and off.'**
+  /// **'Finder\'s own setting is in System Settings\' extensions, where the Caocode extension can also be turned on and off.'**
   String get generalSettingsContextMenuMacNote;
 
   /// No description provided for @generalSettingsContextMenuOn.
@@ -11835,7 +11883,7 @@ abstract class AppLocalizations {
   /// **'Installing Claude Code on {host}… {percent}%'**
   String remoteInstallingClaudeProgress(String host, int percent);
 
-  /// Shown over the chat while Claude Code is downloaded into BaoCode's data folder, the user having none that runs (or only one too old), before the agent starts.
+  /// Shown over the chat while Claude Code is downloaded into Caocode's data folder, the user having none that runs (or only one too old), before the agent starts.
   ///
   /// In en, this message translates to:
   /// **'Downloading Claude Code… {percent}%'**
@@ -11886,7 +11934,7 @@ abstract class AppLocalizations {
   /// No description provided for @tipsSetupTitle.
   ///
   /// In en, this message translates to:
-  /// **'Set Up BaoCode'**
+  /// **'Set Up Caocode'**
   String get tipsSetupTitle;
 
   /// No description provided for @tipsSetupCount.
@@ -11940,7 +11988,7 @@ abstract class AppLocalizations {
   /// No description provided for @tipsUpdated.
   ///
   /// In en, this message translates to:
-  /// **'BaoCode was updated to {version}. New: {features}.'**
+  /// **'Caocode was updated to {version}. New: {features}.'**
   String tipsUpdated(String version, String features);
 
   /// No description provided for @tipsListSeparator.
@@ -11964,7 +12012,7 @@ abstract class AppLocalizations {
   /// No description provided for @tipContextMenuBody.
   ///
   /// In en, this message translates to:
-  /// **'Open files and folders in BaoCode from their context menu.'**
+  /// **'Open files and folders in Caocode from their context menu.'**
   String get tipContextMenuBody;
 
   /// No description provided for @tipShellCommandTitle.
@@ -11976,7 +12024,7 @@ abstract class AppLocalizations {
   /// No description provided for @tipShellCommandBody.
   ///
   /// In en, this message translates to:
-  /// **'Open folders in BaoCode from a terminal: {name} <path>.'**
+  /// **'Open folders in Caocode from a terminal: {name} <path>.'**
   String tipShellCommandBody(String name);
 
   /// No description provided for @tipImportKeybindingsTitle.
@@ -12006,19 +12054,19 @@ abstract class AppLocalizations {
   /// No description provided for @cmdStarOnGitHub.
   ///
   /// In en, this message translates to:
-  /// **'Star BaoCode on GitHub'**
+  /// **'Star Caocode on GitHub'**
   String get cmdStarOnGitHub;
 
   /// No description provided for @starPromptMessage.
   ///
   /// In en, this message translates to:
-  /// **'Enjoying BaoCode?'**
+  /// **'Enjoying Caocode?'**
   String get starPromptMessage;
 
   /// No description provided for @starPromptDetail.
   ///
   /// In en, this message translates to:
-  /// **'BaoCode is free and open source. If it helps you, a star on GitHub helps other people find it.'**
+  /// **'Caocode is free and open source. If it helps you, a star on GitHub helps other people find it.'**
   String get starPromptDetail;
 
   /// No description provided for @starPromptStar.
@@ -12234,7 +12282,7 @@ abstract class AppLocalizations {
   /// No description provided for @networkSettingsDescription.
   ///
   /// In en, this message translates to:
-  /// **'How BaoCode and the Claude Code it starts reach the internet.'**
+  /// **'How Caocode and the Claude Code it starts reach the internet.'**
   String get networkSettingsDescription;
 
   /// No description provided for @networkProxy.
@@ -12246,7 +12294,7 @@ abstract class AppLocalizations {
   /// No description provided for @networkProxyDescription.
   ///
   /// In en, this message translates to:
-  /// **'The proxy for BaoCode and Claude Code (http.proxyMode). System Proxy follows the system\'s settings, such as Clash\'s system proxy. New sessions take a change; restart a running one for it.'**
+  /// **'The proxy for Caocode and Claude Code (http.proxyMode). System Proxy follows the system\'s settings, such as Clash\'s system proxy. New sessions take a change; restart a running one for it.'**
   String get networkProxyDescription;
 
   /// The proxy dropdown, as read out.
@@ -12342,7 +12390,7 @@ abstract class AppLocalizations {
   /// No description provided for @networkProxyStatusAutoConfig.
   ///
   /// In en, this message translates to:
-  /// **'Direct: the system sets its proxy with an auto-config (PAC) file, which BaoCode doesn\'t follow. Turn on Clash\'s system proxy, or enter the address manually.'**
+  /// **'Direct: the system sets its proxy with an auto-config (PAC) file, which Caocode doesn\'t follow. Turn on Clash\'s system proxy, or enter the address manually.'**
   String get networkProxyStatusAutoConfig;
 
   /// No description provided for @networkProxyRefresh.
@@ -12486,7 +12534,7 @@ abstract class AppLocalizations {
   /// No description provided for @extsCapabilityPartialDetail.
   ///
   /// In en, this message translates to:
-  /// **'Its themes apply; the rest of it does nothing in BaoCode.'**
+  /// **'Its themes apply; the rest of it does nothing in Caocode.'**
   String get extsCapabilityPartialDetail;
 
   /// No description provided for @extsEngineIncompatible.
@@ -12852,7 +12900,7 @@ abstract class AppLocalizations {
   /// No description provided for @extsCapabilityUnsupportedDetail.
   ///
   /// In en, this message translates to:
-  /// **'It has no color or file icon theme: BaoCode only uses themes from extensions.'**
+  /// **'It has no color or file icon theme: Caocode only uses themes from extensions.'**
   String get extsCapabilityUnsupportedDetail;
 
   /// No description provided for @extsFindingCode.
@@ -13020,7 +13068,7 @@ abstract class AppLocalizations {
   /// No description provided for @mobileSettingsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Follow and drive this computer\'s agents from BaoCode on your phone, over the local network or the internet. What goes between them is end-to-end encrypted.'**
+  /// **'Follow and drive this computer\'s agents from Caocode on your phone, over the local network or the internet. What goes between them is end-to-end encrypted.'**
   String get mobileSettingsDescription;
 
   /// No description provided for @mobileAllow.
@@ -13128,7 +13176,7 @@ abstract class AppLocalizations {
   /// No description provided for @mobileRelayDescription.
   ///
   /// In en, this message translates to:
-  /// **'Reach this computer through BaoCode\'s relay when none of its addresses can be reached. Coming later.'**
+  /// **'Reach this computer through Caocode\'s relay when none of its addresses can be reached. Coming later.'**
   String get mobileRelayDescription;
 
   /// No description provided for @mobileRelayUnavailable.
@@ -13146,7 +13194,7 @@ abstract class AppLocalizations {
   /// No description provided for @mobilePairDescription.
   ///
   /// In en, this message translates to:
-  /// **'Scan the code with BaoCode on the phone (Me → Paired computers → Pair a computer), or pick this computer under Nearby Computers there.'**
+  /// **'Scan the code with Caocode on the phone (Me → Paired computers → Pair a computer), or pick this computer under Nearby Computers there.'**
   String get mobilePairDescription;
 
   /// No description provided for @mobilePairShow.

@@ -1,7 +1,7 @@
 // The user's theme extensions: color themes and file icon themes installed
 // from Open VSX or a .vsix into `<data>/extensions/`, in VS Code's layout
 // (`publisher.name-version/` folders listed in `extensions.json`), so the
-// folder is VS Code's as much as BaoCode's. No extension code runs: their
+// folder is VS Code's as much as Caocode's. No extension code runs: their
 // `contributes.themes`, `iconThemes`, `colors` and `icons` apply to the
 // workbench ([apply]).
 

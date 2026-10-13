@@ -21,7 +21,7 @@
 class AppWindows;
 
 // What tells the user an agent wants them while they look elsewhere, over the
-// `baocode/attention` channel (lib/notifications/; the macOS app answers the
+// `caocode/attention` channel (lib/notifications/; the macOS app answers the
 // same in Attention.swift):
 //
 //   notify (id, title, body)  a notification: the tray icon's balloon, which

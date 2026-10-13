@@ -152,7 +152,7 @@ class _DataDirectoryPageState extends State<DataDirectoryPage> {
       _error = null;
     });
     try {
-      if (target.contents == DataDirectoryContents.baocodeData) {
+      if (target.contents == DataDirectoryContents.caocodeData) {
         await _service.useAsIs(target.path);
       } else {
         await _service.migrate(
@@ -248,7 +248,7 @@ class _DataDirectoryPageState extends State<DataDirectoryPage> {
                 ),
                 if (draft != null) ...[
                   Text(
-                    draft.contents == DataDirectoryContents.baocodeData
+                    draft.contents == DataDirectoryContents.caocodeData
                         ? l10n.dataDirUseAsIsDetail
                         : l10n.dataDirCopyDetail,
                     style: SettingsText.description,

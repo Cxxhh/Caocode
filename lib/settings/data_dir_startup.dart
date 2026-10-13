@@ -55,7 +55,7 @@ class DataDirectoryRecoveryApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-    title: 'BaoCode',
+    title: 'Caocode',
     debugShowCheckedModeBanner: false,
     theme: buildAppTheme(),
     // The display language setting is in the folder that is not there:

@@ -3,16 +3,16 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:bao_link/bao_link.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/customize/customization_store.dart';
-import 'package:baocode/icons/project_icon.dart';
-import 'package:baocode/ide/file_service.dart';
-import 'package:baocode/kernel/agent_kernel.dart' show KernelChoiceKind;
-import 'package:baocode/link/chat_codec.dart';
-import 'package:baocode/link/link_host.dart';
-import 'package:baocode/kernel/mock/mock_kernels.dart';
-import 'package:baocode/workspace/project_workspace.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/customize/customization_store.dart';
+import 'package:caocode/icons/project_icon.dart';
+import 'package:caocode/ide/file_service.dart';
+import 'package:caocode/kernel/agent_kernel.dart' show KernelChoiceKind;
+import 'package:caocode/link/chat_codec.dart';
+import 'package:caocode/link/link_host.dart';
+import 'package:caocode/kernel/mock/mock_kernels.dart';
+import 'package:caocode/workspace/project_workspace.dart';
+import 'package:caocode/workspace/workspace.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -39,10 +39,10 @@ void main() {
       ),
       filesOf: (project) => (
         files: _MemoryFiles({
-          '~/code/baocode/README.md': '# BaoCode',
-          '~/code/baocode/lib/chat/chat_history_view.dart': 'class View {}',
-          '~/code/baocode/assets/logo.png': null,
-          '~/code/baocode/node_modules/x/index.js': '',
+          '~/code/caocode/README.md': '# Caocode',
+          '~/code/caocode/lib/chat/chat_history_view.dart': 'class View {}',
+          '~/code/caocode/assets/logo.png': null,
+          '~/code/caocode/node_modules/x/index.js': '',
         }),
         paths: p.posix,
       ),
@@ -160,13 +160,13 @@ void main() {
     expect(state.canListExtensions, isTrue);
     expect(
       [for (final p in state.projects) p.name],
-      ['baocode', 'cursor-docs', 'api-gateway'],
+      ['caocode', 'cursor-docs', 'api-gateway'],
     );
     expect(state.projects.first.branch, 'main');
     final first = state.sessions.firstWhere(
       (s) => s.title == 'Sticky user message on scroll',
     );
-    expect(first.project, '~/code/baocode');
+    expect(first.project, '~/code/caocode');
 
     final opened = LinkSessionUpdate.fromJson(
       (await peer.call(LinkMethods.open, {'session': first.id}))!
@@ -286,7 +286,7 @@ void main() {
         .session
         .attach();
     final listed =
-        (await peer.call(LinkMethods.files, {'project': '~/code/baocode'}))!
+        (await peer.call(LinkMethods.files, {'project': '~/code/caocode'}))!
             as Map;
     // Not what the index leaves out (node_modules).
     expect(listed['paths'], [
@@ -301,23 +301,23 @@ void main() {
 
     final read =
         (await peer.call(LinkMethods.read, {
-              'project': '~/code/baocode',
+              'project': '~/code/caocode',
               'path': 'lib/chat/chat_history_view.dart',
             }))!
             as Map;
     expect(read['text'], 'class View {}');
     final image =
         (await peer.call(LinkMethods.read, {
-              'project': '~/code/baocode',
+              'project': '~/code/caocode',
               'path': 'assets/logo.png',
             }))!
             as Map;
     expect(image['binary'], isTrue);
 
     for (final (project, path) in [
-      ('~/code/baocode', '../../.ssh/id_ed25519'),
-      ('~/code/baocode', ''),
-      ('~', 'code/baocode/README.md'),
+      ('~/code/caocode', '../../.ssh/id_ed25519'),
+      ('~/code/caocode', ''),
+      ('~', 'code/caocode/README.md'),
     ]) {
       await expectLater(
         peer.call(LinkMethods.read, {'project': project, 'path': path}),

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:baocode/kernel/claude_code/claude_haiku.dart';
+import 'package:caocode/kernel/claude_code/claude_haiku.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

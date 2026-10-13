@@ -2,10 +2,10 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bao_editor/monaco/flutter/editor_surface.dart';
-import 'package:baocode/ide/lsp/lsp_protocol.dart';
-import 'package:baocode/ide/lsp_ui/language_widgets.dart';
-import 'package:baocode/ide/lsp_ui/problems_panel.dart';
-import 'package:baocode/theme/workbench_theme.dart';
+import 'package:caocode/ide/lsp/lsp_protocol.dart';
+import 'package:caocode/ide/lsp_ui/language_widgets.dart';
+import 'package:caocode/ide/lsp_ui/problems_panel.dart';
+import 'package:caocode/theme/workbench_theme.dart';
 
 import '../workbench/fake_files.dart';
 import 'fake_language_features.dart';

@@ -1,5 +1,5 @@
-import 'package:baocode/kernel/claude_code/claude_elicitation.dart';
-import 'package:baocode/kernel/kernel_types.dart';
+import 'package:caocode/kernel/claude_code/claude_elicitation.dart';
+import 'package:caocode/kernel/kernel_types.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/git/repository_scan.dart';
-import 'package:baocode/ide/ide_list.dart';
-import 'package:baocode/ide/ide_workspace.dart';
-import 'package:baocode/theme/codicons.dart';
+import 'package:caocode/ide/git/repository_scan.dart';
+import 'package:caocode/ide/ide_list.dart';
+import 'package:caocode/ide/ide_workspace.dart';
+import 'package:caocode/theme/codicons.dart';
 
 import '../git/fake_git.dart';
 import 'fake_files.dart';

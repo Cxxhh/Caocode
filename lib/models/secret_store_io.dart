@@ -52,7 +52,7 @@ Future<ProcessResult> _run(
 }
 
 /// The macOS login keychain, through `security`: generic passwords of
-/// the service `BaoCode`, by account. The secret goes on its stdin (in
+/// the service `Caocode`, by account. The secret goes on its stdin (in
 /// hex), never in a command line.
 class KeychainSecretStore implements SecretStore {
   KeychainSecretStore({@visibleForTesting SecretCommand? run})
@@ -60,7 +60,7 @@ class KeychainSecretStore implements SecretStore {
 
   final SecretCommand _command;
 
-  static const service = 'BaoCode';
+  static const service = 'Caocode';
 
   /// `security`'s "not found".
   static const _notFound = 44;
@@ -188,7 +188,7 @@ class SecretServiceStore implements SecretStore {
     'secret-tool',
   ]).then((result) => result.exitCode == 0, onError: (_) => false);
 
-  List<String> _attributes(String id) => ['service', 'baocode', 'account', id];
+  List<String> _attributes(String id) => ['service', 'caocode', 'account', id];
 
   @override
   Future<String?> read(String id) async {
@@ -211,7 +211,7 @@ class SecretServiceStore implements SecretStore {
     if (!await _hasTool) return fallback.write(id, value);
     final result = await _command('secret-tool', [
       'store',
-      '--label=BaoCode: $id',
+      '--label=Caocode: $id',
       ..._attributes(id),
     ], input: value);
     if (result.exitCode != 0) throw _failed('kept', result);

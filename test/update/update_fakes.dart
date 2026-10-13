@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:baocode/update/update_service.dart';
-import 'package:baocode/update/update_settings.dart';
-import 'package:baocode/update/version.dart';
+import 'package:caocode/update/update_service.dart';
+import 'package:caocode/update/update_settings.dart';
+import 'package:caocode/update/version.dart';
 
 /// A manifest of [version] with downloads for both platforms.
 String manifestOf(
@@ -19,7 +19,8 @@ String manifestOf(
   'platforms': {
     for (final platform in platforms)
       platform: {
-        'url': 'https://baocode.dev/releases/$version/$platform.bin',
+        'url':
+            'https://github.com/Cxxhh/Caocode/releases/download/v$version/$platform.bin',
         'size': 100,
         'sha256': 'a' * 64,
         'signature': base64.encode(List.filled(64, 1)),

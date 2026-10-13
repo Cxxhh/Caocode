@@ -32,7 +32,7 @@ class WebSocketLinkSocket implements LinkSocket {
 }
 
 /// The path a desktop takes phones' WebSockets at.
-const linkPath = '/baocode-link';
+const linkPath = '/caocode-link';
 
 /// A desktop's listening end: takes phones' WebSockets on [port], on all of
 /// its addresses (IPv4 and IPv6).
@@ -66,7 +66,7 @@ class LinkServer {
           !WebSocketTransformer.isUpgradeRequest(request)) {
         request.response
           ..statusCode = HttpStatus.notFound
-          ..write('BaoCode');
+          ..write('Caocode');
         unawaited(request.response.close());
         continue;
       }

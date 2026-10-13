@@ -37,7 +37,7 @@ void main() {
   late String fakeBin;
 
   setUp(() {
-    sandbox = Directory.systemTemp.createTempSync('baocode-ssh-');
+    sandbox = Directory.systemTemp.createTempSync('caocode-ssh-');
     home = Directory(p.join(sandbox.path, 'home'))..createSync();
     log = File(p.join(sandbox.path, 'ssh.log'));
     fakeBin = p.join(sandbox.path, 'bin');
@@ -117,7 +117,7 @@ exec /bin/sh -c "$*"
 
   /// A "server build" that runs the real server from source.
   List<int> serverScript() => utf8.encode('''#!/bin/sh
-exec '$dartExecutable' '${p.absolute('packages', 'bao_remote', 'bin', 'baocode_server.dart')}' --data "\$HOME/server-data"
+exec '$dartExecutable' '${p.absolute('packages', 'bao_remote', 'bin', 'caocode_server.dart')}' --data "\$HOME/server-data"
 ''');
 
   List<String> commands() => log.existsSync()
@@ -140,7 +140,7 @@ exec '$dartExecutable' '${p.absolute('packages', 'bao_remote', 'bin', 'baocode_s
     expect(connection.hello.home, home.path);
     expect(connection.hello.dataDir, p.join(home.path, 'server-data'));
     final installed = File(
-      p.join(home.path, '.baocode-server', '1-abc', 'baocode-server'),
+      p.join(home.path, '.caocode-server', '1-abc', 'caocode-server'),
     );
     expect(installed.existsSync(), isTrue);
     expect(installed.readAsBytesSync(), serverScript());
@@ -148,8 +148,8 @@ exec '$dartExecutable' '${p.absolute('packages', 'bao_remote', 'bin', 'baocode_s
     expect(progress.any((line) => line.contains('Installing')), isTrue);
     expect(commands(), [
       'sh -s',
-      startsWith("sh -c 'mkdir -p .baocode-server/1-abc && gzip -dc >"),
-      '.baocode-server/1-abc/baocode-server',
+      startsWith("sh -c 'mkdir -p .caocode-server/1-abc && gzip -dc >"),
+      '.caocode-server/1-abc/caocode-server',
     ]);
 
     // It answers: a file there.
@@ -165,7 +165,7 @@ exec '$dartExecutable' '${p.absolute('packages', 'bao_remote', 'bin', 'baocode_s
     log.deleteSync();
     final again = await launcher.connect(SshTarget.parse('dev'));
     expect(binaries.reads, ['linux-x64']);
-    expect(commands(), ['sh -s', '.baocode-server/1-abc/baocode-server']);
+    expect(commands(), ['sh -s', '.caocode-server/1-abc/caocode-server']);
     await again.close();
   }, timeout: const Timeout(Duration(minutes: 2)));
 
@@ -406,7 +406,7 @@ exec '$dartExecutable' '${p.absolute('packages', 'bao_remote', 'bin', 'baocode_s
     expect(arguments, containsAllInOrder(['-T', '-o', 'BatchMode=yes']));
     expect(arguments, contains('ServerAliveInterval=15'));
     expect(arguments.sublist(arguments.length - 2), ['dev', 'cmd']);
-    expect(launcher.serverPath, '.baocode-server/7/baocode-server');
+    expect(launcher.serverPath, '.caocode-server/7/caocode-server');
     expect(launcher.uploadCommand('n', gzip: false), contains('cat >'));
   });
 

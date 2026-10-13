@@ -180,7 +180,7 @@ void main() {
           DirectEndpoint('2408:8207::1', 47100),
           DirectEndpoint('home.example.com', 443),
         ],
-        relay: RelayEndpoint(Uri.parse('wss://relay.baocode.dev'), 'room'),
+        relay: RelayEndpoint(Uri.parse('wss://relay.caocode.dev'), 'room'),
       );
       final parsed = PairingOffer.parse(offer.uri);
       expect(parsed.name, offer.name);

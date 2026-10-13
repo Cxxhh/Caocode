@@ -50,7 +50,7 @@ class DataDirectory {
   /// user's data.
   static DataDirectory get current => _current ??= DataDirectory(
     Platform.environment.containsKey('FLUTTER_TEST')
-        ? p.join(Directory.systemTemp.path, 'baocode-test-data-$pid')
+        ? p.join(Directory.systemTemp.path, 'caocode-test-data-$pid')
         : defaultPath(Platform.environment),
   );
   static set current(DataDirectory value) => _current = value;
@@ -378,7 +378,7 @@ String expandDataDirectory(String path, String home) {
 
 /// Whether a file can be made (and removed) in the folder at [path].
 bool canWriteIn(String path) {
-  final probe = File(p.join(path, '.baocode-write-probe-$pid'));
+  final probe = File(p.join(path, '.caocode-write-probe-$pid'));
   try {
     probe.writeAsStringSync('');
     probe.deleteSync();

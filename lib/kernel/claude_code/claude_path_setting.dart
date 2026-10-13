@@ -2,7 +2,7 @@ import 'local_claude_stub.dart' if (dart.library.io) 'local_claude_io.dart';
 
 /// Settings → General → Claude Code: the build to run on this machine
 /// (`claudeCode.path` in settings.json), e.g. one built from a fork; none
-/// set, the newest of those installed and the one BaoCode downloaded.
+/// set, the newest of those installed and the one Caocode downloaded.
 abstract final class ClaudePathSetting {
   static const settingKey = 'claudeCode.path';
 
@@ -22,7 +22,7 @@ sealed class LocalClaudeStatus {
 }
 
 /// [path] runs, at [version] (null when it does not say); [downloaded]
-/// when it is the one BaoCode downloaded.
+/// when it is the one Caocode downloaded.
 class LocalClaudeFound extends LocalClaudeStatus {
   const LocalClaudeFound(this.path, this.version, {this.downloaded = false});
 

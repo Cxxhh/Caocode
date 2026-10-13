@@ -9,7 +9,7 @@ does the same way, and where it differs.
 windows/
   runner/
     main.cpp                 window size, centre, minimum size
-    flutter_window.cpp       hosts Flutter; wires baocode/window; the window's
+    flutter_window.cpp       hosts Flutter; wires caocode/window; the window's
                              parts: hit test, move, resize, its buttons
     window_channel.cpp       setAlwaysOnTop, pickDirectory, clipboard,
                              context menu, open (CreateProcess / ShellExecute)
@@ -26,7 +26,7 @@ lib/
   kernel/claude_code/        CLI find + start, config and temp dirs
 ```
 
-## Same channel as macOS: `baocode/window`
+## Same channel as macOS: `caocode/window`
 
 | Method | Windows |
 | --- | --- |
@@ -42,14 +42,14 @@ lib/
 | `open` | an app (`code` / `cursor` / `wt`) found on PATH + PATHEXT: `CreateProcessW` with `CREATE_NO_WINDOW` (`.cmd` / `.bat` through `cmd.exe /d /s /c`, so no console flashes up); otherwise `ShellExecuteW` |
 
 Files dragged onto the window from other apps come over a channel of their
-own, `baocode/drop` (`dragUpdate` / `dragExit` / `drop`, see
+own, `caocode/drop` (`dragUpdate` / `dragExit` / `drop`, see
 `lib/chat/composer/file_drop.dart`): `drop_target.cpp` is registered on the
 Flutter view with `RegisterDragDrop`, which is why `main.cpp` initializes
 COM through `OleInitialize`. Flutter answers whether the composer is under
 the pointer later than OLE asks, so `DragOver` tells OLE the last answer (it
 is asked again while the drag rests).
 
-Edit-menu bridging (`editCommand` / `baocodeSelectAll:` …) is **macOS only**.
+Edit-menu bridging (`editCommand` / `caocodeSelectAll:` …) is **macOS only**.
 Windows has no app menu bar for those; Flutter handles Ctrl+A/C/V itself
 (`WindowControls.hasEditMenu`).
 
@@ -84,10 +84,10 @@ Default client size 1024×760, minimum 400×540 — same numbers as
 
 | Concern | Windows |
 | --- | --- |
-| Preferences | `%APPDATA%\baocode\preferences.json` |
-| Claude config | `%USERPROFILE%\.claude` (or `BAOCODE_CLAUDE_DATA_PATH` / `CLAUDE_CONFIG_DIR`) |
+| Preferences | `%APPDATA%\caocode\preferences.json` |
+| Claude config | `%USERPROFILE%\.claude` (or `CAOCODE_CLAUDE_DATA_PATH` / `CLAUDE_CONFIG_DIR`) |
 | Task temp | `Directory.systemTemp` (not `/tmp`) |
-| Finding `claude` | Settings → General → Claude Code (`claudeCode.path`), else the newest of PATH (`claude.cmd` / `.exe`), `%APPDATA%\npm\claude.cmd`, … and the one BaoCode downloaded (`win32-x64/claude.exe`, kept as `<data>\claude\claude-<version>.exe`) |
+| Finding `claude` | Settings → General → Claude Code (`claudeCode.path`), else the newest of PATH (`claude.cmd` / `.exe`), `%APPDATA%\npm\claude.cmd`, … and the one Caocode downloaded (`win32-x64/claude.exe`, kept as `<data>\claude\claude-<version>.exe`) |
 | Starting CLI | `Process.start(..., runInShell: true)` for `.cmd` / `.bat` shims |
 | Login shell env | not used; the process already has the user's environment |
 

@@ -10,8 +10,8 @@
 // is the detector's `wordSeparators` setter.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/terminal/links/links.dart';
-import 'package:baocode/ide/terminal/links/terminal_word_link_detector.dart';
+import 'package:caocode/ide/terminal/links/links.dart';
+import 'package:caocode/ide/terminal/links/terminal_word_link_detector.dart';
 import 'package:bao_xterm/headless/public/terminal.dart';
 import 'package:bao_xterm/typings/xterm_headless.dart' hide Terminal;
 

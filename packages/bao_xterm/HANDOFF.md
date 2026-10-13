@@ -12,9 +12,9 @@
 | `packages/bao_pty` | 伪终端进程（forkpty／ConPTY），见 [bao_pty 的 HANDOFF](../bao_pty/HANDOFF.md) | 纯 Dart，build hook 编译 C |
 | `packages/bao_editor` | Monaco 编辑器、Monarch 与 TextMate 高亮（含 Oniguruma）、VS Code 主题和配色，见 [bao_editor 的 HANDOFF](../bao_editor/HANDOFF.md) | Flutter，build hook 编译 C |
 
-- **许可是 MIT**（各包的 `LICENSE`，Copyright (c) 2026 BaoCode）。应用本身是 GPL-3.0-only，把应用的代码搬进包等于以 MIT 放出，先问用户。上游声明留在原处：`bao_xterm/lib/LICENSE.txt` 和各插件目录的 `LICENSE`（xterm.js），`bao_editor/lib/monaco/LICENSE.txt`（VS Code），`bao_editor/assets/monaco/LICENSE.txt`（Monaco），`bao_editor/assets/textmate/LICENSE.txt`（语法和主题），`bao_editor/lib/textmate/vscode_textmate/LICENSE.md`，`bao_editor/native/oniguruma/`（Oniguruma）。
+- **许可是 MIT**（各包的 `LICENSE`，Copyright (c) 2026 Caocode）。应用本身是 GPL-3.0-only，把应用的代码搬进包等于以 MIT 放出，先问用户。上游声明留在原处：`bao_xterm/lib/LICENSE.txt` 和各插件目录的 `LICENSE`（xterm.js），`bao_editor/lib/monaco/LICENSE.txt`（VS Code），`bao_editor/assets/monaco/LICENSE.txt`（Monaco），`bao_editor/assets/textmate/LICENSE.txt`（语法和主题），`bao_editor/lib/textmate/vscode_textmate/LICENSE.md`，`bao_editor/native/oniguruma/`（Oniguruma）。
 - **暂不发布**。用户以后会发到 pub.dev，包名就是 bao_editor、bao_xterm、bao_pty；在那之前保持 `publish_to: none`、版本 0.1.0，不要自行发布。
-- 依赖只能从应用指向包，包不能 import `package:baocode`。包要用应用的东西时，包里定义接口、应用实现，比如 bao_editor 的 `TextMateThemeSource`（应用的 `WorkbenchThemeService`）、`MonacoLanguagePacks`（应用的 `LanguagePackRegistry`，`main()` 里设 `MonacoLanguageAssets.defaultPacks`）。
+- 依赖只能从应用指向包，包不能 import `package:caocode`。包要用应用的东西时，包里定义接口、应用实现，比如 bao_editor 的 `TextMateThemeSource`（应用的 `WorkbenchThemeService`）、`MonacoLanguagePacks`（应用的 `LanguagePackRegistry`，`main()` 里设 `MonacoLanguageAssets.defaultPacks`）。
 - 包里文档的路径相对于包根目录，`../../` 开头的是应用的文件。
 
 发布前要做的：
@@ -90,7 +90,7 @@ xterm.js commit `c58ea3637f3968e0e6e79cd92cf9aace7ef89ee2`（`@xterm/xterm` 6.1.
 
 以下都先按合理的默认做了，需要时再改：
 
-1. `TERM_PROGRAM` 设成 `baocode`，不是 `vscode`。有些程序会按 `vscode` 做特殊处理，好处是兼容，坏处是冒充。
+1. `TERM_PROGRAM` 设成 `caocode`，不是 `vscode`。有些程序会按 `vscode` 做特殊处理，好处是兼容，坏处是冒充。
 2. Windows 上不设 `TERM`，与 VS Code、node-pty 一致。
 3. 没有设 `TERM_PROGRAM_VERSION`，应用版本还没接进来（`terminalEnvironment(version:)` 已经能接收）。
 4. native assets 要求 macOS 13，而 Runner 的最低版本是 12.0：在 macOS 12 上 `ptySupported` 为 false，没有终端。可以把最低版本提到 13，或者接受。

@@ -77,7 +77,7 @@ class GalleryNetworkException implements Exception {
 /// `User-Agent` of the app's.
 class IoGalleryHttp implements GalleryHttp {
   IoGalleryHttp({
-    String userAgent = 'BaoCode',
+    String userAgent = 'Caocode',
     Duration connectionTimeout = const Duration(seconds: 20),
     this.stallTimeout = const Duration(seconds: 60),
   }) : _client = HttpClient()

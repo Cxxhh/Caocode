@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/workspace/window_controls.dart';
+import 'package:caocode/workspace/window_controls.dart';
 
-const _window = MethodChannel('baocode/window');
+const _window = MethodChannel('caocode/window');
 
 /// The native open and save panels the IDE asks for, and the macOS File
 /// menu it names and fills: what goes to the window, and what comes back.

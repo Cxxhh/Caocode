@@ -5,8 +5,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/platform/data_dir.dart';
-import 'package:baocode/settings/data_dir_service.dart';
+import 'package:caocode/platform/data_dir.dart';
+import 'package:caocode/settings/data_dir_service.dart';
 import 'package:path/path.dart' as p;
 
 /// Moving the data folder copies only the app's own entries, points the
@@ -18,7 +18,7 @@ void main() {
   late String current;
 
   setUp(() {
-    root = Directory.systemTemp.createTempSync('baocode-move');
+    root = Directory.systemTemp.createTempSync('caocode-move');
     home = p.join(root.path, 'home');
     current = p.join(root.path, 'current');
     Directory(home).createSync();
@@ -38,7 +38,7 @@ void main() {
       ('cache/claude-sessions.json', '{}'),
       ('icons/index.json', '[]'),
       ('workspaces/w1/web.code-workspace', '{"folders": []}'),
-      ('logs/errors.log', '--- BaoCode 1.0.1 ---\n'),
+      ('logs/errors.log', '--- Caocode 1.0.1 ---\n'),
       ('extensions/extensions.json', '[]'),
       ('Cookies', 'chromium'),
       ('GPUCache/data_0', 'chromium'),
@@ -86,7 +86,7 @@ void main() {
 
   group('check', () {
     test(
-      'an empty folder, one with BaoCode data, one with other files',
+      'an empty folder, one with Caocode data, one with other files',
       () async {
         expect(
           (await service().check(folder('empty', files: ['.DS_Store'])))
@@ -95,14 +95,14 @@ void main() {
         );
         expect(
           (await service().check(
-            folder('baocode', files: ['User/settings.json']),
+            folder('caocode', files: ['User/settings.json']),
           )).contents,
-          DataDirectoryContents.baocodeData,
+          DataDirectoryContents.caocodeData,
         );
         expect(
           (await service().check(folder('argv', files: ['argv.json'])))
               .contents,
-          DataDirectoryContents.baocodeData,
+          DataDirectoryContents.caocodeData,
         );
         expect(
           (await service().check(folder('other', files: ['notes.txt'])))
@@ -137,7 +137,7 @@ void main() {
       final target = await service().check(readOnly);
       expect(target.error, contains('cannot be written'));
       // Made when asked (the default place may not be there yet).
-      final made = p.join(root.path, 'made', 'baocode');
+      final made = p.join(root.path, 'made', 'caocode');
       expect((await service().check(made, create: true)).ok, isTrue);
       expect(Directory(made).existsSync(), isTrue);
     });
@@ -326,7 +326,7 @@ void main() {
     });
   });
 
-  test('a folder with BaoCode data is used as it is', () async {
+  test('a folder with Caocode data is used as it is', () async {
     final target = folder('target', files: ['User/settings.json']);
     await service().useAsIs(target);
     expect(tree(target), ['User', 'User/settings.json']);

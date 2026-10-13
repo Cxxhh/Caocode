@@ -518,6 +518,7 @@ class SettingsTextField extends StatefulWidget {
     required this.value,
     required this.semanticLabel,
     required this.onSubmitted,
+    this.onChanged,
     this.hint,
     this.width = 220,
   });
@@ -525,6 +526,7 @@ class SettingsTextField extends StatefulWidget {
   final String value;
   final String semanticLabel;
   final ValueChanged<String> onSubmitted;
+  final ValueChanged<String>? onChanged;
   final String? hint;
   final double width;
 
@@ -589,6 +591,7 @@ class _SettingsTextFieldState extends State<SettingsTextField> {
           controller: _controller,
           focusNode: _focus,
           onSubmitted: _submit,
+          onChanged: widget.onChanged,
           style: mono.copyWith(color: AppColors.text),
           decoration: InputDecoration(
             isDense: true,

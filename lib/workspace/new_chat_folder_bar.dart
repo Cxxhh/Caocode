@@ -41,17 +41,17 @@ class NewChatFolderBar extends StatelessWidget {
   final void Function(ValueChanged<String> onOpen, {String? host})? openRemote;
 
   /// The menu's row for Open Remote Project….
-  static const _openRemoteId = 'baocode.remote.openFolder';
+  static const _openRemoteId = 'caocode.remote.openFolder';
 
   /// The menu's row for Create Workspace….
-  static const _createWorkspaceId = 'baocode.workspace.create';
+  static const _createWorkspaceId = 'caocode.workspace.create';
 
   /// Before an SSH host, the menu's row for it, which lists its projects
   /// at its side.
-  static const _hostId = 'baocode.remote.host:';
+  static const _hostId = 'caocode.remote.host:';
 
   /// Before an SSH host, the row first at its side: a folder there to pick.
-  static const _pickOnId = 'baocode.remote.pickOn:';
+  static const _pickOnId = 'caocode.remote.pickOn:';
 
   /// The projects the menu lists of this machine, and of SSH hosts, the
   /// most recent first: the rest are reached by picking their folder.

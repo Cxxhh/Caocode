@@ -1,4 +1,4 @@
-import 'package:baocode/network/proxy_settings.dart';
+import 'package:caocode/network/proxy_settings.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// `scutil --proxy` with Clash Verge's system proxy on.

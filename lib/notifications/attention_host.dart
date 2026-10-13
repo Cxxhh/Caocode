@@ -48,7 +48,7 @@ class TrayState {
 }
 
 /// The system's side of notifying: what the native window does over
-/// `baocode/attention` (macos/Runner/Attention.swift,
+/// `caocode/attention` (macos/Runner/Attention.swift,
 /// windows/runner/attention.cpp).
 abstract interface class AttentionHost {
   /// A notification of the system's, without a sound; [id] is the agent's,
@@ -95,7 +95,7 @@ class ChannelAttentionHost implements AttentionHost {
   /// The one host: the channel has one handler.
   static final instance = ChannelAttentionHost._();
 
-  static const _channel = MethodChannel('baocode/attention');
+  static const _channel = MethodChannel('caocode/attention');
 
   static bool get _available => AppPlatform.isMacOS || AppPlatform.isWindows;
 

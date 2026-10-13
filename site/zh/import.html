@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>导入到 BaoCode</title>
-<meta name="description" content="一键把上游添加到 BaoCode。">
+<title>导入到 Caocode</title>
+<meta name="description" content="一键把上游添加到 Caocode。">
 <meta name="robots" content="noindex">
 <link rel="icon" href="/icon.png">
 <link rel="stylesheet" href="/style.css">
@@ -17,48 +17,48 @@
   <symbol id="ic-download" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3m9 12v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10l5 5l5-5"/></g></symbol>
 </svg>
 <header class="top">
-  <a class="brand" href="/zh/"><img src="/icon.png" alt="">BaoCode</a>
+  <a class="brand" href="/zh/"><img src="/icon.png" alt="">Caocode</a>
   <a href="/zh/download">下载</a>
   <a href="/zh/changelog">更新日志</a>
-  <a href="https://github.com/baocode-dev/baocode"><svg class="ic" aria-hidden="true"><use href="#ic-github"/></svg>GitHub</a>
+  <a href="https://github.com/Cxxhh/Caocode"><svg class="ic" aria-hidden="true"><use href="#ic-github"/></svg>GitHub</a>
   <a class="lang" href="/import" hreflang="en" lang="en">English</a>
 </header>
 
-<!-- import.js 从地址里读出要导入的内容，填进下面，并打开 BaoCode；用到的文字都在这里。 -->
+<!-- import.js 从地址里读出要导入的内容，填进下面，并打开 Caocode；用到的文字都在这里。 -->
 <main class="page" data-import="zh">
-  <h1>导入到 BaoCode</h1>
+  <h1>导入到 Caocode</h1>
 
   <section data-state="ready" hidden>
-    <p class="subtitle">正在打开 BaoCode 添加 <strong data-field="name"></strong>。BaoCode 会先展示详情，经你确认后才会添加。</p>
+    <p class="subtitle">正在打开 Caocode 添加 <strong data-field="name"></strong>。Caocode 会先展示详情，经你确认后才会添加。</p>
     <dl class="import">
       <dt>地址</dt><dd data-field="url"></dd>
       <dt>协议</dt><dd data-field="protocol"></dd>
       <dt>密钥</dt><dd data-field="key"></dd>
     </dl>
     <div class="actions">
-      <a class="button primary" data-open href="/zh/download">打开 BaoCode</a>
-      <a class="button" href="/zh/download" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#ic-download"/></svg>下载 BaoCode</a>
+      <a class="button primary" data-open href="/zh/download">打开 Caocode</a>
+      <a class="button" href="/zh/download" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#ic-download"/></svg>下载 Caocode</a>
     </div>
-    <p class="missing" data-missing hidden>没有反应？可能还没安装 BaoCode。下载并安装后，回到这个标签页，再点一次“打开 BaoCode”。</p>
+    <p class="missing" data-missing hidden>没有反应？可能还没安装 Caocode。下载并安装后，回到这个标签页，再点一次“打开 Caocode”。</p>
     <p class="note">你的对话和代码会发往 <strong data-field="host"></strong>，只从你信任的站点导入。</p>
-    <p class="note">密钥不会发到 baocode.dev：它在链接的 # 后面，浏览器不会把这部分发给服务器；本页读取后也会立即把它从地址栏中清除。</p>
+    <p class="note">密钥不会发到 caocode.dev：它在链接的 # 后面，浏览器不会把这部分发给服务器；本页读取后也会立即把它从地址栏中清除。</p>
   </section>
 
   <section data-state="invalid" hidden>
     <p class="subtitle">这个导入链接无法使用。</p>
-    <p>链接里需要有 Base URL（http 或 https）和 BaoCode 支持的协议。请让站点重新生成链接，或在 BaoCode 的 设置 → 模型 中手动添加上游。</p>
+    <p>链接里需要有 Base URL（http 或 https）和 Caocode 支持的协议。请让站点重新生成链接，或在 Caocode 的 设置 → 模型 中手动添加上游。</p>
   </section>
 
-  <noscript><p>这个页面需要 JavaScript 才能把上游交给 BaoCode。你也可以在 BaoCode 的 设置 → 模型 中手动添加。</p></noscript>
+  <noscript><p>这个页面需要 JavaScript 才能把上游交给 Caocode。你也可以在 Caocode 的 设置 → 模型 中手动添加。</p></noscript>
 
   <div hidden>
     <span data-protocol-name="anthropic">Anthropic 兼容</span>
     <span data-protocol-name="openai-chat">OpenAI Chat Completions</span>
     <span data-protocol-name="openai-responses">OpenAI Responses</span>
-    <span data-no-key>无，可在 BaoCode 中再填</span>
+    <span data-no-key>无，可在 Caocode 中再填</span>
   </div>
 
-  <p class="note">你是站长？<a href="/zh/upstreams">接入一键导入</a>，BaoCode 会免费展示你的站点。</p>
+  <p class="note">你是站长？<a href="/zh/upstreams">接入一键导入</a>，Caocode 会免费展示你的站点。</p>
 </main>
 
 <script src="/site.js"></script>

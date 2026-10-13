@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:baocode/keybindings/keybinding_service.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/search/conversation_search.dart';
-import 'package:baocode/search/search_palette.dart';
-import 'package:baocode/sidebar/sidebar.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:caocode/keybindings/keybinding_service.dart';
+import 'package:caocode/main.dart';
+import 'package:caocode/search/conversation_search.dart';
+import 'package:caocode/search/search_palette.dart';
+import 'package:caocode/sidebar/sidebar.dart';
+import 'package:caocode/workspace/workspace.dart';
 
 /// Kept conversations that say what is searched for in one session.
 class _FakeSearch implements ConversationSearch {
@@ -38,7 +38,7 @@ Future<Workspace> _pumpApp(
   addTearDown(() => KeybindingService.instance = KeybindingService());
   final workspace = Workspace.mock();
   await tester.pumpWidget(
-    BaoCodeApp(workspace: workspace, conversations: conversations),
+    CaocodeApp(workspace: workspace, conversations: conversations),
   );
   await tester.pump();
   return workspace;
@@ -91,7 +91,7 @@ void main() {
       'We should retry the websocket handshake twice before failing.',
     );
     await tester.pumpWidget(
-      BaoCodeApp(workspace: workspace, conversations: search),
+      CaocodeApp(workspace: workspace, conversations: search),
     );
     await tester.pump();
     await tester.tap(

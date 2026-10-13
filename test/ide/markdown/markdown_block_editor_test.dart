@@ -1,7 +1,7 @@
 import 'package:bao_editor/monaco/flutter/editor_document_model.dart';
-import 'package:baocode/ide/markdown/markdown_block_editor.dart';
-import 'package:baocode/ide/markdown/markdown_blocks.dart';
-import 'package:baocode/ide/markdown/markdown_document.dart';
+import 'package:caocode/ide/markdown/markdown_block_editor.dart';
+import 'package:caocode/ide/markdown/markdown_blocks.dart';
+import 'package:caocode/ide/markdown/markdown_document.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// An edit of [model]'s block [index] (empty lines aside).

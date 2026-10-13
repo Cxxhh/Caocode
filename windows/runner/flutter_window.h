@@ -16,7 +16,7 @@
 
 // The main window: the chat's, the one the app starts with, which hosts the
 // engine's first view (the implicit one) and owns the engine; it answers the
-// window commands Flutter asks for over `baocode/window` (see
+// window commands Flutter asks for over `caocode/window` (see
 // window_channel.h), and keeps the IDE's windows (see app_windows.h), the
 // paths the app is asked to open and the tray.
 class FlutterWindow : public ViewWindow {

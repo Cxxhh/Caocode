@@ -25,17 +25,17 @@
 			</array>
 		</dict>
 	</array>
-	<!-- baocode://, by which the Finder extension hands the app what its
+	<!-- caocode://, by which the Finder extension hands the app what its
 	     context menu is on, and a site's one-click import an upstream (see
 	     AppDelegate.swift). -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>dev.baocode.desktop</string>
+			<string>dev.caocode.desktop</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>baocode</string>
+				<string>caocode</string>
 			</array>
 		</dict>
 	</array>
@@ -67,7 +67,7 @@
 	     Without this string it refuses at once, with no dialog and no
 	     entry under Privacy & Security → Automation. -->
 	<key>NSAppleEventsUsageDescription</key>
-	<string>A program run in BaoCode wants to control another app.</string>
+	<string>A program run in Caocode wants to control another app.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>$(PRODUCT_COPYRIGHT)</string>
 	<key>NSMainNibFile</key>
@@ -75,10 +75,10 @@
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>BaoCode lets the phones paired with it find it on the local network.</string>
+	<string>Caocode lets the phones paired with it find it on the local network.</string>
 	<key>NSBonjourServices</key>
 	<array>
-		<string>_baocode._tcp</string>
+		<string>_caocode._tcp</string>
 	</array>
 </dict>
 </plist>

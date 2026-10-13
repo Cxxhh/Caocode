@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:caocode/chat/chat_session.dart';
+import 'package:caocode/workspace/workspace.dart';
 
 /// What the IDE's chat shows counts as in view, as the chat's panes do: no
 /// notification for it while the window is in front, and its turn's end is

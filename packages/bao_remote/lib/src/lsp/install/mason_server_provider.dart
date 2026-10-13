@@ -307,7 +307,7 @@ class MasonServerProvider implements LspServerProvider {
         await File(p.join(directory, 'package.json')).writeAsString(
           jsonEncode({
             'name':
-                'baocode-${plan.package.name.replaceAll(RegExp(r'[^a-z0-9-]'), '-')}',
+                'caocode-${plan.package.name.replaceAll(RegExp(r'[^a-z0-9-]'), '-')}',
             'version': '0.0.0',
             'private': true,
           }),
@@ -529,7 +529,7 @@ class MasonServerProvider implements LspServerProvider {
   }
 }
 
-/// What an install left in its package folder (`baocode-install.json`).
+/// What an install left in its package folder (`caocode-install.json`).
 class MasonInstallManifest {
   const MasonInstallManifest({
     required this.package,
@@ -546,7 +546,7 @@ class MasonInstallManifest {
         bin: (json['bin'] as Map).cast<String, String>(),
       );
 
-  static const fileName = 'baocode-install.json';
+  static const fileName = 'caocode-install.json';
 
   final String package;
   final String version;

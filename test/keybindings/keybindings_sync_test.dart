@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bao_editor/monaco/flutter/keybinding_entry.dart';
-import 'package:baocode/keybindings/keybinding_service.dart';
-import 'package:baocode/keybindings/keybindings_sync.dart';
-import 'package:baocode/keybindings/keymap.dart';
-import 'package:baocode/settings/jsonc_file.dart';
-import 'package:baocode/settings/user_settings.dart';
+import 'package:caocode/keybindings/keybinding_service.dart';
+import 'package:caocode/keybindings/keybindings_sync.dart';
+import 'package:caocode/keybindings/keymap.dart';
+import 'package:caocode/settings/jsonc_file.dart';
+import 'package:caocode/settings/user_settings.dart';
 import 'package:path/path.dart' as p;
 
 void main() {
@@ -19,7 +19,7 @@ void main() {
   late KeybindingsSync sync;
 
   setUp(() async {
-    temp = await Directory.systemTemp.createTemp('baocode-keybindings-sync');
+    temp = await Directory.systemTemp.createTemp('caocode-keybindings-sync');
     keybindings = JsoncFile(
       p.join(temp.path, 'User', 'keybindings.json'),
       debounce: Duration.zero,
@@ -71,7 +71,7 @@ void main() {
   );
 
   test('applies the keymap the setting selects, and follows it', () async {
-    await write(settings, '{ "baocode.keymap": "ms-vscode.atom-keybindings" }');
+    await write(settings, '{ "caocode.keymap": "ms-vscode.atom-keybindings" }');
     sync.start();
     await sync.ready;
     expect(service.keymapId, 'ms-vscode.atom-keybindings');
@@ -80,7 +80,7 @@ void main() {
 
     await write(
       settings,
-      '{ "baocode.keymap": "ms-vscode.sublime-keybindings" }',
+      '{ "caocode.keymap": "ms-vscode.sublime-keybindings" }',
     );
     await sync.ready;
     expect(service.keymapName, 'Sublime Text');
@@ -106,12 +106,12 @@ void main() {
     expect(service.labelFor('workbench.view.explorer'), '⌘K ⌘M');
     final text = File(settings.path).readAsStringSync();
     expect(text, contains('// settings'));
-    expect(text, contains('"baocode.keymap": "someone.my-keys"'));
+    expect(text, contains('"caocode.keymap": "someone.my-keys"'));
 
     // Not there (deleted): none in effect.
     await sync.selectKeymap('someone.gone');
     expect(service.keymapId, isNull);
     await sync.selectKeymap(null);
-    expect(settings['baocode.keymap'], isNull);
+    expect(settings['caocode.keymap'], isNull);
   });
 }

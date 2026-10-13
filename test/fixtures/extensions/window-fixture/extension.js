@@ -162,7 +162,7 @@ function activate(extensionContext) {
       const handler = vscode.window.registerUriHandler({
         handleUri: uri => { lastUri = uri.toString(); }
       });
-      const appUri = vscode.Uri.from({ scheme: 'baocode', authority: 'baocode-test.window-fixture', path: '/callback', query: 'code=42' });
+      const appUri = vscode.Uri.from({ scheme: 'caocode', authority: 'caocode-test.window-fixture', path: '/callback', query: 'code=42' });
       vscode.env.openExternal(appUri).then(ok => { lastUri = `opened=${ok}`; });
       setTimeout(() => handler.dispose(), 3000);
       return 'registered';

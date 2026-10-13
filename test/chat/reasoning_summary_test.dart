@@ -1,7 +1,7 @@
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/widgets/chat_item_view.dart';
-import 'package:baocode/chat/widgets/step_header.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/widgets/chat_item_view.dart';
+import 'package:caocode/chat/widgets/step_header.dart';
+import 'package:caocode/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

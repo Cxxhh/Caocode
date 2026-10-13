@@ -50,7 +50,7 @@ class SshAskpass {
   /// takes it as refused). Gives up after ten minutes, or once the run's
   /// folder is gone (its `ssh` ended).
   static const script = r'''#!/bin/sh
-d="$BAOCODE_ASKPASS_DIR"
+d="$CAOCODE_ASKPASS_DIR"
 [ -d "$d" ] || exit 1
 umask 077
 printf '%s' "$1" > "$d/prompt.$$.tmp" && mv -f "$d/prompt.$$.tmp" "$d/prompt.$$" || exit 1
@@ -80,7 +80,7 @@ esac
   /// What [script] does, in PowerShell: the prompt is its arguments, the
   /// answer written to stdout as UTF-8.
   static const powershellScript = r'''
-$d = $env:BAOCODE_ASKPASS_DIR
+$d = $env:CAOCODE_ASKPASS_DIR
 if (-not $d -or -not (Test-Path -LiteralPath $d -PathType Container)) { exit 1 }
 $utf8 = New-Object System.Text.UTF8Encoding $false
 $prompt = $args -join ' '
@@ -113,7 +113,7 @@ exit 0
   /// The folder of the script and the runs' folders: made once, only the
   /// user's (`mkdtemp`; on Windows, the user's own temporary folder).
   Future<Directory> get _folder => _root ??= () async {
-    final root = await Directory.systemTemp.createTemp('baocode-askpass-');
+    final root = await Directory.systemTemp.createTemp('caocode-askpass-');
     final file = File(p.join(root.path, _scriptName));
     if (windows) {
       await file.writeAsString(windowsScript, flush: true);
@@ -153,7 +153,7 @@ class AskpassRun {
         'SSH_ASKPASS': script,
         // Even with no display (OpenSSH 8.4 and later).
         'SSH_ASKPASS_REQUIRE': 'force',
-        'BAOCODE_ASKPASS_DIR': _folder.path,
+        'CAOCODE_ASKPASS_DIR': _folder.path,
       } {
     _timer = Timer.periodic(interval, (_) => _poll());
   }

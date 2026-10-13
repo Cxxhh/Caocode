@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bao_editor/monaco/flutter/editor_document_model.dart';
 import 'package:bao_editor/monaco/flutter/editor_surface.dart';
 import 'package:bao_editor/monaco/flutter/editor_surface_controller.dart';
-import 'package:baocode/ide/ide_code_editor.dart';
+import 'package:caocode/ide/ide_code_editor.dart';
 
 void main() {
   EditorSurfaceController controllerOf(String text) {

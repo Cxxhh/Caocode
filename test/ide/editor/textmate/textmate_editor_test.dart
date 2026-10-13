@@ -7,11 +7,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bao_editor/monaco/flutter/editor_surface.dart';
 import 'package:bao_editor/textmate/textmate_syntax.dart';
 import 'package:bao_editor/textmate/textmate_worker.dart';
-import 'package:baocode/ide/file_service.dart';
-import 'package:baocode/ide/ide_editor.dart';
-import 'package:baocode/ide/ide_workspace.dart';
-import 'package:baocode/theme/app_theme.dart';
-import 'package:baocode/theme/workbench_theme.dart';
+import 'package:caocode/ide/file_service.dart';
+import 'package:caocode/ide/ide_editor.dart';
+import 'package:caocode/ide/ide_workspace.dart';
+import 'package:caocode/theme/app_theme.dart';
+import 'package:caocode/theme/workbench_theme.dart';
 import 'package:path/path.dart' as p;
 
 import '../../workbench/fake_files.dart';

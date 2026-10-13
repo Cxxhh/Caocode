@@ -1,6 +1,6 @@
 # 扩展（VS Code 插件）
 
-BaoCode **不运行 VS Code 插件的代码**。Node 扩展宿主曾经接入过，后来因为它让
+Caocode **不运行 VS Code 插件的代码**。Node 扩展宿主曾经接入过，后来因为它让
 工作台变重、变卡，在 `a572d6a`（2026-10-10）里整体移除了。现在扩展只用来装
 **颜色主题和文件图标主题**；语言功能走原生 LSP 客户端，调试走原生 DAP 客户端。
 
@@ -35,7 +35,7 @@ BaoCode **不运行 VS Code 插件的代码**。Node 扩展宿主曾经接入过
   和 `assets/lsp/mason-registry.json`，可以用语言包或 `<data>/User/lsp.json`
   覆盖，见 `lib/ide/lsp/packs/README.md`。
 - **调试**：DAP 客户端和调试视图在 `lib/debug/`，由 `lib/ide/ide_debug_host.dart`
-  接到工作台。适配器要由 BaoCode 自己注册（`DebuggerRegistry.setExtensions`）。
+  接到工作台。适配器要由 Caocode 自己注册（`DebuggerRegistry.setExtensions`）。
   **目前一个都没有注册。**
 
 ### 例：`ms-python.python`（2026-10-11）

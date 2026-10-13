@@ -6,25 +6,25 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bao_remote/claude.dart' show ClaudeNotInstalled;
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/widgets/tool_call_row.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/kernel/claude_code/claude_code_kernel.dart';
-import 'package:baocode/kernel/claude_code/claude_code_transport.dart';
-import 'package:baocode/kernel/claude_code/claude_code_translator.dart';
-import 'package:baocode/kernel/claude_code/claude_environment.dart';
-import 'package:baocode/kernel/claude_code/claude_goal.dart';
-import 'package:baocode/kernel/claude_code/claude_storage_io.dart';
-import 'package:baocode/kernel/claude_code/cli_locator.dart';
-import 'package:baocode/kernel/claude_code/control_channel.dart';
-import 'package:baocode/kernel/codex/codex_kernel.dart';
-import 'package:baocode/kernel/codex/codex_transport.dart';
-import 'package:baocode/kernel/commit_attribution.dart';
-import 'package:baocode/kernel/kernel_event.dart';
-import 'package:baocode/kernel/kernel_types.dart';
-import 'package:baocode/kernel/mock/mock_kernels.dart';
-import 'package:baocode/kernel/transcript.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/widgets/tool_call_row.dart';
+import 'package:caocode/chat/chat_session.dart';
+import 'package:caocode/kernel/agent_kernel.dart';
+import 'package:caocode/kernel/claude_code/claude_code_kernel.dart';
+import 'package:caocode/kernel/claude_code/claude_code_transport.dart';
+import 'package:caocode/kernel/claude_code/claude_code_translator.dart';
+import 'package:caocode/kernel/claude_code/claude_environment.dart';
+import 'package:caocode/kernel/claude_code/claude_goal.dart';
+import 'package:caocode/kernel/claude_code/claude_storage_io.dart';
+import 'package:caocode/kernel/claude_code/cli_locator.dart';
+import 'package:caocode/kernel/claude_code/control_channel.dart';
+import 'package:caocode/kernel/codex/codex_kernel.dart';
+import 'package:caocode/kernel/codex/codex_transport.dart';
+import 'package:caocode/kernel/commit_attribution.dart';
+import 'package:caocode/kernel/kernel_event.dart';
+import 'package:caocode/kernel/kernel_types.dart';
+import 'package:caocode/kernel/mock/mock_kernels.dart';
+import 'package:caocode/kernel/transcript.dart';
 
 /// Lines Claude Code 2.1.281 printed (recorded, with paths and account
 /// details replaced).
@@ -2267,7 +2267,7 @@ void main() {
       );
       await pumpEventQueue();
       expect(kernel.health.status, KernelHealthStatus.failed);
-      expect(kernel.health.message, contains('older than BaoCode needs'));
+      expect(kernel.health.message, contains('older than Caocode needs'));
       expect(kernel.health.detail, contains('--prompt-suggestions'));
       expect(
         kernel.health.detail,
@@ -2335,7 +2335,7 @@ void main() {
       await pumpEventQueue();
       expect(starts, 1);
       expect(kernel.health.status, KernelHealthStatus.failed);
-      expect(kernel.health.message, contains('older than BaoCode needs'));
+      expect(kernel.health.message, contains('older than Caocode needs'));
       expect(kernel.health.detail, contains('/usr/local/bin/claude'));
       kernel.dispose();
     });
@@ -3585,22 +3585,22 @@ void main() {
       return at < 0 ? null : jsonDecode(launch.arguments[at + 1]);
     }
 
-    test('is the setting\'s, BaoCode when unset or unknown', () {
-      expect(CommitAttribution.parse(null), CommitAttribution.baocode);
+    test('is the setting\'s, Caocode when unset or unknown', () {
+      expect(CommitAttribution.parse(null), CommitAttribution.caocode);
       expect(CommitAttribution.parse('none'), CommitAttribution.none);
       expect(CommitAttribution.parse('agent'), CommitAttribution.agent);
-      expect(CommitAttribution.parse('claude'), CommitAttribution.baocode);
-      expect(CommitAttribution.parse(1), CommitAttribution.baocode);
+      expect(CommitAttribution.parse('claude'), CommitAttribution.caocode);
+      expect(CommitAttribution.parse(1), CommitAttribution.caocode);
     });
 
     test('is passed as Claude Code\'s attribution setting, but for the '
         'agent\'s own', () {
       ClaudeLaunch launch(CommitAttribution attribution) =>
           ClaudeLaunch(cwd: '/p', attribution: attribution);
-      expect(flagSettings(launch(CommitAttribution.baocode)), {
+      expect(flagSettings(launch(CommitAttribution.caocode)), {
         'attribution': {
-          'commit': 'Co-Authored-By: BaoCode <noreply@baocode.dev>',
-          'pr': '🤖 Generated with [BaoCode](https://baocode.dev)',
+          'commit': 'Co-Authored-By: Caocode <noreply@caocode.dev>',
+          'pr': '🤖 Generated with [Caocode](https://caocode.dev)',
         },
       });
       expect(flagSettings(launch(CommitAttribution.none)), {
@@ -3656,9 +3656,9 @@ void main() {
   group('claude locator', () {
     tearDown(() => CliLocator.use(null));
 
-    test('BAOCODE_CLAUDE_PATH in the environment is not read: the build '
+    test('CAOCODE_CLAUDE_PATH in the environment is not read: the build '
         'to run is a setting now', () async {
-      final root = await Directory.systemTemp.createTemp('baocode-locator-');
+      final root = await Directory.systemTemp.createTemp('caocode-locator-');
       addTearDown(() => root.delete(recursive: true));
       final variant = File('${root.path}/claude-variant')
         ..writeAsStringSync('#!/bin/sh\n');
@@ -3666,7 +3666,7 @@ void main() {
         ..createSync(recursive: true)
         ..writeAsStringSync('#!/bin/sh\n');
       CliLocator.use({
-        'BAOCODE_CLAUDE_PATH': variant.path,
+        'CAOCODE_CLAUDE_PATH': variant.path,
         'PATH': '${root.path}/bin',
       });
 
@@ -3681,7 +3681,7 @@ void main() {
     group('on the PATH', () {
       late Directory root;
       setUp(() async {
-        root = await Directory.systemTemp.createTemp('baocode-locator-');
+        root = await Directory.systemTemp.createTemp('caocode-locator-');
         for (final dir in ['first', 'second']) {
           Directory('${root.path}/$dir').createSync();
         }
@@ -3747,7 +3747,7 @@ void main() {
     test(
       'none that runs: not installed, naming the ones that do not',
       () async {
-        final root = await Directory.systemTemp.createTemp('baocode-locator-');
+        final root = await Directory.systemTemp.createTemp('caocode-locator-');
         addTearDown(() => root.delete(recursive: true));
         addTearDown(() => CliLocator.candidatesOverride = null);
         final broken = File('${root.path}/claude')
@@ -3769,7 +3769,7 @@ void main() {
     );
 
     test('Volta\'s shim is passed over for its package\'s build', () async {
-      final root = await Directory.systemTemp.createTemp('baocode-locator-');
+      final root = await Directory.systemTemp.createTemp('caocode-locator-');
       addTearDown(() => root.delete(recursive: true));
       final volta = '${root.path}/Volta';
       final bin = '$volta/bin';
@@ -3789,7 +3789,7 @@ void main() {
     });
 
     test('a program is told from a script left in its place', () async {
-      final root = await Directory.systemTemp.createTemp('baocode-locator-');
+      final root = await Directory.systemTemp.createTemp('caocode-locator-');
       addTearDown(() => root.delete(recursive: true));
       File file(String name, List<int> bytes) =>
           File('${root.path}/$name')..writeAsBytesSync(bytes);
@@ -3849,7 +3849,7 @@ void main() {
   group('the shell environment', () {
     late Directory root;
     setUp(() async {
-      root = await Directory.systemTemp.createTemp('baocode-shell-');
+      root = await Directory.systemTemp.createTemp('caocode-shell-');
       ClaudeEnvironment.use(null);
     });
     tearDown(() async {
@@ -3895,7 +3895,7 @@ exec /bin/sh -c "\$command"
 
   group('Claude Code storage', () {
     test('reads the sessions where the login shell keeps them', () async {
-      final root = await Directory.systemTemp.createTemp('baocode-storage-');
+      final root = await Directory.systemTemp.createTemp('caocode-storage-');
       addTearDown(() => root.delete(recursive: true));
       addTearDown(() => ClaudeEnvironment.use(null));
       final config = '${root.path}/config';
@@ -3920,7 +3920,7 @@ exec /bin/sh -c "\$command"
 
     test('a session is titled as the user named it, else as Claude Code '
         'did, else after its first message', () async {
-      final root = await Directory.systemTemp.createTemp('baocode-storage-');
+      final root = await Directory.systemTemp.createTemp('caocode-storage-');
       addTearDown(() => root.delete(recursive: true));
       final config = '${root.path}/config';
       final cwd = '${root.path}/project';
@@ -3967,7 +3967,7 @@ exec /bin/sh -c "\$command"
 
     test('a session is dated by its last message, and titled past the '
         'placeholders its images are sent with', () async {
-      final root = await Directory.systemTemp.createTemp('baocode-storage-');
+      final root = await Directory.systemTemp.createTemp('caocode-storage-');
       addTearDown(() => root.delete(recursive: true));
       final config = '${root.path}/config';
       final cwd = '${root.path}/project';
@@ -4023,7 +4023,7 @@ exec /bin/sh -c "\$command"
 
     test('a session file is read again only once it changes, and the cache '
         'keeps only the files still there', () async {
-      final root = await Directory.systemTemp.createTemp('baocode-storage-');
+      final root = await Directory.systemTemp.createTemp('caocode-storage-');
       addTearDown(() => root.delete(recursive: true));
       final config = '${root.path}/config';
       final cwd = '${root.path}/project';
@@ -4070,7 +4070,7 @@ exec /bin/sh -c "\$command"
     test(
       'the app\'s data path wins, and the CLI is told to keep state there',
       () async {
-        final root = await Directory.systemTemp.createTemp('baocode-storage-');
+        final root = await Directory.systemTemp.createTemp('caocode-storage-');
         addTearDown(() => root.delete(recursive: true));
         addTearDown(() => ClaudeEnvironment.use(null));
         final mine = '${root.path}/mine';
@@ -4088,7 +4088,7 @@ exec /bin/sh -c "\$command"
             })}\n',
           );
         final environment = {
-          'BAOCODE_CLAUDE_DATA_PATH': mine,
+          'CAOCODE_CLAUDE_DATA_PATH': mine,
           'CLAUDE_CONFIG_DIR': theirs,
         };
         ClaudeEnvironment.use(environment);
@@ -4105,7 +4105,7 @@ exec /bin/sh -c "\$command"
     test(
       'deleting a session removes all of it, and only it, idempotently',
       () async {
-        final root = await Directory.systemTemp.createTemp('baocode-storage-');
+        final root = await Directory.systemTemp.createTemp('caocode-storage-');
         addTearDown(() => root.delete(recursive: true));
         final config = '${root.path}/config';
         final temp = '${root.path}/tmp';
@@ -4142,7 +4142,7 @@ exec /bin/sh -c "\$command"
     );
 
     test('a fork copies the conversation up to a message, apart', () async {
-      final root = await Directory.systemTemp.createTemp('baocode-storage-');
+      final root = await Directory.systemTemp.createTemp('caocode-storage-');
       addTearDown(() => root.delete(recursive: true));
       final config = '${root.path}/config';
       const id = 'aaaaaaaa-1111-4111-8111-111111111111';

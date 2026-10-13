@@ -1,11 +1,11 @@
 // The Extensions view: the installed list, an Open VSX search, and the
 // install, uninstall and enable actions through the backend.
 
-import 'package:baocode/extensions/capabilities/capability_analysis.dart';
-import 'package:baocode/extensions/gallery/extension_management_backend.dart';
-import 'package:baocode/extensions/gallery/open_vsx_client.dart';
-import 'package:baocode/extensions/ui/extensions_model.dart';
-import 'package:baocode/extensions/ui/extensions_view.dart';
+import 'package:caocode/extensions/capabilities/capability_analysis.dart';
+import 'package:caocode/extensions/gallery/extension_management_backend.dart';
+import 'package:caocode/extensions/gallery/open_vsx_client.dart';
+import 'package:caocode/extensions/ui/extensions_model.dart';
+import 'package:caocode/extensions/ui/extensions_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
@@ -290,7 +290,7 @@ void main() {
     expect(
       find.byTooltip(
         'Partly supported: Its themes apply; the rest of it does nothing in '
-        'BaoCode.',
+        'Caocode.',
       ),
       findsOneWidget,
     );

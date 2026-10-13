@@ -14,7 +14,7 @@
 // extensionsViews.ts, extensionsList.ts, extensionsActions.ts and their
 // media/extensionsViewlet.css, extension.css and extensionActions.css.
 //
-// Deviations: the gallery is Open VSX, searched for themes (BaoCode runs no
+// Deviations: the gallery is Open VSX, searched for themes (Caocode runs no
 // extension code: only their color and file icon themes apply); a row shows
 // the capability badge; a click opens the extension's page through
 // [ExtensionsView.onOpen], which the workbench shows as an editor.

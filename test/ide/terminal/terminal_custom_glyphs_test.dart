@@ -8,7 +8,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/terminal/terminal_custom_glyphs.dart';
+import 'package:caocode/ide/terminal/terminal_custom_glyphs.dart';
 import 'package:bao_xterm/addons/addon_webgl/custom_glyphs/custom_glyph_definitions.dart';
 import 'package:bao_xterm/addons/addon_webgl/custom_glyphs/types.dart';
 

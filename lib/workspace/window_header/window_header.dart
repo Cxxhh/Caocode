@@ -168,7 +168,7 @@ class WindowHeader extends StatefulWidget {
 class _WindowHeaderState extends State<WindowHeader> {
   static const _toggleSidebarCommand =
       'workbench.action.toggleSidebarVisibility';
-  static const _backToChatCommand = 'baocode.ide.backToChat';
+  static const _backToChatCommand = 'caocode.ide.backToChat';
 
   /// The most of the strip the session's title takes (see
   /// [WindowHeader.title]): a long one is cut short well before the tools.
@@ -644,8 +644,8 @@ class _WindowHeaderState extends State<WindowHeader> {
       ],
       HeaderMenu.help => [
         HeaderMenuItem(
-          l10n.menuAboutBaoCode,
-          onSelected: () => showAboutBaoCode(context),
+          l10n.menuAboutCaocode,
+          onSelected: () => showAboutCaocode(context),
         ),
       ],
     };

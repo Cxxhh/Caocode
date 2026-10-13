@@ -3,19 +3,19 @@
 // page's to pick from; the files the agent names found in its folders.
 
 import 'package:bao_editor/monaco/flutter/editor_surface.dart';
-import 'package:baocode/theme/code_font.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/side_panel/file_link.dart';
-import 'package:baocode/chat/side_panel/file_open.dart';
-import 'package:baocode/chat/side_panel/side_panel_controller.dart';
-import 'package:baocode/chat/side_panel/side_panel_view.dart';
-import 'package:baocode/ide/file_service.dart';
-import 'package:baocode/ide/git/git_repository.dart';
-import 'package:baocode/ide/git/repository_scan.dart';
-import 'package:baocode/ide/ide_explorer.dart';
-import 'package:baocode/ide/ide_list.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:caocode/theme/code_font.dart';
+import 'package:caocode/chat/chat_session.dart';
+import 'package:caocode/chat/side_panel/file_link.dart';
+import 'package:caocode/chat/side_panel/file_open.dart';
+import 'package:caocode/chat/side_panel/side_panel_controller.dart';
+import 'package:caocode/chat/side_panel/side_panel_view.dart';
+import 'package:caocode/ide/file_service.dart';
+import 'package:caocode/ide/git/git_repository.dart';
+import 'package:caocode/ide/git/repository_scan.dart';
+import 'package:caocode/ide/ide_explorer.dart';
+import 'package:caocode/ide/ide_list.dart';
+import 'package:caocode/kernel/agent_kernel.dart';
+import 'package:caocode/theme/app_theme.dart';
 import 'package:flutter/gestures.dart' show kSecondaryButton;
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart'

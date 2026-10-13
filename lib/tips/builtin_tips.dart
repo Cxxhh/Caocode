@@ -42,7 +42,7 @@ List<FeatureTip> builtInFeatureTips(AppSettings settings) => [
       final l10n = at.context.l10n;
       try {
         await ContextMenu.install((
-          agent: l10n.contextMenuOpenWith('BaoCode'),
+          agent: l10n.contextMenuOpenWith('Caocode'),
           ide: l10n.contextMenuOpenWith('Fast Ide'),
         ));
       } on ContextMenuException catch (error) {

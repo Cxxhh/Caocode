@@ -1,8 +1,8 @@
 // A README's HTML on the extension page: images and links kept, block
 // tags part paragraphs, other tags dropped, code left as written.
 
-import 'package:baocode/chat/widgets/markdown_view.dart';
-import 'package:baocode/extensions/ui/readme_html.dart';
+import 'package:caocode/chat/widgets/markdown_view.dart';
+import 'package:caocode/extensions/ui/readme_html.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:markdown/markdown.dart' as md;
 

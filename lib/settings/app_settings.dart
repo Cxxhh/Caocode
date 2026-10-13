@@ -113,7 +113,12 @@ class AppSettings {
   }
 
   /// [section]'s page of the settings dialog.
-  Widget buildPage(BuildContext context, SettingsSection section) {
+  Widget buildPage(
+    BuildContext context,
+    SettingsSection section, {
+    String? cwd,
+    FutureOr<void> Function(String)? onOpenFile,
+  }) {
     switch (section) {
       case SettingsSection.general:
         return GeneralSettingsPage(
@@ -129,7 +134,11 @@ class AppSettings {
           settings: files?.settings,
         );
       case SettingsSection.models:
-        return CodexSettingsPage(settings: files?.settings);
+        return CodexSettingsPage(
+          settings: files?.settings,
+          cwd: cwd,
+          onOpenFile: onOpenFile,
+        );
       case SettingsSection.network:
         return NetworkSettingsPage(settings: files?.settings);
       case SettingsSection.mobile:

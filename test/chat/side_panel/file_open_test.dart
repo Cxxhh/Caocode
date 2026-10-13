@@ -1,8 +1,8 @@
 // The files the agent read found by the paths it names them by, those
 // paths gone wrong too.
 
-import 'package:baocode/chat/side_panel/file_link.dart';
-import 'package:baocode/chat/side_panel/file_open.dart';
+import 'package:caocode/chat/side_panel/file_link.dart';
+import 'package:caocode/chat/side_panel/file_open.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 

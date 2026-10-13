@@ -177,7 +177,7 @@ abstract final class CliLocator {
   /// stands beside it. The shim only forwards to that exe, but reaching it
   /// means `cmd.exe`, which parses the arguments as a command line of its own
   /// first: `<` and `>` in them are redirections there, and the `--settings`
-  /// JSON carries the angle brackets in BaoCode's own attribution (see
+  /// JSON carries the angle brackets in Caocode's own attribution (see
   /// [ClaudeLaunch.arguments]). A shim is only a fallback for a layout
   /// [_besideShim] does not know.
   ///

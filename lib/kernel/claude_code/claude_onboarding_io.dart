@@ -52,7 +52,7 @@ Future<bool> prepareClaudeOnboarding({Map<String, String>? environment}) async {
     final mode = existing ? (await file.stat()).mode & 0x1ff : 0x180;
 
     await file.parent.create(recursive: true);
-    aside = await file.parent.createTemp('.baocode-onboarding-');
+    aside = await file.parent.createTemp('.caocode-onboarding-');
     final replacement = File(p.join(aside.path, '.claude.json'));
     await replacement.writeAsString(
       '${const JsonEncoder.withIndent('  ').convert(decoded)}\n',

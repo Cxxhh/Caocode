@@ -1,13 +1,13 @@
 // Signs a release's installers and writes the manifest the app reads to
-// update itself (https://dl.baocode.dev/releases/latest.json; see
+// update itself (GitHub Cxxhh/Caocode releases, latest.json; see
 // docs/auto-update.md). Run from anywhere in the repository:
 //
 //   dart run tool/release_manifest.dart \
-//     --windows build/installers/BaoCode-1.2.0-setup.exe \
-//     --macos-arm64 build/installers/BaoCode-1.2.0-mac-arm64.zip \
-//     --macos-x64 build/installers/BaoCode-1.2.0-mac-x64.zip \
-//     [--dmg-arm64 build/installers/BaoCode-1.2.0-arm64.dmg] \
-//     [--dmg-x64 build/installers/BaoCode-1.2.0-x64.dmg] \
+//     --windows build/installers/Caocode-1.2.0-setup.exe \
+//     --macos-arm64 build/installers/Caocode-1.2.0-mac-arm64.zip \
+//     --macos-x64 build/installers/Caocode-1.2.0-mac-x64.zip \
+//     [--dmg-arm64 build/installers/Caocode-1.2.0-arm64.dmg] \
+//     [--dmg-x64 build/installers/Caocode-1.2.0-x64.dmg] \
 //     [--notes-en <text or file>] [--notes-zh <text or file>] \
 //     [--minimum-version 1.0.0] [--version 1.2.0+12] \
 //     [--manifest build/installers/latest.json]
@@ -16,8 +16,8 @@
 //   dart run tool/release_manifest.dart --public-key
 //
 // The private key is a file holding 32 random bytes, base64; its path is
-// in BAOCODE_UPDATE_SIGNING_KEY. Never in the repository: whoever has it
-// can make every installed BaoCode run their program.
+// in CAOCODE_UPDATE_SIGNING_KEY. Never in the repository: whoever has it
+// can make every installed Caocode run their program.
 //
 // The version is pubspec.yaml's unless given. A manifest already there for
 // the same version keeps the other platforms' entries, so the Windows and the
@@ -34,17 +34,17 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:baocode/update/update_manifest.dart';
-import 'package:baocode/update/update_signature.dart';
-import 'package:baocode/update/version.dart';
+import 'package:caocode/update/update_manifest.dart';
+import 'package:caocode/update/update_signature.dart';
+import 'package:caocode/update/version.dart';
 import 'package:crypto/crypto.dart' as crypto;
 
 /// Where the downloads go: `<base>/<1.2.0>/<file>`.
-const _releasesBase = 'https://dl.baocode.dev/releases';
+const _releasesBase = '$releaseRepositoryUrl/releases/download';
 
 /// [name]'s link, for the file whose SHA-256 is [sha256].
 Uri _link(AppVersion version, String name, String sha256) => Uri.parse(
-  '$_releasesBase/${version.marketing}/$name?sha256=${sha256.substring(0, 16)}',
+  '$_releasesBase/${version.releaseTag}/${Uri.encodeComponent(name)}?sha256=${sha256.substring(0, 16)}',
 );
 
 /// The Macs built for, each its own download (tool/build_macos.dart), and
@@ -52,7 +52,7 @@ Uri _link(AppVersion version, String name, String sha256) => Uri.parse(
 const _macArchitectures = ['arm64', 'x64'];
 
 /// Where the private key's path is given.
-const _keyVariable = 'BAOCODE_UPDATE_SIGNING_KEY';
+const _keyVariable = 'CAOCODE_UPDATE_SIGNING_KEY';
 
 const _usage = '''
 Usage:
@@ -85,7 +85,7 @@ Future<void> main(List<String> arguments) async {
       'The key in \$$_keyVariable is not the one the app checks against.\n'
       '  its public key:   $publicKey\n'
       '  the app expects:  $updatePublicKey (lib/update/update_signature.dart)\n'
-      'Releases signed with it would be refused by every installed BaoCode.',
+      'Releases signed with it would be refused by every installed Caocode.',
     );
   }
 

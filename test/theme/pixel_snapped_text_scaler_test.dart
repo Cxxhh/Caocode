@@ -1,6 +1,6 @@
 import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/theme/pixel_snapped_text_scaler.dart';
+import 'package:caocode/theme/pixel_snapped_text_scaler.dart';
 
 void main() {
   test('rounds each size to a whole device pixel', () {

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/window/code_args.dart';
+import 'package:caocode/window/code_args.dart';
 
 void main() {
   group('CodeArgs.parse', () {
@@ -136,7 +136,7 @@ void main() {
     expect(
       LaunchRequest.of(const [
         CodeArgs.windowsLinkFlag,
-        'baocode://provider/import?url=https%3A%2F%2Fapi.example.com',
+        'caocode://provider/import?url=https%3A%2F%2Fapi.example.com',
       ]),
       LaunchRequest.none,
     );

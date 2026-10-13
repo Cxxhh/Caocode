@@ -1,15 +1,15 @@
 import 'dart:io';
 
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/chat_width.dart';
-import 'package:baocode/chat/widgets/chat_minimap.dart';
-import 'package:baocode/chat/composer/composer.dart';
-import 'package:baocode/ide/ide_color_theme_picker.dart';
-import 'package:baocode/settings/pages/appearance_page.dart';
-import 'package:baocode/settings/pages/settings_widgets.dart';
-import 'package:baocode/settings/user_settings.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:caocode/chat/chat_screen.dart';
+import 'package:caocode/chat/chat_session.dart';
+import 'package:caocode/chat/chat_width.dart';
+import 'package:caocode/chat/widgets/chat_minimap.dart';
+import 'package:caocode/chat/composer/composer.dart';
+import 'package:caocode/ide/ide_color_theme_picker.dart';
+import 'package:caocode/settings/pages/appearance_page.dart';
+import 'package:caocode/settings/pages/settings_widgets.dart';
+import 'package:caocode/settings/user_settings.dart';
+import 'package:caocode/theme/app_theme.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -117,7 +117,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final data = (await tester.runAsync(
-      () => Directory.systemTemp.createTemp('baocode-chat-width'),
+      () => Directory.systemTemp.createTemp('caocode-chat-width'),
     ))!;
     final settings = UserSettings(p.join(data.path, 'settings.json'));
     await tester.runAsync(settings.load);

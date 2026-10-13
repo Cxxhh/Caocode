@@ -13,7 +13,7 @@
   "commonSelectAll": "Select All",
   "languageSettingsTitle": "Region & Language",
   "languageSettingsDisplayLanguage": "Display Language",
-  "languageSettingsDescription": "The language of BaoCode's menus, views and messages. Changes apply at once.",
+  "languageSettingsDescription": "The language of Caocode's menus, views and messages. Changes apply at once.",
   "languageSettingsFollowSystemCurrent": "Follow System ({language})",
   "@languageSettingsFollowSystemCurrent": {
     "description": "Follow System, with the language the system's resolves to, named in its own language.",
@@ -619,7 +619,7 @@
   "menuHideSidebar": "Hide Sidebar",
   "menuKeepOnTop": "Keep on Top",
   "menuContextPanel": "Context Panel",
-  "menuAboutBaoCode": "About BaoCode",
+  "menuAboutCaocode": "About Caocode",
   "windowShowSidebar": "Show sidebar",
   "@windowShowSidebar": {
     "description": "Tooltip."
@@ -761,7 +761,7 @@
   "@windowClose": {
     "description": "Window button."
   },
-  "aboutDescription": "Agents run Claude Code as a local process; what they do — messages, tools, diffs and panels — is shown here.",
+  "aboutDescription": "Caocode is the Codex edition of the upstream desktop IDE. Agents run through the local Codex CLI; their messages, tool calls, code diffs and conversation panels are shown here.",
   "agentUntitled": "New Chat",
   "@agentUntitled": {
     "description": "The title of an agent before its first message names it."
@@ -1474,6 +1474,14 @@
     "description": "Heading of the model's context window choices."
   },
   "composerSettingEffort": "Effort",
+  "composerFastMode": "Fast mode",
+  "composerFastEnable": "Enable Fast (currently off)",
+  "composerFastDisable": "Disable Fast (currently on)",
+  "composerFastOnDetail": "Use Fast for subsequent messages. Availability and pricing depend on the provider.",
+  "composerFastOffDetail": "Use standard speed for subsequent messages",
+  "composerFastChanging": "Changing Fast…",
+  "composerFastUnavailable": "Fast unavailable",
+  "composerFastUnavailableDetail": "The current model or CLI configuration does not support Fast mode",
   "@composerSettingEffort": {
     "description": "Heading of the model's reasoning effort choices."
   },
@@ -2101,7 +2109,7 @@
   "generalSettingsCommitAttribution": "Commit Attribution",
   "generalSettingsCommitAttributionDescription": "Who the commits and pull requests an agent writes credit. Applies to agents started after a change; Claude Code only for now.",
   "generalSettingsTelemetry": "Send Usage Data",
-  "generalSettingsTelemetryDescription": "Once a day BaoCode is used, it sends a random install ID, its version, and your system and processor type, so we can tell how many people use it and come back. Nothing about you, your code, or what you do in BaoCode (telemetry.telemetryLevel).",
+  "generalSettingsTelemetryDescription": "Once a day Caocode is used, it sends a random install ID, its version, and your system and processor type, so we can tell how many people use it and come back. Nothing about you, your code, or what you do in Caocode (telemetry.telemetryLevel).",
   "generalSettingsCommitAttributionLabel": "Commit Attribution: {name}",
   "@generalSettingsCommitAttributionLabel": {
     "description": "The commit attribution dropdown, as read out: its setting and the choice in effect.",
@@ -2187,7 +2195,7 @@
   "trayEnabledMacOS": "Show the icon in the menu bar",
   "trayEnabledWindows": "Show the icon in the system tray",
   "trayEnabledDescription": "Closing the window hides it there and the agents keep running; its menu shows the agents waiting on you, and quits the app.",
-  "trayShow": "Show BaoCode",
+  "trayShow": "Show Caocode",
   "trayWaiting": "Waiting for You",
   "@trayWaiting": {
     "description": "Tray menu header over the agents waiting on the user."
@@ -2210,7 +2218,7 @@
     },
     "description": "Tray menu: how many agents are running."
   },
-  "trayQuit": "Quit BaoCode",
+  "trayQuit": "Quit Caocode",
   "attentionNeedsInput": "Needs your input",
   "@attentionNeedsInput": {
     "description": "Notification: the agent waits on the user."
@@ -3432,7 +3440,7 @@
       }
     }
   },
-  "kbUnknownContextKeys": "{count, plural, =1{BaoCode does not know the context key {keys}: this keybinding never applies.} other{BaoCode does not know the context keys {keys}: this keybinding never applies.}}",
+  "kbUnknownContextKeys": "{count, plural, =1{Caocode does not know the context key {keys}: this keybinding never applies.} other{Caocode does not know the context keys {keys}: this keybinding never applies.}}",
   "@kbUnknownContextKeys": {
     "placeholders": {
       "count": {
@@ -3479,7 +3487,7 @@
   "kbColumnSource": "Source",
   "kbWhenLabel": "When expression",
   "kbNoneFound": "No keybindings found",
-  "kbCannotReadKey": "BaoCode cannot read the key “{key}”: this keybinding never applies.",
+  "kbCannotReadKey": "Caocode cannot read the key “{key}”: this keybinding never applies.",
   "@kbCannotReadKey": {
     "placeholders": {
       "key": {
@@ -3488,7 +3496,7 @@
     }
   },
   "kbNotSupported": "Not supported",
-  "kbNotSupportedHover": "BaoCode does not have this command: the keybinding is kept, but does nothing.",
+  "kbNotSupportedHover": "Caocode does not have this command: the keybinding is kept, but does nothing.",
   "kbPressKeys": "Press desired key combination and then press Enter.",
   "kbChordTo": "chord to",
   "kbExistingCommands": "{count, plural, =1{1 existing command has this keybinding} other{{count} existing commands have this keybinding}}",
@@ -3537,12 +3545,12 @@
   },
   "dataDirRevealInFileExplorer": "Reveal in File Explorer",
   "dataDirChecking": "Checking the folder…",
-  "dataDirAlreadyHolds": "The folder already holds BaoCode data",
-  "dataDirMoveBack": "Move BaoCode's data back to the default folder?",
-  "dataDirMoveHere": "Move BaoCode's data to this folder?",
-  "dataDirUseAsIsDetail": "After a restart BaoCode uses the data there as it is; nothing is copied, and the current folder keeps yours.",
-  "dataDirCopyDetail": "BaoCode copies its settings, keybindings, language servers and state there, and uses that folder after a restart.",
-  "dataDirOtherFiles": "The folder holds other files: they stay, beside BaoCode's own.",
+  "dataDirAlreadyHolds": "The folder already holds Caocode data",
+  "dataDirMoveBack": "Move Caocode's data back to the default folder?",
+  "dataDirMoveHere": "Move Caocode's data to this folder?",
+  "dataDirUseAsIsDetail": "After a restart Caocode uses the data there as it is; nothing is copied, and the current folder keeps yours.",
+  "dataDirCopyDetail": "Caocode copies its settings, keybindings, language servers and state there, and uses that folder after a restart.",
+  "dataDirOtherFiles": "The folder holds other files: they stay, beside Caocode's own.",
   "dataDirUseItsData": "Use Its Data",
   "dataDirCopyAndSwitch": "Copy and Switch",
   "dataDirCopying": "Copying…",
@@ -3573,8 +3581,8 @@
       }
     }
   },
-  "dataDirRestartTitle": "Restart BaoCode to use the new data folder",
-  "dataDirRestartDetail": "BaoCode keeps using {current} until it restarts. The next start uses {next}, and offers to remove what is left in the old one.",
+  "dataDirRestartTitle": "Restart Caocode to use the new data folder",
+  "dataDirRestartDetail": "Caocode keeps using {current} until it restarts. The next start uses {next}, and offers to remove what is left in the old one.",
   "@dataDirRestartDetail": {
     "placeholders": {
       "current": {
@@ -3586,7 +3594,7 @@
     }
   },
   "dataDirTheNewFolder": "the new folder",
-  "quitConfirmMessage": "Quit BaoCode?",
+  "quitConfirmMessage": "Quit Caocode?",
   "quitConfirmDetail": "Running agents and terminals will be stopped.",
   "quitConfirmQuit": "Quit",
   "dataDirQuitNow": "Quit Now",
@@ -3617,7 +3625,7 @@
     }
   },
   "dataDirTitle": "Data Folder",
-  "dataDirDescription": "Where BaoCode keeps your settings, keybindings, language servers and its own state. Other programs keep files there too (the web view's caches); BaoCode never moves or removes those.",
+  "dataDirDescription": "Where Caocode keeps your settings, keybindings, language servers and its own state. Other programs keep files there too (the web view's caches); Caocode never moves or removes those.",
   "dataDirCurrentFolder": "Current folder",
   "dataDirNewFolder": "New folder",
   "dataDirAfterRestart": "After a restart: {path}",
@@ -3649,9 +3657,9 @@
       }
     }
   },
-  "dataDirSettingUnreadable": "BaoCode's data folder setting cannot be read",
-  "dataDirCannotWrite": "BaoCode cannot write to its data folder",
-  "dataDirUnavailable": "BaoCode's data folder is not available",
+  "dataDirSettingUnreadable": "Caocode's data folder setting cannot be read",
+  "dataDirCannotWrite": "Caocode cannot write to its data folder",
+  "dataDirUnavailable": "Caocode's data folder is not available",
   "dataDirWhereEnv": "It is set by the {variable} environment variable.",
   "@dataDirWhereEnv": {
     "placeholders": {
@@ -3660,7 +3668,7 @@
       }
     }
   },
-  "dataDirWhereFixPointer": "Fix or delete {file} and try again; BaoCode changes it only if you choose another folder.",
+  "dataDirWhereFixPointer": "Fix or delete {file} and try again; Caocode changes it only if you choose another folder.",
   "@dataDirWhereFixPointer": {
     "placeholders": {
       "file": {
@@ -3687,8 +3695,8 @@
   "dataDirRetry": "Retry",
   "dataDirUseDefaultOnce": "Use the Default Folder This Time",
   "dataDirChooseAnother": "Choose Another Folder…",
-  "dataDirRemoveOldTitle": "Remove the data BaoCode left in its previous folder?",
-  "dataDirRemoveOldDetail": "BaoCode now keeps its data in {current}. Only its own items are removed from the previous folder ({items}); the folder and everything else in it stay.",
+  "dataDirRemoveOldTitle": "Remove the data Caocode left in its previous folder?",
+  "dataDirRemoveOldDetail": "Caocode now keeps its data in {current}. Only its own items are removed from the previous folder ({items}); the folder and everything else in it stay.",
   "@dataDirRemoveOldDetail": {
     "placeholders": {
       "current": {
@@ -3702,7 +3710,7 @@
   "dataDirRemove": "Remove",
   "dataDirKeep": "Keep",
   "dataDirRemoveOldInUse": "Some of the old data could not be removed",
-  "dataDirRemoveOldInUseDetail": "Files in {items} are in use, perhaps by another program. Everything else was removed; BaoCode offers to remove the rest the next time it starts.",
+  "dataDirRemoveOldInUseDetail": "Files in {items} are in use, perhaps by another program. Everything else was removed; Caocode offers to remove the rest the next time it starts.",
   "@dataDirRemoveOldInUseDetail": {
     "placeholders": {
       "items": {
@@ -3905,7 +3913,7 @@
       }
     }
   },
-  "shellCommandOccupied": "{path} already runs another app's '{name}' command. Replace it with BaoCode's?",
+  "shellCommandOccupied": "{path} already runs another app's '{name}' command. Replace it with Caocode's?",
   "@shellCommandOccupied": {
     "placeholders": {
       "path": {
@@ -3940,7 +3948,7 @@
     }
   },
   "generalSettingsMainWindow": "Open at Launch",
-  "generalSettingsMainWindowDescription": "What BaoCode opens to: the agents, or the IDE windows (as Restore Windows says), never both. By default, wherever it was left when it last quit.",
+  "generalSettingsMainWindowDescription": "What Caocode opens to: the agents, or the IDE windows (as Restore Windows says), never both. By default, wherever it was left when it last quit.",
   "generalSettingsMainWindowLabel": "Open at Launch: {name}",
   "@generalSettingsMainWindowLabel": {
     "placeholders": {
@@ -3954,7 +3962,7 @@
   "generalSettingsMainWindowLast": "Where you left off",
   "generalSettingsWindows": "Windows",
   "claudePathSetting": "Path",
-  "claudePathSettingDescription": "Empty: the newest of the Claude Code installed on this machine and the one BaoCode downloaded (downloaded the first time there is none). A path: that one, always, e.g. one you built. (claudeCode.path)",
+  "claudePathSettingDescription": "Empty: the newest of the Claude Code installed on this machine and the one Caocode downloaded (downloaded the first time there is none). A path: that one, always, e.g. one you built. (claudeCode.path)",
   "claudePathSettingHint": "Automatic",
   "claudePathChecking": "Checking…",
   "claudePathInUse": "In use: {path} ({version})",
@@ -3978,7 +3986,7 @@
       }
     }
   },
-  "claudePathInUseDownloaded": "In use: Claude Code {version}, downloaded by BaoCode",
+  "claudePathInUseDownloaded": "In use: Claude Code {version}, downloaded by Caocode",
   "@claudePathInUseDownloaded": {
     "placeholders": {
       "version": {
@@ -4049,7 +4057,7 @@
   "windowMenuWindows": "Windows",
   "windowOpened": "Opened",
   "generalSettingsShellCommand": "Shell Command",
-  "generalSettingsShellCommandDescription": "Open files and folders in BaoCode from a terminal: 'code <path>'. Installed at {location}.",
+  "generalSettingsShellCommandDescription": "Open files and folders in Caocode from a terminal: 'code <path>'. Installed at {location}.",
   "@generalSettingsShellCommandDescription": {
     "placeholders": {
       "location": {
@@ -4218,7 +4226,7 @@
     }
   },
   "modelsFeaturedWhy": "Why am I seeing this?",
-  "modelsFeaturedNote": "These sites are officially listed by BaoCode",
+  "modelsFeaturedNote": "These sites are officially listed by Caocode",
   "modelsFeaturedNoteHow": "Add the one-click import to be listed too, for free",
   "modelsFeaturedNoteLink": "List My Site Too",
   "modelsImportTitle": "Import an upstream from {host}",
@@ -4265,7 +4273,7 @@
   },
   "modelsImportAsNew": "Add as New Upstream",
   "modelsImportInvalid": "This import link can't be used",
-  "modelsImportInvalidDetail": "It needs a base URL (http or https) and a protocol BaoCode knows. Ask the site for a new link, or add the upstream by hand in Settings → Models.",
+  "modelsImportInvalidDetail": "It needs a base URL (http or https) and a protocol Caocode knows. Ask the site for a new link, or add the upstream by hand in Settings → Models.",
   "modelsAddProvider": "Add Upstream",
   "modelsNewProviderName": "New Upstream",
   "modelsProviderNoUrl": "No base URL",
@@ -4611,7 +4619,7 @@
   "modelsAuxiliaryBuiltin": "Claude Code Haiku (this machine's setup)",
   "settingsSectionUpdates": "Updates",
   "updatesSettingsTitle": "Updates",
-  "updatesSettingsDescription": "BaoCode looks for new versions on baocode.dev.",
+  "updatesSettingsDescription": "Caocode checks the Cxxhh/Caocode GitHub releases for new versions.",
   "updateCurrentVersion": "Current Version",
   "updateLastChecked": "Last checked {time}",
   "@updateLastChecked": {
@@ -4627,8 +4635,8 @@
     "description": "The settings page's button."
   },
   "updateChecking": "Checking for updates…",
-  "updateUpToDate": "BaoCode is up to date.",
-  "updateAvailable": "BaoCode {version} is available.",
+  "updateUpToDate": "Caocode is up to date.",
+  "updateAvailable": "Caocode {version} is available.",
   "@updateAvailable": {
     "placeholders": {
       "version": {
@@ -4636,7 +4644,7 @@
       }
     }
   },
-  "updateReady": "BaoCode {version} has been downloaded. Restart to update.",
+  "updateReady": "Caocode {version} has been downloaded. Restart to update.",
   "@updateReady": {
     "placeholders": {
       "version": {
@@ -4644,7 +4652,7 @@
       }
     }
   },
-  "updateDownloading": "Downloading BaoCode {version}…",
+  "updateDownloading": "Downloading Caocode {version}…",
   "@updateDownloading": {
     "placeholders": {
       "version": {
@@ -4652,7 +4660,7 @@
       }
     }
   },
-  "updateDownloadingProgress": "Downloading BaoCode {version}… {percent}%",
+  "updateDownloadingProgress": "Downloading Caocode {version}… {percent}%",
   "@updateDownloadingProgress": {
     "placeholders": {
       "version": {
@@ -4663,7 +4671,7 @@
       }
     }
   },
-  "updateMandatory": "This version of BaoCode is no longer supported. Update to {version} to keep using it.",
+  "updateMandatory": "This version of Caocode is no longer supported. Update to {version} to keep using it.",
   "@updateMandatory": {
     "placeholders": {
       "version": {
@@ -4675,7 +4683,7 @@
   "updateLater": "Later",
   "updateSkip": "Skip This Version",
   "updateSkippedNote": "You skipped this version: it is not offered again, but can still be installed here.",
-  "updateFailed": "Couldn't update BaoCode: {error}",
+  "updateFailed": "Couldn't update Caocode: {error}",
   "@updateFailed": {
     "placeholders": {
       "error": {
@@ -4692,8 +4700,8 @@
     }
   },
   "updateDisabled": "Updates are turned off (update.mode is \"none\").",
-  "updateUnsupported": "This build of BaoCode doesn't update itself.",
-  "updateManual": "BaoCode can't update itself here ({reason}). Download the new version from baocode.dev.",
+  "updateUnsupported": "This build of Caocode doesn't update itself.",
+  "updateManual": "Caocode can't update itself here ({reason}). Download the new version from the Cxxhh/Caocode GitHub releases.",
   "@updateManual": {
     "placeholders": {
       "reason": {
@@ -4702,7 +4710,7 @@
     }
   },
   "updateOpenDownloadPage": "Open Download Page",
-  "updateUnfinished": "BaoCode {version} wasn't installed: this is still {current}. Try again from Settings > Updates, or download it from baocode.dev.",
+  "updateUnfinished": "Caocode {version} wasn't installed: this is still {current}. Try again from Settings > Updates, or download it from the Cxxhh/Caocode GitHub releases.",
   "@updateUnfinished": {
     "placeholders": {
       "version": {
@@ -4724,7 +4732,7 @@
     }
   },
   "updateMode": "Update Mode",
-  "updateModeDescription": "Whether BaoCode looks for new versions by itself (update.mode).",
+  "updateModeDescription": "Whether Caocode looks for new versions by itself (update.mode).",
   "updateModeLabel": "Update Mode: {name}",
   "@updateModeLabel": {
     "description": "The update mode dropdown, as read out.",
@@ -4747,7 +4755,7 @@
     "description": "Update mode: never checks."
   },
   "diagnosticsTitle": "Diagnostic Logs",
-  "diagnosticsDescription": "Send BaoCode's error logs to its developers to help track down a problem. Nothing is sent until you upload.",
+  "diagnosticsDescription": "Send Caocode's error logs to its developers to help track down a problem. Nothing is sent until you upload.",
   "diagnosticsUpload": "Upload…",
   "diagnosticsDialogTitle": "Upload Diagnostic Logs",
   "diagnosticsNotePlaceholder": "Note (optional): what went wrong, and how to make it happen again",
@@ -4780,7 +4788,7 @@
   "diagnosticsSend": "Upload",
   "diagnosticsUploading": "Uploading…",
   "diagnosticsUploaded": "Uploaded. Report ID:",
-  "diagnosticsUploadedDetail": "Give this ID to BaoCode's developers so they can find these logs.",
+  "diagnosticsUploadedDetail": "Give this ID to Caocode's developers so they can find these logs.",
   "diagnosticsOmittedDumps": "{count, plural, =1{1 older memory dump was} other{{count} older memory dumps were}} left out: over 10 MB.",
   "@diagnosticsOmittedDumps": {
     "placeholders": {
@@ -4988,8 +4996,8 @@
   },
   "generalSettingsContextMenuFinder": "Finder Context Menu",
   "generalSettingsContextMenuExplorer": "Explorer Context Menu",
-  "generalSettingsContextMenuDescription": "Adds \"Open with BaoCode\" (a new agent) and \"Open with Fast Ide\" (a new IDE window) to the context menu of files, folders and a folder's background.",
-  "generalSettingsContextMenuMacNote": "Finder's own setting is in System Settings' extensions, where the BaoCode extension can also be turned on and off.",
+  "generalSettingsContextMenuDescription": "Adds \"Open with Caocode\" (a new agent) and \"Open with Fast Ide\" (a new IDE window) to the context menu of files, folders and a folder's background.",
+  "generalSettingsContextMenuMacNote": "Finder's own setting is in System Settings' extensions, where the Caocode extension can also be turned on and off.",
   "generalSettingsContextMenuOn": "On",
   "generalSettingsContextMenuOff": "Off",
   "generalSettingsContextMenuUnsupported": "This build of the app has no Finder extension.",
@@ -5143,7 +5151,7 @@
   },
   "localDownloadingClaude": "Downloading Claude Code… {percent}%",
   "@localDownloadingClaude": {
-    "description": "Shown over the chat while Claude Code is downloaded into BaoCode's data folder, the user having none that runs (or only one too old), before the agent starts.",
+    "description": "Shown over the chat while Claude Code is downloaded into Caocode's data folder, the user having none that runs (or only one too old), before the agent starts.",
     "placeholders": {
       "percent": {
         "type": "int"
@@ -5199,7 +5207,7 @@
   "@updateButton": {
     "description": "The sidebar's button while an update waits to be installed: restarts into it."
   },
-  "tipsSetupTitle": "Set Up BaoCode",
+  "tipsSetupTitle": "Set Up Caocode",
   "tipsSetupCount": "{done}/{total}",
   "@tipsSetupCount": {
     "placeholders": {
@@ -5238,7 +5246,7 @@
       }
     }
   },
-  "tipsUpdated": "BaoCode was updated to {version}. New: {features}.",
+  "tipsUpdated": "Caocode was updated to {version}. New: {features}.",
   "@tipsUpdated": {
     "placeholders": {
       "version": {
@@ -5252,7 +5260,7 @@
   "tipsListSeparator": ", ",
   "tipsSettingsTitle": "Recommended",
   "tipsSettingsDescription": "Features not turned on yet. Show Setup Guide brings back the setup checklist; \"workbench.tips.enabled\": false in settings.json turns tips off.",
-  "tipContextMenuBody": "Open files and folders in BaoCode from their context menu.",
+  "tipContextMenuBody": "Open files and folders in Caocode from their context menu.",
   "tipShellCommandTitle": "'{name}' Command",
   "@tipShellCommandTitle": {
     "placeholders": {
@@ -5261,7 +5269,7 @@
       }
     }
   },
-  "tipShellCommandBody": "Open folders in BaoCode from a terminal: {name} <path>.",
+  "tipShellCommandBody": "Open folders in Caocode from a terminal: {name} <path>.",
   "@tipShellCommandBody": {
     "placeholders": {
       "name": {
@@ -5273,9 +5281,9 @@
   "tipImportKeybindingsBody": "Bring your keybindings over from VS Code or Cursor.",
   "tipColorThemeBody": "Pick the colors of the chat, the IDE and the terminal.",
   "cmdShowSetupGuide": "Show Setup Guide",
-  "cmdStarOnGitHub": "Star BaoCode on GitHub",
-  "starPromptMessage": "Enjoying BaoCode?",
-  "starPromptDetail": "BaoCode is free and open source. If it helps you, a star on GitHub helps other people find it.",
+  "cmdStarOnGitHub": "Star Caocode on GitHub",
+  "starPromptMessage": "Enjoying Caocode?",
+  "starPromptDetail": "Caocode is free and open source. If it helps you, a star on GitHub helps other people find it.",
   "starPromptStar": "Star on GitHub",
   "starPromptLater": "Maybe Later",
   "cmdResetFeatureTips": "Reset Feature Tips",
@@ -5400,9 +5408,9 @@
   "settingsSectionNetwork": "Network",
   "settingsNetworkKeywords": "proxy http https clash vpn network",
   "networkSettingsTitle": "Network",
-  "networkSettingsDescription": "How BaoCode and the Claude Code it starts reach the internet.",
+  "networkSettingsDescription": "How Caocode and the Claude Code it starts reach the internet.",
   "networkProxy": "Proxy",
-  "networkProxyDescription": "The proxy for BaoCode and Claude Code (http.proxyMode). System Proxy follows the system's settings, such as Clash's system proxy. New sessions take a change; restart a running one for it.",
+  "networkProxyDescription": "The proxy for Caocode and Claude Code (http.proxyMode). System Proxy follows the system's settings, such as Clash's system proxy. New sessions take a change; restart a running one for it.",
   "networkProxyLabel": "Proxy: {name}",
   "@networkProxyLabel": {
     "description": "The proxy dropdown, as read out.",
@@ -5463,7 +5471,7 @@
   "networkProxyStatusManualMissing": "Enter the proxy's address.",
   "networkProxyStatusNone": "Direct: the system has no proxy set.",
   "networkProxyStatusOff": "Direct.",
-  "networkProxyStatusAutoConfig": "Direct: the system sets its proxy with an auto-config (PAC) file, which BaoCode doesn't follow. Turn on Clash's system proxy, or enter the address manually.",
+  "networkProxyStatusAutoConfig": "Direct: the system sets its proxy with an auto-config (PAC) file, which Caocode doesn't follow. Turn on Clash's system proxy, or enter the address manually.",
   "networkProxyRefresh": "Detect Again",
   "networkTest": "Connection Test",
   "networkTestDescription": "Reaches these sites through the proxy in use: whether each answers, and how quickly (a new connection's time, until the answer starts).",
@@ -5505,7 +5513,7 @@
   "extsCapabilityFull": "Fully supported",
   "extsCapabilityFullDetail": "Its color or file icon themes all apply.",
   "extsCapabilityPartial": "Partly supported",
-  "extsCapabilityPartialDetail": "Its themes apply; the rest of it does nothing in BaoCode.",
+  "extsCapabilityPartialDetail": "Its themes apply; the rest of it does nothing in Caocode.",
   "extsEngineIncompatible": "Needs VS Code {requested}; this is {current}.",
   "@extsEngineIncompatible": {
     "placeholders": {
@@ -5666,7 +5674,7 @@
   "themeSelectIconThemePlaceholder": "Select File Icon Theme (Up/Down Keys to Preview)",
   "themeIconThemeBuiltIn": "Built-in",
   "extsCapabilityUnsupported": "Not supported",
-  "extsCapabilityUnsupportedDetail": "It has no color or file icon theme: BaoCode only uses themes from extensions.",
+  "extsCapabilityUnsupportedDetail": "It has no color or file icon theme: Caocode only uses themes from extensions.",
   "extsFindingCode": "Its code does not run.",
   "extsFindingContribution": "Not used: {name}",
   "@extsFindingContribution": {
@@ -5743,7 +5751,7 @@
   },
   "settingsSectionMobile": "Mobile",
   "settingsMobileKeywords": "phone iphone android ios pair qr code remote lan",
-  "mobileSettingsDescription": "Follow and drive this computer's agents from BaoCode on your phone, over the local network or the internet. What goes between them is end-to-end encrypted.",
+  "mobileSettingsDescription": "Follow and drive this computer's agents from Caocode on your phone, over the local network or the internet. What goes between them is end-to-end encrypted.",
   "mobileAllow": "Allow Phones to Connect",
   "mobileAllowDescription": "Phones paired with this computer connect to it directly.",
   "mobileStatus": "Status",
@@ -5782,10 +5790,10 @@
   "mobilePublicAddress": "Public Address",
   "mobilePublicAddressDescription": "A domain or IP this computer can be reached at from the internet (with the port forwarded), put in the QR code; several separated by commas. Public IPv6 addresses are found by themselves.",
   "mobileRelay": "Relay",
-  "mobileRelayDescription": "Reach this computer through BaoCode's relay when none of its addresses can be reached. Coming later.",
+  "mobileRelayDescription": "Reach this computer through Caocode's relay when none of its addresses can be reached. Coming later.",
   "mobileRelayUnavailable": "Not Available Yet",
   "mobilePair": "Pair a Phone",
-  "mobilePairDescription": "Scan the code with BaoCode on the phone (Me → Paired computers → Pair a computer), or pick this computer under Nearby Computers there.",
+  "mobilePairDescription": "Scan the code with Caocode on the phone (Me → Paired computers → Pair a computer), or pick this computer under Nearby Computers there.",
   "mobilePairShow": "Show QR Code",
   "mobilePairCancel": "Cancel",
   "mobilePairNewCode": "New Code",

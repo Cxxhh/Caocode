@@ -12,7 +12,7 @@ import 'mac_host_platform.dart'
     if (dart.library.ffi) 'mac_host_platform_ffi.dart';
 
 /// The server builds in [directory] (tool/build_remote_server.dart writes
-/// them): `baocode-server-<platform>` (`linux-x64`, `darwin-arm64`, …), and
+/// them): `caocode-server-<platform>` (`linux-x64`, `darwin-arm64`, …), and
 /// `VERSION`, which names them.
 class DirectoryServerBinaries implements RemoteServerBinaries {
   DirectoryServerBinaries(this.directory, this.version);
@@ -44,7 +44,7 @@ class DirectoryServerBinaries implements RemoteServerBinaries {
   @override
   final String version;
 
-  static String fileName(String platform) => 'baocode-server-$platform';
+  static String fileName(String platform) => 'caocode-server-$platform';
 
   /// Those there are builds for.
   static const platforms = [
@@ -167,7 +167,7 @@ class DownloadedServerBinaries implements RemoteServerBinaries {
   }
 
   Future<List<int>> _fetch(String platform, ServerDownload download) async {
-    final file = File(p.join(cacheDir, version, 'baocode-server-$platform.gz'));
+    final file = File(p.join(cacheDir, version, 'caocode-server-$platform.gz'));
     final name = SshLauncher.describe(platform);
     if (await file.exists()) {
       final kept = await file.readAsBytes();
@@ -179,14 +179,14 @@ class DownloadedServerBinaries implements RemoteServerBinaries {
     } on Object catch (error) {
       throw SshConnectException(
         SshFailure.server,
-        'The BaoCode server for $name could not be downloaded',
+        'The Caocode server for $name could not be downloaded',
         detail: '${download.url}: $error',
       );
     }
     if (!download.matches(bytes)) {
       throw SshConnectException(
         SshFailure.server,
-        'The BaoCode server downloaded for $name is not the one this '
+        'The Caocode server downloaded for $name is not the one this '
         'app was built with',
         detail: '${download.url}',
       );
@@ -243,7 +243,7 @@ class DownloadedServerBinaries implements RemoteServerBinaries {
 /// [DownloadedServerBinaries], keeping them in [cacheDir], the data
 /// folder's cache by default): in the bundle's resources on macOS
 /// (`Contents/Resources/remote`), beside the executable elsewhere
-/// (`remote/`); `BAOCODE_REMOTE_SERVER_DIR`, else `build/remote` of the
+/// (`remote/`); `CAOCODE_REMOTE_SERVER_DIR`, else `build/remote` of the
 /// checkout (the working folder's, or one the executable is built under),
 /// in development. Null when there are none.
 RemoteServerBinaries? bundledServerBinaries({
@@ -257,7 +257,7 @@ RemoteServerBinaries? bundledServerBinaries({
   current ??= Directory.current.path;
   final exeDir = p.dirname(executable);
   final directories = [
-    ?environment['BAOCODE_REMOTE_SERVER_DIR'],
+    ?environment['CAOCODE_REMOTE_SERVER_DIR'],
     if (Platform.isMacOS) p.join(p.dirname(exeDir), 'Resources', 'remote'),
     p.join(exeDir, 'remote'),
     p.join(exeDir, 'data', 'remote'),
@@ -334,7 +334,7 @@ class SourceServerBinaries implements RemoteServerBinaries {
     );
   }
 
-  static const _source = 'packages/bao_remote/bin/baocode_server.dart';
+  static const _source = 'packages/bao_remote/bin/caocode_server.dart';
 
   final String root;
   final String _dart;
@@ -358,7 +358,7 @@ class SourceServerBinaries implements RemoteServerBinaries {
     if (os == 'darwin' && platform != host) {
       throw SshConnectException(
         SshFailure.server,
-        'The BaoCode server for $name can only be built on a Mac of that '
+        'The Caocode server for $name can only be built on a Mac of that '
         'architecture: run tool/build_remote_server.dart there',
       );
     }
@@ -376,7 +376,7 @@ class SourceServerBinaries implements RemoteServerBinaries {
           os == 'darwin' ? 'macos' : os,
           '--target-arch',
           arch,
-          '-Dbaocode.version=$version',
+          '-Dcaocode.version=$version',
           '-o',
           out.path,
           _source,
@@ -388,7 +388,7 @@ class SourceServerBinaries implements RemoteServerBinaries {
         _built.remove(platform);
         throw SshConnectException(
           SshFailure.server,
-          'The BaoCode server could not be built for $name',
+          'The Caocode server could not be built for $name',
           detail: '${result.stdout}\n${result.stderr}'.trim(),
         );
       }

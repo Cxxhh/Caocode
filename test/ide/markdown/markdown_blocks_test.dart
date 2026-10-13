@@ -1,5 +1,5 @@
-import 'package:baocode/chat/widgets/markdown_view.dart';
-import 'package:baocode/ide/markdown/markdown_blocks.dart';
+import 'package:caocode/chat/widgets/markdown_view.dart';
+import 'package:caocode/ide/markdown/markdown_blocks.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:markdown/markdown.dart' as md;
 

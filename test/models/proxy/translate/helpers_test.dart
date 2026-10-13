@@ -7,11 +7,11 @@
 
 import 'dart:convert';
 
-import 'package:baocode/models/proxy/translate/common.dart';
-import 'package:baocode/models/proxy/translate/json_value.dart';
-import 'package:baocode/models/proxy/translate/signature.dart';
-import 'package:baocode/models/proxy/translate/thinking.dart';
-import 'package:baocode/models/proxy/translate/util.dart';
+import 'package:caocode/models/proxy/translate/common.dart';
+import 'package:caocode/models/proxy/translate/json_value.dart';
+import 'package:caocode/models/proxy/translate/signature.dart';
+import 'package:caocode/models/proxy/translate/thinking.dart';
+import 'package:caocode/models/proxy/translate/util.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 String testGptReasoningSignature() {

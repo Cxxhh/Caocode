@@ -17,11 +17,11 @@ enum WindowButton { minimize, maximize, close }
 /// MainFlutterWindow.swift and windows/runner/window_channel.cpp).
 ///
 /// Each of the app's windows has its own channel: the main one's is
-/// `baocode/window`, another's `baocode/window.<viewId>` (see
+/// `caocode/window`, another's `caocode/window.<viewId>` (see
 /// lib/window/). What is asked without saying of which window (a dialog,
 /// a menu) is the window in front's, [activeViewId].
 abstract final class WindowControls {
-  static const _main = MethodChannel('baocode/window');
+  static const _main = MethodChannel('caocode/window');
   static final Map<int, MethodChannel> _channels = {};
 
   /// The channel of [viewId]'s window.
@@ -29,7 +29,7 @@ abstract final class WindowControls {
       ? _main
       : _channels.putIfAbsent(
           viewId,
-          () => MethodChannel('baocode/window.$viewId'),
+          () => MethodChannel('caocode/window.$viewId'),
         );
 
   /// The window in front, the keyboard's: where a dialog or a menu asked

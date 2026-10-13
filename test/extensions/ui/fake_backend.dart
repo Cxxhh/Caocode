@@ -2,11 +2,11 @@
 
 import 'dart:async';
 
-import 'package:baocode/base/cancellation.dart';
-import 'package:baocode/extensions/gallery/extension_management_backend.dart';
-import 'package:baocode/extensions/gallery/open_vsx_client.dart';
-import 'package:baocode/extensions/vsix/extension_manifest.dart';
-import 'package:baocode/extensions/vsix/vsix_reader.dart';
+import 'package:caocode/base/cancellation.dart';
+import 'package:caocode/extensions/gallery/extension_management_backend.dart';
+import 'package:caocode/extensions/gallery/open_vsx_client.dart';
+import 'package:caocode/extensions/vsix/extension_manifest.dart';
+import 'package:caocode/extensions/vsix/vsix_reader.dart';
 
 /// A manifest of [id] at [version] with [manifest]'s extra fields.
 ExtensionManifestInfo fakeManifest(

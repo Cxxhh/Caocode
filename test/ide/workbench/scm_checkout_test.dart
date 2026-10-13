@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/git/git_service.dart';
-import 'package:baocode/ide/ide_quick_input.dart';
-import 'package:baocode/ide/ide_status_bar.dart';
-import 'package:baocode/keybindings/keybinding_service.dart';
+import 'package:caocode/ide/git/git_service.dart';
+import 'package:caocode/ide/ide_quick_input.dart';
+import 'package:caocode/ide/ide_status_bar.dart';
+import 'package:caocode/keybindings/keybinding_service.dart';
 
 import '../git/fake_git.dart';
 import 'fake_files.dart';
@@ -37,7 +37,7 @@ void main() {
       gitRefRecord(
         'refs/heads/feature/ide',
         feature,
-        subject: 'refactor: rename monad to BaoCode',
+        subject: 'refactor: rename monad to Caocode',
         time: ago(const Duration(hours: 1)),
         track: '[ahead 2, behind 1]',
       ),
@@ -116,7 +116,7 @@ void main() {
       'branches',
       'leoaaaaaaafeat: add a commit attribution setting',
       'feature/ide  1↓ 2↑1 hour ago',
-      'Adabbbbbbbrefactor: rename monad to BaoCode',
+      'Adabbbbbbbrefactor: rename monad to Caocode',
       'origin/topic  3 days ago',
       'remote branches',
       'AdacccccccChange',

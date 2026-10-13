@@ -5,10 +5,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/terminal/pty.dart';
-import 'package:baocode/ide/terminal/pty_io.dart';
-import 'package:baocode/ide/terminal/terminal_shell.dart';
-import 'package:baocode/platform/child_process_registry.dart';
+import 'package:caocode/ide/terminal/pty.dart';
+import 'package:caocode/ide/terminal/pty_io.dart';
+import 'package:caocode/ide/terminal/terminal_shell.dart';
+import 'package:caocode/platform/child_process_registry.dart';
 import 'package:path/path.dart' as p;
 
 /// The app's side of its terminals' processes: the record of them, stopping
@@ -20,7 +20,7 @@ void main() {
   late File registryFile;
 
   setUp(() {
-    dir = Directory.systemTemp.createTempSync('baocode-pty');
+    dir = Directory.systemTemp.createTempSync('caocode-pty');
     registryFile = File(p.join(dir.path, 'pty-processes.json'));
     // Never the user's own list, nor their processes.
     PtyProcesses.registry = ChildProcessRegistry(
@@ -68,7 +68,7 @@ void main() {
     expect(await pty.exitCode.timeout(timeout), 0);
     expect(
       printed.toString(),
-      contains('term=xterm-256color program=baocode lang=en_US.UTF-8'),
+      contains('term=xterm-256color program=caocode lang=en_US.UTF-8'),
     );
   });
 

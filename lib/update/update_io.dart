@@ -20,7 +20,7 @@ class IoUpdateBackend implements UpdateBackend {
   IoUpdateBackend({
     required this.directory,
     HttpClient Function()? client,
-    this.userAgent = 'BaoCode',
+    this.userAgent = 'Caocode',
     this.publicKey = updatePublicKey,
     this.timeout = const Duration(seconds: 30),
   }) : _client = client ?? HttpClient.new;
@@ -129,7 +129,7 @@ class IoUpdateBackend implements UpdateBackend {
       signature: asset.signature,
       publicKey: publicKey,
     );
-    if (!signed) return 'The download is not signed by BaoCode';
+    if (!signed) return 'The download is not signed by Caocode';
     return null;
   }
 

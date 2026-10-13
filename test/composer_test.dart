@@ -9,35 +9,35 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/widgets/activity_row.dart';
-import 'package:baocode/sidebar/sidebar.dart';
-import 'package:baocode/workspace/workspace.dart';
-import 'package:baocode/chat/widgets/markdown_view.dart';
-import 'package:baocode/workspace/window_controls.dart';
-import 'package:baocode/main.dart';
+import 'package:caocode/chat/widgets/activity_row.dart';
+import 'package:caocode/sidebar/sidebar.dart';
+import 'package:caocode/workspace/workspace.dart';
+import 'package:caocode/chat/widgets/markdown_view.dart';
+import 'package:caocode/workspace/window_controls.dart';
+import 'package:caocode/main.dart';
 import 'package:super_sliver_list/super_sliver_list.dart';
-import 'package:baocode/kernel/claude_code/claude_code_kernel.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/widgets/edge_fade_mask.dart';
-import 'package:baocode/chat/widgets/live_selectable_text.dart';
-import 'package:baocode/chat/widgets/shimmer_text.dart';
-import 'package:baocode/chat/widgets/thinking_section.dart';
-import 'package:baocode/chat/widgets/chat_item_view.dart';
-import 'package:baocode/chat/widgets/user_message_bubble.dart';
-import 'package:baocode/chat/chat_history_view.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/chat/composer/composer.dart';
-import 'package:baocode/chat/composer/composer_caret.dart';
-import 'package:baocode/chat/composer/composer_embeds.dart';
-import 'package:baocode/chat/composer/composer_files.dart';
-import 'package:baocode/chat/composer/composer_picker.dart';
-import 'package:baocode/chat/floating/floating_layer.dart';
-import 'package:baocode/chat/composer/suggestion_menu.dart';
-import 'package:baocode/chat/panels/activity_strip.dart';
-import 'package:baocode/chat/panels/interaction_panel.dart';
-import 'package:baocode/chat/panels/context_usage_panel.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:caocode/kernel/claude_code/claude_code_kernel.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/widgets/edge_fade_mask.dart';
+import 'package:caocode/chat/widgets/live_selectable_text.dart';
+import 'package:caocode/chat/widgets/shimmer_text.dart';
+import 'package:caocode/chat/widgets/thinking_section.dart';
+import 'package:caocode/chat/widgets/chat_item_view.dart';
+import 'package:caocode/chat/widgets/user_message_bubble.dart';
+import 'package:caocode/chat/chat_history_view.dart';
+import 'package:caocode/chat/chat_session.dart';
+import 'package:caocode/chat/chat_screen.dart';
+import 'package:caocode/chat/composer/composer.dart';
+import 'package:caocode/chat/composer/composer_caret.dart';
+import 'package:caocode/chat/composer/composer_embeds.dart';
+import 'package:caocode/chat/composer/composer_files.dart';
+import 'package:caocode/chat/composer/composer_picker.dart';
+import 'package:caocode/chat/floating/floating_layer.dart';
+import 'package:caocode/chat/composer/suggestion_menu.dart';
+import 'package:caocode/chat/panels/activity_strip.dart';
+import 'package:caocode/chat/panels/interaction_panel.dart';
+import 'package:caocode/chat/panels/context_usage_panel.dart';
+import 'package:caocode/theme/app_theme.dart';
 
 Future<ChatSession> pumpScreen(
   WidgetTester tester, {
@@ -560,7 +560,7 @@ void main() {
     expect(controller.document.toPlainText(), '\uFFFC \n');
   });
 
-  testWidgets('files put in the draft from outside (Open with BaoCode) go '
+  testWidgets('files put in the draft from outside (Open with Caocode) go '
       'in as if pasted: before the composer shows, and while it does', (
     tester,
   ) async {
@@ -602,7 +602,7 @@ void main() {
     final messenger = tester.binding.defaultBinaryMessenger;
     final menus = <List<Map<Object?, Object?>>>[];
     final replies = ['selectAll', 'copy', 'paste'];
-    messenger.setMockMethodCallHandler(const MethodChannel('baocode/window'), (
+    messenger.setMockMethodCallHandler(const MethodChannel('caocode/window'), (
       call,
     ) async {
       switch (call.method) {
@@ -663,7 +663,7 @@ void main() {
       expect(menus, hasLength(3));
     } finally {
       messenger.setMockMethodCallHandler(
-        const MethodChannel('baocode/window'),
+        const MethodChannel('caocode/window'),
         null,
       );
       messenger.setMockMethodCallHandler(SystemChannels.platform, null);
@@ -689,7 +689,7 @@ void main() {
       /// The menu item [command] chosen, as the window sends it.
       Future<void> menu(String command) async {
         await messenger.handlePlatformMessage(
-          'baocode/window',
+          'caocode/window',
           const StandardMethodCodec().encodeMethodCall(
             MethodCall('editCommand', command),
           ),
@@ -724,7 +724,7 @@ void main() {
       expect(copied!.length, greaterThan(200));
     } finally {
       messenger.setMockMethodCallHandler(
-        const MethodChannel('baocode/window'),
+        const MethodChannel('caocode/window'),
         null,
       );
       messenger.setMockMethodCallHandler(SystemChannels.platform, null);
@@ -1227,7 +1227,7 @@ void main() {
 
     testWidgets('an edit stays open while another conversation is visited '
         'from the sidebar', (tester) async {
-      await tester.pumpWidget(BaoCodeApp(workspace: Workspace.mock()));
+      await tester.pumpWidget(CaocodeApp(workspace: Workspace.mock()));
       await tester.pump();
       final title = find.descendant(
         of: find.byType(Sidebar),

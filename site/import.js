@@ -1,10 +1,10 @@
 // The one-click import of an upstream (docs/upstream-import.md): a site's
-// "Import to BaoCode" link comes here, what to import after the # —
+// "Import to Caocode" link comes here, what to import after the # —
 //
-//   https://baocode.dev/import#v=1&name=…&protocol=…&url=…&key=…
+//   https://caocode.dev/import#v=1&name=…&protocol=…&url=…&key=…
 //
-// which browsers never send to baocode.dev — and goes on to the app as
-// baocode://provider/import?…, BaoCode asking before it adds anything. The
+// which browsers never send to caocode.dev — and goes on to the app as
+// caocode://provider/import?…, Caocode asking before it adds anything. The
 // fragment is taken off the address bar as soon as it is read, so the key
 // is not left in it. The page's words are in its HTML (each language's).
 (() => {
@@ -74,13 +74,13 @@
     ['url', base.href.replace(/\/+$/, '')], ['key', key],
   ].filter(([, value]) => value)
     .map(([k, value]) => `${k}=${encodeURIComponent(value)}`).join('&');
-  const link = `baocode://provider/import?${query}`;
+  const link = `caocode://provider/import?${query}`;
   const open = root.querySelector('[data-open]');
   open.href = link;
   show('ready');
 
   // Opened, the app takes the focus from the page; still here a moment
-  // later, BaoCode is most likely not installed: the download comes first.
+  // later, Caocode is most likely not installed: the download comes first.
   let left = false;
   const away = () => { left = true; };
   window.addEventListener('blur', away);

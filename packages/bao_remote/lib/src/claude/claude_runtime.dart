@@ -13,7 +13,7 @@ import 'cli_locator.dart';
 typedef ClaudeDownloadProgress = void Function(int received, int size);
 
 /// The Claude Code to run on a machine: the newest of the user's builds
-/// and the one BaoCode installed there ([managed]), the user's where they
+/// and the one Caocode installed there ([managed]), the user's where they
 /// are as new. A machine with none is given one, when asked to.
 ///
 /// What each of the user's builds is, it is asked (`--version`) once per
@@ -121,7 +121,7 @@ class ClaudeRuntime {
         null => null,
       };
 
-  /// [executable] refused an option BaoCode starts Claude Code with: it is
+  /// [executable] refused an option Caocode starts Claude Code with: it is
   /// passed over from now on, with every build of the user's no newer.
   /// Whether another may be tried: for the installed one, whether a newer
   /// one was installed in its place (its progress told to [onDownload]).

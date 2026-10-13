@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BaoCode — An awesome, easy-to-use desktop UI for Claude Code</title>
+<title>Caocode — An awesome, easy-to-use desktop UI for Claude Code</title>
 <meta name="description" content="An awesome, easy-to-use desktop UI for Claude Code, with a millisecond-fast IDE built in.">
 <link rel="icon" href="icon.png">
 <link rel="stylesheet" href="style.css">
-<link rel="alternate" hreflang="en" href="https://baocode.dev/">
-<link rel="alternate" hreflang="zh" href="https://baocode.dev/zh/">
+<link rel="alternate" hreflang="en" href="https://caocode.dev/">
+<link rel="alternate" hreflang="zh" href="https://caocode.dev/zh/">
 </head>
 <body>
 <svg class="sprite" aria-hidden="true">
@@ -38,10 +38,10 @@
 </svg>
 <canvas class="grid" aria-hidden="true"></canvas>
 <header class="top">
-  <a class="brand" href="/"><img src="icon.png" alt="">BaoCode</a>
+  <a class="brand" href="/"><img src="icon.png" alt="">Caocode</a>
   <a href="download.html">Download</a>
   <a href="/changelog">Changelog</a>
-  <a href="https://github.com/baocode-dev/baocode"><svg class="ic" aria-hidden="true"><use href="#ic-github"/></svg>GitHub</a>
+  <a href="https://github.com/Cxxhh/Caocode"><svg class="ic" aria-hidden="true"><use href="#ic-github"/></svg>GitHub</a>
   <a class="lang" href="/zh/" hreflang="zh" lang="zh-CN">中文</a>
 </header>
 
@@ -64,30 +64,30 @@
     </ol>
   </nav>
 
-  <h1>BaoCode</h1>
+  <h1>Caocode</h1>
   <p class="subtitle">An awesome, easy-to-use desktop UI for Claude Code, with a millisecond-fast IDE built in.</p>
   <p class="meta"><span data-version>Version 1.0.6</span><span>macOS (Apple silicon and Intel) and Windows</span><span>Free and open source</span><span data-updated>Updated 10 October 2026</span></p>
 
   <div class="actions">
     <a class="button primary" href="download.html"><svg class="ic logo" aria-hidden="true"><use href="#ic-apple"/></svg>Download for Mac</a>
-    <a class="button" data-file="windows" href="https://dl.baocode.dev/releases/1.0.6/BaoCode-1.0.6-setup.exe"><svg class="ic logo" aria-hidden="true"><use href="#ic-windows"/></svg>Download for Windows</a>
+    <a class="button" data-file="windows" href="https://dl.caocode.dev/releases/1.0.6/Caocode-1.0.6-setup.exe"><svg class="ic logo" aria-hidden="true"><use href="#ic-windows"/></svg>Download for Windows</a>
   </div>
 
   <figure>
-    <div class="img" data-src="shots/main.webp"><img decoding="async" src="shots/main.webp" width="1568" height="976" alt="BaoCode’s main window with two conversations side by side and the model picker open" fetchpriority="high"></div>
+    <div class="img" data-src="shots/main.webp"><img decoding="async" src="shots/main.webp" width="1568" height="976" alt="Caocode’s main window with two conversations side by side and the model picker open" fetchpriority="high"></div>
     <div class="img" data-src="shots/main-ide.webp"><img decoding="async" loading="lazy" src="shots/main-ide.webp" width="1568" height="1007" alt="Fast IDE with a conversation docked beside the editor and terminal"></div>
-    <figcaption>Top: BaoCode’s main window, with your agents grouped by project, two conversations side by side while background agents run, and the model picker. Bottom: Fast IDE with the conversation docked beside the editor and terminal, while Claude runs five analysis agents; the selected code goes into the message as a reference.</figcaption>
+    <figcaption>Top: Caocode’s main window, with your agents grouped by project, two conversations side by side while background agents run, and the model picker. Bottom: Fast IDE with the conversation docked beside the editor and terminal, while Claude runs five analysis agents; the selected code goes into the message as a reference.</figcaption>
   </figure>
 
   <h2 id="why"><svg class="ic" aria-hidden="true"><use href="#ic-lightbulb"/></svg>Why we built this</h2>
   <p>We use Claude Code every day. The terminal is a fine place to run it, but a poor place to read it: long diffs scroll out of view, earlier steps are hard to find again, and reviewing what changed means switching to another app.</p>
-  <p>BaoCode is the window we wanted around it. It is drawn natively, it opens instantly, and it never makes Claude wait on the interface.</p>
+  <p>Caocode is the window we wanted around it. It is drawn natively, it opens instantly, and it never makes Claude wait on the interface.</p>
 
   <h2 id="interface"><svg class="ic" aria-hidden="true"><use href="#ic-panel-left"/></svg>The interface</h2>
-  <p>The interface is the point of BaoCode, so most of the work went into details you may not notice until you go back to something else:</p>
+  <p>The interface is the point of Caocode, so most of the work went into details you may not notice until you go back to something else:</p>
   <ul class="features">
     <li><svg class="ic" aria-hidden="true"><use href="#ic-fold-vertical"/></svg><span><strong>Steps fold away.</strong> Reads, searches and commands collapse into single lines, so the conversation reads as what Claude said and did.</span></li>
-    <li><svg class="ic" aria-hidden="true"><use href="#ic-git-compare"/></svg><span><strong>Every change can be reviewed.</strong> Keep or Undo what Claude edited, file by file. Checkpoints live in BaoCode’s own data folder, never in your repository’s <code>.git</code>.</span></li>
+    <li><svg class="ic" aria-hidden="true"><use href="#ic-git-compare"/></svg><span><strong>Every change can be reviewed.</strong> Keep or Undo what Claude edited, file by file. Checkpoints live in Caocode’s own data folder, never in your repository’s <code>.git</code>.</span></li>
     <li><svg class="ic" aria-hidden="true"><use href="#ic-activity"/></svg><span><strong>You can see what it is doing.</strong> The current task and its progress stay above the input while Claude works.</span></li>
     <li><svg class="ic" aria-hidden="true"><use href="#ic-flag"/></svg><span><strong>Give it a goal.</strong> Type <code>/goal</code> and what you want done, and Claude keeps working until it is met. The goal stays above the input with how long it has been worked on; open it to see why it isn’t met yet, or to change it. Set one in the middle of a task and it takes effect at once.</span></li>
     <li><svg class="ic" aria-hidden="true"><use href="#ic-message-square-text"/></svg><span><strong>The input is a rich-text editor.</strong> Copy code from the editor and it arrives as a reference to the file and its lines; paste images or drop in files and they sit right where you put them in the sentence.</span></li>
@@ -103,10 +103,10 @@
 
   <h2 id="speed"><svg class="ic" aria-hidden="true"><use href="#ic-zap"/></svg>Speed</h2>
   <p>VS Code and Cursor are built on Electron. Each window is a web page, and every copy of the app carries its own Chromium browser and Node.js. That is where the seconds at launch, the gigabyte of memory and the 200 MB downloads go.</p>
-  <p>BaoCode is not a web page. It is a native app that draws its own interface straight to the GPU, with no browser underneath.</p>
+  <p>Caocode is not a web page. It is a native app that draws its own interface straight to the GPU, with no browser underneath.</p>
   <div class="table">
     <table>
-      <thead><tr><th></th><th>BaoCode</th><th>VS Code</th><th>Cursor</th></tr></thead>
+      <thead><tr><th></th><th>Caocode</th><th>VS Code</th><th>Cursor</th></tr></thead>
       <tbody>
         <tr><td>Launch</td><td>≈ 0.18 s</td><td>≈ 2–3 s</td><td>≈ 2–3 s</td></tr>
         <tr><td>Memory, one window idle</td><td>≈ 120 MB</td><td>≈ 970 MB</td><td>≈ 1.9 GB</td></tr>
@@ -117,10 +117,10 @@
   </div>
 
   <h2 id="themes"><svg class="ic" aria-hidden="true"><use href="#ic-palette"/></svg>Your themes</h2>
-  <p>BaoCode’s colors are VS Code’s theme colors, so the themes you already use look the way you expect: the editor, the conversation and the sidebar all follow them. Change the theme whenever you like; the window previews each one as you move through the list.</p>
-  <p>This is what BaoCode does with VS Code as a whole: it keeps the parts that matter most and fits them into a 16 MB download on Windows.</p>
+  <p>Caocode’s colors are VS Code’s theme colors, so the themes you already use look the way you expect: the editor, the conversation and the sidebar all follow them. Change the theme whenever you like; the window previews each one as you move through the list.</p>
+  <p>This is what Caocode does with VS Code as a whole: it keeps the parts that matter most and fits them into a 16 MB download on Windows.</p>
   <figure>
-    <div class="img" data-src="shots/themes-light.webp"><img decoding="async" loading="lazy" src="shots/themes-light.webp" width="1568" height="974" alt="BaoCode’s main window in a light theme, with search open"></div>
+    <div class="img" data-src="shots/themes-light.webp"><img decoding="async" loading="lazy" src="shots/themes-light.webp" width="1568" height="974" alt="Caocode’s main window in a light theme, with search open"></div>
     <div class="img" data-src="shots/themes-dark.webp"><img decoding="async" loading="lazy" src="shots/themes-dark.webp" width="1568" height="996" alt="Fast IDE in Kimbie Dark, with the color theme list open"></div>
     <figcaption>Top: the main window in a light theme, with search open across agents, conversations, files and actions. Bottom: Fast IDE in Kimbie Dark, picked from VS Code’s own light and dark themes.</figcaption>
   </figure>
@@ -136,50 +136,50 @@
 
   <h2 id="remote"><svg class="ic" aria-hidden="true"><use href="#ic-server"/></svg>Remote projects over SSH</h2>
   <p>Your code doesn’t have to be on your machine. Open a folder on a Linux server over SSH, the way VS Code’s Remote-SSH does: the window stays on your computer, and files, search, Git, terminals, language servers and Claude Code all run on the server, right next to the code.</p>
-  <p>Pick a host from your <code>~/.ssh/config</code>, or type <code>user@host</code>, then choose a folder. Remote projects sit in the sidebar with the rest, marked with their host, and a new chat can start in one from the folder menu above the input. If the server has no Claude Code, BaoCode installs it there, and the models you added work there too.</p>
-  <p>If the connection drops, BaoCode reconnects by itself, and a conversation that was cut off carries on with your next message. If a host can’t be reached, it tells you why, with a button to try again.</p>
+  <p>Pick a host from your <code>~/.ssh/config</code>, or type <code>user@host</code>, then choose a folder. Remote projects sit in the sidebar with the rest, marked with their host, and a new chat can start in one from the folder menu above the input. If the server has no Claude Code, Caocode installs it there, and the models you added work there too.</p>
+  <p>If the connection drops, Caocode reconnects by itself, and a conversation that was cut off carries on with your next message. If a host can’t be reached, it tells you why, with a button to try again.</p>
   <p>The server needs Linux (x64 or arm64) and to accept your SSH key or ssh-agent. Passwords and two-factor prompts aren’t supported yet.</p>
 
   <h2 id="customize"><svg class="ic" aria-hidden="true"><use href="#ic-puzzle"/></svg>Skills, MCP servers and more</h2>
   <p>Everything Claude Code can be extended with is in one place: plugins, MCP servers, skills, subagents, rules, commands and hooks, for you or for a single project. Skills you have on claude.ai show up here too.</p>
   <figure>
-    <div class="img" data-src="shots/customize.webp"><img decoding="async" loading="lazy" src="shots/customize.webp" width="1568" height="1164" alt="Customize in BaoCode, listing skills synced from claude.ai"></div>
+    <div class="img" data-src="shots/customize.webp"><img decoding="async" loading="lazy" src="shots/customize.webp" width="1568" height="1164" alt="Customize in Caocode, listing skills synced from claude.ai"></div>
     <figcaption>Customize: plugins, MCP servers, skills, subagents, rules, commands and hooks, here with the skills synced from claude.ai.</figcaption>
   </figure>
 
   <h2 id="models"><svg class="ic" aria-hidden="true"><use href="#ic-sparkles"/></svg>Any model</h2>
-  <p>Claude Code does the work; you choose the model. Add an upstream that speaks Anthropic’s API, OpenAI’s Chat Completions or OpenAI’s Responses, and BaoCode’s local proxy translates between it and Claude Code. Its tools, skills and way of working stay the same. You can even run Claude Code on GPT-6 Astra.</p>
+  <p>Claude Code does the work; you choose the model. Add an upstream that speaks Anthropic’s API, OpenAI’s Chat Completions or OpenAI’s Responses, and Caocode’s local proxy translates between it and Claude Code. Its tools, skills and way of working stay the same. You can even run Claude Code on GPT-6 Astra.</p>
   <p>API keys are kept in the system keychain, not in a settings file, and you can choose which model Claude Code uses for each part of its work.</p>
   <figure>
-    <div class="img" data-src="shots/models.webp"><img decoding="async" loading="lazy" src="shots/models.webp" width="1568" height="1174" alt="Adding a model upstream in BaoCode’s settings, with its protocol menu open"></div>
+    <div class="img" data-src="shots/models.webp"><img decoding="async" loading="lazy" src="shots/models.webp" width="1568" height="1174" alt="Adding a model upstream in Caocode’s settings, with its protocol menu open"></div>
     <figcaption>Adding an upstream: its protocol, base URL and API key, the models it offers, and which model Claude Code uses for each role.</figcaption>
   </figure>
 
   <h2 id="notifications"><svg class="ic" aria-hidden="true"><use href="#ic-bell"/></svg>Notifications</h2>
-  <p>You don’t have to watch the window. When an agent needs you, to answer a question, grant a permission or approve a plan, or when it finishes its turn, BaoCode tells you the way your system does: a notification, a sound, and a count on the app’s icon of the agents waiting on you.</p>
+  <p>You don’t have to watch the window. When an agent needs you, to answer a question, grant a permission or approve a plan, or when it finishes its turn, Caocode tells you the way your system does: a notification, a sound, and a count on the app’s icon of the agents waiting on you.</p>
   <p>Close the window and the agents keep running in the menu bar (the tray on Windows), whose menu shows which of them are waiting on you. The default sound is a microwave’s ding, because the work is ready: <button class="play" type="button" data-sound="sounds/microwave-ding.m4a" aria-label="Play the notification sound"><svg class="ic start" aria-hidden="true"><use href="#ic-play"/></svg><svg class="ic stop" aria-hidden="true"><use href="#ic-square"/></svg>Play</button></p>
   <p>Choose man-oh-yeah, Gulp Gulp Gulp Gulp, a system sound or your own audio file in Settings → Notifications. When several agents notify together, each sound plays without cutting off the others.</p>
   <figure>
-    <div class="img" data-src="shots/notifications.webp"><img decoding="async" loading="lazy" src="shots/notifications.webp" width="1568" height="1222" alt="BaoCode’s notification settings"></div>
+    <div class="img" data-src="shots/notifications.webp"><img decoding="async" loading="lazy" src="shots/notifications.webp" width="1568" height="1222" alt="Caocode’s notification settings"></div>
     <figcaption>Notification settings: when to be told, the sound, and the menu bar icon.</figcaption>
   </figure>
 
   <h2 id="limits"><svg class="ic" aria-hidden="true"><use href="#ic-target"/></svg>What it doesn’t do</h2>
-  <p><strong>BaoCode has no agent of its own, by design.</strong> Claude Code is the agent, and its ecosystem is unmatched: its tools, skills, plugins, MCP servers, subagents and hooks. A second agent would only split it. BaoCode’s job is to give Claude Code the interface it deserves, and to make everything around it work out of the box.</p>
-  <p>So BaoCode doesn’t come with a model or an account. It runs the Claude Code you already have, with your settings and your <code>CLAUDE.md</code>. Codex and other agents aren’t supported; other models work through Claude Code, as above.</p>
+  <p><strong>Caocode has no agent of its own, by design.</strong> Claude Code is the agent, and its ecosystem is unmatched: its tools, skills, plugins, MCP servers, subagents and hooks. A second agent would only split it. Caocode’s job is to give Claude Code the interface it deserves, and to make everything around it work out of the box.</p>
+  <p>So Caocode doesn’t come with a model or an account. It runs the Claude Code you already have, with your settings and your <code>CLAUDE.md</code>. Codex and other agents aren’t supported; other models work through Claude Code, as above.</p>
 
   <h2 id="download"><svg class="ic" aria-hidden="true"><use href="#ic-download"/></svg>Download</h2>
   <ul class="features">
-    <li><svg class="ic logo" aria-hidden="true"><use href="#ic-apple"/></svg><span><strong>macOS</strong>: for <a data-file="macos-arm64" href="https://dl.baocode.dev/releases/1.0.6/BaoCode-1.0.6-arm64.dmg">Apple silicon</a> or <a data-file="macos-x64" href="https://dl.baocode.dev/releases/1.0.6/BaoCode-1.0.6-x64.dmg">Intel</a>, macOS 12 Monterey or later.</span></li>
-    <li><svg class="ic logo" aria-hidden="true"><use href="#ic-windows"/></svg><span><strong>Windows</strong>: <a data-file="windows" data-name href="https://dl.baocode.dev/releases/1.0.6/BaoCode-1.0.6-setup.exe">BaoCode 1.0.6</a>, x64, Windows 10 or later.</span></li>
+    <li><svg class="ic logo" aria-hidden="true"><use href="#ic-apple"/></svg><span><strong>macOS</strong>: for <a data-file="macos-arm64" href="https://dl.caocode.dev/releases/1.0.6/Caocode-1.0.6-arm64.dmg">Apple silicon</a> or <a data-file="macos-x64" href="https://dl.caocode.dev/releases/1.0.6/Caocode-1.0.6-x64.dmg">Intel</a>, macOS 12 Monterey or later.</span></li>
+    <li><svg class="ic logo" aria-hidden="true"><use href="#ic-windows"/></svg><span><strong>Windows</strong>: <a data-file="windows" data-name href="https://dl.caocode.dev/releases/1.0.6/Caocode-1.0.6-setup.exe">Caocode 1.0.6</a>, x64, Windows 10 or later.</span></li>
   </ul>
-  <p>BaoCode updates itself in the background and asks before restarting. You can make updates manual, or turn them off, in Settings → Updates.</p>
+  <p>Caocode updates itself in the background and asks before restarting. You can make updates manual, or turn them off, in Settings → Updates.</p>
 
   <h2 id="source"><svg class="ic" aria-hidden="true"><use href="#ic-git-fork"/></svg>Source code</h2>
-  <p>BaoCode is open source under the <a href="https://github.com/baocode-dev/baocode/blob/main/LICENSE">GPL-3.0</a>; its editor and terminal packages are MIT. The code is on <a href="https://github.com/baocode-dev/baocode">GitHub</a>. Issues are welcome; pull requests aren’t accepted.</p>
+  <p>Caocode is open source under the <a href="https://github.com/Cxxhh/Caocode/blob/main/LICENSE">GPL-3.0</a>; its editor and terminal packages are MIT. The code is on <a href="https://github.com/Cxxhh/Caocode">GitHub</a>. Issues are welcome; pull requests aren’t accepted.</p>
 
 
-  <footer>BaoCode is an independent project, not affiliated with or endorsed by Anthropic. Claude Code is a product of Anthropic.</footer>
+  <footer>Caocode is an independent project, not affiliated with or endorsed by Anthropic. Claude Code is a product of Anthropic.</footer>
 </main>
 
 <script src="site.js"></script>

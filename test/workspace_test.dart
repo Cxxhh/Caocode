@@ -7,20 +7,20 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_quill/quill_delta.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/kernel/claude_code/claude_code_kernel.dart';
-import 'package:baocode/kernel/claude_code/mock_claude_code_transport.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/sidebar/sidebar.dart';
-import 'package:baocode/kernel/claude_code/claude_code_transport.dart';
-import 'package:baocode/workspace/agent_title.dart';
-import 'package:baocode/workspace/chat_grid.dart';
-import 'package:baocode/workspace/editor_launcher.dart';
-import 'package:baocode/workspace/preference_store.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/chat_screen.dart';
+import 'package:caocode/chat/chat_session.dart';
+import 'package:caocode/kernel/agent_kernel.dart';
+import 'package:caocode/kernel/claude_code/claude_code_kernel.dart';
+import 'package:caocode/kernel/claude_code/mock_claude_code_transport.dart';
+import 'package:caocode/main.dart';
+import 'package:caocode/sidebar/sidebar.dart';
+import 'package:caocode/kernel/claude_code/claude_code_transport.dart';
+import 'package:caocode/workspace/agent_title.dart';
+import 'package:caocode/workspace/chat_grid.dart';
+import 'package:caocode/workspace/editor_launcher.dart';
+import 'package:caocode/workspace/preference_store.dart';
+import 'package:caocode/workspace/workspace.dart';
 
 /// Sessions as Claude Code keeps them: one recorded, in one project, and
 /// any [started] since (e.g. in a terminal).
@@ -82,7 +82,7 @@ Future<Workspace> pumpLoaded(
     drafts: drafts,
     titler: titler,
   );
-  await tester.pumpWidget(BaoCodeApp(workspace: workspace));
+  await tester.pumpWidget(CaocodeApp(workspace: workspace));
   await tester.runAsync(workspace.load);
   await tester.pump();
   return workspace;

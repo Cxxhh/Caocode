@@ -8,14 +8,14 @@ import 'dart:io';
 
 import 'package:bao_remote/server.dart';
 
-/// The app's version the server came with (`-Dbaocode.version=…`).
-const _version = String.fromEnvironment('baocode.version');
+/// The Caocode version the server came with (`-Dcaocode.version=…`).
+const _version = String.fromEnvironment('caocode.version');
 
 Future<void> main(List<String> arguments) async {
   final home = Platform.environment['HOME'] ?? Directory.current.path;
   final dataDir = arguments.length >= 2 && arguments.first == '--data'
       ? arguments[1]
-      : '$home/.baocode-server/data';
+      : '$home/.caocode-server/data';
   Directory(dataDir).createSync(recursive: true);
   // A key Claude Code is given stays in memory where there is a place for
   // it, not on disk.
@@ -25,7 +25,7 @@ Future<void> main(List<String> arguments) async {
       Directory(runtime).existsSync()) {
     ClaudeSettingsFile.parent = Directory(runtime);
   }
-  void log(String message) => stderr.writeln('baocode-server: $message');
+  void log(String message) => stderr.writeln('caocode-server: $message');
 
   final peer = RpcPeer(
     stdin.transform(utf8.decoder).transform(const LineSplitter()),

@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_history_view.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/composer/composer.dart';
-import 'package:baocode/chat/widgets/fold_line.dart';
-import 'package:baocode/chat/composer/composer_embeds.dart';
-import 'package:baocode/chat/widgets/tool_call_row.dart';
-import 'package:baocode/chat/widgets/user_message_bubble.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:caocode/chat/chat_history_view.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/chat_screen.dart';
+import 'package:caocode/chat/chat_session.dart';
+import 'package:caocode/chat/composer/composer.dart';
+import 'package:caocode/chat/widgets/fold_line.dart';
+import 'package:caocode/chat/composer/composer_embeds.dart';
+import 'package:caocode/chat/widgets/tool_call_row.dart';
+import 'package:caocode/chat/widgets/user_message_bubble.dart';
+import 'package:caocode/theme/app_theme.dart';
 import 'package:super_sliver_list/super_sliver_list.dart';
 
 Future<void> pumpScreen(WidgetTester tester) async {

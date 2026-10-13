@@ -7,9 +7,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bao_editor/monaco/flutter/language_assets.dart';
 import 'package:bao_editor/textmate/textmate_syntax.dart';
 import 'package:bao_editor/textmate/textmate_worker.dart';
-import 'package:baocode/ide/lsp/catalog/bundled_lsp_catalog.dart';
-import 'package:baocode/ide/lsp/packs/language_packs.dart';
-import 'package:baocode/theme/workbench_theme.dart';
+import 'package:caocode/ide/lsp/catalog/bundled_lsp_catalog.dart';
+import 'package:caocode/ide/lsp/packs/language_packs.dart';
+import 'package:caocode/theme/workbench_theme.dart';
 import 'package:path/path.dart' as p;
 
 final _packsDirectory = p.absolute('test/fixtures/lsp/packs');

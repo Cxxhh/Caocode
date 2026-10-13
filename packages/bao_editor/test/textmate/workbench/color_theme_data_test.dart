@@ -70,7 +70,7 @@ void main() {
   );
 
   group('bundled themes match VS Code', () {
-    // VS Code's themes; BaoCode's own have no upstream to match.
+    // VS Code's themes; Caocode's own have no upstream to match.
     for (final contribution in manifest.themes.where(
       (t) => t.extension != 'theme-bao',
     )) {

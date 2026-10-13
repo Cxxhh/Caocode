@@ -2,17 +2,17 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:baocode/models/codex/codex_accounts_io.dart';
-import 'package:baocode/models/codex/codex_api.dart';
-import 'package:baocode/models/codex/codex_balancer.dart';
-import 'package:baocode/models/codex/codex_oauth.dart';
-import 'package:baocode/models/codex/codex_service.dart';
-import 'package:baocode/models/codex/codex_usage.dart';
-import 'package:baocode/models/model_provider.dart';
-import 'package:baocode/models/model_providers.dart';
-import 'package:baocode/models/proxy/model_proxy.dart';
-import 'package:baocode/models/secret_store.dart';
-import 'package:baocode/models/upstream.dart';
+import 'package:caocode/models/codex/codex_accounts_io.dart';
+import 'package:caocode/models/codex/codex_api.dart';
+import 'package:caocode/models/codex/codex_balancer.dart';
+import 'package:caocode/models/codex/codex_oauth.dart';
+import 'package:caocode/models/codex/codex_service.dart';
+import 'package:caocode/models/codex/codex_usage.dart';
+import 'package:caocode/models/model_provider.dart';
+import 'package:caocode/models/model_providers.dart';
+import 'package:caocode/models/proxy/model_proxy.dart';
+import 'package:caocode/models/secret_store.dart';
+import 'package:caocode/models/upstream.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 String jwt(Map<String, Object?> claims) {

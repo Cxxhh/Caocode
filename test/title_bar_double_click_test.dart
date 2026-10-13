@@ -2,19 +2,19 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/chat/widgets/inline_rename_field.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/sidebar/sidebar.dart';
-import 'package:baocode/workspace/open_in_editor_button.dart';
-import 'package:baocode/workspace/pin_window_button.dart';
-import 'package:baocode/workspace/title_bar_double_click.dart';
-import 'package:baocode/workspace/window_controls.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:caocode/chat/chat_screen.dart';
+import 'package:caocode/chat/widgets/inline_rename_field.dart';
+import 'package:caocode/main.dart';
+import 'package:caocode/sidebar/sidebar.dart';
+import 'package:caocode/workspace/open_in_editor_button.dart';
+import 'package:caocode/workspace/pin_window_button.dart';
+import 'package:caocode/workspace/title_bar_double_click.dart';
+import 'package:caocode/workspace/window_controls.dart';
+import 'package:caocode/workspace/workspace.dart';
 
 import 'sidebar_test.dart' show pumpApp;
 
-const _window = MethodChannel('baocode/window');
+const _window = MethodChannel('caocode/window');
 
 final _macOS = TargetPlatformVariant.only(TargetPlatform.macOS);
 
@@ -239,7 +239,7 @@ void main() {
     tester.view.physicalSize = const Size(600, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(BaoCodeApp(workspace: Workspace()));
+    await tester.pumpWidget(CaocodeApp(workspace: Workspace()));
     await tester.pump();
     expect(find.text('Open a project folder'), findsOneWidget);
 

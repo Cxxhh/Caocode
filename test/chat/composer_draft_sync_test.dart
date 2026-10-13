@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/composer/composer.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:caocode/chat/chat_session.dart';
+import 'package:caocode/chat/composer/composer.dart';
+import 'package:caocode/theme/app_theme.dart';
 
 QuillController _controller(WidgetTester tester, int index) =>
     tester.widget<QuillEditor>(find.byType(QuillEditor).at(index)).controller;

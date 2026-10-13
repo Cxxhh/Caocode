@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/search/text_search.dart';
+import 'package:caocode/ide/search/text_search.dart';
 import 'package:path/path.dart' as p;
 
 void main() {

@@ -152,6 +152,15 @@ abstract interface class SelectsEffort {
   ModelSetting get effort;
 }
 
+/// A service-speed choice for subsequent turns, shared by the toolbar and
+/// runtime commands. Changing it does not submit a chat message.
+abstract interface class TogglesFastMode {
+  bool get fastEnabled;
+  bool get fastAvailable;
+  bool get fastChanging;
+  Future<void> setFastMode(bool enabled);
+}
+
 /// How much of the conversation the model holds, e.g. 200K or 1M tokens.
 abstract interface class SelectsContextSize {
   ModelSetting get contextSize;

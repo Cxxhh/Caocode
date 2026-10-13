@@ -5,18 +5,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/ide/ide_quick_input.dart';
-import 'package:baocode/keybindings/chat_keybindings.dart';
+import 'package:caocode/chat/chat_screen.dart';
+import 'package:caocode/ide/ide_quick_input.dart';
+import 'package:caocode/keybindings/chat_keybindings.dart';
 import 'package:bao_editor/monaco/flutter/keybinding_entry.dart';
-import 'package:baocode/keybindings/keybinding_service.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/search/search_palette.dart';
-import 'package:baocode/workspace/chat_grid.dart';
-import 'package:baocode/workspace/window_header/header_menu_bar.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:caocode/keybindings/keybinding_service.dart';
+import 'package:caocode/main.dart';
+import 'package:caocode/search/search_palette.dart';
+import 'package:caocode/workspace/chat_grid.dart';
+import 'package:caocode/workspace/window_header/header_menu_bar.dart';
+import 'package:caocode/workspace/workspace.dart';
 
-const _window = MethodChannel('baocode/window');
+const _window = MethodChannel('caocode/window');
 
 Future<Workspace> pumpApp(WidgetTester tester) async {
   tester.view.physicalSize = const Size(1400, 900);
@@ -34,7 +34,7 @@ Future<Workspace> pumpApp(WidgetTester tester) async {
     ),
   );
   final workspace = Workspace.mock();
-  await tester.pumpWidget(BaoCodeApp(workspace: workspace));
+  await tester.pumpWidget(CaocodeApp(workspace: workspace));
   await tester.pump();
   return workspace;
 }

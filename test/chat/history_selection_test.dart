@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_feed.dart';
-import 'package:baocode/chat/chat_history_view.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/composer/composer_draft.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:caocode/chat/chat_feed.dart';
+import 'package:caocode/chat/chat_history_view.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/chat_session.dart';
+import 'package:caocode/chat/composer/composer_draft.dart';
+import 'package:caocode/theme/app_theme.dart';
 import 'package:super_sliver_list/super_sliver_list.dart';
 
 /// Text left on the selection's list that is no longer there, far below:

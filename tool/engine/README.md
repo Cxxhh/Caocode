@@ -59,9 +59,9 @@ logs what it ended up with (`Windows text: ...`):
 The individual ones apply on top of `FLUTTER_WIN_TEXT=off` too.
 
 ```powershell
-$env:FLUTTER_WIN_TEXT = 'off'; .\baocode.exe          # stock
-Remove-Item Env:FLUTTER_WIN_TEXT; .\baocode.exe       # patched
-$env:FLUTTER_WIN_TEXT_CONTRAST = '0.75'; .\baocode.exe
+$env:FLUTTER_WIN_TEXT = 'off'; .\caocode.exe          # stock
+Remove-Item Env:FLUTTER_WIN_TEXT; .\caocode.exe       # patched
+$env:FLUTTER_WIN_TEXT_CONTRAST = '0.75'; .\caocode.exe
 ```
 
 ## Building
@@ -108,7 +108,7 @@ C:\src\flutter-wintext\bin\flutter.bat build windows --release `
 ```
 
 or copy `engine\src\out\host_release\flutter_windows.dll` over the one next to
-`baocode.exe` in a stock build of the same tag. Only that DLL differs; the
+`caocode.exe` in a stock build of the same tag. Only that DLL differs; the
 Dart snapshot is the same because the tag (and so the Dart SDK) is.
 
 ## Shipping

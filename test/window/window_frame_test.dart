@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/window/window_frame.dart';
+import 'package:caocode/window/window_frame.dart';
 
 const _main = ScreenArea('main', Rect.fromLTWH(0, 25, 1440, 875));
 const _right = ScreenArea('right', Rect.fromLTWH(1440, 0, 1920, 1080));

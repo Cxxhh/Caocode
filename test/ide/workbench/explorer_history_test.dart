@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
-import 'package:baocode/chat/composer/file_drop.dart';
-import 'package:baocode/ide/ide_explorer.dart';
+import 'package:caocode/chat/composer/file_drop.dart';
+import 'package:caocode/ide/ide_explorer.dart';
 
 import 'fake_files.dart';
 
@@ -197,7 +197,7 @@ void main() {
   ]) {
     final calls = <MethodCall>[];
     final messenger = tester.binding.defaultBinaryMessenger;
-    const channel = MethodChannel('baocode/window');
+    const channel = MethodChannel('caocode/window');
     messenger.setMockMethodCallHandler(channel, (call) async {
       calls.add(call);
       return answers.containsKey(call.method) ? answers[call.method] : true;

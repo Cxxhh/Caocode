@@ -42,7 +42,7 @@ bool FlutterWindow::OnCreate() {
   flutter::BinaryMessenger* messenger =
       flutter_controller_->engine()->messenger();
   HostView(messenger, flutter_controller_->view()->GetNativeWindow(),
-           "baocode/window", "baocode/drop");
+           "caocode/window", "caocode/drop");
 
   // Paths the app is asked to open (see open_requests.dart): those it was
   // started with first, then those a second copy of it hands this window

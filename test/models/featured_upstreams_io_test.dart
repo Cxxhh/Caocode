@@ -1,10 +1,10 @@
-// The upstreams Settings → Models lists, got from baocode.dev: kept with
+// The upstreams Settings → Models lists, got from caocode.dev: kept with
 // their logos, and what was kept when it does not answer.
 
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:baocode/models/featured_upstreams_io.dart';
+import 'package:caocode/models/featured_upstreams_io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -44,7 +44,7 @@ void main() {
   });
 
   test('a site listed shows at once, its logo downloaded beside the list; '
-      'kept for when baocode.dev does not answer', () async {
+      'kept for when caocode.dev does not answer', () async {
     list = jsonEncode({
       'upstreams': [
         {'id': 'a', 'name': 'A', 'url': 'https://a.dev', 'logo': 'a.png'},

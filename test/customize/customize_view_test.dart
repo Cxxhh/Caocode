@@ -5,17 +5,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bao_editor/monaco/flutter/editor_surface.dart';
 import 'package:bao_editor/monaco/flutter/editor_surface_controller.dart';
 
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/chat/side_panel/side_panel_view.dart';
-import 'package:baocode/customize/customization_store.dart';
-import 'package:baocode/customize/customizations.dart';
-import 'package:baocode/customize/customize_view.dart';
-import 'package:baocode/customize/mcp_probe.dart';
-import 'package:baocode/ide/ide_code_editor.dart';
-import 'package:baocode/keybindings/keybinding_service.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/sidebar/sidebar.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:caocode/chat/chat_screen.dart';
+import 'package:caocode/chat/side_panel/side_panel_view.dart';
+import 'package:caocode/customize/customization_store.dart';
+import 'package:caocode/customize/customizations.dart';
+import 'package:caocode/customize/customize_view.dart';
+import 'package:caocode/customize/mcp_probe.dart';
+import 'package:caocode/ide/ide_code_editor.dart';
+import 'package:caocode/keybindings/keybinding_service.dart';
+import 'package:caocode/main.dart';
+import 'package:caocode/sidebar/sidebar.dart';
+import 'package:caocode/workspace/workspace.dart';
 
 /// Skills kept in memory, by file.
 class _MemoryStore implements CustomizationStore {
@@ -112,7 +112,7 @@ Future<Workspace> _pumpApp(
   addTearDown(() => KeybindingService.instance = KeybindingService());
   final workspace = Workspace.mock();
   await tester.pumpWidget(
-    BaoCodeApp(workspace: workspace, customizations: store),
+    CaocodeApp(workspace: workspace, customizations: store),
   );
   await tester.pump();
   return workspace;

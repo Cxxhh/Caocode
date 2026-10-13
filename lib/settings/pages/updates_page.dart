@@ -105,7 +105,7 @@ class _UpdatesSettingsPageState extends State<UpdatesSettingsPage> {
             SettingsRow(
               label: l10n.updateCurrentVersion,
               description: [
-                (service?.current ?? currentAppVersion).marketing,
+                (service?.current ?? currentAppVersion).display,
                 switch (service?.lastChecked) {
                   final time? => l10n.updateLastChecked(_format(context, time)),
                   null when service != null => l10n.updateNeverChecked,
@@ -146,7 +146,7 @@ class _UpdatesSettingsPageState extends State<UpdatesSettingsPage> {
         ),
         if (notes != null)
           SettingsGroup(
-            title: l10n.updateReleaseNotesFor(noted!.version.marketing),
+            title: l10n.updateReleaseNotesFor(noted!.version.display),
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -173,7 +173,7 @@ class _UpdatesSettingsPageState extends State<UpdatesSettingsPage> {
   Widget? _status(BuildContext context, UpdateService service) {
     final l10n = context.l10n;
     final release = service.release;
-    final version = release?.version.marketing ?? '';
+    final version = release?.version.display ?? '';
     final label = switch (service.status) {
       UpdateStatus.idle => null,
       UpdateStatus.checking => l10n.updateChecking,

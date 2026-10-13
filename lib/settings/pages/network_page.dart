@@ -12,7 +12,7 @@ import 'network_test_view.dart';
 import 'settings_dropdown.dart';
 import 'settings_widgets.dart';
 
-/// Settings → Network: the proxy BaoCode and the Claude Code it starts go
+/// Settings → Network: the proxy Caocode and the Claude Code it starts go
 /// through (`http.proxyMode`, `http.proxy`), the one in use now, and a
 /// test of it: whether a few sites answer through it, and how quickly.
 class NetworkSettingsPage extends StatefulWidget {

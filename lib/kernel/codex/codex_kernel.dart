@@ -24,6 +24,7 @@ class CodexKernel
         SelectsModel,
         SelectsPermission,
         SelectsEffort,
+        TogglesFastMode,
         QueuesMessages,
         ProvidesCommands,
         ReportsContext,
@@ -55,9 +56,20 @@ class CodexKernel
   late StreamSubscription<Map<String, Object?>> _subscription;
 
   @override
-  late final LocalChoice model = LocalChoice(const [
-    KernelOption('default', 'CLI 默认', Icons.bolt_rounded, '使用 Codex CLI 的模型配置'),
-  ], onChanged: (_) => emitInfoChanged());
+  late final LocalChoice model = LocalChoice(
+    const [
+      KernelOption(
+        'default',
+        'CLI 默认',
+        Icons.bolt_rounded,
+        '使用 Codex CLI 的模型配置',
+      ),
+    ],
+    onChanged: (_) {
+      if (fastEnabled) _serviceTierOverride = _fastTier ?? 'default';
+      emitInfoChanged();
+    },
+  );
 
   @override
   late final LocalChoice permission = LocalChoice(
@@ -72,6 +84,71 @@ class CodexKernel
     emitInfoChanged,
   );
   Map _config = const {};
+  final Map<String, Map> _modelsById = {};
+  String? _serviceTierOverride;
+  String? _reportedServiceTier;
+  String? _reportedModelProvider;
+  Future<void>? _fastChange;
+
+  @override
+  bool get fastAvailable => _fastTier != null;
+
+  @override
+  bool get fastChanging => _fastChange != null;
+
+  String? get _fastTier {
+    if ((_config['features'] as Map?)?['fast_mode'] == false) return null;
+    final selected = _modelsById[effort.resolvedModel];
+    final serviceTiers = selected?['serviceTiers'];
+    final speedTiers = selected?['additionalSpeedTiers'];
+    if (serviceTiers case final List tiers) {
+      for (final tier in tiers.whereType<Map>()) {
+        if (tier['id'] is String &&
+            (tier['id'] as String).isNotEmpty &&
+            ({
+                  'fast',
+                  'priority',
+                }.contains(tier['name'].toString().trim().toLowerCase()) ||
+                tier['id'] == 'fast' ||
+                tier['id'] == 'priority')) {
+          return tier['id'] as String;
+        }
+      }
+    }
+    if (speedTiers case final List tiers) {
+      if (tiers.contains('fast')) return 'fast';
+      if (tiers.contains('priority')) return 'priority';
+    }
+    if (serviceTiers is List || speedTiers is List) {
+      final hasCustomProvider =
+          [_config['model_provider'], _reportedModelProvider]
+              .whereType<String>()
+              .any((provider) => provider.toLowerCase() != 'openai');
+      final hasAdvertisedTiers =
+          (serviceTiers is List && serviceTiers.isNotEmpty) ||
+          (speedTiers is List && speedTiers.isNotEmpty);
+      // Custom-provider catalogs may return empty lists for every model,
+      // even when service_tier is configured. Let the provider validate Fast.
+      if (hasCustomProvider && !hasAdvertisedTiers) {
+        return 'fast';
+      }
+      return null;
+    }
+    // Older CLI catalogs and custom providers may omit tier metadata.
+    return 'fast';
+  }
+
+  @override
+  bool get fastEnabled {
+    final tier =
+        _serviceTierOverride ??
+        _reportedServiceTier ??
+        _config['service_tier'] ??
+        _modelsById[effort.resolvedModel]?['defaultServiceTier'];
+    return tier == 'fast' ||
+        tier == 'priority' ||
+        (tier != null && tier == _fastTier);
+  }
 
   @override
   KernelHealth get health => _health;
@@ -180,6 +257,12 @@ class CodexKernel
     final models = await rpc.request('model/list', {'limit': 100});
     if (_disposed || _released || generation != _generation) return;
     final data = (models['data'] as List? ?? const []).whereType<Map>();
+    _modelsById
+      ..clear()
+      ..addEntries([
+        for (final raw in data)
+          if (raw['model'] case final String id) MapEntry(id, raw),
+      ]);
     effort.loadModels(data);
     model.options = [
       const KernelOption(
@@ -222,9 +305,14 @@ class CodexKernel
     if (_threadId case final id?) {
       final resumed = await rpc.request('thread/resume', {
         'threadId': id,
+        'serviceTier': ?_serviceTierOverride,
         if (_context.cwd != null) 'cwd': codexServerPath(_context.cwd),
       });
       if (_disposed || _released || generation != _generation) return;
+      _reportedModelProvider = resumed['modelProvider'] as String?;
+      if (resumed.containsKey('serviceTier')) {
+        _reportedServiceTier = resumed['serviceTier'] as String? ?? 'default';
+      }
       if (!_historyLoaded) {
         _replay((resumed['thread'] as Map?) ?? const {});
         _historyLoaded = true;
@@ -306,23 +394,29 @@ class CodexKernel
   }
 
   @override
-  final List<KernelCommand> commands = const [
+  List<KernelCommand> get commands => [
     KernelCommand(
+      'fast',
+      'Fast ${fastEnabled ? 'on' : 'off'} · /fast on 开启，/fast off 关闭',
+      Icons.speed_rounded,
+      argumentHint: '[on|off]',
+    ),
+    const KernelCommand(
       'review',
       'Review uncommitted changes',
       Icons.rate_review_outlined,
     ),
-    KernelCommand(
+    const KernelCommand(
       'compact',
       'Summarize the conversation',
       Icons.compress_rounded,
     ),
-    KernelCommand(
+    const KernelCommand(
       'init',
       'Write an AGENTS.md for this project',
       Icons.description_outlined,
     ),
-    KernelCommand('diff', 'Show the git diff', Icons.difference_outlined),
+    const KernelCommand('diff', 'Show the git diff', Icons.difference_outlined),
   ];
 
   @override
@@ -440,7 +534,17 @@ class CodexKernel
 
   Future<void> _start(KernelTurn turn) async {
     await _ready();
+    // A toolbar choice made before Send must reach this turn. A rejected
+    // change leaves the previous choice in place and does not fail the turn.
+    await _fastChange?.catchError((Object _) {});
     if (_turn != turn.id || _disposed) return;
+    if (RegExp(
+      r'^/fast(?:\s|$)',
+      caseSensitive: false,
+    ).hasMatch(turn.text.trim())) {
+      await _fastCommand(turn);
+      return;
+    }
     if (_threadId == null) {
       await (_openingThread ??= _openThread());
     }
@@ -485,6 +589,7 @@ class CodexKernel
       ],
       'model': ?effort.resolvedModel,
       'effort': ?effort.selected,
+      'serviceTier': ?_serviceTierOverride,
       if (_context.cwd != null) 'cwd': codexServerPath(_context.cwd),
       ...readOnly
           ? {
@@ -504,17 +609,107 @@ class CodexKernel
     if (_turn != turn.id) _interrupt();
   }
 
+  Future<void> _fastCommand(KernelTurn turn) async {
+    final parts = turn.text.trim().toLowerCase().split(RegExp(r'\s+'));
+    var message =
+        'Fast 当前${fastEnabled ? '已开启' : '已关闭'}。使用 /fast on 或 /fast off 切换。';
+    var kind = NoticeKind.info;
+    if (turn.images.isNotEmpty ||
+        parts.length > 2 ||
+        (parts.length == 2 && !{'on', 'off'}.contains(parts[1]))) {
+      message = '用法：/fast on 开启，/fast off 关闭，/fast 查看状态。请单独发送命令。';
+    } else if (parts.length == 2) {
+      if (parts[1] == 'on' && !fastAvailable) {
+        message = '当前模型或 CLI 配置不支持 Fast。';
+        kind = NoticeKind.warning;
+      } else {
+        try {
+          await _changeFastMode(parts[1] == 'on');
+          if (_turn != turn.id || _disposed) return;
+          message = fastEnabled
+              ? 'Fast 已开启，从下一条消息生效。实际支持与计费由供应商决定。'
+              : 'Fast 已关闭，后续消息使用标准速度。';
+        } catch (error) {
+          message = 'Fast 切换失败：$error';
+          kind = NoticeKind.error;
+        }
+      }
+    }
+    if (_turn != turn.id || _disposed) return;
+    emit(ItemUpserted(nextSeq, 'fast:${turn.id}', NoticeItem(kind, message)));
+    _endTurn(turn.id, interrupted: false);
+  }
+
+  @override
+  Future<void> setFastMode(bool enabled) async {
+    if (_disposed || fastChanging) return;
+    try {
+      await _changeFastMode(enabled);
+    } catch (error) {
+      if (_disposed) return;
+      final seq = nextSeq;
+      emit(
+        ItemUpserted(
+          seq,
+          'fast:setting:$seq',
+          NoticeItem(NoticeKind.error, 'Fast 切换失败：$error'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _changeFastMode(bool enabled) async {
+    final change = _applyFastMode(enabled);
+    _fastChange = change;
+    emitInfoChanged();
+    try {
+      await change;
+    } finally {
+      if (identical(_fastChange, change)) _fastChange = null;
+      if (!_disposed) emitInfoChanged();
+    }
+  }
+
+  Future<void> _applyFastMode(bool enabled) async {
+    await _ready();
+    if (_disposed) return;
+    final tier = enabled ? _fastTier : 'default';
+    if (tier == null) throw const CodexRpcException('当前模型或 CLI 配置不支持 Fast。');
+    if (_threadId != null) {
+      try {
+        await _request('thread/settings/update', {
+          'threadId': _threadId,
+          'model': ?effort.resolvedModel,
+          'effort': ?effort.selected,
+          'serviceTier': tier,
+        });
+      } on CodexRpcException catch (error) {
+        // Older servers can still apply the choice on turn/start.
+        if (error.code != -32601) rethrow;
+      }
+    }
+    if (_disposed) return;
+    // The model picker can change while the server acknowledges the choice.
+    // Resolve again so the next turn never inherits the previous model's tier.
+    _serviceTierOverride = enabled ? _fastTier ?? 'default' : 'default';
+  }
+
   Future<void> _openThread() async {
     try {
       final started = await _request('thread/start', {
         if (_context.cwd != null) 'cwd': codexServerPath(_context.cwd),
         'model': ?effort.resolvedModel,
+        'serviceTier': ?_serviceTierOverride,
         if (_context.workspace?.call()?.instructions case final instructions?
             when instructions.isNotEmpty)
           'developerInstructions': instructions,
       });
       final thread = started['thread'] as Map;
       _threadId = thread['id'] as String;
+      _reportedModelProvider = started['modelProvider'] as String?;
+      if (started.containsKey('serviceTier')) {
+        _reportedServiceTier = started['serviceTier'] as String? ?? 'default';
+      }
       _historyLoaded = true;
       CodexCatalog.remember(
         _threadId!,

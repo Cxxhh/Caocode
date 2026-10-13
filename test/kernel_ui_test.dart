@@ -5,36 +5,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/composer/composer.dart';
-import 'package:baocode/chat/composer/composer_picker.dart';
-import 'package:baocode/chat/panels/activity_strip.dart';
-import 'package:baocode/chat/panels/interaction_panel.dart';
-import 'package:baocode/chat/panels/context_usage_panel.dart';
-import 'package:baocode/chat/panels/mcp_servers_panel.dart';
-import 'package:baocode/chat/panels/queue_panel.dart';
-import 'package:baocode/chat/side_panel/file_open.dart';
-import 'package:baocode/chat/composer/composer_embeds.dart';
-import 'package:baocode/chat/widgets/activity_row.dart';
-import 'package:baocode/chat/widgets/thinking_spark.dart';
-import 'package:baocode/chat/widgets/command_step.dart';
-import 'package:baocode/chat/widgets/pixel_loader.dart';
-import 'package:baocode/ide/ide_hover.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/composer/composer_images.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/kernel/kernel_types.dart';
-import 'package:baocode/kernel/mock/mock_kernels.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/sidebar/sidebar.dart';
-import 'package:baocode/theme/app_theme.dart';
-import 'package:baocode/theme/codicons.dart';
-import 'package:baocode/workspace/workspace.dart';
-import 'package:baocode/chat/agent_view.dart';
-import 'package:baocode/chat/widgets/plan_card.dart';
-import 'package:baocode/chat/widgets/user_message_bubble.dart';
-import 'package:baocode/kernel/claude_code/claude_code_kernel.dart';
+import 'package:caocode/chat/chat_screen.dart';
+import 'package:caocode/chat/chat_session.dart';
+import 'package:caocode/chat/composer/composer.dart';
+import 'package:caocode/chat/composer/composer_picker.dart';
+import 'package:caocode/chat/panels/activity_strip.dart';
+import 'package:caocode/chat/panels/interaction_panel.dart';
+import 'package:caocode/chat/panels/context_usage_panel.dart';
+import 'package:caocode/chat/panels/mcp_servers_panel.dart';
+import 'package:caocode/chat/panels/queue_panel.dart';
+import 'package:caocode/chat/side_panel/file_open.dart';
+import 'package:caocode/chat/composer/composer_embeds.dart';
+import 'package:caocode/chat/widgets/activity_row.dart';
+import 'package:caocode/chat/widgets/thinking_spark.dart';
+import 'package:caocode/chat/widgets/command_step.dart';
+import 'package:caocode/chat/widgets/pixel_loader.dart';
+import 'package:caocode/ide/ide_hover.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/composer/composer_images.dart';
+import 'package:caocode/kernel/agent_kernel.dart';
+import 'package:caocode/kernel/kernel_types.dart';
+import 'package:caocode/kernel/mock/mock_kernels.dart';
+import 'package:caocode/main.dart';
+import 'package:caocode/sidebar/sidebar.dart';
+import 'package:caocode/theme/app_theme.dart';
+import 'package:caocode/theme/codicons.dart';
+import 'package:caocode/workspace/workspace.dart';
+import 'package:caocode/chat/agent_view.dart';
+import 'package:caocode/chat/widgets/plan_card.dart';
+import 'package:caocode/chat/widgets/user_message_bubble.dart';
+import 'package:caocode/kernel/claude_code/claude_code_kernel.dart';
 
 import 'kernel_test.dart' show FakeCli;
 
@@ -198,7 +198,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final workspace = Workspace.mock();
-    await tester.pumpWidget(BaoCodeApp(workspace: workspace));
+    await tester.pumpWidget(CaocodeApp(workspace: workspace));
     await tester.pump();
     await tester.tap(
       find.descendant(
@@ -548,7 +548,7 @@ void main() {
     // backslash or a line break once broke the editor's build, and the
     // input turned into a grey box until the app restarted.
     const suggestion =
-        r'Run release\win-unpacked\BaoCode.exe'
+        r'Run release\win-unpacked\Caocode.exe'
         '\n'
         r'then open "C:\Users"';
     final (:session, :cli) = await pumpScripted(tester);
@@ -562,7 +562,7 @@ void main() {
       find.descendant(
         of: find.byType(ChatComposer),
         matching: find.text(
-          r'Run release\win-unpacked\BaoCode.exe then open "C:\Users"    Tab',
+          r'Run release\win-unpacked\Caocode.exe then open "C:\Users"    Tab',
           findRichText: true,
         ),
       ),
@@ -1229,7 +1229,7 @@ void main() {
       kernels: [claude],
       projects: const [Project('app', '/tmp/app')],
     );
-    await tester.pumpWidget(BaoCodeApp(workspace: workspace));
+    await tester.pumpWidget(CaocodeApp(workspace: workspace));
     await tester.pump();
     final thread = workspace.create();
     await tester.pump();

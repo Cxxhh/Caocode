@@ -7,8 +7,8 @@
 
 import 'dart:convert';
 
-import 'package:baocode/models/proxy/translate/json_value.dart';
-import 'package:baocode/models/proxy/translate/responses_request.dart';
+import 'package:caocode/models/proxy/translate/json_value.dart';
+import 'package:caocode/models/proxy/translate/responses_request.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 JsonValue convert(String input, {String model = 'test-model'}) =>

@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BaoCode Changelog</title>
-<meta name="description" content="What changed in each version of BaoCode.">
+<title>Caocode Changelog</title>
+<meta name="description" content="What changed in each version of Caocode.">
 <link rel="icon" href="/icon.png">
 <link rel="stylesheet" href="/style.css">
-<link rel="alternate" hreflang="en" href="https://baocode.dev/changelog">
-<link rel="alternate" hreflang="zh" href="https://baocode.dev/zh/changelog">
+<link rel="alternate" hreflang="en" href="https://caocode.dev/changelog">
+<link rel="alternate" hreflang="zh" href="https://caocode.dev/zh/changelog">
 </head>
 <body>
 <!-- Made by tool/build_changelog.dart from release-notes/: edit those, not this. -->
@@ -18,34 +18,30 @@
   <symbol id="ic-github" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5c.08-1.25-.27-2.48-1-3.5c.28-1.15.28-2.35 0-3.5c0 0-1 0-3 1.5c-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5c-.39.49-.68 1.05-.85 1.65S8.93 17.38 9 18v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></g></symbol>
 </svg>
 <header class="top">
-  <a class="brand" href="/"><img src="/icon.png" alt="">BaoCode</a>
+  <a class="brand" href="/"><img src="/icon.png" alt="">Caocode</a>
   <a href="/download">Download</a>
   <a href="/changelog" aria-current="page">Changelog</a>
-  <a href="https://github.com/baocode-dev/baocode"><svg class="ic" aria-hidden="true"><use href="#ic-github"/></svg>GitHub</a>
+  <a href="https://github.com/Cxxhh/Caocode"><svg class="ic" aria-hidden="true"><use href="#ic-github"/></svg>GitHub</a>
   <a class="lang" href="/zh/changelog" hreflang="zh" lang="zh-CN">中文</a>
 </header>
 
 <main class="page changelog">
   <h1>Changelog</h1>
-  <p class="subtitle">What changed in each version of BaoCode.</p>
+  <p class="subtitle">What changed in each version of Caocode.</p>
 
   <section class="release" id="v1.1.0">
     <h2 class="plain"><a href="#v1.1.0">1.1.0</a></h2>
-    <p>Nice and bouncy</p>
-    <p>This release lays the groundwork for your phone: BaoCode on a phone can pair with your computer, to see and steer its agents. The conversation also has a minimap, so a long one can be taken in at a glance and any part of it reached with a click; under each reply there is now a copy button and what the turn used.</p>
-    <p>New</p>
+    <p>Caocode 1.1.0c is the first Codex edition of the upstream desktop IDE, for Windows 10/11 x64.</p>
     <ul>
-    <li>Phones (preview): a new Settings → Mobile page. Pair a phone by scanning a QR code, or let a phone on the same network find the computer; both sides show a security code to check, then they connect directly over the local network or the internet, end-to-end encrypted, and keep working when the computer's IP changes. Off until you show the QR code; the first time, macOS asks whether BaoCode may use the local network. The phone app is coming soon.</li>
-    <li>Conversation minimap: a miniature of the whole conversation beside it, your messages, code, tables and changes each telling apart. While you scroll, a drop of liquid glass marks where you are, magnifying what is under it a little, like the macOS Dock; click or drag it to go anywhere.</li>
-    <li>While the minimap shows, it takes the place of the scrollbar on the right, and the messages leave a little more room either side; in a narrow window it hides and the scrollbar is back.</li>
-    <li>Settings → Appearance: turn off Conversation Minimap to keep the scrollbar on the right, as before; with it on, set how opaque its glass is (0% to 150%), and how much it stretches as it follows you scrolling (Off, Subtle, Medium, Bouncy).</li>
-    <li>Turn footer: under a finished reply, a Copy reply button and how long the turn took; with Claude Code, also, faintly, how fast the model wrote, the tokens the turn used and what it cost; hover for the details.</li>
+    <li>Run agents through the local Codex CLI, with new, resumed and archived conversations, streaming messages, tools and approvals.</li>
+    <li>Choose models, reasoning effort and permissions from the Codex CLI's capabilities.</li>
+    <li>Toggle Fast with the composer lightning button or /fast on and /fast off. The button stays visible when disabled, with long model names and in narrow windows.</li>
+    <li>Manage Codex providers, import providers from CC Switch (CCS), or connect to its database read-only and refresh changes.</li>
+    <li>Use the Caocode name throughout the app, About dialog, shortcuts and installer, with a separate data directory.</li>
+    <li>Check Cxxhh/Caocode GitHub releases for updates; downloads are verified by size, SHA-256 and Ed25519 signatures.</li>
+    <li>Install the Windows x64 package for the current user by default.</li>
     </ul>
-    <p>Improved</p>
-    <ul>
-    <li>Over a subagent's conversation, the way back reads &quot;← Conversation&quot;, the arrow and the word one button, lit on hover or keyboard focus.</li>
-    <li>A running agent's loader in the sidebar is a little smaller, in keeping with the list's text.</li>
-    </ul>
+    <p>Install and configure Codex CLI first. This release is validated on Windows; remote Codex over SSH, goals and subagents remain under migration.</p>
   </section>
 
   <section class="release" id="v1.0.9">

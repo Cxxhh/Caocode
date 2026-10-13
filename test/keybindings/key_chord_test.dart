@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/keybindings/key_chord.dart';
+import 'package:caocode/keybindings/key_chord.dart';
 import 'package:bao_editor/monaco/flutter/keybinding_entry.dart';
 
 void main() {

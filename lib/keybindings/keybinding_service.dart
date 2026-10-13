@@ -152,7 +152,7 @@ class KeybindingService extends ChangeNotifier {
     _changed();
   }
 
-  /// Whether BaoCode has [command]: a keybinding for one it has not (another
+  /// Whether Caocode has [command]: a keybinding for one it has not (another
   /// editor's) is kept, but shown as not supported and never runs.
   bool isSupported(String command) =>
       _commands.containsKey(command) ||

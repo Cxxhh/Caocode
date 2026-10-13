@@ -8,15 +8,15 @@ import 'dart:ui' show ImageByteFormat;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_feed.dart';
-import 'package:baocode/chat/chat_history_view.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/composer/composer_draft.dart';
-import 'package:baocode/chat/user_message_style.dart';
-import 'package:baocode/chat/widgets/edge_fade_mask.dart';
-import 'package:baocode/chat/widgets/user_message_bubble.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:caocode/chat/chat_feed.dart';
+import 'package:caocode/chat/chat_history_view.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/chat_session.dart';
+import 'package:caocode/chat/composer/composer_draft.dart';
+import 'package:caocode/chat/user_message_style.dart';
+import 'package:caocode/chat/widgets/edge_fade_mask.dart';
+import 'package:caocode/chat/widgets/user_message_bubble.dart';
+import 'package:caocode/theme/app_theme.dart';
 import 'package:super_sliver_list/super_sliver_list.dart';
 
 /// Two turns, the second's message near enough to the start to be laid out

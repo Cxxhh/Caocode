@@ -1,6 +1,6 @@
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/kernel/codex/codex_catalog.dart';
-import 'package:baocode/search/codex_conversation_search.dart';
+import 'package:caocode/kernel/agent_kernel.dart';
+import 'package:caocode/kernel/codex/codex_catalog.dart';
+import 'package:caocode/search/codex_conversation_search.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class Catalog extends CodexCatalog {

@@ -1,16 +1,16 @@
 # 上游一键导入与推荐上游
 
-上游站点（多为 new-api / sub2api）在自己的令牌页放一个「导入到 BaoCode」的链接，
-用户点一下，上游连同密钥就加进 BaoCode。作为回报，BaoCode 在 设置 → 模型 顶部
+上游站点（多为 new-api / sub2api）在自己的令牌页放一个「导入到 Caocode」的链接，
+用户点一下，上游连同密钥就加进 Caocode。作为回报，Caocode 在 设置 → 模型 顶部
 用小卡片免费展示接入了的站点。
 
 ```
-站点令牌页「导入到 BaoCode」
-  → https://baocode.dev/import#v=1&name=…&protocol=…&url=…&key=…   (site/import.js)
+站点令牌页「导入到 Caocode」
+  → https://caocode.dev/import#v=1&name=…&protocol=…&url=…&key=…   (site/import.js)
       参数在 # 后：浏览器不发给服务器；页面读完即从地址栏清除
-  → baocode://provider/import?v=1&name=…&protocol=…&url=…&key=…
+  → caocode://provider/import?v=1&name=…&protocol=…&url=…&key=…
       macOS：Info.plist 注册，AppDelegate.swift → OpenRequests
-      Windows：tool/baocode.iss 注册，--baocode-link → open_requests.cpp
+      Windows：tool/caocode.iss 注册，--caocode-link → open_requests.cpp
   → Flutter：code_args.dart 的 importRequestMarker → workbench._importUpstream
       → upstream_import_dialog.dart 确认（可改名）→ ModelProviders 写入 + 钥匙串
       → 打开 设置 → 模型 中这个上游的页面
@@ -21,7 +21,7 @@
 | 参数 | 必填 | 说明 |
 | --- | --- | --- |
 | `v` | 否 | 版本，目前只有 `1`；其他值拒绝 |
-| `url` | 是 | Base URL，http 或 https。new-api 用 `{address}` 即可：Anthropic 协议 Claude Code 自己加 `/v1`，OpenAI 协议缺版本时 BaoCode 补 `/v1`（`UpstreamUrls`） |
+| `url` | 是 | Base URL，http 或 https。new-api 用 `{address}` 即可：Anthropic 协议 Claude Code 自己加 `/v1`，OpenAI 协议缺版本时 Caocode 补 `/v1`（`UpstreamUrls`） |
 | `protocol` | 否 | `anthropic`（默认）、`openai-chat`、`openai-responses`。不接受 `codex`（它用账号登录，没有 key） |
 | `name` | 否 | 显示名，最长 64；缺省用 host |
 | `key` | 否 | API key，最长 512；缺省时导入后再填 |
@@ -34,7 +34,7 @@
 ## 推荐上游（卡片）
 
 收录表：`site/featured/upstreams.json`，Logo 放在同目录，`logo` 只写文件名（不能带路径）。
-它随官网部署在 `https://baocode.dev/featured/upstreams.json`（缓存 5 分钟），不随应用发布：
+它随官网部署在 `https://caocode.dev/featured/upstreams.json`（缓存 5 分钟），不随应用发布：
 合并到 main、官网部署完，新收录就出现在用户的 设置 → 模型 里。应用打开该页时拉取
 （`lib/models/featured_upstreams_io.dart`，走应用代理，一小时内不重复拉），连同 Logo 存在
 数据目录的 `cache/featured/`；拉不到时用上次存下的，第一次就拉不到则不显示卡片。
@@ -58,7 +58,7 @@
 - `url`：点卡片打开的地址，允许带推广参数。
 - `logo`：SVG 或 PNG（建议 64×64 以上、正方形、自带底色，深浅主题都能看清）；
   缺省显示名称首字母。
-- `hosts`：从这些域名导入时，确认框写「已收录在 BaoCode：名称」。只是提示，
+- `hosts`：从这些域名导入时，确认框写「已收录在 Caocode：名称」。只是提示，
   未收录的站点导入不受任何限制。
 - 卡片顺序每次打开页面随机；最后一张固定为「展示你的站点」，指向 /upstreams。
 - 用户已有某个收录站点的上游（上游的域名在该站点的 `hosts` 里，比如从它的令牌页导入过），
@@ -67,7 +67,7 @@
 
 ## 收录流程
 
-1. 站长按 https://baocode.dev/upstreams 接入一键导入。
+1. 站长按 https://caocode.dev/upstreams 接入一键导入。
 2. 站长用 issue 模板「收录我的上游」（`.github/ISSUE_TEMPLATE/upstream-listing.yml`）提交。
 3. 维护者：
    - 注册一个账号，在令牌页实际点一次导入，确认能成功添加并列出模型；
@@ -86,19 +86,19 @@
 
 提示词下面是一排按钮样式（内联 style，CSP 为此放开了 `style-src-attr`），点哪个按钮就复制
 带它的提示词：第 3、4 条之间多一段，照 `/upstreams#style-<id>` 上的这个按钮做，附上它的
-HTML（图片换成 baocode.dev 的绝对地址，href 是第 2 条导入链接的占位）。拼接逻辑在 `site/site.js`。
+HTML（图片换成 caocode.dev 的绝对地址，href 是第 2 条导入链接的占位）。拼接逻辑在 `site/site.js`。
 
-提示词第 5 条是通知 BaoCode 收录：按 issue 表单的小标题写正文，有 gh 就用 `gh issue create` 提交，
-Logo 和截图提醒站长事后拖进评论。第 2 节「通知 BaoCode 收录」单独放了同样内容的提示词，给手动接入的站长。
+提示词第 5 条是通知 Caocode 收录：按 issue 表单的小标题写正文，有 gh 就用 `gh issue create` 提交，
+Logo 和截图提醒站长事后拖进评论。第 2 节「通知 Caocode 收录」单独放了同样内容的提示词，给手动接入的站长。
 改 issue 模板（`.github/ISSUE_TEMPLATE/upstream-listing.yml`）的字段时，两份提示词里的小标题要一起改。
 
 按钮用的图标放在 `site/brand/`，由 `tool/make_brand_assets.py` 生成，接入方直接引用
-`https://baocode.dev/brand/...` 的在线地址，不下载、不拿 SVG：
+`https://caocode.dev/brand/...` 的在线地址，不下载、不拿 SVG：
 
-- 标志：`baocode-mark-<black|white>-<高度>.webp`，无损 WebP，4:3。显示 16×12 / 24×18 / 32×24
+- 标志：`caocode-mark-<black|white>-<高度>.webp`，无损 WebP，4:3。显示 16×12 / 24×18 / 32×24
   三档（对应 13–14px / 15–16px / 18px 以上的按钮文字），每档 1x、2x、3x，所以高度有
   12、18、24、36、48、54、72。
-- 应用图标：`baocode-icon-<尺寸>.png`，16、24、32、48、64、96、128、256、512。
+- 应用图标：`caocode-icon-<尺寸>.png`，16、24、32、48、64、96、128、256、512。
 
 这些文件名接入方会写死在页面里，只能加不能改名或删除。`/brand/*` 允许跨站引用（`_headers`）。
 
@@ -106,7 +106,7 @@ new-api 不用改代码：系统设置 → 聊天设置 里加一行即可（`{a
 new-api 替换）：
 
 ```json
-{ "BaoCode": "https://baocode.dev/import#v=1&name=站点名&protocol=anthropic&url={address}&key={key}" }
+{ "Caocode": "https://caocode.dev/import#v=1&name=站点名&protocol=anthropic&url={address}&key={key}" }
 ```
 
 key 原样传、原样存，不加也不去任何前缀：不是所有站点的 key 都以 `sk-` 开头。确认收录前在

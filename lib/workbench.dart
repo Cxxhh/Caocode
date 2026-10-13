@@ -302,7 +302,7 @@ class _WorkbenchState extends State<Workbench> implements WindowDelegate {
   /// Whether this is one of them.
   bool get _ideWindow => _multi && (widget.window?.isIde ?? false);
 
-  /// Whether this is an agent's window (Explorer's Open with BaoCode): its
+  /// Whether this is an agent's window (Explorer's Open with Caocode): its
   /// conversation alone, [_agentThread]'s.
   bool get _agentWindow => widget.window?.isAgent ?? false;
   AgentThread? get _agentThread => _agentWindow ? widget.window!.thread : null;
@@ -961,7 +961,7 @@ class _WorkbenchState extends State<Workbench> implements WindowDelegate {
   // --- Search and Customize ---------------------------------------------------
 
   /// Customize's command, for the palette.
-  static const _customizeCommand = 'baocode.chat.customize';
+  static const _customizeCommand = 'caocode.chat.customize';
 
   /// Claude Code's customizations show in place of the chat.
   bool _customizing = false;
@@ -1276,7 +1276,7 @@ class _WorkbenchState extends State<Workbench> implements WindowDelegate {
     );
   }
 
-  /// Star BaoCode on GitHub, the command: the ask, now.
+  /// Star Caocode on GitHub, the command: the ask, now.
   void _starOnGitHub() => unawaited(_starPrompt?.show() ?? _showStarDialog());
 
   /// The restores of the card seen (see [_tipsChanged]).
@@ -2026,7 +2026,17 @@ class _WorkbenchState extends State<Workbench> implements WindowDelegate {
         context,
         section: section,
         pageBuilder: (context, section) =>
-            widget.settings?.buildPage(context, section) ??
+            widget.settings?.buildPage(
+              context,
+              section,
+              cwd: _showsIde && _ideFolder != _noFolder
+                  ? _ideFolder
+                  : _workspace.current?.project.path,
+              onOpenFile: (path) {
+                Navigator.of(context).pop();
+                _openIdeFiles([path]);
+              },
+            ) ??
             const SizedBox.shrink(),
       );
     } finally {

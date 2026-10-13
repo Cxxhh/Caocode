@@ -5,17 +5,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/composer/composer.dart';
-import 'package:baocode/chat/composer/composer_embeds.dart';
-import 'package:baocode/chat/composer/composer_files.dart';
-import 'package:baocode/chat/composer/file_drop.dart';
-import 'package:baocode/chat/widgets/user_message_bubble.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/kernel/mock/mock_kernels.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/chat_screen.dart';
+import 'package:caocode/chat/chat_session.dart';
+import 'package:caocode/chat/composer/composer.dart';
+import 'package:caocode/chat/composer/composer_embeds.dart';
+import 'package:caocode/chat/composer/composer_files.dart';
+import 'package:caocode/chat/composer/file_drop.dart';
+import 'package:caocode/chat/widgets/user_message_bubble.dart';
+import 'package:caocode/kernel/agent_kernel.dart';
+import 'package:caocode/kernel/mock/mock_kernels.dart';
+import 'package:caocode/theme/app_theme.dart';
 
 const _root = '/work/app';
 
@@ -89,12 +89,12 @@ void _type(WidgetTester tester, String text) {
 void _window(WidgetTester tester, Object? Function(MethodCall call) answer) {
   final messenger = tester.binding.defaultBinaryMessenger;
   messenger.setMockMethodCallHandler(
-    const MethodChannel('baocode/window'),
+    const MethodChannel('caocode/window'),
     (call) async => answer(call),
   );
   addTearDown(
     () => messenger.setMockMethodCallHandler(
-      const MethodChannel('baocode/window'),
+      const MethodChannel('caocode/window'),
       null,
     ),
   );

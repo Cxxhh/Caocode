@@ -5,10 +5,10 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:baocode/extensions/gallery/extension_management_backend.dart';
-import 'package:baocode/extensions/gallery/open_vsx_client.dart';
-import 'package:baocode/extensions/theme_extensions.dart';
-import 'package:baocode/extensions/window/json_state_store.dart';
+import 'package:caocode/extensions/gallery/extension_management_backend.dart';
+import 'package:caocode/extensions/gallery/open_vsx_client.dart';
+import 'package:caocode/extensions/theme_extensions.dart';
+import 'package:caocode/extensions/window/json_state_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 

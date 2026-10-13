@@ -33,8 +33,8 @@ String localizedCommandLabel(AppLocalizations l10n, String id, String english) {
     'workbench.action.files.newUntitledFile' => l10n.cmdNewUntitledFile,
     'workbench.action.files.openFile' => l10n.cmdOpenFile,
     'workbench.action.files.openFolder' => l10n.cmdOpenFolder,
-    'baocode.remote.openFolder' => l10n.cmdOpenRemoteFolder,
-    'baocode.workspace.create' => l10n.cmdCreateWorkspace,
+    'caocode.remote.openFolder' => l10n.cmdOpenRemoteFolder,
+    'caocode.workspace.create' => l10n.cmdCreateWorkspace,
     'workbench.action.openRecent' => l10n.cmdOpenRecent,
     'workbench.action.clearRecentlyOpened' => l10n.cmdClearRecentlyOpened,
     'workbench.action.closeFolder' => l10n.cmdCloseFolder,
@@ -91,14 +91,14 @@ String localizedCommandLabel(AppLocalizations l10n, String id, String english) {
     'workbench.action.navigateForward' => l10n.cmdGoForward,
     'workbench.action.selectTheme' => l10n.cmdColorTheme,
     // Its title says what running it does.
-    'baocode.ide.toggleFormatOnSave' =>
+    'caocode.ide.toggleFormatOnSave' =>
       english.startsWith('Turn Off')
           ? l10n.cmdTurnOffFormatOnSave
           : english.startsWith('Turn On')
           ? l10n.cmdTurnOnFormatOnSave
           : l10n.cmdToggleFormatOnSave,
-    'baocode.ide.retryLanguageServices' => l10n.cmdRetryLanguageServices,
-    'baocode.ide.backToChat' => l10n.cmdBackToChat,
+    'caocode.ide.retryLanguageServices' => l10n.cmdRetryLanguageServices,
+    'caocode.ide.backToChat' => l10n.cmdBackToChat,
     WindowCommandIds.newWindow => l10n.cmdNewWindow,
     WindowCommandIds.closeWindow => l10n.cmdCloseWindow,
     WindowCommandIds.switchWindow => l10n.cmdSwitchWindow,

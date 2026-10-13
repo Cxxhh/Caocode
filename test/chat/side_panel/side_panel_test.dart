@@ -1,41 +1,41 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/kernel/kernel_types.dart';
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/chat/composer/composer.dart';
-import 'package:baocode/chat/composer/composer_files.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/side_panel/file_link.dart';
-import 'package:baocode/chat/side_panel/file_open.dart';
-import 'package:baocode/chat/side_panel/file_preview.dart';
-import 'package:baocode/chat/side_panel/side_panel_controller.dart';
-import 'package:baocode/chat/side_panel/side_panel_view.dart';
-import 'package:baocode/chat/widgets/edit_step.dart';
-import 'package:baocode/chat/widgets/fold_line.dart';
-import 'package:baocode/chat/widgets/markdown_view.dart';
-import 'package:baocode/chat/widgets/tool_call_row.dart';
-import 'package:baocode/ide/file_service.dart';
-import 'package:baocode/ide/git/commit_message.dart';
-import 'package:baocode/ide/git/git_repository.dart';
-import 'package:baocode/ide/ide_button.dart';
-import 'package:baocode/ide/ide_code_editor.dart';
-import 'package:baocode/ide/ide_explorer.dart';
-import 'package:baocode/ide/ide_list.dart';
-import 'package:baocode/ide/ide_tab_bar.dart';
-import 'package:baocode/ide/terminal/terminal_instance.dart';
-import 'package:baocode/ide/terminal/terminal_service.dart';
-import 'package:baocode/ide/terminal/terminal_view.dart';
-import 'package:baocode/ide/tab_strip_scroll.dart';
-import 'package:baocode/chat/side_panel/terminal_preview.dart';
-import 'package:baocode/chat/panels/activity_strip.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/theme/app_theme.dart';
-import 'package:baocode/theme/code_font.dart';
-import 'package:baocode/theme/codicons.dart';
-import 'package:baocode/theme/material_file_icons.dart';
-import 'package:baocode/workspace/preference_store.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/kernel/kernel_types.dart';
+import 'package:caocode/chat/chat_screen.dart';
+import 'package:caocode/chat/composer/composer.dart';
+import 'package:caocode/chat/composer/composer_files.dart';
+import 'package:caocode/chat/chat_session.dart';
+import 'package:caocode/chat/side_panel/file_link.dart';
+import 'package:caocode/chat/side_panel/file_open.dart';
+import 'package:caocode/chat/side_panel/file_preview.dart';
+import 'package:caocode/chat/side_panel/side_panel_controller.dart';
+import 'package:caocode/chat/side_panel/side_panel_view.dart';
+import 'package:caocode/chat/widgets/edit_step.dart';
+import 'package:caocode/chat/widgets/fold_line.dart';
+import 'package:caocode/chat/widgets/markdown_view.dart';
+import 'package:caocode/chat/widgets/tool_call_row.dart';
+import 'package:caocode/ide/file_service.dart';
+import 'package:caocode/ide/git/commit_message.dart';
+import 'package:caocode/ide/git/git_repository.dart';
+import 'package:caocode/ide/ide_button.dart';
+import 'package:caocode/ide/ide_code_editor.dart';
+import 'package:caocode/ide/ide_explorer.dart';
+import 'package:caocode/ide/ide_list.dart';
+import 'package:caocode/ide/ide_tab_bar.dart';
+import 'package:caocode/ide/terminal/terminal_instance.dart';
+import 'package:caocode/ide/terminal/terminal_service.dart';
+import 'package:caocode/ide/terminal/terminal_view.dart';
+import 'package:caocode/ide/tab_strip_scroll.dart';
+import 'package:caocode/chat/side_panel/terminal_preview.dart';
+import 'package:caocode/chat/panels/activity_strip.dart';
+import 'package:caocode/kernel/agent_kernel.dart';
+import 'package:caocode/theme/app_theme.dart';
+import 'package:caocode/theme/code_font.dart';
+import 'package:caocode/theme/codicons.dart';
+import 'package:caocode/theme/material_file_icons.dart';
+import 'package:caocode/workspace/preference_store.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -1887,7 +1887,7 @@ void main() {
     final (:panel, :session) = await _pumpReply(
       tester,
       '[secrets](../outside/key.pem), [passwd](/etc/passwd), '
-      '`/etc/hosts` and [the site](https://baocode.dev).',
+      '`/etc/hosts` and [the site](https://caocode.dev).',
       texts: {'/etc/hosts': 'x', '/outside/key.pem': 'x'},
     );
     expect(_span(tester, 'secrets')?.recognizer, isNull);
@@ -1897,7 +1897,7 @@ void main() {
     expect(_span(tester, 'the site')?.recognizer, isA<TapGestureRecognizer>());
     final scope = tester.element(find.byType(MarkdownView));
     expect(
-      FileOpenScope.maybeOf(scope)!.linkRecognizer('https://baocode.dev'),
+      FileOpenScope.maybeOf(scope)!.linkRecognizer('https://caocode.dev'),
       isNull,
     );
     expect(panel.shown, isFalse);

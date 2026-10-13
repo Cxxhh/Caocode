@@ -6,7 +6,7 @@ import UserNotifications
 /// What tells the user an agent wants them while they look elsewhere (see
 /// lib/notifications/): the system's notifications, a sound, the Dock
 /// icon's badge and bounce, and the menu bar icon, whose menu brings the
-/// window — or an agent — back. Over `baocode/attention`.
+/// window — or an agent — back. Over `caocode/attention`.
 final class Attention: NSObject, UNUserNotificationCenterDelegate, NSSoundDelegate {
   /// The window's, for the app delegate to ask (see hidesOnClose).
   private(set) static weak var shared: Attention?
@@ -24,7 +24,7 @@ final class Attention: NSObject, UNUserNotificationCenterDelegate, NSSoundDelega
   private var authorizationAsked = false
 
   init(messenger: FlutterBinaryMessenger, window: NSWindow) {
-    channel = FlutterMethodChannel(name: "baocode/attention", binaryMessenger: messenger)
+    channel = FlutterMethodChannel(name: "caocode/attention", binaryMessenger: messenger)
     self.window = window
     super.init()
     channel.setMethodCallHandler { [weak self] call, result in

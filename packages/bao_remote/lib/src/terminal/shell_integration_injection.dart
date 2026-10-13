@@ -19,7 +19,7 @@
 // ZDOTDIR is a folder under it rather than `<tmp>/<user>-<app>-zsh` with the
 // sticky bit set. There are no extension environment variable collections,
 // so `VSCODE_PATH_PREFIX` is never set. fish's script only runs when
-// `TERM_PROGRAM` is `vscode` (it is `baocode` here, see terminal_shell.dart):
+// `TERM_PROGRAM` is `vscode` (it is `caocode` here, see terminal_shell.dart):
 // its init command says so while it sources the script, then puts it back.
 
 import 'dart:math';
@@ -409,11 +409,11 @@ enum _ShellIntegrationExecutable {
 /// fish's script only runs where `TERM_PROGRAM` is `vscode`: it is so
 /// while the script is sourced.
 const _fishSource =
-    r'set -g __baocode_term_program $TERM_PROGRAM; '
+    r'set -g __caocode_term_program $TERM_PROGRAM; '
     r'set -gx TERM_PROGRAM vscode; '
     'source "{0}/shellIntegration.fish"; '
-    r'set -gx TERM_PROGRAM $__baocode_term_program; '
-    'set -e __baocode_term_program';
+    r'set -gx TERM_PROGRAM $__caocode_term_program; '
+    'set -e __caocode_term_program';
 
 const _shellIntegrationArgs = <_ShellIntegrationExecutable, List<String>>{
   // The try catch swallows execution policy errors in the case of the archive

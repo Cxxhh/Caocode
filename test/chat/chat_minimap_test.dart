@@ -1,14 +1,14 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_feed.dart';
-import 'package:baocode/chat/chat_history_view.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/composer/composer_draft.dart';
-import 'package:baocode/chat/widgets/assistant_text.dart';
-import 'package:baocode/chat/widgets/chat_minimap.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:caocode/chat/chat_feed.dart';
+import 'package:caocode/chat/chat_history_view.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/chat_session.dart';
+import 'package:caocode/chat/composer/composer_draft.dart';
+import 'package:caocode/chat/widgets/assistant_text.dart';
+import 'package:caocode/chat/widgets/chat_minimap.dart';
+import 'package:caocode/theme/app_theme.dart';
 
 class _Feed extends ChangeNotifier implements ChatFeed {
   _Feed(this.items);

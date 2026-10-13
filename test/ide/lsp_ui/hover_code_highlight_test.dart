@@ -7,9 +7,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bao_editor/textmate/textmate_syntax.dart';
 import 'package:bao_editor/textmate/textmate_worker.dart';
-import 'package:baocode/ide/lsp/lsp_protocol.dart';
-import 'package:baocode/ide/lsp_ui/language_widgets.dart';
-import 'package:baocode/theme/workbench_theme.dart';
+import 'package:caocode/ide/lsp/lsp_protocol.dart';
+import 'package:caocode/ide/lsp_ui/language_widgets.dart';
+import 'package:caocode/theme/workbench_theme.dart';
 
 import 'fake_language_features.dart';
 import 'lsp_test_helpers.dart';

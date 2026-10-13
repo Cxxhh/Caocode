@@ -86,14 +86,14 @@ class CodeArgs {
   /// The suffix of the file the macOS script writes a request to, which
   /// the system hands the app as one to open (see shell_command_io.dart):
   /// the working directory on the first line, the arguments on the rest.
-  static const requestFileSuffix = '.baocode-cli';
+  static const requestFileSuffix = '.caocode-cli';
 
   /// The flag the Windows script (code.cmd) starts the app with, the
   /// console's folder and the arguments next; the runner hands them over
   /// as a request ([requestMarker]; see open_requests.cpp).
-  static const windowsRequestFlag = '--baocode-cli';
+  static const windowsRequestFlag = '--caocode-cli';
 
-  /// The marker of Open with BaoCode (Explorer's context menu, which the
+  /// The marker of Open with Caocode (Explorer's context menu, which the
   /// Windows installer or the settings add; Finder's, the macOS app's
   /// Finder extension, see AppDelegate.swift), the paths next: each in a
   /// new agent, in the chat's window (see AppWindows.openAgent).
@@ -101,17 +101,17 @@ class CodeArgs {
 
   /// The flag that menu starts the app with, the path next; the runner
   /// hands it over as a request ([agentRequestMarker]).
-  static const windowsAgentFlag = '--baocode-agent';
+  static const windowsAgentFlag = '--caocode-agent';
 
   /// The marker of a site's one-click import of an upstream (a
-  /// `baocode://provider/import?…` link, see UpstreamImport), the link
+  /// `caocode://provider/import?…` link, see UpstreamImport), the link
   /// next: asked about in the main window, which comes in front for it.
   static const importRequestMarker = '\u0000import';
 
-  /// The flag Windows starts the app with for a `baocode://` link (the URL
+  /// The flag Windows starts the app with for a `caocode://` link (the URL
   /// scheme the installer registers), the link next; the runner hands it
   /// over as a request ([importRequestMarker]).
-  static const windowsLinkFlag = '--baocode-link';
+  static const windowsLinkFlag = '--caocode-link';
 
   /// Whether [argument] starts a request ([requestMarker],
   /// [agentRequestMarker], [importRequestMarker]) among what the system
@@ -238,7 +238,7 @@ enum LaunchRequest {
   /// Started as itself: the windows of the last run.
   none,
 
-  /// Open with BaoCode ([CodeArgs.windowsAgentFlag]): the chat's window.
+  /// Open with Caocode ([CodeArgs.windowsAgentFlag]): the chat's window.
   agent,
 
   /// Paths to open in the IDE (Open with Fast Ide, the `code` command,

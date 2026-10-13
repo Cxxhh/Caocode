@@ -1,8 +1,8 @@
-import 'package:baocode/ide/ide_notifications.dart';
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/tips/feature_tip.dart';
-import 'package:baocode/tips/feature_tips_controller.dart';
-import 'package:baocode/update/version.dart';
+import 'package:caocode/ide/ide_notifications.dart';
+import 'package:caocode/l10n/l10n.dart';
+import 'package:caocode/tips/feature_tip.dart';
+import 'package:caocode/tips/feature_tips_controller.dart';
+import 'package:caocode/update/version.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -357,7 +357,7 @@ void main() {
         final note = notifications.notifications.single;
         expect(
           note.message,
-          'BaoCode was updated to 1.2.0. New: Title new, Title newer.',
+          'Caocode was updated to 1.2.0. New: Title new, Title newer.',
         );
         expect(note.primary.map((action) => action.label), [
           'Title new',

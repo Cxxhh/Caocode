@@ -1,6 +1,6 @@
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/composer/composer_embeds.dart';
-import 'package:baocode/chat/composer/suggestion_menu.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/composer/composer_embeds.dart';
+import 'package:caocode/chat/composer/suggestion_menu.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';

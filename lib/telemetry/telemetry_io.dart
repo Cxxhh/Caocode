@@ -9,7 +9,7 @@ import 'telemetry_service.dart';
 
 /// Where to send the reports instead, to try a server: also turns them on
 /// in a debug build.
-const telemetryUrlVariable = 'BAOCODE_TELEMETRY_URL';
+const telemetryUrlVariable = 'CAOCODE_TELEMETRY_URL';
 
 /// What the app reports with where it runs; null where it reports nothing:
 /// a debug build (unless [telemetryUrlVariable] is set), or `DO_NOT_TRACK`
@@ -29,7 +29,7 @@ PlatformTelemetry? platformTelemetry() {
     url: url,
     os: os,
     arch: arch,
-    sender: IoTelemetrySender(userAgent: 'BaoCode/$currentAppVersion ($os)'),
+    sender: IoTelemetrySender(userAgent: 'Caocode/$currentAppVersion ($os)'),
   );
 }
 
@@ -64,7 +64,7 @@ class PlatformTelemetry {
 /// A JSON POST over HTTPS.
 class IoTelemetrySender implements TelemetrySender {
   IoTelemetrySender({
-    this.userAgent = 'BaoCode',
+    this.userAgent = 'Caocode',
     this.timeout = const Duration(seconds: 15),
     HttpClient Function()? client,
   }) : _client = client ?? HttpClient.new;

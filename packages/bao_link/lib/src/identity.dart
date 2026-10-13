@@ -85,7 +85,7 @@ String deviceIdOf(Uint8List publicKey) =>
 List<String> safetyCode(Uint8List desktopKey, Uint8List phoneKey) {
   final hash = Hash.sha256(
     Uint8List.fromList([
-      ...utf8.encode('baocode-safety'),
+      ...utf8.encode('caocode-safety'),
       ...desktopKey,
       ...phoneKey,
     ]),

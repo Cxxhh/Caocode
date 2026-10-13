@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/icons/project_icon.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/sidebar/sidebar.dart';
-import 'package:baocode/workspace/preference_store.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:caocode/icons/project_icon.dart';
+import 'package:caocode/main.dart';
+import 'package:caocode/sidebar/sidebar.dart';
+import 'package:caocode/workspace/preference_store.dart';
+import 'package:caocode/workspace/workspace.dart';
 
 import 'workspace_test.dart' show claude;
 
@@ -16,7 +16,7 @@ Future<Workspace> pumpLoaded(
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   final workspace = Workspace(kernels: [claude], preferences: preferences);
-  await tester.pumpWidget(BaoCodeApp(workspace: workspace));
+  await tester.pumpWidget(CaocodeApp(workspace: workspace));
   await tester.runAsync(workspace.load);
   await tester.pump();
   return workspace;

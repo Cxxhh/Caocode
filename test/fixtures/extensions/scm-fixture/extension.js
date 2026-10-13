@@ -1,5 +1,5 @@
-// A source control of its own (shown by BaoCode), and the built-in Git
-// extension's API (whose provider BaoCode receives but does not show).
+// A source control of its own (shown by Caocode), and the built-in Git
+// extension's API (whose provider Caocode receives but does not show).
 const vscode = require('vscode');
 const path = require('path');
 

@@ -4,7 +4,7 @@ import '../window/code_args.dart';
 
 /// Files and folders the system asks the app to open, from outside it: the
 /// `code` command (see shell_command.dart), Finder's Open With, an item of
-/// the macOS File menu's Open Recent, the context menu's Open with BaoCode
+/// the macOS File menu's Open Recent, the context menu's Open with Caocode
 /// and Open with Fast Ide (see context_menu.dart), or the Windows app
 /// started again with paths (it hands them to the one already running).
 ///
@@ -12,7 +12,7 @@ import '../window/code_args.dart';
 /// it was started with among them — until [listen] takes them (see
 /// AppDelegate.swift and windows/runner/open_requests.cpp).
 abstract final class OpenRequests {
-  static const _channel = MethodChannel('baocode/open');
+  static const _channel = MethodChannel('caocode/open');
 
   /// Starts delivering paths the system asks the app to open (the `code`
   /// command, Finder's Open With, a recent item of the macOS File menu):
@@ -40,7 +40,7 @@ abstract final class OpenRequests {
   static void Function(List<String> paths)? _onOpen;
 
   /// What the macOS app was launched for: the first of what the system
-  /// asked it to open before now (Finder's Open with BaoCode, an agent;
+  /// asked it to open before now (Finder's Open with Caocode, an agent;
   /// anything else, the IDE), which [listen] then delivers; none, launched
   /// as itself. The Windows app has it on its command line instead (see
   /// [LaunchRequest.of]). Asked once, before what shows at launch is
@@ -97,7 +97,7 @@ abstract final class OpenRequests {
     if (first < 0) return;
     // Requests (each its marker, then what it carries: the `code`
     // command's working directory and arguments as typed, Open with
-    // BaoCode's paths), one after another, each going as it came (see
+    // Caocode's paths), one after another, each going as it came (see
     // CodeArgs); the window keeps them after the paths.
     var start = first;
     for (var index = first + 1; index <= all.length; index++) {

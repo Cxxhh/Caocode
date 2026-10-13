@@ -1,4 +1,4 @@
-// Takes a remote server build already published at dl.baocode.dev (by
+// Takes a remote server build already published at dl.caocode.dev (by
 // .github/workflows/remote.yml's server-* tags, or with a release) instead
 // of building one: its VERSION and servers.json, all the installers carry.
 // An app packaged with them downloads the builds CI made, not ones only
@@ -14,7 +14,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-const _base = 'https://dl.baocode.dev/releases/remote';
+const _base = 'https://github.com/Cxxhh/Caocode/releases';
 
 Future<void> main(List<String> arguments) async {
   final root = File.fromUri(Platform.script).parent.parent.absolute;
@@ -34,7 +34,10 @@ Future<void> main(List<String> arguments) async {
     var version = named.firstOrNull ?? 'latest';
     if (version == 'latest') {
       _step('Finding the newest remote server');
-      final latest = await _getJson(client, Uri.parse('$_base/latest.json'));
+      final latest = await _getJson(
+        client,
+        Uri.parse('$_base/latest/download/remote-latest.json'),
+      );
       version = '${latest['version']}';
       stdout.writeln('  $version (${latest['tag']}, ${latest['commit']})');
     }
@@ -45,10 +48,12 @@ Future<void> main(List<String> arguments) async {
     _step('Taking servers.json of $version');
     final servers = await _getJson(
       client,
-      Uri.parse('$_base/$version/servers.json'),
+      Uri.parse('$_base/download/server-$version/servers.json'),
     );
     if (servers['version'] != version) {
-      _fail('$_base/$version/servers.json is for ${servers['version']}.');
+      _fail(
+        '$_base/download/server-$version/servers.json is for ${servers['version']}.',
+      );
     }
     final files = servers['files'] as Map<String, Object?>;
     for (final MapEntry(key: platform, :value) in files.entries) {

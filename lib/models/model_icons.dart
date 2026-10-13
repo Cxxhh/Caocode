@@ -85,7 +85,7 @@ class ProviderIcon extends StatelessWidget {
 
 /// [icon] as an upstream shows it, in a square of [size]: a glyph or a
 /// logo as large as a glyph of it, a picture a little larger. Without one,
-/// the logo BaoCode lists [site] with ([FeaturedUpstream.known]); else
+/// the logo Caocode lists [site] with ([FeaturedUpstream.known]); else
 /// [site]'s icon ([SiteIcons]); without that, a globe.
 class ProviderIconView extends StatelessWidget {
   const ProviderIconView({
@@ -113,7 +113,7 @@ class ProviderIconView extends StatelessWidget {
           final image? => _spilling(IconImageView(image, size: size + 2)),
           null => Icon(Codicons.globe, size: size, color: color),
         };
-        // A site BaoCode lists: the logo it is listed with.
+        // A site Caocode lists: the logo it is listed with.
         final logo = switch (site) {
           final site? => FeaturedUpstream.knownAt(site.host)?.logo,
           null => null,

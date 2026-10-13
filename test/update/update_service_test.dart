@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/update/update_manifest.dart';
-import 'package:baocode/update/update_service.dart';
-import 'package:baocode/update/update_settings.dart';
-import 'package:baocode/update/version.dart';
+import 'package:caocode/update/update_manifest.dart';
+import 'package:caocode/update/update_service.dart';
+import 'package:caocode/update/update_settings.dart';
+import 'package:caocode/update/version.dart';
 
 import 'update_fakes.dart';
 
@@ -70,7 +70,7 @@ void main() {
     test("a wrong entry for this platform is a failed check", () async {
       final backend = FakeBackend(
         manifestOf('1.2.0').replaceFirst(
-          'https://baocode.dev/releases/1.2.0/windows-x64.bin',
+          'https://github.com/Cxxhh/Caocode/releases/download/v1.2.0/windows-x64.bin',
           'https://evil.example/windows-x64.bin',
         ),
       );

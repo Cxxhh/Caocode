@@ -6,16 +6,16 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/widgets/pixel_loader.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/ide/ide_chat_title.dart';
-import 'package:baocode/ide/ide_quick_input.dart';
-import 'package:baocode/ide/ide_workbench.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:caocode/chat/widgets/pixel_loader.dart';
+import 'package:caocode/chat/chat_session.dart';
+import 'package:caocode/ide/ide_chat_title.dart';
+import 'package:caocode/ide/ide_quick_input.dart';
+import 'package:caocode/ide/ide_workbench.dart';
+import 'package:caocode/main.dart';
+import 'package:caocode/workspace/workspace.dart';
 
-const _window = MethodChannel('baocode/window');
-const _open = MethodChannel('baocode/open');
+const _window = MethodChannel('caocode/window');
+const _open = MethodChannel('caocode/open');
 
 /// The app over the mock agents, its window's calls answered.
 Future<Workspace> _pumpApp(WidgetTester tester) async {
@@ -33,7 +33,7 @@ Future<Workspace> _pumpApp(WidgetTester tester) async {
     ),
   );
   final workspace = Workspace.mock();
-  await tester.pumpWidget(BaoCodeApp(workspace: workspace));
+  await tester.pumpWidget(CaocodeApp(workspace: workspace));
   await tester.pump();
   return workspace;
 }
@@ -72,7 +72,7 @@ void main() {
 
   testWidgets('with no folder, a file opened has the chat in its folder, '
       'the agent told of it', (tester) async {
-    final folder = Directory.systemTemp.createTempSync('baocode-loose-file');
+    final folder = Directory.systemTemp.createTempSync('caocode-loose-file');
     addTearDown(() => folder.deleteSync(recursive: true));
     final file = File('${folder.path}/CN2-GIA.conf')
       ..writeAsStringSync('[general]\nudp_drop_list = 443\n');
@@ -157,7 +157,7 @@ void main() {
 
   testWidgets('a folder from the code command opens in the IDE, though the '
       'main window is the chat; the chat keeps its agent', (tester) async {
-    final folder = Directory.systemTemp.createTempSync('baocode-code-open');
+    final folder = Directory.systemTemp.createTempSync('caocode-code-open');
     addTearDown(() => folder.deleteSync(recursive: true));
     var pending = <String>[folder.path];
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(_open, (

@@ -2,14 +2,14 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/ide_quick_input.dart';
-import 'package:baocode/ide/terminal/terminal_instance.dart';
-import 'package:baocode/ide/terminal/terminal_profile_service.dart';
-import 'package:baocode/ide/terminal/terminal_profiles.dart';
-import 'package:baocode/ide/terminal/terminal_service.dart';
-import 'package:baocode/ide/terminal/terminal_shell.dart';
-import 'package:baocode/l10n/app_localizations_en.dart';
-import 'package:baocode/settings/user_settings.dart';
+import 'package:caocode/ide/ide_quick_input.dart';
+import 'package:caocode/ide/terminal/terminal_instance.dart';
+import 'package:caocode/ide/terminal/terminal_profile_service.dart';
+import 'package:caocode/ide/terminal/terminal_profiles.dart';
+import 'package:caocode/ide/terminal/terminal_service.dart';
+import 'package:caocode/ide/terminal/terminal_shell.dart';
+import 'package:caocode/l10n/app_localizations_en.dart';
+import 'package:caocode/settings/user_settings.dart';
 import 'package:path/path.dart' as p;
 
 import 'fake_pty.dart';
@@ -22,7 +22,7 @@ void main() {
   late List<Object?> detections;
 
   setUp(() async {
-    temp = await Directory.systemTemp.createTemp('baocode-terminal-profiles');
+    temp = await Directory.systemTemp.createTemp('caocode-terminal-profiles');
     settings = UserSettings(
       p.join(temp.path, 'User', 'settings.json'),
       debounce: Duration.zero,

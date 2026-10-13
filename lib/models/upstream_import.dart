@@ -1,6 +1,6 @@
 /// An upstream as a site hands it over to be added in one click: the link
-/// on its key's page goes to baocode.dev/import (site/import.js), which
-/// opens `baocode://provider/import?…` (see docs/upstream-import.md).
+/// on its key's page goes to caocode.dev/import (site/import.js), which
+/// opens `caocode://provider/import?…` (see docs/upstream-import.md).
 ///
 /// Only where it is, how it is spoken to, its name and the key come in
 /// this way: nothing that changes what Claude Code runs with (an upstream's
@@ -18,7 +18,7 @@ class UpstreamImport {
     this.key = '',
   });
 
-  /// What the link asks: `baocode://provider/import`, then `v` (1),
+  /// What the link asks: `caocode://provider/import`, then `v` (1),
   /// `name`, `protocol` (`anthropic`, the default, `openai-chat` or
   /// `openai-responses`), `url` (the base URL, http or https) and `key`;
   /// null for any other URL, or one without a base URL to go to.
@@ -48,8 +48,8 @@ class UpstreamImport {
     );
   }
 
-  /// The app's URL scheme (Info.plist, tool/baocode.iss).
-  static const scheme = 'baocode';
+  /// The app's URL scheme (Info.plist, tool/caocode.iss).
+  static const scheme = 'caocode';
 
   static const maxNameLength = 64;
   static const maxKeyLength = 512;

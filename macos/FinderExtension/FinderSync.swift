@@ -3,13 +3,13 @@ import FinderSync
 
 /// Finder's context menu on files, folders, a folder's background and the
 /// sidebar (and the toolbar button, once added to the toolbar): Open with
-/// BaoCode, a new agent in a window of its own, and Open with Fast Ide, a
+/// Caocode, a new agent in a window of its own, and Open with Fast Ide, a
 /// new IDE window, as the Windows installer adds them to Explorer's (see
-/// tool/baocode.iss). Turned on and off in the app's settings, or System
+/// tool/caocode.iss). Turned on and off in the app's settings, or System
 /// Settings' extensions (see lib/platform/context_menu_io.dart).
 ///
 /// The extension is sandboxed, as app extensions are: it hands the paths
-/// to the app it is in through a `baocode://` URL, which the app turns into
+/// to the app it is in through a `caocode://` URL, which the app turns into
 /// the request Explorer's menu makes on Windows (see AppDelegate.swift).
 class FinderSync: FIFinderSync {
   override init() {
@@ -36,7 +36,7 @@ class FinderSync: FIFinderSync {
     return urls
   }
 
-  /// The app the extension is in: BaoCode.app/Contents/PlugIns/….appex.
+  /// The app the extension is in: Caocode.app/Contents/PlugIns/….appex.
   private static let appURL = Bundle.main.bundleURL
     .deletingLastPathComponent()
     .deletingLastPathComponent()
@@ -46,7 +46,7 @@ class FinderSync: FIFinderSync {
     Locale.preferredLanguages.first?.hasPrefix("zh") ?? false
   }
 
-  /// "Open with BaoCode", in the words the Windows installer uses.
+  /// "Open with Caocode", in the words the Windows installer uses.
   private static func openWith(_ name: String) -> String {
     chinese ? "用 \(name) 打开" : "Open with \(name)"
   }
@@ -57,10 +57,10 @@ class FinderSync: FIFinderSync {
     return image
   }
 
-  override var toolbarItemName: String { "BaoCode" }
+  override var toolbarItemName: String { "Caocode" }
 
   override var toolbarItemToolTip: String {
-    Self.chinese ? "在 BaoCode 中打开当前文件夹" : "Open the current folder in BaoCode"
+    Self.chinese ? "在 Caocode 中打开当前文件夹" : "Open the current folder in Caocode"
   }
 
   override var toolbarItemImage: NSImage { Self.icon(size: 32) }
@@ -80,7 +80,7 @@ class FinderSync: FIFinderSync {
     }
     let icon = Self.icon(size: 16)
     let agent = NSMenuItem(
-      title: Self.openWith("BaoCode"), action: #selector(openAgent(_:)), keyEquivalent: "")
+      title: Self.openWith("Caocode"), action: #selector(openAgent(_:)), keyEquivalent: "")
     agent.image = icon
     menu.addItem(agent)
     let ide = NSMenuItem(
@@ -111,14 +111,14 @@ class FinderSync: FIFinderSync {
     return [controller.targetedURL()].compactMap { $0 }
   }
 
-  /// Hands the targets to the app: `baocode://<mode>?path=…&path=…`.
+  /// Hands the targets to the app: `caocode://<mode>?path=…&path=…`.
   private func open(mode: String) {
     let paths = targets().filter(\.isFileURL).map(\.path)
     guard !paths.isEmpty else { return }
     var allowed = CharacterSet.alphanumerics
     allowed.insert(charactersIn: "-._~/")
     var components = URLComponents()
-    components.scheme = "baocode"
+    components.scheme = "caocode"
     components.host = mode
     components.percentEncodedQuery = paths.map {
       "path=" + ($0.addingPercentEncoding(withAllowedCharacters: allowed) ?? "")

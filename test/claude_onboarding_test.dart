@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:baocode/kernel/claude_code/claude_onboarding.dart';
-import 'package:baocode/kernel/claude_code/claude_environment.dart';
+import 'package:caocode/kernel/claude_code/claude_onboarding.dart';
+import 'package:caocode/kernel/claude_code/claude_environment.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -14,7 +14,7 @@ void main() {
   late Map<String, String> environment;
 
   setUp(() {
-    temp = Directory.systemTemp.createTempSync('baocode-onboarding-test-');
+    temp = Directory.systemTemp.createTempSync('caocode-onboarding-test-');
     home = Directory(p.join(temp.path, 'home'))..createSync();
     config = File(p.join(home.path, '.claude.json'));
     environment = {'HOME': home.path, 'USERPROFILE': home.path};
@@ -109,8 +109,8 @@ void main() {
     expect(home.listSync(), isEmpty);
   });
 
-  test('BaoCode config override takes precedence', () async {
-    final moved = p.join(temp.path, 'baocode');
+  test('Caocode config override takes precedence', () async {
+    final moved = p.join(temp.path, 'caocode');
     environment[ClaudeEnvironment.dataPathVariable] = moved;
     environment['CLAUDE_CONFIG_DIR'] = p.join(temp.path, 'other');
     config = File(p.join(moved, '.claude.json'));

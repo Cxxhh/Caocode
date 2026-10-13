@@ -2,13 +2,13 @@
 // decorations it finds in what VS Code's scripts write.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/terminal/shell_integration/capabilities/capabilities.dart';
-import 'package:baocode/ide/terminal/shell_integration/shell_integration.dart';
-import 'package:baocode/ide/terminal/shell_integration/shell_integration_addon.dart';
-import 'package:baocode/ide/terminal/terminal_colors.dart';
+import 'package:caocode/ide/terminal/shell_integration/capabilities/capabilities.dart';
+import 'package:caocode/ide/terminal/shell_integration/shell_integration.dart';
+import 'package:caocode/ide/terminal/shell_integration/shell_integration_addon.dart';
+import 'package:caocode/ide/terminal/terminal_colors.dart';
 import 'package:bao_xterm/common/services/decoration_service.dart';
 import 'package:bao_xterm/headless/terminal.dart';
-import 'package:baocode/theme/codicons.dart';
+import 'package:caocode/theme/codicons.dart';
 
 import 'shell_integration_test_helpers.dart';
 

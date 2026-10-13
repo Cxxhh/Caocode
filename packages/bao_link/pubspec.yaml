@@ -1,6 +1,6 @@
 name: bao_link
 description: >-
-  BaoCode's link between a desktop and the phones paired with it: pairing
+  Caocode's link between a desktop and the phones paired with it: pairing
   by QR code, an end-to-end encrypted channel (X25519, XSalsa20-Poly1305)
   and the requests that go over it. Direct over the LAN or the internet for
   now; a relay is reserved for, not there yet. No Flutter in the library.

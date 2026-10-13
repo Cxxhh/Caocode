@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/ide_hover.dart';
-import 'package:baocode/theme/codicons.dart';
+import 'package:caocode/ide/ide_hover.dart';
+import 'package:caocode/theme/codicons.dart';
 
 void main() {
   Future<void> pump(WidgetTester tester, Widget child) => tester.pumpWidget(

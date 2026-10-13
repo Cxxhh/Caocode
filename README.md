@@ -1,130 +1,64 @@
 # Caocode
 
-基于 [BaoCode](https://github.com/baocode-dev/baocode) 的新 IDE 工程，目标是将代理
-执行底层迁移到 Codex CLI 的 `codex app-server`，继续使用现有编辑器、终端和
-Flutter 桌面界面。已完成开发环境与 Windows 编译基线，默认代理已接入 Codex。
-当前支持对话、图片、审批、会话保存与恢复；迁移范围见
-[迁移说明](docs/caocode-migration.md)。
+Caocode 是基于 [上游桌面 IDE](https://github.com/baocode-dev/baocode) 开发的 **Codex 版本**，使用本机的 `codex app-server` 运行代理，在桌面窗口中查看对话、工具调用、审批和代码差异。
 
-在 WSL 开发源码，从终端启动 Windows 开发窗口：
+[下载 Windows 安装包](https://github.com/Cxxhh/Caocode/releases/latest) · [版本发布](https://github.com/Cxxhh/Caocode/releases) · [反馈问题](https://github.com/Cxxhh/Caocode/issues)
+
+首个发布版本：**1.1.0c**。当前提供 Windows x64 安装包。
+
+## 功能
+
+- Codex 新建、恢复和归档会话，支持流式消息、工具执行和审批。
+- 模型列表来自 Codex CLI，可直接选择模型、推理强度及权限模式。
+- 输入栏的闪电按钮控制 Fast；支持 `/fast on`、`/fast off` 和 `/fast` 查询。关闭后按钮仍保留，长模型名称和窄窗口不会把它挤出视口。
+- 管理 Codex 供应商，支持从 CC Switch（CCS）的数据库导入，或连接数据库并刷新；连接模式只读，由 CCS 负责添加和修改。
+- 内置编辑器、终端、Git、文件浏览及代码差异视图。
+- 独立的 Caocode 数据目录、中英文界面和 GitHub Releases 更新渠道。
+
+第三方模型的 Fast 请求由供应商决定是否接受。供应商、数据库连接与 Fast 的详细说明见 [Codex 供应商文档](docs/codex-providers.md)。
+
+## 安装与使用
+
+1. 从 [发布页](https://github.com/Cxxhh/Caocode/releases/latest) 下载并运行 `Caocode-1.1.0c-setup.exe`。支持 Windows 10/11 x64，默认按当前用户安装。
+2. 安装并配置 [Codex CLI](https://github.com/openai/codex)，确保终端中可以运行 `codex`；也可在 Caocode 的 Codex 设置中指定 CLI 路径。
+3. 打开项目文件夹，在设置中选择或配置 Codex 供应商，然后开始对话。
+4. 后续版本可在“设置 → 更新”中检查、下载并重启安装。直接运行构建目录的用户需要手动安装更新。
+
+Caocode 的数据与上游独立：Windows 默认使用 `%APPDATA%\caocode`，WSL/Linux 使用 `~/.config/caocode`；可通过 `CAOCODE_DATA_DIR` 指定其他目录。供应商连接不会修改 CCS 数据库。
+
+## 开发与构建
+
+主源码在 WSL 中维护，Windows 目录是增量同步的构建副本。固定使用 Flutter **3.47.5** / Dart **3.13.4**，并需要 Windows PowerShell 7、Visual Studio C++ 桌面工具链；制作安装包还需要 Inno Setup 6。
 
 ```bash
-cd /home/noxae/Documents/Caocode
-./setup.sh
-./dev.sh
+./setup.sh                         # 初始化两端工具链与依赖
+./dev.sh                           # Windows 调试窗口；r 热重载，R 热重启
+./flutterw analyze lib packages test tool
+./flutterw test test/kernel/codex_test.dart test/chat/codex_choices_test.dart
+./build.sh                         # 编译 Windows Release 可运行目录
+./build.sh --installer             # 编译并制作 Windows 安装包
 ```
 
-首次启动自动构建 Debug，之后修改 Dart 代码，回到终端按 `r` 增量同步并热重载；
-`R` 热重启，`q` 退出。开发完成后用 `./build.sh` 生成 Windows Release 程序。
-`./build.sh --sync-only` 只同步，`./build.sh --debug` 单独构建 Debug。
-同步按内容校验，只复制变更文件，保留 Windows 依赖和编译缓存。
-开发环境、同步规则和检查命令见 [开发说明](docs/caocode-environment.md)。
+安装包位于 Windows 构建副本的 `build/installers/`。公开版本名称为 `1.1.0c`，Git 标签为 `v1.1.0c`；Flutter 和更新清单使用 `1.1.0+12`，Windows 使用数字文件版本。`c` 表示 Codex 版本，不影响更新时的数字版本比较。
 
-| 路径 | 用途 |
+发布步骤见 [发布文档](docs/release.md)，更新协议见 [自动更新](docs/auto-update.md)，开发环境见 [环境说明](docs/caocode-environment.md)。完整测试套件耗时较长，日常按修改范围选择测试。
+
+## 项目结构
+
+| 路径 | 内容 |
 | --- | --- |
-| 工程根目录 | 本地派生工程，保留上游 Git 历史，开发分支 `caocode/main` |
-| `reference/baocode` | 固定版本的独立上游参考仓库 |
-| `lib/` | Flutter 应用及代理内核 |
-| `packages/` | 编辑器、终端、PTY 和远程模块 |
-| `tool/caocode/` | 初始化、增量同步、开发启动、Windows 编译及 Codex 协议检查 |
-| `C:\Users\11914\Documents\Caocode` | Windows 构建副本 |
+| `lib/kernel/codex/` | Codex CLI 通信、会话与供应商管理 |
+| `lib/` | 桌面应用、编辑器、设置和更新 |
+| `packages/` | 编辑器、终端、PTY、连接与远程服务基础包 |
+| `windows/`、`macos/` | 原生窗口与平台接口 |
+| `tool/caocode/` | WSL/Windows 同步及构建脚本 |
+| `docs/` | 功能、开发和发布文档 |
+| `reference/baocode/` | 本地上游参考副本，不随工程推送 |
 
-上游基线和 Flutter 版本固定在 [toolchain.json](tool/caocode/toolchain.json)。
-当前为本地派生仓库，远程 `upstream` 指向原工程。
+当前发布验证覆盖 Windows。SSH 远程 Codex、目标和子代理等迁移范围见 [Codex 迁移说明](docs/caocode-migration.md)；上游 Claude 实现保留用于迁移参考和回归测试。
 
----
+## 许可证与来源
 
-以下为上游 BaoCode 项目说明。原始参考副本见 `reference/baocode/README.md`。
+Caocode 保留上游 Git 历史，基于 GPL-3.0-only 发布，见 [LICENSE](LICENSE)。`packages/` 及第三方资源的许可证保留在各自目录中。上游来源与固定版本见 [toolchain.json](tool/caocode/toolchain.json)。
 
-# BaoCode
-<a href="https://trendshift.io/repositories/289180?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-289180" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/289180/daily?language=Dart" alt="baocode-dev%2Fbaocode | Trendshift" width="250" height="55"/></a>
-
-An awesome, easy-to-use desktop UI for [Claude Code](https://github.com/anthropics/claude-code), with a millisecond-fast IDE built in.
-
-[Website](https://baocode.dev) · [Download](https://baocode.dev/download) · [Changelog](https://baocode.dev/changelog)
-
-![BaoCode's main window: agents grouped by project, two conversations side by side, and the model picker](site/shots/main.png)
-
-## Why
-
-We use Claude Code every day. The terminal is a fine place to run it, but a poor place to read it: long diffs scroll out of view, earlier steps are hard to find again, and reviewing what changed means switching to another app. BaoCode is the window we wanted around it.
-
-BaoCode has no agent of its own, by design. Claude Code is the agent, and its ecosystem is unmatched: its tools, skills, plugins, MCP servers, subagents and hooks. BaoCode gives it the interface it deserves and makes everything around it work out of the box. It runs the Claude Code you already have, with your settings and your `CLAUDE.md`.
-
-## Features
-
-- **An interface made for reading.** Reads, searches and commands fold into single lines. Keep or Undo each change Claude made, file by file; checkpoints live in BaoCode's own data folder, never in your repository's `.git`.
-- **Goals.** Type `/goal` and what you want done, and Claude keeps working until it is met, with the goal and its progress above the input.
-- **A rich-text input.** Code copied from the editor arrives as a reference to its file and lines; pasted images and dropped files sit where you put them in the sentence.
-- **Fast IDE.** An editor, a terminal and Source Control with a commit graph, built in. Claude Code drafts your commit messages. VS Code, IntelliJ, Sublime and Atom keymaps, and language servers.
-- **Your VS Code themes.** The editor, the conversation and the sidebar all follow them.
-- **Skills, MCP servers and more.** Plugins, MCP servers, skills, subagents, rules, commands and hooks in one place, for you or for a single project.
-- **Any model.** Add an upstream that speaks Anthropic's API, OpenAI's Chat Completions or OpenAI's Responses; a local proxy translates between it and Claude Code. Keys stay in the system keychain.
-- **Remote projects over SSH.** The window stays on your machine; files, Git, search, terminals, language servers and Claude Code run on the remote host (Linux, x64 or arm64).
-- **Notifications.** A system notification, a sound and a badge when an agent needs you or finishes. Close the window and the agents keep running in the menu bar or tray.
-- **Updates itself** in the background, or manually, or not at all.
-
-## Speed
-
-VS Code and Cursor are built on Electron: each window is a web page, and every copy carries its own Chromium and Node.js. BaoCode is a native app that draws its own interface straight to the GPU.
-
-| | BaoCode | VS Code | Cursor |
-| --- | --- | --- | --- |
-| Launch | ≈ 0.18 s | ≈ 2–3 s | ≈ 2–3 s |
-| Memory, one window idle | ≈ 120 MB | ≈ 970 MB | ≈ 1.9 GB |
-| Processes, one window | 2 | 8 | 13 |
-| Download size, Windows | ≈ 16 MB | ≈ 244 MB | ≈ 214 MB |
-
-## Requirements
-
-- macOS 12 or later (Apple silicon or Intel, one download each), or Windows 10 or later (x64).
-- [Claude Code](https://github.com/anthropics/claude-code), installed.
-
-## Building from source
-
-BaoCode is a Flutter app (Dart SDK `^3.13.4`).
-
-```sh
-flutter pub get
-flutter run -d macos        # or: flutter run -d windows
-```
-
-To build what is released, into `build/installers/`:
-
-```sh
-dart run tool/build_macos.dart            # BaoCode-<version>-{arm64,x64}.dmg and BaoCode-<version>-mac-{arm64,x64}.zip
-dart run tool/build_windows.dart          # BaoCode-<version>-setup.exe (needs Inno Setup)
-dart run tool/build_remote_server.dart    # the SSH remote server, for Linux x64 and arm64
-```
-
-The full test suite is slow; run the tests for what you changed, for example `flutter test test/update`.
-
-Releases are built and published by CI when a `v*` tag is pushed; versions, signing and where releases go are in [docs/release.md](docs/release.md). More in [docs/](docs): [auto-update](docs/auto-update.md), [SSH remote](docs/ssh-remote.md), [Windows](docs/windows.md) (some are in Chinese).
-
-## Repository
-
-| Path | What it is |
-| --- | --- |
-| [lib/](lib) | The app |
-| [packages/bao_editor](packages/bao_editor) | Monaco, ported to Flutter: the editor, its highlighting, VS Code's themes and keybindings |
-| [packages/bao_xterm](packages/bao_xterm) | A Dart port of xterm.js |
-| [packages/bao_pty](packages/bao_pty) | Pseudo terminals for Dart: forkpty on macOS and Linux, ConPTY on Windows |
-| [packages/bao_remote](packages/bao_remote) | The remote host served over SSH |
-| [macos/](macos), [windows/](windows) | The native runners |
-| [tool/](tool) | Build, packaging and release scripts |
-| [site/](site) | The website, [baocode.dev](https://baocode.dev) |
-| [docs/](docs) | Design notes |
-
-## Feedback
-
-Issues are welcome. Pull requests are not accepted.
-
-## License
-
-BaoCode is licensed under the [GNU General Public License v3.0](LICENSE)
-(GPL-3.0-only). The editor and terminal packages in [packages/](packages)
-(bao_editor, bao_xterm, bao_pty) are MIT. Third-party components keep their
-own licenses, found next to them in the source tree.
-
-BaoCode is an independent project, not affiliated with or endorsed by
-Anthropic.
+本项目是独立的社区项目，与 OpenAI、Anthropic 及上游维护者不存在官方关联。

@@ -5,10 +5,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:bao_remote/files.dart' show IdeFileExistsException;
-import 'package:baocode/customize/customization_store.dart';
-import 'package:baocode/customize/customizations.dart';
-import 'package:baocode/remote/remote_customization_disk.dart';
-import 'package:baocode/remote/ssh_host.dart';
+import 'package:caocode/customize/customization_store.dart';
+import 'package:caocode/customize/customizations.dart';
+import 'package:caocode/remote/remote_customization_disk.dart';
+import 'package:caocode/remote/ssh_host.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -32,8 +32,8 @@ void main() {
   }
 
   setUp(() {
-    dataDir = Directory.systemTemp.createTempSync('baocode-remote-data-');
-    temp = Directory.systemTemp.createTempSync('baocode-remote-custom-');
+    dataDir = Directory.systemTemp.createTempSync('caocode-remote-data-');
+    temp = Directory.systemTemp.createTempSync('caocode-remote-custom-');
     final root = temp.resolveSymbolicLinksSync();
     home = p.join(root, 'home');
     config = p.join(home, '.claude');

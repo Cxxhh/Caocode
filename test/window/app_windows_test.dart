@@ -2,17 +2,17 @@ import 'dart:ui' show AppExitResponse, Rect;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/composer/composer_files.dart';
-import 'package:baocode/ide/ide_quick_input.dart';
-import 'package:baocode/ide/ide_workspace.dart';
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/window/app_windows.dart';
-import 'package:baocode/window/code_args.dart';
-import 'package:baocode/window/window_frame.dart';
-import 'package:baocode/window/window_settings.dart';
-import 'package:baocode/workspace/main_window.dart';
-import 'package:baocode/workspace/preference_store.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:caocode/chat/composer/composer_files.dart';
+import 'package:caocode/ide/ide_quick_input.dart';
+import 'package:caocode/ide/ide_workspace.dart';
+import 'package:caocode/l10n/l10n.dart';
+import 'package:caocode/window/app_windows.dart';
+import 'package:caocode/window/code_args.dart';
+import 'package:caocode/window/window_frame.dart';
+import 'package:caocode/window/window_settings.dart';
+import 'package:caocode/workspace/main_window.dart';
+import 'package:caocode/workspace/preference_store.dart';
+import 'package:caocode/workspace/workspace.dart';
 
 import 'fake_window_host.dart';
 
@@ -162,7 +162,7 @@ void main() {
       final a = await harness.windows.showFolder('/w/a');
       await harness.windows.showFolder('/w/b');
       expect(harness.folders, ['/w/a', '/w/b']);
-      expect(harness.host.titles[a!.viewId], 'a — BaoCode');
+      expect(harness.host.titles[a!.viewId], 'a — Caocode');
       expect(harness.order, ['/w/b', '/w/a', 'chat']);
 
       expect(await harness.windows.showFolder('/w/a'), same(a));
@@ -202,7 +202,7 @@ void main() {
       await harness.windows.newWindow();
       await harness.windows.newWindow();
       expect(harness.folders, [null, null]);
-      expect(harness.host.created.first.title, 'Welcome — BaoCode');
+      expect(harness.host.created.first.title, 'Welcome — Caocode');
     });
 
     testWidgets('window.newWindowDimensions: inherit, below and right of the '
@@ -320,7 +320,7 @@ void main() {
       expect(harness.folders, ['/w/b']);
       expect(window.folder, '/w/b');
       expect(harness.host.created, hasLength(1));
-      expect(harness.host.titles[window.viewId], 'b — BaoCode');
+      expect(harness.host.titles[window.viewId], 'b — Caocode');
 
       // A file, there too, though another window had it.
       await code(harness, ['c']);
@@ -348,13 +348,13 @@ void main() {
         'file (macOS), plain paths (the Dock, Finder)', (tester) async {
       final harness = _Harness(
         tester,
-        requestFiles: {'/tmp/1.baocode-cli': '/w\n-g\nb/y.dart:9\n'},
+        requestFiles: {'/tmp/1.caocode-cli': '/w\n-g\nb/y.dart:9\n'},
       );
       await harness.start();
       await harness.windows.openRequested([CodeArgs.requestMarker, '/w', 'a']);
       expect(harness.folders, ['/w/a']);
 
-      await harness.windows.openRequested(['/tmp/1.baocode-cli', '/w/c']);
+      await harness.windows.openRequested(['/tmp/1.caocode-cli', '/w/c']);
       expect(harness.folders, ['/w/a', '/w/c']);
       // The request first: its file to the window last in front, a's.
       expect(harness.delegateOf('/w/a').opened, [
@@ -382,8 +382,8 @@ void main() {
     });
   });
 
-  group('Open with BaoCode', () {
-    String agentTitle(String title) => '$title — BaoCode';
+  group('Open with Caocode', () {
+    String agentTitle(String title) => '$title — Caocode';
 
     testWidgets('a folder: a new agent in it, as its project, in a new '
         'narrow window of its own, each time', (tester) async {
@@ -433,11 +433,11 @@ void main() {
       final harness = _Harness(tester);
       await harness.start();
       final thread = (await harness.windows.openAgent([
-        '~/code/baocode/lib/main.dart',
+        '~/code/caocode/lib/main.dart',
       ]))!;
-      expect(thread.project.path, '~/code/baocode');
+      expect(thread.project.path, '~/code/caocode');
       expect(thread.session.draft.pendingFiles, const [
-        ComposerFile('~/code/baocode/lib/main.dart'),
+        ComposerFile('~/code/caocode/lib/main.dart'),
       ]);
 
       final loose = (await harness.windows.openAgent(['/tmp/notes/a.md']))!;
@@ -528,7 +528,7 @@ void main() {
     });
   });
 
-  testWidgets('Open with Fast Ide (`--baocode-cli <path> -n <path>`): a file '
+  testWidgets('Open with Fast Ide (`--caocode-cli <path> -n <path>`): a file '
       'in a new window, its folder\'s open or not', (tester) async {
     final harness = _Harness(tester);
     await harness.start();
@@ -785,7 +785,7 @@ void main() {
     // Asked in the window in front: b's.
     expect(harness.host.focused, harness.window('/w/b').viewId);
 
-    expect(find.text('Quit BaoCode?'), findsOneWidget);
+    expect(find.text('Quit Caocode?'), findsOneWidget);
     await tester.tap(find.text('Quit'));
     await tester.pump();
     expect(await quitting, isTrue);
@@ -797,7 +797,7 @@ void main() {
     await harness.windows.showFolder('/w/a');
     await harness.showDialogs(tester);
     expect(await harness.windows.confirmQuit(), isTrue);
-    expect(find.text('Quit BaoCode?'), findsNothing);
+    expect(find.text('Quit Caocode?'), findsNothing);
   });
 
   testWidgets('quitting from the tray, everything hidden, shows the window '
@@ -811,7 +811,7 @@ void main() {
 
     final quitting = harness.windows.confirmQuit();
     await tester.pump();
-    expect(find.text('Quit BaoCode?'), findsOneWidget);
+    expect(find.text('Quit Caocode?'), findsOneWidget);
     expect(harness.windows.chat.shown, isTrue);
     expect(harness.host.focused, 0);
     await tester.tap(find.text('Quit'));
@@ -906,7 +906,7 @@ void main() {
     await tester.tap(find.text('Cancel'));
     await tester.pump();
     expect(await quitting, isFalse);
-    expect(find.text('Quit BaoCode?'), findsNothing);
+    expect(find.text('Quit Caocode?'), findsNothing);
   });
 
   group('restoring', () {
@@ -977,7 +977,7 @@ void main() {
       expect(harness.folders, ['/w/a']);
     });
 
-    testWidgets('started for an agent (Open with BaoCode): its window '
+    testWidgets('started for an agent (Open with Caocode): its window '
         'alone, the chat\'s not shown', (tester) async {
       final harness = _Harness(
         tester,

@@ -17,7 +17,7 @@ namespace {
 constexpr wchar_t kWindowClassName[] = L"FLUTTER_RUNNER_WIN32_WINDOW";
 
 // The property MarkOpenRequestWindow puts on the window.
-constexpr wchar_t kOpenRequestProperty[] = L"BaoCode.OpenRequests";
+constexpr wchar_t kOpenRequestProperty[] = L"Caocode.OpenRequests";
 
 // How long a second copy of the app waits for the first's window while that
 // is still starting, and how often it looks.
@@ -101,7 +101,7 @@ OpenRequests::OpenRequests(flutter::BinaryMessenger* messenger,
                            std::vector<std::string> pending)
     : pending_(std::move(pending)),
       channel_(std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
-          messenger, "baocode/open",
+          messenger, "caocode/open",
           &flutter::StandardMethodCodec::GetInstance())) {
   channel_->SetMethodCallHandler(
       [this](const flutter::MethodCall<flutter::EncodableValue>& call,
@@ -180,7 +180,7 @@ std::vector<std::string> OpenPathsFromCommandLine() {
     ::LocalFree(arguments);
     return paths;
   }
-  // From a baocode: link, its flag first, then the link as it came (not a
+  // From a caocode: link, its flag first, then the link as it came (not a
   // path to make absolute).
   if (count > 2 && Utf8FromUtf16(arguments[1]) == kLinkRequestFlag) {
     std::string link = Utf8FromUtf16(arguments[2]);
@@ -191,7 +191,7 @@ std::vector<std::string> OpenPathsFromCommandLine() {
     ::LocalFree(arguments);
     return paths;
   }
-  // From Open with BaoCode, its flag first: the paths, as below, go to an
+  // From Open with Caocode, its flag first: the paths, as below, go to an
   // agent.
   const bool agent =
       count > 1 && Utf8FromUtf16(arguments[1]) == kAgentRequestFlag;

@@ -1,13 +1,13 @@
-# Goal：BaoCode 支持 SSH 远程项目（Claude Code 在远端运行）
+# Goal：Caocode 支持 SSH 远程项目（Claude Code 在远端运行）
 
 ## 背景
-BaoCode 是 Flutter 桌面应用（macOS / Windows），给 Claude Code 做 UI，并自带 IDE（文件、搜索、git、终端、LSP）。
+Caocode 是 Flutter 桌面应用（macOS / Windows），给 Claude Code 做 UI，并自带 IDE（文件、搜索、git、终端、LSP）。
 现在所有能力都只针对本机：各服务通过条件导入在编译期选 `*_io.dart` 或 `*_stub.dart`，`Project` 只有 `name + path`（lib/workspace/workspace.dart:31）。
 目标：用户能打开 `ssh 主机 + 远端目录` 作为项目。Claude Code、文件、git、搜索、终端、语言服务器都在远端执行，UI、凭据、模型配置留在本机。
 
 ## 核心架构（必须遵守）
-1. **远端 server**：新建纯 Dart 包 `packages/bao_remote`（不能依赖 Flutter），包含协议和 `bin/baocode_server.dart`。
-   用 `dart compile exe --target-os linux --target-arch {x64,arm64}` 交叉编译，产物随 App 一起打包（改 tool/build_macos.dart、tool/build_windows.dart、tool/baocode.iss）。
+1. **远端 server**：新建纯 Dart 包 `packages/bao_remote`（不能依赖 Flutter），包含协议和 `bin/caocode_server.dart`。
+   用 `dart compile exe --target-os linux --target-arch {x64,arm64}` 交叉编译，产物随 App 一起打包（改 tool/build_macos.dart、tool/build_windows.dart、tool/caocode.iss）。
    另外新增 tool/build_remote_server.dart 负责编译。
 2. **复用现有实现**：下面这些 io 实现基本是纯 Dart，把 server 需要的部分抽进 `packages/bao_remote`（或新建一个纯 Dart 包），App 里原有的公开 API 保留为薄封装，保证现有测试不变：
    - lib/ide/file_service_io.dart
@@ -23,7 +23,7 @@ BaoCode 是 Flutter 桌面应用（macOS / Windows），给 Claude Code 做 UI�
    遇到 `package:flutter/foundation.dart` 的 `visibleForTesting`，改用 `package:meta`。
 3. **连接**：调用系统的 `ssh`（Windows 用 System32\OpenSSH\ssh.exe，找不到就给出明确报错），不要引入 Dart SSH 库，这样能复用 ~/.ssh/config、ProxyJump、agent、known_hosts。
    - 参数：`-T -o BatchMode=yes -o ServerAliveInterval=15`
-   - 启动流程：远端先跑一段引导脚本：`uname -sm` 判断平台，检查 `~/.baocode-server/<版本>/baocode-server`，不存在就通过 stdin 上传（先写临时文件，再 chmod、mv，保证原子替换），然后 exec。
+   - 启动流程：远端先跑一段引导脚本：`uname -sm` 判断平台，检查 `~/.caocode-server/<版本>/caocode-server`，不存在就通过 stdin 上传（先写临时文件，再 chmod、mv，保证原子替换），然后 exec。
    - **每个主机只开一条 ssh 连接**，该主机上的所有项目共用。
 4. **协议**：JSON-RPC 2.0，每行一个 JSON，走 server 的 stdin/stdout；stderr 只写日志。
    - 先做 `initialize` 握手，带协议版本，server 同时回报远端平台和架构；版本不匹配就重新部署 server。
@@ -48,7 +48,7 @@ BaoCode 是 Flutter 桌面应用（macOS / Windows），给 Claude Code 做 UI�
   `settingsPath` 对应的设置优先用 `--settings` 传 JSON 字符串；必须用文件时，权限设为 0600，进程退出后删除。
 - **模型 proxy 转发**：如果 env 里的 `ANTHROPIC_BASE_URL` 指向本机（localhost 或 127.0.0.1），就在 RPC 层做反向端口转发：server 在远端 127.0.0.1 监听一个随机端口，TCP 流经 RPC 送回客户端，再由客户端连本地 proxy。然后把 env 里的地址改写成远端端口。不依赖 ssh -R，Windows 上也能用。非本机地址原样透传。
 - 会话列表和历史读远端的 `~/.claude`（遵守 `CLAUDE_CONFIG_DIR`）。会话标题用的 Haiku 调用（lib/kernel/claude_code/claude_haiku_io.dart）同样在该项目所在的 host 上执行。
-- **Keep/Undo 审阅**：shadow git 仓库放在远端 `~/.baocode-server/data/checkpoints/`，布局和本机一致。远端没有 git 时，像现在一样优雅禁用。**绝不读写用户项目的 .git，Keep 永远不 stage。**
+- **Keep/Undo 审阅**：shadow git 仓库放在远端 `~/.caocode-server/data/checkpoints/`，布局和本机一致。远端没有 git 时，像现在一样优雅禁用。**绝不读写用户项目的 .git，Keep 永远不 stage。**
 
 ## LSP 在远端
 - **分工**：LSP 协议客户端（lsp_client.dart、lsp_manager.dart、json_rpc.dart、lib/ide/lsp_ui/）留在 App。server 只负责启动语言服务器进程，并转发它的 stdin/stdout/stderr 字节。
@@ -63,7 +63,7 @@ BaoCode 是 Flutter 桌面应用（macOS / Windows），给 Claude Code 做 UI�
 - **安装语言服务器**：
   - mason_registry.dart 通过 `rootBundle`（Flutter）加载 registry，这部分留在 App。
   - App 用远端平台（来自 initialize，替代 mason_server_provider.dart 里的 `Abi.current()`）计算 `MasonInstallPlan`，把计划交给 server 执行（下载、解压、npm/pip/go/cargo 等命令、链接），进度通过流回传。
-  - 远端安装目录：`~/.baocode-server/data/lsp/`。`which` 和定位用远端登录 shell 的环境。
+  - 远端安装目录：`~/.caocode-server/data/lsp/`。`which` 和定位用远端登录 shell 的环境。
   - UI 里的安装状态按 host 区分（例如"已安装于 dev-box"）。
   - 远端无法联网时给出明确报错。
 - **用户设置**：用户的 LSP 设置（lib/ide/lsp/packs/lsp_user_settings.dart、lsp_files）存在本机，同样作用于远程项目；设置里写的可执行文件路径在远程项目里按远端路径理解。
@@ -133,7 +133,7 @@ BaoCode 是 Flutter 桌面应用（macOS / Windows），给 Claude Code 做 UI�
 - 工作区是共享的，别人正在同时修改这份 checkout。**在新的 git worktree 和分支上开发**，不要碰、不要提交、不要 stash 或 reset 主工作区里别人的改动。
 - 代码风格和周边保持一致：注释密度、`///` 文档注释的写法、命名、`*_io.dart` / `*_stub.dart` 的分层方式。
 - 在自己的分支上分步提交，commit message 末尾加：
-  `Co-Authored-By: BaoCode <noreply@baocode.dev>`
+  `Co-Authored-By: Caocode <noreply@caocode.dev>`
 
 ## 合并进 main（完成并通过测试后）
 main 的工作区里有别人未提交的改动，`git merge` 会拒绝，**不要 stash、不要 reset --hard**：

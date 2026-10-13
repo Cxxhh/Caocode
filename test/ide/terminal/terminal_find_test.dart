@@ -5,7 +5,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/terminal/terminal_find.dart';
+import 'package:caocode/ide/terminal/terminal_find.dart';
 import 'package:bao_xterm/addons/addon_search/typings/addon_search.dart';
 import 'package:bao_xterm/common/async.dart';
 import 'package:bao_xterm/common/services/services.dart'

@@ -520,6 +520,6 @@ String? promptCacheKey(Map<String, Object?> request) {
     if (legacy >= 0) session = userId.substring(legacy + 9).trim();
   }
   if (session.isEmpty) return null;
-  final digest = sha256.convert(utf8.encode('baocode:$session'));
-  return 'baocode-${'$digest'.substring(0, 32)}';
+  final digest = sha256.convert(utf8.encode('caocode:$session'));
+  return 'caocode-${'$digest'.substring(0, 32)}';
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/ide_list.dart';
-import 'package:baocode/ide/ide_workspace.dart';
+import 'package:caocode/ide/ide_list.dart';
+import 'package:caocode/ide/ide_workspace.dart';
 
 import '../workbench/fake_files.dart';
 import 'fake_git.dart';

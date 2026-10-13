@@ -1,5 +1,5 @@
-name: baocode
-description: "A new Flutter project."
+name: caocode
+description: "Caocode: a desktop IDE and conversation interface for Codex CLI."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.1.0+11
+version: 1.1.0+12
 
 environment:
   sdk: ^3.13.4
@@ -49,6 +49,7 @@ dependencies:
     path: packages/bao_xterm
   # The names project icons are kept under (lib/icons/icon_library.dart).
   bonsoir: ^7.1.5
+  collection: ^1.19.1
   crypto: ^3.0.6
   flutter:
     sdk: flutter
@@ -65,7 +66,9 @@ dependencies:
   path: ^1.9.1
   pinenacl: ^0.6.0
   qr: ^4.0.0
+  sqlite3: ^3.7.0
   super_sliver_list: ^0.4.1
+  toml: ^0.18.0
 
 dev_dependencies:
   flutter_test:
@@ -90,6 +93,7 @@ flutter:
   generate: true
 
   assets:
+    - assets/licenses/
     - assets/lsp/
     - assets/material_icons/
     - assets/material_icons/icons/

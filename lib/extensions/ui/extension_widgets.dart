@@ -11,7 +11,7 @@
 // src/vs/workbench/contrib/extensions/browser/extensionsWidgets.ts
 // (`InstallCountWidget`, `RatingsWidget`) and media/extensionActions.css.
 //
-// Deviations: the capability badge is BaoCode's (no webviews).
+// Deviations: the capability badge is Caocode's (no webviews).
 
 import 'dart:typed_data';
 

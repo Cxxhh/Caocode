@@ -1,17 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:baocode/kernel/claude_code/claude_code_transport.dart';
-import 'package:baocode/kernel/claude_code/claude_environment.dart';
-import 'package:baocode/icons/project_icon.dart';
-import 'package:baocode/models/launch_environment.dart';
-import 'package:baocode/models/model_provider.dart';
-import 'package:baocode/models/model_providers.dart';
-import 'package:baocode/models/model_runtime.dart';
-import 'package:baocode/models/secret_store.dart';
-import 'package:baocode/models/secret_store_io.dart';
-import 'package:baocode/models/upstream.dart';
-import 'package:baocode/settings/pages/models_page.dart'
+import 'package:caocode/kernel/claude_code/claude_code_transport.dart';
+import 'package:caocode/kernel/claude_code/claude_environment.dart';
+import 'package:caocode/icons/project_icon.dart';
+import 'package:caocode/models/launch_environment.dart';
+import 'package:caocode/models/model_provider.dart';
+import 'package:caocode/models/model_providers.dart';
+import 'package:caocode/models/model_runtime.dart';
+import 'package:caocode/models/secret_store.dart';
+import 'package:caocode/models/secret_store_io.dart';
+import 'package:caocode/models/upstream.dart';
+import 'package:caocode/settings/pages/models_page.dart'
     show formatEnvironment, parseEnvironment;
 import 'package:flutter_test/flutter_test.dart';
 
@@ -618,7 +618,7 @@ void main() {
       expect(calls.single.$1, ['-i']);
       expect(
         calls.single.$2,
-        'add-generic-password -U -s BaoCode -a "provider.gw" -X 736b2dc3a9\n',
+        'add-generic-password -U -s Caocode -a "provider.gw" -X 736b2dc3a9\n',
       );
       expect(calls.single.$1.join(' '), isNot(contains('sk-')));
 
@@ -627,7 +627,7 @@ void main() {
       expect(calls.last.$1, [
         'find-generic-password',
         '-s',
-        'BaoCode',
+        'Caocode',
         '-a',
         'provider.gw',
         '-w',

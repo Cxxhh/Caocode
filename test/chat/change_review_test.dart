@@ -3,9 +3,9 @@ library;
 
 import 'dart:io';
 
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/review/change_review.dart';
-import 'package:baocode/chat/review/review_store_io.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/review/change_review.dart';
+import 'package:caocode/chat/review/review_store_io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -49,7 +49,7 @@ void main() {
   };
 
   setUp(() async {
-    temp = await Directory.systemTemp.createTemp('baocode_review_');
+    temp = await Directory.systemTemp.createTemp('caocode_review_');
     final resolved = await temp.resolveSymbolicLinks();
     root = p.join(resolved, 'project');
     checkpoints = p.join(resolved, 'checkpoints');
@@ -240,7 +240,7 @@ void main() {
 
   test('leaves out its checkpoints where the project holds them', () async {
     // A home folder opened as the project, the data folder in it.
-    checkpoints = path('.baocode-server/data/checkpoints');
+    checkpoints = path('.caocode-server/data/checkpoints');
     final review = await open();
     await review.begin();
     await review.begin();

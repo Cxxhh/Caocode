@@ -21,7 +21,7 @@
 (() => {
   const dialog = document.querySelector('[data-star]');
   if (!dialog?.showModal) return;
-  const key = 'baocode.starAsked';
+  const key = 'caocode.starAsked';
   const asked = () => { try { return localStorage.getItem(key) === '1'; } catch { return false; } };
   for (const a of document.querySelectorAll('.platform a[data-file]')) {
     a.addEventListener('click', () => {

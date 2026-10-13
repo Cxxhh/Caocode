@@ -4,16 +4,16 @@ import 'dart:convert';
 
 import 'version.dart';
 
-/// Where the app looks for its next version: the release manifest
-/// dl.baocode.dev serves (docs/auto-update.md has its format).
-const defaultManifestUrl = 'https://dl.baocode.dev/releases/latest.json';
+/// The signed manifest attached to this repository's latest GitHub release.
+const releaseRepositoryUrl = 'https://github.com/Cxxhh/Caocode';
+const defaultManifestUrl =
+    '$releaseRepositoryUrl/releases/latest/download/latest.json';
 
 /// The environment variable that points the app at another manifest, to
 /// try a release before it is published (a local server's, say).
-const manifestUrlVariable = 'BAOCODE_UPDATE_URL';
+const manifestUrlVariable = 'CAOCODE_UPDATE_URL';
 
-/// A manifest that cannot be used: not JSON, a field missing or wrong, a
-/// download not on baocode.dev.
+/// A manifest that cannot be used: invalid data or an untrusted download.
 class UpdateManifestException implements Exception {
   const UpdateManifestException(this.message);
 
@@ -23,10 +23,8 @@ class UpdateManifestException implements Exception {
   String toString() => 'Invalid update manifest: $message';
 }
 
-/// Which download links a manifest may give: https on baocode.dev (or a
-/// subdomain of it), and [extraOrigins] besides — the origin of a manifest
-/// [manifestUrlVariable] points at, so a release can be tried from where it
-/// is served before it is published.
+/// Downloads belong to this repository's releases. Explicit test manifests
+/// may also use their own origin through [extraOrigins].
 class UpdateUrlPolicy {
   const UpdateUrlPolicy({this.extraOrigins = const {}});
 
@@ -38,22 +36,35 @@ class UpdateUrlPolicy {
       ? const UpdateUrlPolicy()
       : UpdateUrlPolicy(extraOrigins: {manifest.origin});
 
-  static const domain = 'baocode.dev';
-
   final Set<String> extraOrigins;
 
   bool allows(Uri url) {
+    if (url.userInfo.isNotEmpty) return false;
     if (url.hasScheme &&
         (url.scheme == 'http' || url.scheme == 'https') &&
         url.host.isNotEmpty &&
         extraOrigins.contains(url.origin)) {
       return true;
     }
-    final host = url.host.toLowerCase();
+    final segments = url.pathSegments;
     return url.scheme == 'https' &&
         !url.hasPort &&
-        url.userInfo.isEmpty &&
-        (host == domain || host.endsWith('.$domain'));
+        url.host.toLowerCase() == 'github.com' &&
+        segments.length == 6 &&
+        segments[0] == 'Cxxhh' &&
+        segments[1] == 'Caocode' &&
+        segments[2] == 'releases' &&
+        segments[3] == 'download' &&
+        segments
+            .skip(4)
+            .every(
+              (part) =>
+                  part.isNotEmpty &&
+                  part != '.' &&
+                  part != '..' &&
+                  !part.contains('/') &&
+                  !part.contains('\\'),
+            );
   }
 }
 
@@ -220,7 +231,7 @@ class UpdateManifest {
     if (url == null) throw const UpdateManifestException('"url" is missing');
     if (!policy.allows(url)) {
       throw UpdateManifestException(
-        '"$url" is not an https link on ${UpdateUrlPolicy.domain}',
+        '"$url" is not an https download from Cxxhh/Caocode releases',
       );
     }
     final size = json['size'];

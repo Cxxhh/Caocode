@@ -1,4 +1,4 @@
-// Asks for what BaoCode degrades: a Webview panel, a Webview view, a custom
+// Asks for what Caocode degrades: a Webview panel, a Webview view, a custom
 // editor, a notebook serializer and controller, and a language model tool;
 // reports what the extension sees of each.
 const vscode = require('vscode');

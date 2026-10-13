@@ -3,8 +3,8 @@
 // codex_claude_parallel_function_calls_test.go (MIT License; see
 // lib/models/proxy/translate/NOTICE.md).
 
-import 'package:baocode/models/proxy/translate/json_value.dart';
-import 'package:baocode/models/proxy/translate/responses_response.dart';
+import 'package:caocode/models/proxy/translate/json_value.dart';
+import 'package:caocode/models/proxy/translate/responses_response.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// What [translator] writes for each of [chunks].

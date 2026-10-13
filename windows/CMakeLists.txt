@@ -6,6 +6,12 @@ project(caocode LANGUAGES CXX)
 # the on-disk name of your application.
 set(BINARY_NAME "caocode")
 
+# Packaging may build beside a running development bundle without replacing it.
+set(CAOCODE_BUNDLE_OUTPUT "$ENV{CAOCODE_BUNDLE_OUTPUT}")
+if(CAOCODE_BUNDLE_OUTPUT)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CAOCODE_BUNDLE_OUTPUT}")
+endif()
+
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
 cmake_policy(VERSION 3.14...3.25)
@@ -71,9 +77,12 @@ set(BUILD_BUNDLE_DIR "$<TARGET_FILE_DIR:${BINARY_NAME}>")
 # Make the "install" step default, as it's required to run.
 set(CMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD 1)
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR
-   CMAKE_INSTALL_PREFIX MATCHES "^\\$<TARGET_FILE_DIR:")
+   CMAKE_INSTALL_PREFIX MATCHES "^\\$<TARGET_FILE_DIR:" OR
+   CAOCODE_BUNDLE_OUTPUT OR CAOCODE_PREVIOUS_BUNDLE_OUTPUT)
   set(CMAKE_INSTALL_PREFIX "${BUILD_BUNDLE_DIR}" CACHE PATH "..." FORCE)
 endif()
+set(CAOCODE_PREVIOUS_BUNDLE_OUTPUT "${CAOCODE_BUNDLE_OUTPUT}" CACHE INTERNAL
+  "Previous isolated packaging directory" FORCE)
 
 set(INSTALL_BUNDLE_DATA_DIR "${CMAKE_INSTALL_PREFIX}/data")
 set(INSTALL_BUNDLE_LIB_DIR "${CMAKE_INSTALL_PREFIX}")

@@ -65,6 +65,10 @@ class MockCodexTransport implements CodexTransport {
                 'displayName': label,
                 'isDefault': model == 'gpt-5.5-codex',
                 'defaultReasoningEffort': 'medium',
+                'serviceTiers': [
+                  if (model != 'gpt-5.5-mini')
+                    {'id': 'fast', 'name': 'Fast', 'description': 'Fast mode'},
+                ],
                 'supportedReasoningEfforts': [
                   for (final level in ['low', 'medium', 'high'])
                     {'reasoningEffort': level},
@@ -89,6 +93,8 @@ class MockCodexTransport implements CodexTransport {
         _respond(id, {
           'thread': {'id': _threadId},
         });
+      case 'thread/settings/update':
+        _respond(id, {});
       case 'turn/start':
         final turnId = 'turn_${++_turns}';
         _respond(id, {

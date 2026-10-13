@@ -9,9 +9,9 @@ import 'package:bao_editor/monaco/flutter/language_assets.dart';
 import 'package:bao_editor/monaco/flutter/language_configuration_assets.dart';
 import 'package:bao_editor/monaco/flutter/monaco_syntax.dart';
 import 'package:bao_editor/monaco/vs/editor/common/languages/language_configuration.dart';
-import 'package:baocode/ide/lsp/catalog/bundled_lsp_catalog.dart';
-import 'package:baocode/ide/lsp/packs/language_packs.dart';
-import 'package:baocode/ide/lsp/packs/lsp_user_settings.dart';
+import 'package:caocode/ide/lsp/catalog/bundled_lsp_catalog.dart';
+import 'package:caocode/ide/lsp/packs/language_packs.dart';
+import 'package:caocode/ide/lsp/packs/lsp_user_settings.dart';
 import 'package:path/path.dart' as p;
 
 final packsDirectory = p.absolute('test/fixtures/lsp/packs');

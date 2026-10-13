@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BaoCode 更新日志</title>
-<meta name="description" content="BaoCode 每个版本的变化。">
+<title>Caocode 更新日志</title>
+<meta name="description" content="Caocode 每个版本的变化。">
 <link rel="icon" href="/icon.png">
 <link rel="stylesheet" href="/style.css">
-<link rel="alternate" hreflang="en" href="https://baocode.dev/changelog">
-<link rel="alternate" hreflang="zh" href="https://baocode.dev/zh/changelog">
+<link rel="alternate" hreflang="en" href="https://caocode.dev/changelog">
+<link rel="alternate" hreflang="zh" href="https://caocode.dev/zh/changelog">
 </head>
 <body>
 <!-- Made by tool/build_changelog.dart from release-notes/: edit those, not this. -->
@@ -18,34 +18,30 @@
   <symbol id="ic-github" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5c.08-1.25-.27-2.48-1-3.5c.28-1.15.28-2.35 0-3.5c0 0-1 0-3 1.5c-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5c-.39.49-.68 1.05-.85 1.65S8.93 17.38 9 18v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></g></symbol>
 </svg>
 <header class="top">
-  <a class="brand" href="/zh/"><img src="/icon.png" alt="">BaoCode</a>
+  <a class="brand" href="/zh/"><img src="/icon.png" alt="">Caocode</a>
   <a href="/zh/download">下载</a>
   <a href="/zh/changelog" aria-current="page">更新日志</a>
-  <a href="https://github.com/baocode-dev/baocode"><svg class="ic" aria-hidden="true"><use href="#ic-github"/></svg>GitHub</a>
+  <a href="https://github.com/Cxxhh/Caocode"><svg class="ic" aria-hidden="true"><use href="#ic-github"/></svg>GitHub</a>
   <a class="lang" href="/changelog" hreflang="en" lang="en">English</a>
 </header>
 
 <main class="page changelog">
   <h1>更新日志</h1>
-  <p class="subtitle">BaoCode 每个版本的变化。</p>
+  <p class="subtitle">Caocode 每个版本的变化。</p>
 
   <section class="release" id="v1.1.0">
     <h2 class="plain"><a href="#v1.1.0">1.1.0</a></h2>
-    <p>QQ弹弹</p>
-    <p>这次更新打好了连接手机的基础：手机上的 BaoCode 可以和电脑配对，查看并操作电脑上的智能体。对话也加了一张缩略图，长对话一眼看清全貌、点一下就能跳过去；每轮回复下方还会显示复制按钮和这一轮的用量。</p>
-    <p>新功能</p>
+    <p>Caocode 1.1.0c 是基于上游桌面 IDE 的首个 Codex 版本，支持 Windows 10/11 x64。</p>
     <ul>
-    <li>连接手机（预览）：新增「设置 → 手机」，可以扫码配对，也可以让同一网络里的手机直接发现这台电脑。配对时两端核对安全码，之后经局域网或公网直连，内容端到端加密；电脑换了 IP 也不用重新配对。默认不开启，点「显示二维码」时才开始监听；macOS 第一次会询问是否允许 BaoCode 访问本地网络。手机 App 即将推出。</li>
-    <li>对话缩略图：对话左侧显示整段对话的缩略图，你的消息、代码、表格、改动都能分辨出来。滚动时一块液态玻璃标出当前所在位置，玻璃下的内容会像 macOS 程序坞一样轻微放大；点击或拖动缩略图即可跳转。</li>
-    <li>缩略图显示时代替右侧滚动条，消息列左右也会让出一些空间；窗口太窄时自动隐藏，恢复滚动条。</li>
-    <li>设置 → 外观：可以关闭「对话缩略图」，关闭后和以前一样使用右侧滚动条；开启时还能调节液态玻璃的不透明度（0%～150%），以及它跟随滚动时上下拉伸的弹性（关闭、轻微、适中、Q 弹）。</li>
-    <li>回合底栏：每轮回复结束后，下方有「复制回复」按钮和这一轮的耗时；使用 Claude Code 时还会淡淡地显示输出速度、用了多少 token 和花费，鼠标悬停可以看到明细。</li>
+    <li>使用本地 Codex CLI 运行代理，支持新建、恢复和归档会话、流式消息、工具调用及审批。</li>
+    <li>可选择模型、推理强度和权限模式，模型目录来自 Codex CLI。</li>
+    <li>输入栏新增 Fast 闪电开关，支持 /fast on、/fast off 和状态查询；关闭后保留图标，长模型名称和窄窗口下仍可操作。</li>
+    <li>新增 Codex 供应商管理，可导入 CC Switch（CCS）供应商，或只读连接其数据库并刷新。</li>
+    <li>应用名称、关于页面、快捷方式和安装包统一为 Caocode，使用独立数据目录。</li>
+    <li>设置中的更新改为 Cxxhh/Caocode 的 GitHub Releases，安装包更新经过大小、SHA-256 和 Ed25519 签名校验。</li>
+    <li>提供 Windows x64 安装包，默认按当前用户安装。</li>
     </ul>
-    <p>改进</p>
-    <ul>
-    <li>子 Agent 对话顶部的返回按钮改为「← 对话」，箭头和文字合成一个按钮，悬停或用键盘选中时高亮。</li>
-    <li>侧栏中运行中智能体的加载动画略微缩小，与列表文字更协调。</li>
-    </ul>
+    <p>需要先安装并配置 Codex CLI。当前发布验证覆盖 Windows；SSH 远程 Codex、目标与子代理等功能仍在迁移。</p>
   </section>
 
   <section class="release" id="v1.0.9">

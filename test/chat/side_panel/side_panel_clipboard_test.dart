@@ -1,9 +1,9 @@
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/side_panel/side_panel_controller.dart';
-import 'package:baocode/chat/side_panel/side_panel_view.dart';
-import 'package:baocode/ide/ide_explorer.dart';
-import 'package:baocode/kernel/agent_kernel.dart' show KernelContext;
-import 'package:baocode/theme/app_theme.dart';
+import 'package:caocode/chat/chat_session.dart';
+import 'package:caocode/chat/side_panel/side_panel_controller.dart';
+import 'package:caocode/chat/side_panel/side_panel_view.dart';
+import 'package:caocode/ide/ide_explorer.dart';
+import 'package:caocode/kernel/agent_kernel.dart' show KernelContext;
+import 'package:caocode/theme/app_theme.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -22,7 +22,7 @@ void main() {
   List<String> clipboard(WidgetTester tester) {
     final held = <String>[];
     final messenger = tester.binding.defaultBinaryMessenger;
-    const channel = MethodChannel('baocode/window');
+    const channel = MethodChannel('caocode/window');
     messenger.setMockMethodCallHandler(channel, (call) async {
       switch (call.method) {
         case 'writePasteboardFiles':

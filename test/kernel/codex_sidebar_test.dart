@@ -1,14 +1,14 @@
 import 'dart:async';
 
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/kernel/codex/codex_kernel.dart';
-import 'package:baocode/kernel/codex/codex_transport.dart';
-import 'package:baocode/kernel/kernel_types.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/sidebar/sidebar.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/chat_screen.dart';
+import 'package:caocode/kernel/agent_kernel.dart';
+import 'package:caocode/kernel/codex/codex_kernel.dart';
+import 'package:caocode/kernel/codex/codex_transport.dart';
+import 'package:caocode/kernel/kernel_types.dart';
+import 'package:caocode/main.dart';
+import 'package:caocode/sidebar/sidebar.dart';
+import 'package:caocode/workspace/workspace.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -116,7 +116,7 @@ void main() {
       },
     );
     final workspace = Workspace(kernels: [codex]);
-    await tester.pumpWidget(BaoCodeApp(workspace: workspace));
+    await tester.pumpWidget(CaocodeApp(workspace: workspace));
     await tester.runAsync(workspace.load);
     await tester.pump();
 

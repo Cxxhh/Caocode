@@ -16,7 +16,7 @@ import 'package:bao_editor/monaco/vs/editor/common/tokens/contiguous_tokens_stor
 import 'package:bao_editor/monaco/vs/editor/common/tokens/line_tokens.dart';
 import 'package:bao_editor/textmate/textmate_syntax.dart';
 import 'package:bao_editor/textmate/textmate_worker.dart';
-import 'package:baocode/theme/workbench_theme.dart';
+import 'package:caocode/theme/workbench_theme.dart';
 
 import '../../../flutter_test_config.dart' show testColorTheme;
 import 'textmate_fixture.dart';

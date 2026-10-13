@@ -8,6 +8,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../ide/ide_dialog.dart';
 import '../../kernel/agent_kernel.dart';
@@ -1651,6 +1652,7 @@ class ChatComposerState extends State<ChatComposer>
     final mode = session.modes;
     final permission = session.permissions;
     final model = session.models;
+    final fastMode = session.fastMode;
     final effort = model == null || session.kernel.id != 'codex'
         ? null
         : session
@@ -1673,126 +1675,153 @@ class ChatComposerState extends State<ChatComposer>
           // Takes the room left, so the actions sit at the far end; scrolls
           // when the pickers do not fit.
           Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  if (kernel != null) ...[
-                    ComposerPicker(
-                      options: kernel.options,
-                      selected: kernel.selected,
-                      tapRegionGroupId: widget.tapRegionGroupId,
-                      focusNode: _focusNode,
-                      onSelected: kernel.onSelected,
-                    ),
-                    const SizedBox(width: 2),
-                  ],
-                  if (mode != null) ...[
-                    ComposerPicker(
-                      key: _modePickerKey,
-                      options: mode.options,
-                      selected: mode.selected,
-                      emphasized: true,
-                      tooltip: ChatKeys.titleWithKey(
-                        l10n.composerSetMode,
-                        ChatCommandIds.openModePicker,
-                        input,
-                      ),
-                      tapRegionGroupId: widget.tapRegionGroupId,
-                      focusNode: _focusNode,
-                      onSelected: mode.onSelected,
-                    ),
-                    const SizedBox(width: 2),
-                  ],
-                  if (permission != null) ...[
-                    ComposerPicker(
-                      key: mode == null ? _modePickerKey : null,
-                      options: [
-                        for (final option in permission.options)
-                          localized(option),
-                      ],
-                      selected: localized(permission.selected),
-                      // `context` is the session's here.
-                      title: session.kernel.id == 'codex'
-                          ? l10n.composerCodexApprovalTitle
-                          : l10n.composerApprovalTitle(session.kernel.label),
-                      menuWidth: 290,
-                      tapRegionGroupId: widget.tapRegionGroupId,
-                      focusNode: _focusNode,
-                      onSelected: permission.onSelected,
-                    ),
-                    const SizedBox(width: 2),
-                  ],
-                  if (model != null)
-                    ComposerPicker(
-                      key: _modelPickerKey,
-                      options: model.options,
-                      selected: model.selected,
-                      label: _modelLabel(model.selected, model.options),
-                      // Each its name alone, one line; its maker's logo
-                      // and its upstream's heading tell the rest.
-                      describes: false,
-                      settingsOf: (option) => [
-                        for (final setting in session.modelSettings(option.id))
-                          ModelSettingChoice(
-                            kind: setting.kind,
+            child: Row(
+              children: [
+                Flexible(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        if (kernel != null) ...[
+                          ComposerPicker(
+                            options: kernel.options,
+                            selected: kernel.selected,
+                            tapRegionGroupId: widget.tapRegionGroupId,
+                            focusNode: _focusNode,
+                            onSelected: kernel.onSelected,
+                          ),
+                          const SizedBox(width: 2),
+                        ],
+                        if (mode != null) ...[
+                          ComposerPicker(
+                            key: _modePickerKey,
+                            options: mode.options,
+                            selected: mode.selected,
+                            emphasized: true,
+                            tooltip: ChatKeys.titleWithKey(
+                              l10n.composerSetMode,
+                              ChatCommandIds.openModePicker,
+                              input,
+                            ),
+                            tapRegionGroupId: widget.tapRegionGroupId,
+                            focusNode: _focusNode,
+                            onSelected: mode.onSelected,
+                          ),
+                          const SizedBox(width: 2),
+                        ],
+                        if (permission != null) ...[
+                          ComposerPicker(
+                            key: mode == null ? _modePickerKey : null,
                             options: [
-                              for (final option in setting.options)
-                                localized(option, setting.kind),
+                              for (final option in permission.options)
+                                localized(option),
                             ],
-                            selected: setting.selected == null
-                                ? null
-                                : localized(setting.selected!, setting.kind),
-                            onSelected: (choice) => unawaited(
+                            selected: localized(permission.selected),
+                            // `context` is the session's here.
+                            title: session.kernel.id == 'codex'
+                                ? l10n.composerCodexApprovalTitle
+                                : l10n.composerApprovalTitle(
+                                    session.kernel.label,
+                                  ),
+                            menuWidth: 290,
+                            tapRegionGroupId: widget.tapRegionGroupId,
+                            focusNode: _focusNode,
+                            onSelected: permission.onSelected,
+                          ),
+                          const SizedBox(width: 2),
+                        ],
+                        if (model != null)
+                          ComposerPicker(
+                            key: _modelPickerKey,
+                            options: model.options,
+                            selected: model.selected,
+                            label: _modelLabel(model.selected, model.options),
+                            // Each its name alone, one line; its maker's logo
+                            // and its upstream's heading tell the rest.
+                            describes: false,
+                            settingsOf: (option) => [
+                              for (final setting in session.modelSettings(
+                                option.id,
+                              ))
+                                ModelSettingChoice(
+                                  kind: setting.kind,
+                                  options: [
+                                    for (final option in setting.options)
+                                      localized(option, setting.kind),
+                                  ],
+                                  selected: setting.selected == null
+                                      ? null
+                                      : localized(
+                                          setting.selected!,
+                                          setting.kind,
+                                        ),
+                                  onSelected: (choice) => unawaited(
+                                    _switchModel(
+                                      option,
+                                      () => setting.onSelected(choice),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                            tooltip: ChatKeys.titleWithKey(
+                              l10n.composerPickModel,
+                              ChatCommandIds.openModelPicker,
+                              input,
+                            ),
+                            menuWidth: 260,
+                            searchPlaceholder: l10n.modelsSearch,
+                            footer: switch (SettingsOpener.maybeOf(
+                              this.context,
+                            )) {
+                              final open? => (
+                                label: l10n.modelsManage,
+                                icon: Icons.tune_rounded,
+                                onTap: () => open(SettingsSection.models),
+                              ),
+                              null => null,
+                            },
+                            tapRegionGroupId: widget.tapRegionGroupId,
+                            focusNode: _focusNode,
+                            onSelected: (option) => unawaited(
                               _switchModel(
                                 option,
-                                () => setting.onSelected(choice),
+                                () => model.onSelected(option),
                               ),
                             ),
                           ),
+                        if (effort != null) ...[
+                          const SizedBox(width: 2),
+                          ComposerPicker(
+                            options: [
+                              for (final option in effort.options)
+                                localized(option, effort.kind),
+                            ],
+                            selected: localized(
+                              effort.selected ?? effort.options.first,
+                              effort.kind,
+                            ),
+                            title: l10n.composerSettingEffort,
+                            tooltip: l10n.composerSettingEffort,
+                            menuWidth: 260,
+                            tapRegionGroupId: widget.tapRegionGroupId,
+                            focusNode: _focusNode,
+                            onSelected: effort.onSelected,
+                          ),
+                        ],
                       ],
-                      tooltip: ChatKeys.titleWithKey(
-                        l10n.composerPickModel,
-                        ChatCommandIds.openModelPicker,
-                        input,
-                      ),
-                      menuWidth: 260,
-                      searchPlaceholder: l10n.modelsSearch,
-                      footer: switch (SettingsOpener.maybeOf(this.context)) {
-                        final open? => (
-                          label: l10n.modelsManage,
-                          icon: Icons.tune_rounded,
-                          onTap: () => open(SettingsSection.models),
-                        ),
-                        null => null,
-                      },
-                      tapRegionGroupId: widget.tapRegionGroupId,
-                      focusNode: _focusNode,
-                      onSelected: (option) => unawaited(
-                        _switchModel(option, () => model.onSelected(option)),
-                      ),
                     ),
-                  if (effort != null) ...[
-                    const SizedBox(width: 2),
-                    ComposerPicker(
-                      options: [
-                        for (final option in effort.options)
-                          localized(option, effort.kind),
-                      ],
-                      selected: localized(
-                        effort.selected ?? effort.options.first,
-                        effort.kind,
-                      ),
-                      title: l10n.composerSettingEffort,
-                      tooltip: l10n.composerSettingEffort,
-                      menuWidth: 260,
-                      tapRegionGroupId: widget.tapRegionGroupId,
-                      focusNode: _focusNode,
-                      onSelected: effort.onSelected,
-                    ),
-                  ],
+                  ),
+                ),
+                // Keep Fast clickable when longer model labels scroll.
+                if (fastMode != null) ...[
+                  const SizedBox(width: 2),
+                  _FastModeButton(
+                    mode: fastMode,
+                    tapRegionGroupId: widget.tapRegionGroupId,
+                    focusNode: _focusNode,
+                  ),
                 ],
-              ),
+              ],
             ),
           ),
           const SizedBox(width: 8),
@@ -1821,6 +1850,85 @@ class ChatComposerState extends State<ChatComposer>
             onStop: session.stop,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FastModeButton extends StatelessWidget {
+  const _FastModeButton({
+    required this.mode,
+    this.tapRegionGroupId,
+    required this.focusNode,
+  });
+
+  final TogglesFastMode mode;
+  final Object? tapRegionGroupId;
+  final FocusNode focusNode;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final enabled =
+        !mode.fastChanging && (mode.fastAvailable || mode.fastEnabled);
+    final unavailable = !mode.fastAvailable && !mode.fastEnabled;
+    final label = unavailable
+        ? l10n.composerFastUnavailable
+        : mode.fastEnabled
+        ? l10n.composerFastDisable
+        : l10n.composerFastEnable;
+    void toggle() {
+      if (!enabled) return;
+      focusNode.requestFocus();
+      unawaited(mode.setFastMode(!mode.fastEnabled));
+    }
+
+    Widget bolt(String asset, Color color) => SvgPicture.asset(
+      asset,
+      width: 16,
+      height: 16,
+      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+    );
+
+    return IdeHover(
+      message: mode.fastChanging
+          ? l10n.composerFastChanging
+          : '$label\n${unavailable ? l10n.composerFastUnavailableDetail : l10n.composerFastOnDetail}',
+      child: Semantics(
+        container: true,
+        button: true,
+        enabled: enabled,
+        toggled: mode.fastEnabled,
+        label: mode.fastChanging ? l10n.composerFastChanging : label,
+        onTap: enabled ? toggle : null,
+        excludeSemantics: true,
+        child: TextFieldTapRegion(
+          groupId: tapRegionGroupId,
+          child: Opacity(
+            opacity: enabled ? 1 : 0.45,
+            child: IconButton(
+              key: const ValueKey('composer-fast-mode'),
+              isSelected: mode.fastEnabled,
+              icon: bolt('assets/icons/lucide-zap.svg', AppColors.textMuted),
+              selectedIcon: bolt(
+                'assets/icons/lucide-zap-fill.svg',
+                themeColors['charts.blue'],
+              ),
+              constraints: const BoxConstraints.tightFor(width: 24, height: 22),
+              style: IconButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(24, 22),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                hoverColor: themeColors['toolbar.hoverBackground'],
+                highlightColor: themeColors['toolbar.activeBackground'],
+              ),
+              onPressed: enabled ? toggle : null,
+            ),
+          ),
+        ),
       ),
     );
   }

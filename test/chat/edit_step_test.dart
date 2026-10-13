@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/widgets/code_citation.dart';
-import 'package:baocode/chat/widgets/edit_step.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/widgets/code_citation.dart';
+import 'package:caocode/chat/widgets/edit_step.dart';
 
 void main() {
   const item = CodeDiffItem(

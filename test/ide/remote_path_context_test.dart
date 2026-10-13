@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import 'package:baocode/chat/side_panel/side_panel_controller.dart';
-import 'package:baocode/ide/file_service.dart';
-import 'package:baocode/ide/ide_explorer.dart';
-import 'package:baocode/ide/ide_quick_open.dart';
-import 'package:baocode/ide/ide_workspace.dart';
-import 'package:baocode/ide/lsp/lsp_protocol.dart';
+import 'package:caocode/chat/side_panel/side_panel_controller.dart';
+import 'package:caocode/ide/file_service.dart';
+import 'package:caocode/ide/ide_explorer.dart';
+import 'package:caocode/ide/ide_quick_open.dart';
+import 'package:caocode/ide/ide_workspace.dart';
+import 'package:caocode/ide/lsp/lsp_protocol.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 

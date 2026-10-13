@@ -1,8 +1,8 @@
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/panels/activity_strip.dart';
-import 'package:baocode/chat/panels/change_tree.dart';
-import 'package:baocode/ide/ide_list.dart';
-import 'package:baocode/theme/codicons.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/panels/activity_strip.dart';
+import 'package:caocode/chat/panels/change_tree.dart';
+import 'package:caocode/ide/ide_list.dart';
+import 'package:caocode/theme/codicons.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

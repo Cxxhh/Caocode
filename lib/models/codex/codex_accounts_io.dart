@@ -573,7 +573,7 @@ class _Login implements CodexLogin {
     final String page;
     if (query['state'] != _state) {
       response.statusCode = HttpStatus.badRequest;
-      page = _page('Sign-in did not match', 'Start it again from BaoCode.');
+      page = _page('Sign-in did not match', 'Start it again from Caocode.');
     } else if (error != null || code == null || code.isEmpty) {
       response.statusCode = HttpStatus.badRequest;
       final reason =
@@ -583,7 +583,7 @@ class _Login implements CodexLogin {
     } else {
       page = _page(
         'Signed in',
-        'You can close this page and go back to BaoCode.',
+        'You can close this page and go back to Caocode.',
       );
       _finish(code);
     }
@@ -594,7 +594,7 @@ class _Login implements CodexLogin {
 
   static String _page(String title, String detail) {
     const escape = HtmlEscape();
-    return '<!doctype html><meta charset="utf-8"><title>BaoCode</title>'
+    return '<!doctype html><meta charset="utf-8"><title>Caocode</title>'
         '<body style="font-family:system-ui;text-align:center;margin-top:20vh">'
         '<h2>${escape.convert(title)}</h2><p>${escape.convert(detail)}</p>';
   }

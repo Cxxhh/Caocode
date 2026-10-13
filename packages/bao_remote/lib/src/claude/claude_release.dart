@@ -229,7 +229,7 @@ class _DigestSink implements Sink<Digest> {
   void close() {}
 }
 
-/// The Claude Code BaoCode installs on a machine where the user has none
+/// The Claude Code Caocode installs on a machine where the user has none
 /// (or only older ones), as VS Code's extension carries its own:
 /// `<directory>/claude-<version>` (`.exe` on Windows), the one in use named
 /// by `<directory>/CURRENT`, and `<directory>/bin/claude` that runs it, for
@@ -276,7 +276,7 @@ class ManagedClaude {
     final quoted = "'${directory.replaceAll("'", r"'\''")}'";
     final script =
         '#!/bin/sh\n'
-        '# BaoCode\'s Claude Code on this host, as BaoCode runs it.\n'
+        '# Caocode\'s Claude Code on this host, as Caocode runs it.\n'
         'dir=$quoted\n'
         'DISABLE_AUTOUPDATER=1\n'
         'export DISABLE_AUTOUPDATER\n'

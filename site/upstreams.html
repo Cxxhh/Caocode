@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Add one-click import to BaoCode</title>
-<meta name="description" content="Let your users add your API to BaoCode in one click, and get listed in BaoCode for free.">
+<title>Add one-click import to Caocode</title>
+<meta name="description" content="Let your users add your API to Caocode in one click, and get listed in Caocode for free.">
 <link rel="icon" href="icon.png">
 <link rel="stylesheet" href="style.css">
-<link rel="alternate" hreflang="en" href="https://baocode.dev/upstreams">
-<link rel="alternate" hreflang="zh" href="https://baocode.dev/zh/upstreams">
+<link rel="alternate" hreflang="en" href="https://caocode.dev/upstreams">
+<link rel="alternate" hreflang="zh" href="https://caocode.dev/zh/upstreams">
 </head>
 <body>
 <canvas class="grid" aria-hidden="true"></canvas>
@@ -17,21 +17,21 @@
   <symbol id="ic-github" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5c.08-1.25-.27-2.48-1-3.5c.28-1.15.28-2.35 0-3.5c0 0-1 0-3 1.5c-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5c-.39.49-.68 1.05-.85 1.65S8.93 17.38 9 18v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></g></symbol>
 </svg>
 <header class="top">
-  <a class="brand" href="/"><img src="icon.png" alt="">BaoCode</a>
+  <a class="brand" href="/"><img src="icon.png" alt="">Caocode</a>
   <a href="/download">Download</a>
   <a href="/changelog">Changelog</a>
-  <a href="https://github.com/baocode-dev/baocode"><svg class="ic" aria-hidden="true"><use href="#ic-github"/></svg>GitHub</a>
+  <a href="https://github.com/Cxxhh/Caocode"><svg class="ic" aria-hidden="true"><use href="#ic-github"/></svg>GitHub</a>
   <a class="lang" href="/zh/upstreams" hreflang="zh" lang="zh-CN">中文</a>
 </header>
 
 <main class="page">
-  <h1>Add one-click import to BaoCode</h1>
-  <p class="subtitle">Once your API site supports BaoCode’s one-click import, BaoCode puts your site in front of its users, right inside the app. For users who import from your site, yours always comes first: to them, BaoCode is your own client, making the most of what you offer.</p>
+  <h1>Add one-click import to Caocode</h1>
+  <p class="subtitle">Once your API site supports Caocode’s one-click import, Caocode puts your site in front of its users, right inside the app. For users who import from your site, yours always comes first: to them, Caocode is your own client, making the most of what you offer.</p>
 
-  <div class="mock" role="img" aria-label="Illustration: BaoCode’s Settings → Models page, your site among the cards at the top, and in the upstreams, your site just imported in one click">
+  <div class="mock" role="img" aria-label="Illustration: Caocode’s Settings → Models page, your site among the cards at the top, and in the upstreams, your site just imported in one click">
     <div class="win">
       <div class="side">
-        <div class="bar"><span class="app"><img src="/brand/baocode-mark-black-12.webp" srcset="/brand/baocode-mark-black-24.webp 2x, /brand/baocode-mark-black-36.webp 3x" width="16" height="12" alt="">BaoCode</span></div>
+        <div class="bar"><span class="app"><img src="/brand/caocode-mark-black-12.webp" srcset="/brand/caocode-mark-black-24.webp 2x, /brand/caocode-mark-black-36.webp 3x" width="16" height="12" alt="">Caocode</span></div>
         <div class="nav">General</div><div class="nav">Appearance</div><div class="nav on">Models</div><div class="nav">Network</div>
       </div>
       <div class="main">
@@ -51,82 +51,82 @@
 
   <h2>Have your AI do it, and be listed in no time</h2>
   <p>Send this to your AI coding assistant (Claude Code, Codex, Cursor…) in your site’s repository. It works out what your site runs and adds the import; on new-api it is a line of settings, no code.</p>
-  <div class="copyable" data-prompt><pre><code>Add one-click "Import to BaoCode" to my API site. BaoCode is a desktop AI coding app; how the import works: https://baocode.dev/upstreams
+  <div class="copyable" data-prompt><pre><code>Add one-click "Import to Caocode" to my API site. Caocode is a desktop AI coding app; how the import works: https://caocode.dev/upstreams
 
 1. First find out what this site is:
    - new-api / one-api (it has System Settings → Chat Settings): no code needed. Tell me to add this entry in Chat Settings:
-     { "BaoCode": "https://baocode.dev/import#v=1&amp;name=&lt;site name&gt;&amp;protocol=anthropic&amp;url={address}&amp;key={key}" }
+     { "Caocode": "https://caocode.dev/import#v=1&amp;name=&lt;site name&gt;&amp;protocol=anthropic&amp;url={address}&amp;key={key}" }
      and to try it once, signed in as an ordinary user, with that user's key, and to check the key imported is exactly the whole key the site shows.
-   - Anything else (sub2api, or our own code): add an "Import to BaoCode" button next to each key in the key / token list a signed-in user sees, as in step 2. What is imported is the site's user's own key, never the owner's or an admin's.
+   - Anything else (sub2api, or our own code): add an "Import to Caocode" button next to each key in the key / token list a signed-in user sees, as in step 2. What is imported is the site's user's own key, never the owner's or an admin's.
 
 2. The button opens, in a new tab (target="_blank" rel="noopener noreferrer"):
-   https://baocode.dev/import#v=1&amp;name=&lt;site name&gt;&amp;protocol=&lt;protocol&gt;&amp;url=&lt;API base URL&gt;&amp;key=&lt;the whole key&gt;
+   https://caocode.dev/import#v=1&amp;name=&lt;site name&gt;&amp;protocol=&lt;protocol&gt;&amp;url=&lt;API base URL&gt;&amp;key=&lt;the whole key&gt;
    - name: the site's name, as the site's settings have it.
    - protocol: anthropic (the site serves /v1/messages), openai-chat (/v1/chat/completions) or openai-responses (/v1/responses). Use anthropic where the site supports it; where keys differ (by group, say), pick by this key's.
    - url: the base URL users call the API at, as the site shows it to them, http or https; without /v1 for anthropic.
    - key: the user's whole key, not the masked one shown; if the list only has the masked one, fetch the whole key, as that user, when the button is clicked.
    - Encode each value with encodeURIComponent.
-   - The parameters go after the #, never after a ?: browsers never send what follows a # to any server, so the key goes through neither baocode.dev nor any other server.
+   - The parameters go after the #, never after a ?: browsers never send what follows a # to any server, so the key goes through neither caocode.dev nor any other server.
 
-3. Label the button "Import to BaoCode" and style it as the page's other buttons. Put BaoCode's mark before the label: an &lt;img&gt; of the image online at baocode.dev, never a copy downloaded into the project, nor an SVG drawn or inlined.
-   - Address: https://baocode.dev/brand/baocode-mark-&lt;color&gt;-&lt;height&gt;.webp
+3. Label the button "Import to Caocode" and style it as the page's other buttons. Put Caocode's mark before the label: an &lt;img&gt; of the image online at caocode.dev, never a copy downloaded into the project, nor an SVG drawn or inlined.
+   - Address: https://caocode.dev/brand/caocode-mark-&lt;color&gt;-&lt;height&gt;.webp
    - Color: black on light buttons, white on dark or colored (primary) buttons; where the site has light and dark themes, switch with them.
    - Size: the mark is 4:3. Pick its size by the label's, src the 1x image, and srcset the 2x and 3x for sharp screens:
      · Label 13–14px (small buttons, buttons in a table row): shown 16×12, heights 12 / 24 / 36
      · Label 15–16px (ordinary buttons): shown 24×18, heights 18 / 36 / 54
      · Label 18px or more (large buttons): shown 32×24, heights 24 / 48 / 72
-     For example: &lt;img src="https://baocode.dev/brand/baocode-mark-black-12.webp" srcset="https://baocode.dev/brand/baocode-mark-black-24.webp 2x, https://baocode.dev/brand/baocode-mark-black-36.webp 3x" width="16" height="12" alt=""&gt;
+     For example: &lt;img src="https://caocode.dev/brand/caocode-mark-black-12.webp" srcset="https://caocode.dev/brand/caocode-mark-black-24.webp 2x, https://caocode.dev/brand/caocode-mark-black-36.webp 3x" width="16" height="12" alt=""&gt;
    - About 6px between the mark and the label, centered vertically. Give width and height, so nothing moves as it loads; leave alt empty, the label says it.
-   - Where a square app icon fits (on an import guide, a card): https://baocode.dev/brand/baocode-icon-&lt;size&gt;.png, sizes 16, 24, 32, 48, 64, 96, 128, 256, 512. src the size shown, srcset the one twice that, for example: &lt;img src="https://baocode.dev/brand/baocode-icon-32.png" srcset="https://baocode.dev/brand/baocode-icon-64.png 2x" width="32" height="32" alt=""&gt;
-   - Where the site sets a CSP, add https://baocode.dev to its img-src.
-   Besides these images, don't load any script or style from baocode.dev, and don't call baocode.dev from the backend.
+   - Where a square app icon fits (on an import guide, a card): https://caocode.dev/brand/caocode-icon-&lt;size&gt;.png, sizes 16, 24, 32, 48, 64, 96, 128, 256, 512. src the size shown, srcset the one twice that, for example: &lt;img src="https://caocode.dev/brand/caocode-icon-32.png" srcset="https://caocode.dev/brand/caocode-icon-64.png 2x" width="32" height="32" alt=""&gt;
+   - Where the site sets a CSP, add https://caocode.dev to its img-src.
+   Besides these images, don't load any script or style from caocode.dev, and don't call caocode.dev from the backend.
 
-4. When done, tell me which files changed and how to check it: the button should open baocode.dev/import, showing the site's name, the protocol, the URL and the key masked; with BaoCode installed, it then asks to import.
+4. When done, tell me which files changed and how to check it: the button should open caocode.dev/import, showing the site's name, the protocol, the URL and the key masked; with Caocode installed, it then asks to import.
 
-5. Once it checks out, let BaoCode know, so it lists my site in its Settings → Models (free).
-   Let BaoCode know with an issue in its GitHub repository: https://github.com/baocode-dev/baocode/issues/new?template=upstream-listing.yml
-   - With gh installed and signed in, submit it with gh issue create --repo baocode-dev/baocode --title "[Upstream] &lt;site name&gt;" --body-file &lt;file&gt;; otherwise give me the text, and I paste it in at the link above.
+5. Once it checks out, let Caocode know, so it lists my site in its Settings → Models (free).
+   Let Caocode know with an issue in its GitHub repository: https://github.com/Cxxhh/Caocode/issues/new?template=upstream-listing.yml
+   - With gh installed and signed in, submit it with gh issue create --repo caocode-dev/caocode --title "[Upstream] &lt;site name&gt;" --body-file &lt;file&gt;; otherwise give me the text, and I paste it in at the link above.
    - Write the body under these headings, in this order (as the issue form has them), a paragraph each:
      ### Site name / 站点名称: as the card shows it, at most 24 characters.
      ### Card link / 卡片链接: where a click on the card goes; promotion parameters (aff, ref…) are fine.
      ### API hosts / API 域名: the hosts the base URLs are at, comma-separated, e.g. api.example.com, example.com.
      ### One line about it / 一句话介绍: a line in English and one in Chinese if you can, about 30 characters each, as "en: …" and "zh: …".
      ### What your site runs / 站点系统: new-api, sub2api, one-api or Other / 其他.
-     ### Where the import is / 一键导入的位置: on which page, and in which button or menu, users find "Import to BaoCode".
+     ### Where the import is / 一键导入的位置: on which page, and in which button or menu, users find "Import to Caocode".
      ### Logo: the site's logo, square, PNG at least 256×256 (best on a transparent background) or SVG.
-     ### Contact / 联系方式: how BaoCode reaches me about the assets (email, Telegram, WeChat…).
+     ### Contact / 联系方式: how Caocode reaches me about the assets (email, Telegram, WeChat…).
      ### Rules / 规则:
      - [x] The one-click import works on my site for any signed-in user.
      - [x] I understand a listing is not an endorsement, the order of the cards is random, and a site whose import stops working, or that misleads users, is taken off.
    - The command line can't attach images: once it is submitted, remind me to drag the logo and a screenshot of the button into a comment on the issue.
    - Ask me for what you aren't sure of (the site's name, promotion parameters, contact); don't make it up.</code></pre><button class="copy" type="button" data-copy data-done="Copied">Copy</button></div>
   <p>Or pick a button’s style: click the one you like, and the prompt copied has that button in it.</p>
-  <div class="styles" data-page="https://baocode.dev/upstreams" data-href="the import link of step 2" data-template="The button&#x27;s style (this before step 3&#x27;s &quot;as the page&#x27;s other buttons&quot;): make it as the &quot;{name}&quot; button at {url}, whose HTML is:
+  <div class="styles" data-page="https://caocode.dev/upstreams" data-href="the import link of step 2" data-template="The button&#x27;s style (this before step 3&#x27;s &quot;as the page&#x27;s other buttons&quot;): make it as the &quot;{name}&quot; button at {url}, whose HTML is:
 {html}
-Keep its colors, border, corners, padding, font size and icon size, written as the site writes its own (a component, CSS classes: no need for inline styles); the import link of step 2 for its href, the images still loaded from baocode.dev. Where the site has a dark theme, colors to match there, the mark black or white by the ground. On hover, a shade darker or lighter, as the site's other buttons do. {note}">
-    <button type="button" class="pick" id="style-outline" data-style="Outline" data-note="" data-hint="Outline · Use this style" data-done="Prompt copied" aria-label="Outline: Use this style"><span class="sample" style="display:inline-flex;align-items:center;gap:6px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;font-weight:500;line-height:1;text-decoration:none;white-space:nowrap;cursor:pointer;height:32px;padding:0 12px;font-size:14px;border-radius:6px;border:1px solid #D9D9D9;background:#FFFFFF;color:#1B1A17;"><img src="/brand/baocode-mark-black-12.webp" srcset="/brand/baocode-mark-black-24.webp 2x, /brand/baocode-mark-black-36.webp 3x" width="16" height="12" alt="">Import to BaoCode</span></button>
-    <button type="button" class="pick" id="style-dark" data-style="Dark" data-note="" data-hint="Dark · Use this style" data-done="Prompt copied" aria-label="Dark: Use this style"><span class="sample" style="display:inline-flex;align-items:center;gap:6px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;font-weight:500;line-height:1;text-decoration:none;white-space:nowrap;cursor:pointer;height:32px;padding:0 12px;font-size:14px;border-radius:6px;border:1px solid #1B1A17;background:#1B1A17;color:#FFFFFF;"><img src="/brand/baocode-mark-white-12.webp" srcset="/brand/baocode-mark-white-24.webp 2x, /brand/baocode-mark-white-36.webp 3x" width="16" height="12" alt="">Import to BaoCode</span></button>
-    <button type="button" class="pick" id="style-gold" data-style="BaoCode gold" data-note="" data-hint="BaoCode gold · Use this style" data-done="Prompt copied" aria-label="BaoCode gold: Use this style"><span class="sample" style="display:inline-flex;align-items:center;gap:6px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;font-weight:500;line-height:1;text-decoration:none;white-space:nowrap;cursor:pointer;height:32px;padding:0 12px;font-size:14px;border-radius:6px;border:1px solid #D9AC6C;background:#E5BA7D;color:#23221E;"><img src="/brand/baocode-mark-black-12.webp" srcset="/brand/baocode-mark-black-24.webp 2x, /brand/baocode-mark-black-36.webp 3x" width="16" height="12" alt="">Import to BaoCode</span></button>
-    <button type="button" class="pick" id="style-primary" data-style="Your primary color" data-note="Use the site&#x27;s primary color for #0064FA; where it is light, a dark label and the black mark." data-hint="Your primary color · Use this style" data-done="Prompt copied" aria-label="Your primary color: Use this style"><span class="sample" style="display:inline-flex;align-items:center;gap:6px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;font-weight:500;line-height:1;text-decoration:none;white-space:nowrap;cursor:pointer;height:32px;padding:0 12px;font-size:14px;border-radius:6px;border:1px solid #0064FA;background:#0064FA;color:#FFFFFF;"><img src="/brand/baocode-mark-white-12.webp" srcset="/brand/baocode-mark-white-24.webp 2x, /brand/baocode-mark-white-36.webp 3x" width="16" height="12" alt="">Import to BaoCode</span></button>
-    <button type="button" class="pick" id="style-pill" data-style="Large pill" data-note="" data-hint="Large pill · Use this style" data-done="Prompt copied" aria-label="Large pill: Use this style"><span class="sample" style="display:inline-flex;align-items:center;gap:6px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;font-weight:500;line-height:1;text-decoration:none;white-space:nowrap;cursor:pointer;height:40px;padding:0 18px;font-size:16px;border-radius:999px;border:1px solid #1B1A17;background:#1B1A17;color:#FFFFFF;"><img src="/brand/baocode-mark-white-18.webp" srcset="/brand/baocode-mark-white-36.webp 2x, /brand/baocode-mark-white-54.webp 3x" width="24" height="18" alt="">Import to BaoCode</span></button>
-    <button type="button" class="pick" id="style-link" data-style="Link in a table row" data-note="Color it as the site&#x27;s links or text; the white mark in a dark theme." data-hint="Link in a table row · Use this style" data-done="Prompt copied" aria-label="Link in a table row: Use this style"><span class="sample" style="display:inline-flex;align-items:center;gap:6px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;font-weight:500;line-height:1;text-decoration:none;white-space:nowrap;cursor:pointer;gap:4px;padding:0;font-size:13px;border:0;background:none;color:#1B1A17;"><img src="/brand/baocode-mark-black-12.webp" srcset="/brand/baocode-mark-black-24.webp 2x, /brand/baocode-mark-black-36.webp 3x" width="16" height="12" alt="">Import to BaoCode</span></button>
+Keep its colors, border, corners, padding, font size and icon size, written as the site writes its own (a component, CSS classes: no need for inline styles); the import link of step 2 for its href, the images still loaded from caocode.dev. Where the site has a dark theme, colors to match there, the mark black or white by the ground. On hover, a shade darker or lighter, as the site's other buttons do. {note}">
+    <button type="button" class="pick" id="style-outline" data-style="Outline" data-note="" data-hint="Outline · Use this style" data-done="Prompt copied" aria-label="Outline: Use this style"><span class="sample" style="display:inline-flex;align-items:center;gap:6px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;font-weight:500;line-height:1;text-decoration:none;white-space:nowrap;cursor:pointer;height:32px;padding:0 12px;font-size:14px;border-radius:6px;border:1px solid #D9D9D9;background:#FFFFFF;color:#1B1A17;"><img src="/brand/caocode-mark-black-12.webp" srcset="/brand/caocode-mark-black-24.webp 2x, /brand/caocode-mark-black-36.webp 3x" width="16" height="12" alt="">Import to Caocode</span></button>
+    <button type="button" class="pick" id="style-dark" data-style="Dark" data-note="" data-hint="Dark · Use this style" data-done="Prompt copied" aria-label="Dark: Use this style"><span class="sample" style="display:inline-flex;align-items:center;gap:6px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;font-weight:500;line-height:1;text-decoration:none;white-space:nowrap;cursor:pointer;height:32px;padding:0 12px;font-size:14px;border-radius:6px;border:1px solid #1B1A17;background:#1B1A17;color:#FFFFFF;"><img src="/brand/caocode-mark-white-12.webp" srcset="/brand/caocode-mark-white-24.webp 2x, /brand/caocode-mark-white-36.webp 3x" width="16" height="12" alt="">Import to Caocode</span></button>
+    <button type="button" class="pick" id="style-gold" data-style="Caocode gold" data-note="" data-hint="Caocode gold · Use this style" data-done="Prompt copied" aria-label="Caocode gold: Use this style"><span class="sample" style="display:inline-flex;align-items:center;gap:6px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;font-weight:500;line-height:1;text-decoration:none;white-space:nowrap;cursor:pointer;height:32px;padding:0 12px;font-size:14px;border-radius:6px;border:1px solid #D9AC6C;background:#E5BA7D;color:#23221E;"><img src="/brand/caocode-mark-black-12.webp" srcset="/brand/caocode-mark-black-24.webp 2x, /brand/caocode-mark-black-36.webp 3x" width="16" height="12" alt="">Import to Caocode</span></button>
+    <button type="button" class="pick" id="style-primary" data-style="Your primary color" data-note="Use the site&#x27;s primary color for #0064FA; where it is light, a dark label and the black mark." data-hint="Your primary color · Use this style" data-done="Prompt copied" aria-label="Your primary color: Use this style"><span class="sample" style="display:inline-flex;align-items:center;gap:6px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;font-weight:500;line-height:1;text-decoration:none;white-space:nowrap;cursor:pointer;height:32px;padding:0 12px;font-size:14px;border-radius:6px;border:1px solid #0064FA;background:#0064FA;color:#FFFFFF;"><img src="/brand/caocode-mark-white-12.webp" srcset="/brand/caocode-mark-white-24.webp 2x, /brand/caocode-mark-white-36.webp 3x" width="16" height="12" alt="">Import to Caocode</span></button>
+    <button type="button" class="pick" id="style-pill" data-style="Large pill" data-note="" data-hint="Large pill · Use this style" data-done="Prompt copied" aria-label="Large pill: Use this style"><span class="sample" style="display:inline-flex;align-items:center;gap:6px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;font-weight:500;line-height:1;text-decoration:none;white-space:nowrap;cursor:pointer;height:40px;padding:0 18px;font-size:16px;border-radius:999px;border:1px solid #1B1A17;background:#1B1A17;color:#FFFFFF;"><img src="/brand/caocode-mark-white-18.webp" srcset="/brand/caocode-mark-white-36.webp 2x, /brand/caocode-mark-white-54.webp 3x" width="24" height="18" alt="">Import to Caocode</span></button>
+    <button type="button" class="pick" id="style-link" data-style="Link in a table row" data-note="Color it as the site&#x27;s links or text; the white mark in a dark theme." data-hint="Link in a table row · Use this style" data-done="Prompt copied" aria-label="Link in a table row: Use this style"><span class="sample" style="display:inline-flex;align-items:center;gap:6px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;font-weight:500;line-height:1;text-decoration:none;white-space:nowrap;cursor:pointer;gap:4px;padding:0;font-size:13px;border:0;background:none;color:#1B1A17;"><img src="/brand/caocode-mark-black-12.webp" srcset="/brand/caocode-mark-black-24.webp 2x, /brand/caocode-mark-black-36.webp 3x" width="16" height="12" alt="">Import to Caocode</span></button>
   </div>
 
-  <h2>Let BaoCode know, live once confirmed</h2>
-  <p>Once it works, let BaoCode know: as soon as we’ve seen the import work, your card shows in every user’s BaoCode, with no new release to wait for. Have your AI do this too: send it the prompt below, and it gathers what the form asks and opens an issue on BaoCode’s GitHub to let us know, asking you what it isn’t sure of. The prompt above ends with this step; if you added the import by hand, this one is all you need.</p>
-  <div class="copyable"><pre><code>My API site has BaoCode's one-click import; let BaoCode know, so it lists the site in its Settings → Models (free). How it works: https://baocode.dev/upstreams
+  <h2>Let Caocode know, live once confirmed</h2>
+  <p>Once it works, let Caocode know: as soon as we’ve seen the import work, your card shows in every user’s Caocode, with no new release to wait for. Have your AI do this too: send it the prompt below, and it gathers what the form asks and opens an issue on Caocode’s GitHub to let us know, asking you what it isn’t sure of. The prompt above ends with this step; if you added the import by hand, this one is all you need.</p>
+  <div class="copyable"><pre><code>My API site has Caocode's one-click import; let Caocode know, so it lists the site in its Settings → Models (free). How it works: https://caocode.dev/upstreams
 
-Let BaoCode know with an issue in its GitHub repository: https://github.com/baocode-dev/baocode/issues/new?template=upstream-listing.yml
-- With gh installed and signed in, submit it with gh issue create --repo baocode-dev/baocode --title "[Upstream] &lt;site name&gt;" --body-file &lt;file&gt;; otherwise give me the text, and I paste it in at the link above.
+Let Caocode know with an issue in its GitHub repository: https://github.com/Cxxhh/Caocode/issues/new?template=upstream-listing.yml
+- With gh installed and signed in, submit it with gh issue create --repo caocode-dev/caocode --title "[Upstream] &lt;site name&gt;" --body-file &lt;file&gt;; otherwise give me the text, and I paste it in at the link above.
 - Write the body under these headings, in this order (as the issue form has them), a paragraph each:
   ### Site name / 站点名称: as the card shows it, at most 24 characters.
   ### Card link / 卡片链接: where a click on the card goes; promotion parameters (aff, ref…) are fine.
   ### API hosts / API 域名: the hosts the base URLs are at, comma-separated, e.g. api.example.com, example.com.
   ### One line about it / 一句话介绍: a line in English and one in Chinese if you can, about 30 characters each, as "en: …" and "zh: …".
   ### What your site runs / 站点系统: new-api, sub2api, one-api or Other / 其他.
-  ### Where the import is / 一键导入的位置: on which page, and in which button or menu, users find "Import to BaoCode".
+  ### Where the import is / 一键导入的位置: on which page, and in which button or menu, users find "Import to Caocode".
   ### Logo: the site's logo, square, PNG at least 256×256 (best on a transparent background) or SVG.
-  ### Contact / 联系方式: how BaoCode reaches me about the assets (email, Telegram, WeChat…).
+  ### Contact / 联系方式: how Caocode reaches me about the assets (email, Telegram, WeChat…).
   ### Rules / 规则:
   - [x] The one-click import works on my site for any signed-in user.
   - [x] I understand a listing is not an endorsement, the order of the cards is random, and a site whose import stops working, or that misleads users, is taken off.
@@ -135,7 +135,7 @@ Let BaoCode know with an issue in its GitHub repository: https://github.com/baoc
 
   <h2>How the listing works</h2>
   <ul>
-    <li>Your card is at the top of BaoCode’s Settings → Models, among the sites that added the import, in a random order each time the page opens: nobody is always last.</li>
+    <li>Your card is at the top of Caocode’s Settings → Models, among the sites that added the import, in a random order each time the page opens: nobody is always last.</li>
     <li>A user with an upstream from your site (imported from your key page, say) always sees your card first, the others after it.</li>
     <li>A click on it opens your site, with your promotion parameters if you like.</li>
     <li>Nobody pays to be listed, and a site stays listed as long as its import works. A listing is not an endorsement.</li>
@@ -143,44 +143,44 @@ Let BaoCode know with an issue in its GitHub repository: https://github.com/baoc
   </ul>
 
   <h2>By hand: new-api, one line of settings</h2>
-  <p>In System Settings → Chat Settings, add this entry. new-api fills in <code>{address}</code> and <code>{key}</code>, and every key in the token list gets a BaoCode option:</p>
-  <pre><code>{ "BaoCode": "https://baocode.dev/import#v=1&amp;name=YourSite&amp;protocol=anthropic&amp;url={address}&amp;key={key}" }</code></pre>
+  <p>In System Settings → Chat Settings, add this entry. new-api fills in <code>{address}</code> and <code>{key}</code>, and every key in the token list gets a Caocode option:</p>
+  <pre><code>{ "Caocode": "https://caocode.dev/import#v=1&amp;name=YourSite&amp;protocol=anthropic&amp;url={address}&amp;key={key}" }</code></pre>
   <p>Use <code>protocol=openai-chat</code> or <code>openai-responses</code> instead if that is what your users should speak to. Try it once, signed in as an ordinary user, with that user's key, and check the key imported is exactly the whole key the site shows.</p>
 
   <h2>By hand: any other site, a link</h2>
   <p>Next to each key, a link that opens, in a new tab:</p>
-  <pre><code>https://baocode.dev/import#v=1&amp;name=…&amp;protocol=…&amp;url=…&amp;key=…</code></pre>
+  <pre><code>https://caocode.dev/import#v=1&amp;name=…&amp;protocol=…&amp;url=…&amp;key=…</code></pre>
   <div class="table"><table>
     <thead><tr><th>Parameter</th><th></th><th>What it is</th></tr></thead>
     <tbody>
       <tr><td><code>url</code></td><td>required</td><td>Your base URL, http or https. Without <code>/v1</code> for Anthropic.</td></tr>
       <tr><td><code>protocol</code></td><td>optional</td><td><code>anthropic</code> (the default), <code>openai-chat</code> or <code>openai-responses</code>.</td></tr>
-      <tr><td><code>name</code></td><td>optional</td><td>Your site’s name, as BaoCode lists the upstream.</td></tr>
+      <tr><td><code>name</code></td><td>optional</td><td>Your site’s name, as Caocode lists the upstream.</td></tr>
       <tr><td><code>key</code></td><td>optional</td><td>The user’s key, whole.</td></tr>
       <tr><td><code>v</code></td><td>optional</td><td><code>1</code>.</td></tr>
     </tbody>
   </table></div>
-  <p>Encode each value with <code>encodeURIComponent</code>. Put them after the <code>#</code>, never after a <code>?</code>: browsers never send what follows a <code>#</code> to a server, so the key goes from your page to the user’s BaoCode and nowhere else. baocode.dev’s page reads it, takes it off the address bar and opens BaoCode, which shows the user what it is about to add and asks first.</p>
-  <p>Please don’t load any script from baocode.dev on your key page; a plain link is all it takes. The icons below are fine to load.</p>
+  <p>Encode each value with <code>encodeURIComponent</code>. Put them after the <code>#</code>, never after a <code>?</code>: browsers never send what follows a <code>#</code> to a server, so the key goes from your page to the user’s Caocode and nowhere else. caocode.dev’s page reads it, takes it off the address bar and opens Caocode, which shows the user what it is about to add and asks first.</p>
+  <p>Please don’t load any script from caocode.dev on your key page; a plain link is all it takes. The icons below are fine to load.</p>
 
   <h2>Button icons</h2>
-  <p>Your button may carry BaoCode’s mark. Please load it from these addresses, rather than download it into your project: when the icon changes, your button changes with it. The mark is lossless WebP, in black and in white; the app icon is PNG.</p>
+  <p>Your button may carry Caocode’s mark. Please load it from these addresses, rather than download it into your project: when the icon changes, your button changes with it. The mark is lossless WebP, in black and in white; the app icon is PNG.</p>
   <div class="assets">
-    <div class="asset"><div class="swatch"><img src="/brand/baocode-mark-black-36.webp" srcset="/brand/baocode-mark-black-72.webp 2x" width="48" height="36" alt=""></div><p>Black mark, for light buttons</p></div>
-    <div class="asset"><div class="swatch dark"><img src="/brand/baocode-mark-white-36.webp" srcset="/brand/baocode-mark-white-72.webp 2x" width="48" height="36" alt=""></div><p>White mark, for dark or colored buttons</p></div>
-    <div class="asset"><div class="swatch"><img src="/brand/baocode-icon-48.png" srcset="/brand/baocode-icon-96.png 2x" width="48" height="48" alt=""></div><p>App icon</p></div>
+    <div class="asset"><div class="swatch"><img src="/brand/caocode-mark-black-36.webp" srcset="/brand/caocode-mark-black-72.webp 2x" width="48" height="36" alt=""></div><p>Black mark, for light buttons</p></div>
+    <div class="asset"><div class="swatch dark"><img src="/brand/caocode-mark-white-36.webp" srcset="/brand/caocode-mark-white-72.webp 2x" width="48" height="36" alt=""></div><p>White mark, for dark or colored buttons</p></div>
+    <div class="asset"><div class="swatch"><img src="/brand/caocode-icon-48.png" srcset="/brand/caocode-icon-96.png 2x" width="48" height="48" alt=""></div><p>App icon</p></div>
   </div>
-  <p>The mark is at <code>https://baocode.dev/brand/baocode-mark-&lt;black|white&gt;-&lt;height&gt;.webp</code>, 4:3, sized by the button’s label:</p>
+  <p>The mark is at <code>https://caocode.dev/brand/caocode-mark-&lt;black|white&gt;-&lt;height&gt;.webp</code>, 4:3, sized by the button’s label:</p>
   <div class="table"><table>
     <thead><tr><th>Label</th><th>Shown</th><th>1x</th><th>2x</th><th>3x</th></tr></thead>
     <tbody>
-      <tr><td>13–14px, small buttons</td><td>16×12</td><td><a href="/brand/baocode-mark-black-12.webp">-12</a></td><td><a href="/brand/baocode-mark-black-24.webp">-24</a></td><td><a href="/brand/baocode-mark-black-36.webp">-36</a></td></tr>
-      <tr><td>15–16px, ordinary buttons</td><td>24×18</td><td><a href="/brand/baocode-mark-black-18.webp">-18</a></td><td><a href="/brand/baocode-mark-black-36.webp">-36</a></td><td><a href="/brand/baocode-mark-black-54.webp">-54</a></td></tr>
-      <tr><td>18px or more, large buttons</td><td>32×24</td><td><a href="/brand/baocode-mark-black-24.webp">-24</a></td><td><a href="/brand/baocode-mark-black-48.webp">-48</a></td><td><a href="/brand/baocode-mark-black-72.webp">-72</a></td></tr>
+      <tr><td>13–14px, small buttons</td><td>16×12</td><td><a href="/brand/caocode-mark-black-12.webp">-12</a></td><td><a href="/brand/caocode-mark-black-24.webp">-24</a></td><td><a href="/brand/caocode-mark-black-36.webp">-36</a></td></tr>
+      <tr><td>15–16px, ordinary buttons</td><td>24×18</td><td><a href="/brand/caocode-mark-black-18.webp">-18</a></td><td><a href="/brand/caocode-mark-black-36.webp">-36</a></td><td><a href="/brand/caocode-mark-black-54.webp">-54</a></td></tr>
+      <tr><td>18px or more, large buttons</td><td>32×24</td><td><a href="/brand/caocode-mark-black-24.webp">-24</a></td><td><a href="/brand/caocode-mark-black-48.webp">-48</a></td><td><a href="/brand/caocode-mark-black-72.webp">-72</a></td></tr>
     </tbody>
   </table></div>
-  <pre><code>&lt;img src="https://baocode.dev/brand/baocode-mark-black-12.webp" srcset="https://baocode.dev/brand/baocode-mark-black-24.webp 2x, https://baocode.dev/brand/baocode-mark-black-36.webp 3x" width="16" height="12" alt=""&gt;</code></pre>
-  <p>The app icon is at <code>https://baocode.dev/brand/baocode-icon-&lt;size&gt;.png</code>, in <a href="/brand/baocode-icon-16.png">16</a> · <a href="/brand/baocode-icon-24.png">24</a> · <a href="/brand/baocode-icon-32.png">32</a> · <a href="/brand/baocode-icon-48.png">48</a> · <a href="/brand/baocode-icon-64.png">64</a> · <a href="/brand/baocode-icon-96.png">96</a> · <a href="/brand/baocode-icon-128.png">128</a> · <a href="/brand/baocode-icon-256.png">256</a> · <a href="/brand/baocode-icon-512.png">512</a>. src the size shown, and srcset the one twice that.</p>
+  <pre><code>&lt;img src="https://caocode.dev/brand/caocode-mark-black-12.webp" srcset="https://caocode.dev/brand/caocode-mark-black-24.webp 2x, https://caocode.dev/brand/caocode-mark-black-36.webp 3x" width="16" height="12" alt=""&gt;</code></pre>
+  <p>The app icon is at <code>https://caocode.dev/brand/caocode-icon-&lt;size&gt;.png</code>, in <a href="/brand/caocode-icon-16.png">16</a> · <a href="/brand/caocode-icon-24.png">24</a> · <a href="/brand/caocode-icon-32.png">32</a> · <a href="/brand/caocode-icon-48.png">48</a> · <a href="/brand/caocode-icon-64.png">64</a> · <a href="/brand/caocode-icon-96.png">96</a> · <a href="/brand/caocode-icon-128.png">128</a> · <a href="/brand/caocode-icon-256.png">256</a> · <a href="/brand/caocode-icon-512.png">512</a>. src the size shown, and srcset the one twice that.</p>
 </main>
 
 <script src="site.js"></script>

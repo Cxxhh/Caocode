@@ -4,7 +4,7 @@ library;
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/platform/data_dir.dart';
+import 'package:caocode/platform/data_dir.dart';
 import 'package:path/path.dart' as p;
 
 /// Where the data folder is found: `CAOCODE_DATA_DIR`, else the pointer in
@@ -14,7 +14,7 @@ void main() {
   late Map<String, String> environment;
 
   setUp(() {
-    home = Directory.systemTemp.createTempSync('baocode-home');
+    home = Directory.systemTemp.createTempSync('caocode-home');
     environment = {'HOME': home.path};
   });
   tearDown(() {
@@ -69,9 +69,9 @@ void main() {
   });
 
   test('~ is the home, in the pointer and the variable', () {
-    folder('Data/baocode');
-    pointer().writeAsStringSync('{"dataDir": "~/Data/baocode"}');
-    expect(resolve().path, p.join(home.path, 'Data', 'baocode'));
+    folder('Data/caocode');
+    pointer().writeAsStringSync('{"dataDir": "~/Data/caocode"}');
+    expect(resolve().path, p.join(home.path, 'Data', 'caocode'));
     environment['CAOCODE_DATA_DIR'] = '~';
     expect(resolve().path, home.path);
     expect(expandDataDirectory(r'~\x', '/h'), p.join('/h', 'x'));
@@ -104,7 +104,7 @@ void main() {
 
   test('a folder that is missing or read-only is reported, not replaced '
       'by the default', () {
-    final gone = p.join(home.path, 'Volumes', 'D', 'BaoCode');
+    final gone = p.join(home.path, 'Volumes', 'D', 'Caocode');
     pointer().writeAsStringSync('{"dataDir": "$gone"}');
     var resolution = resolve();
     expect(resolution.ok, isFalse);

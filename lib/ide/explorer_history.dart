@@ -2,8 +2,8 @@ import 'dart:typed_data';
 
 /// Undo and Redo where the focus is in the explorer (VS Code's own `undo`
 /// and `redo` there): of their own, so that an editor's never runs these.
-const explorerUndoCommandId = 'baocode.explorer.undo';
-const explorerRedoCommandId = 'baocode.explorer.redo';
+const explorerUndoCommandId = 'caocode.explorer.undo';
+const explorerRedoCommandId = 'caocode.explorer.redo';
 
 /// A file operation of the explorer's, as VS Code's undo/redo service keeps
 /// them: undone with Undo, done again with Redo.

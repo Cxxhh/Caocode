@@ -49,7 +49,7 @@ class SecureChannel {
       _receiveKey = receiveKey;
 
   static const _version = 1;
-  static const _label = 'baocode-link-v1';
+  static const _label = 'caocode-link-v1';
 
   /// How long the other end has to answer the handshake.
   static const handshakeTimeout = Duration(seconds: 10);
@@ -92,7 +92,7 @@ class SecureChannel {
       }
       final reply = incoming.current;
       if (reply.length != 33 || reply[0] != _version) {
-        throw const LinkHandshakeException('Not a BaoCode desktop');
+        throw const LinkHandshakeException('Not a Caocode desktop');
       }
       final serverMoment = Uint8List.sublistView(reply, 1);
       final keys = _keys(
@@ -137,7 +137,7 @@ class SecureChannel {
       }
       final hello = incoming.current;
       if (hello.length != 1 + 32 + 32 + 16 || hello[0] != _version) {
-        throw const LinkHandshakeException('Not a BaoCode phone');
+        throw const LinkHandshakeException('Not a Caocode phone');
       }
       final clientMoment = Uint8List.sublistView(hello, 1, 33);
       final helloKey = _hash([

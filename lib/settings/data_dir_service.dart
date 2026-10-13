@@ -12,7 +12,7 @@ enum DataDirectoryContents {
   empty,
 
   /// The app's data ([DataDirectory.markers]): used as it is.
-  baocodeData,
+  caocodeData,
 
   /// Other files: the app's are put beside them.
   other,
@@ -129,7 +129,7 @@ class DataDirectoryService {
   static String _defaultHome(Map<String, String>? environment) {
     if (environment == null &&
         Platform.environment.containsKey('FLUTTER_TEST')) {
-      return p.join(Directory.systemTemp.path, 'baocode-test-home-$pid');
+      return p.join(Directory.systemTemp.path, 'caocode-test-home-$pid');
     }
     return AppPaths.home(environment ?? Platform.environment);
   }
@@ -244,7 +244,7 @@ class DataDirectoryService {
     await for (final entity in Directory(path).list(followLinks: false)) {
       final name = p.basename(entity.path);
       if (DataDirectory.markers.contains(name)) {
-        return DataDirectoryContents.baocodeData;
+        return DataDirectoryContents.caocodeData;
       }
       if (!_systemFiles.contains(name.toLowerCase())) empty = false;
     }

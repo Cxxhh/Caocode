@@ -44,7 +44,7 @@ EOF
 )
 
 for arch in x64 arm64; do
-  binary="$dir/baocode-server-darwin-$arch"
+  binary="$dir/caocode-server-darwin-$arch"
   if [ ! -f "$binary" ]; then
     echo "No $binary: build it first (dart run tool/build_remote_server.dart)" >&2
     exit 1

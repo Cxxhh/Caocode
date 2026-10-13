@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/ide_notifications.dart';
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/update/update_controller.dart';
-import 'package:baocode/update/update_service.dart';
-import 'package:baocode/update/update_settings.dart';
-import 'package:baocode/update/version.dart';
+import 'package:caocode/ide/ide_notifications.dart';
+import 'package:caocode/l10n/l10n.dart';
+import 'package:caocode/update/update_controller.dart';
+import 'package:caocode/update/update_service.dart';
+import 'package:caocode/update/update_settings.dart';
+import 'package:caocode/update/version.dart';
 
 import 'update_fakes.dart';
 
@@ -76,7 +76,7 @@ void main() {
       make(manifest: manifestOf('1.2.0', notes: {'en': 'Fixes'}));
       await controller.checkNow(notifications, l10n);
       final offer = notifications.notifications.single;
-      expect(offer.message, l10n.updateAvailable('1.2.0'));
+      expect(offer.message, l10n.updateAvailable('1.2.0c'));
       expect(offer.sticky, isTrue);
       expect(labels(offer), [
         l10n.updateRestartNow,
@@ -85,7 +85,9 @@ void main() {
       ]);
       expect(offer.secondary.single.label, l10n.updateReleaseNotes);
       offer.secondary.single.run();
-      expect(opened, [Uri.parse('https://baocode.dev/changelog#v1.2.0')]);
+      expect(opened, [
+        Uri.parse('https://github.com/Cxxhh/Caocode/releases/tag/v1.2.0c'),
+      ]);
 
       offer.primary[2].run();
       expect(service.skippedVersion, '1.2.0');
@@ -96,11 +98,11 @@ void main() {
       final version = AppVersion.parse('1.2.0+13');
       expect(
         UpdateController.changelogUrl(version, 'zh'),
-        Uri.parse('https://baocode.dev/zh/changelog#v1.2.0'),
+        Uri.parse('https://github.com/Cxxhh/Caocode/releases/tag/v1.2.0c'),
       );
       expect(
         UpdateController.changelogUrl(version, 'en'),
-        Uri.parse('https://baocode.dev/changelog#v1.2.0'),
+        Uri.parse('https://github.com/Cxxhh/Caocode/releases/tag/v1.2.0c'),
       );
     });
 
@@ -109,7 +111,7 @@ void main() {
       await controller.checkNow(notifications, l10n);
       final offer = notifications.notifications.single;
       expect(offer.severity, IdeSeverity.warning);
-      expect(offer.message, l10n.updateMandatory('1.2.0'));
+      expect(offer.message, l10n.updateMandatory('1.2.0c'));
       expect(labels(offer), [l10n.updateRestartNow]);
       expect(offer.secondary, isEmpty, reason: 'no notes');
     });
@@ -140,14 +142,14 @@ void main() {
       expect(opened, [ManualUpdateRequired.downloadPage]);
       expect(
         '${ManualUpdateRequired.downloadPage}',
-        'https://baocode.dev/download',
+        'https://github.com/Cxxhh/Caocode/releases/latest',
       );
     });
 
     test('a download that fails its checks is told, not installed', () async {
       make(manifest: manifestOf('1.2.0'));
       backend.downloadError = const UpdateVerificationException(
-        'The download is not signed by BaoCode',
+        'The download is not signed by Caocode',
       );
       await controller.checkNow(notifications, l10n);
       notifications.clearAll();
@@ -167,7 +169,7 @@ void main() {
       await tester.pump();
       expect(
         notifications.notifications.single.message,
-        l10n.updateReady('1.2.0'),
+        l10n.updateReady('1.2.0c'),
       );
 
       // An install that would not start as the app quit.
@@ -200,7 +202,7 @@ void main() {
       await tester.pump(Duration.zero);
       final note = notifications.notifications.single;
       expect(note.severity, IdeSeverity.warning);
-      expect(note.message, l10n.updateUnfinished('1.2.0', '1.0.0'));
+      expect(note.message, l10n.updateUnfinished('1.2.0c', '1.0.0c'));
       expect(labels(note), [l10n.updateOpenDownloadPage, l10n.updateShowLog]);
       note.primary.first.run();
       expect(opened, [ManualUpdateRequired.downloadPage]);

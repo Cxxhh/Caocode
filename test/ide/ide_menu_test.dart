@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/ide_menu.dart';
+import 'package:caocode/ide/ide_menu.dart';
 
 final _panels = find.byWidgetPredicate(
   (widget) => widget.runtimeType.toString() == '_MenuPanel',

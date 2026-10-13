@@ -7,11 +7,11 @@ import '../l10n/l10n.dart';
 import '../workspace/workspace.dart';
 import 'feature_tip.dart';
 
-/// Asks the user, once, to star BaoCode on GitHub: when the agents have
+/// Asks the user, once, to star Caocode on GitHub: when the agents have
 /// answered them in [conversations] conversations, and they are not busy.
 /// A conversation counts when its agent ends a turn the user's message
 /// started (as AttentionService tells of a finished one), once each.
-/// Star BaoCode on GitHub, the command, asks any time.
+/// Star Caocode on GitHub, the command, asks any time.
 ///
 /// What it counted, and that it asked, is kept in the app's storage under
 /// [storageKey]; with the tips off ([enabled] false) it asks nothing by
@@ -37,7 +37,7 @@ class StarPrompt {
   static const conversations = 3;
 
   /// Where the ask takes the user.
-  static final repository = Uri.parse('https://github.com/baocode-dev/baocode');
+  static final repository = Uri.parse('https://github.com/Cxxhh/Caocode');
 
   final Workspace workspace;
   final TipStorage storage;

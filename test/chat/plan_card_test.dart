@@ -1,6 +1,6 @@
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/widgets/plan_card.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/widgets/plan_card.dart';
+import 'package:caocode/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart'
     show FlutterQuillLocalizations;

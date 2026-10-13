@@ -337,6 +337,11 @@ class ChatSession extends ChangeNotifier implements ChatFeed {
     _ => null,
   };
 
+  TogglesFastMode? get fastMode => switch (_kernel) {
+    final TogglesFastMode kernel => kernel,
+    _ => null,
+  };
+
   /// The settings that go with [model] (one of [models]' options), in
   /// the order they are picked in: only those with a choice to make.
   List<ModelSettingChoice> modelSettings(String model) => [

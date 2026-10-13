@@ -3,18 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/panels/activity_strip.dart';
-import 'package:baocode/chat/widgets/agent_step.dart';
-import 'package:baocode/chat/widgets/chat_item_view.dart';
-import 'package:baocode/chat/widgets/shell_highlight.dart';
-import 'package:baocode/chat/widgets/shimmer_text.dart';
-import 'package:baocode/chat/widgets/step_header.dart';
-import 'package:baocode/chat/widgets/wheel_latch.dart';
-import 'package:baocode/ide/terminal/terminal_colors.dart';
-import 'package:baocode/kernel/kernel_types.dart';
-import 'package:baocode/theme/app_theme.dart';
-import 'package:baocode/theme/workbench_theme.dart' show themeColors;
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/panels/activity_strip.dart';
+import 'package:caocode/chat/widgets/agent_step.dart';
+import 'package:caocode/chat/widgets/chat_item_view.dart';
+import 'package:caocode/chat/widgets/shell_highlight.dart';
+import 'package:caocode/chat/widgets/shimmer_text.dart';
+import 'package:caocode/chat/widgets/step_header.dart';
+import 'package:caocode/chat/widgets/wheel_latch.dart';
+import 'package:caocode/ide/terminal/terminal_colors.dart';
+import 'package:caocode/kernel/kernel_types.dart';
+import 'package:caocode/theme/app_theme.dart';
+import 'package:caocode/theme/workbench_theme.dart' show themeColors;
 
 /// [item] as the history shows it, opened or not; taps toggle it.
 Future<void> pumpStep(WidgetTester tester, ChatItem item) async {

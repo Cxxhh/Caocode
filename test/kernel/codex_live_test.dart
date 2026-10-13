@@ -1,16 +1,16 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/kernel/codex/codex_catalog.dart';
-import 'package:baocode/kernel/codex/codex_kernel.dart';
-import 'package:baocode/kernel/codex/codex_process_io.dart';
-import 'package:baocode/kernel/codex/codex_rpc.dart';
-import 'package:baocode/kernel/kernel_event.dart';
-import 'package:baocode/kernel/kernel_registry.dart';
-import 'package:baocode/kernel/kernel_types.dart';
-import 'package:baocode/search/codex_conversation_search.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/kernel/agent_kernel.dart';
+import 'package:caocode/kernel/codex/codex_catalog.dart';
+import 'package:caocode/kernel/codex/codex_kernel.dart';
+import 'package:caocode/kernel/codex/codex_process_io.dart';
+import 'package:caocode/kernel/codex/codex_rpc.dart';
+import 'package:caocode/kernel/kernel_event.dart';
+import 'package:caocode/kernel/kernel_registry.dart';
+import 'package:caocode/kernel/kernel_types.dart';
+import 'package:caocode/search/codex_conversation_search.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

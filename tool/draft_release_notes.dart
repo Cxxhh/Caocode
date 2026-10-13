@@ -57,7 +57,7 @@ void draftReleaseNotes(Directory root, String version) {
   }
   stdout
     ..writeln()
-    ..writeln('Rewrite them for the people who use BaoCode (the Chinese in')
+    ..writeln('Rewrite them for the people who use Caocode (the Chinese in')
     ..writeln('Chinese), then make the site\'s changelog from them:')
     ..writeln()
     ..writeln('  dart run tool/build_changelog.dart');

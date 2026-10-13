@@ -1,6 +1,6 @@
 // The IDE behind the ported debug service (lib/debug): its folders,
 // settings, editors, quick input and notifications. The adapters are
-// BaoCode's own (registered on the service's registry); no extension runs.
+// Caocode's own (registered on the service's registry); no extension runs.
 
 import 'dart:async';
 import 'dart:convert';

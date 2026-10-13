@@ -10,24 +10,24 @@ import 'package:bao_remote/client.dart';
 import 'package:bao_remote/files.dart' show IdeFileExistsException;
 import 'package:bao_remote/local.dart' show ClaudeEnvironment, CliLocator;
 import 'package:bao_remote/server.dart' show ServerClaude;
-import 'package:baocode/chat/panels/health_banner.dart';
-import 'package:baocode/ide/git/git_model.dart' show IdeGitGroup;
-import 'package:baocode/ide/ide_quick_input.dart';
-import 'package:baocode/ide/lsp/lsp_manager.dart';
-import 'package:baocode/ide/lsp/language_features.dart';
-import 'package:baocode/ide/lsp/lsp_server_definition.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/kernel/claude_code/claude_code_transport.dart';
-import 'package:baocode/kernel/mock/mock_kernels.dart';
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/remote/open_remote.dart';
-import 'package:baocode/remote/project_host.dart';
-import 'package:baocode/remote/remote_claude.dart';
-import 'package:baocode/remote/remote_location.dart';
-import 'package:baocode/remote/remote_services.dart';
-import 'package:baocode/remote/remote_status.dart';
-import 'package:baocode/remote/ssh_host.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:caocode/chat/panels/health_banner.dart';
+import 'package:caocode/ide/git/git_model.dart' show IdeGitGroup;
+import 'package:caocode/ide/ide_quick_input.dart';
+import 'package:caocode/ide/lsp/lsp_manager.dart';
+import 'package:caocode/ide/lsp/language_features.dart';
+import 'package:caocode/ide/lsp/lsp_server_definition.dart';
+import 'package:caocode/kernel/agent_kernel.dart';
+import 'package:caocode/kernel/claude_code/claude_code_transport.dart';
+import 'package:caocode/kernel/mock/mock_kernels.dart';
+import 'package:caocode/l10n/l10n.dart';
+import 'package:caocode/remote/open_remote.dart';
+import 'package:caocode/remote/project_host.dart';
+import 'package:caocode/remote/remote_claude.dart';
+import 'package:caocode/remote/remote_location.dart';
+import 'package:caocode/remote/remote_services.dart';
+import 'package:caocode/remote/remote_status.dart';
+import 'package:caocode/remote/ssh_host.dart';
+import 'package:caocode/workspace/workspace.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -48,8 +48,8 @@ void main() {
   final previous = SshHosts.instance;
 
   setUp(() {
-    dataDir = Directory.systemTemp.createTempSync('baocode-remote-data-');
-    project = Directory.systemTemp.createTempSync('baocode-remote-project-');
+    dataDir = Directory.systemTemp.createTempSync('caocode-remote-data-');
+    project = Directory.systemTemp.createTempSync('caocode-remote-project-');
     root = project.resolveSymbolicLinksSync();
     connector = MemoryConnector(dataDir.path);
     hosts = SshHosts.instance = SshHosts(connect: connector.call);
@@ -235,8 +235,8 @@ void main() {
 
       connector.failure = const SshConnectException(
         SshFailure.server,
-        'The BaoCode server for Linux x64 could not be downloaded',
-        detail: 'https://dl.baocode.dev/x.gz: HTTP 404',
+        'The Caocode server for Linux x64 could not be downloaded',
+        detail: 'https://dl.caocode.dev/x.gz: HTTP 404',
       );
       await tester.runAsync(
         () => hosts['dev'].ready.then((_) {}, onError: (_) {}),
@@ -245,14 +245,14 @@ void main() {
       expect(
         find.text(
           'Could not connect to dev: '
-          'The BaoCode server for Linux x64 could not be downloaded',
+          'The Caocode server for Linux x64 could not be downloaded',
         ),
         findsOneWidget,
       );
       await tester.tap(find.text('Details'));
       await tester.pump();
       expect(
-        find.text('https://dl.baocode.dev/x.gz: HTTP 404'),
+        find.text('https://dl.caocode.dev/x.gz: HTTP 404'),
         findsOneWidget,
       );
 
@@ -423,7 +423,7 @@ void main() {
     late Directory config;
 
     setUp(() {
-      home = Directory.systemTemp.createTempSync('baocode-remote-home-');
+      home = Directory.systemTemp.createTempSync('caocode-remote-home-');
       config = Directory(p.join(home.path, '.claude'))..createSync();
       fake = File(p.join(home.path, 'fake-claude'))
         ..writeAsStringSync(r'''#!/bin/sh
@@ -447,8 +447,8 @@ printf '%s\n' "$line"
       final environment = {
         'PATH': '/usr/bin:/bin',
         'HOME': home.path,
-        'BAOCODE_CLAUDE_PATH': fake.path,
-        'BAOCODE_CLAUDE_DATA_PATH': config.path,
+        'CAOCODE_CLAUDE_PATH': fake.path,
+        'CAOCODE_CLAUDE_DATA_PATH': config.path,
         'CLAUDE_CONFIG_DIR': config.path,
       };
       CliLocator.use(environment);
@@ -564,12 +564,12 @@ printf '%s\n' "$line"
       },
     );
 
-    test('a build named by BAOCODE_CLAUDE_PATH that is not there: says '
+    test('a build named by CAOCODE_CLAUDE_PATH that is not there: says '
         'so, nothing installed instead', () async {
       final environment = {
         'PATH': '/usr/bin:/bin',
         'HOME': home.path,
-        'BAOCODE_CLAUDE_PATH': p.join(home.path, 'missing'),
+        'CAOCODE_CLAUDE_PATH': p.join(home.path, 'missing'),
       };
       CliLocator.use(environment);
       ClaudeEnvironment.use(environment);

@@ -2,25 +2,29 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/kernel/codex/ask_codex.dart';
-import 'package:baocode/kernel/codex/codex_choices.dart';
-import 'package:baocode/kernel/codex/codex_kernel.dart';
-import 'package:baocode/kernel/codex/codex_process_io.dart';
-import 'package:baocode/kernel/codex/codex_rpc.dart';
-import 'package:baocode/kernel/codex/codex_transport.dart';
-import 'package:baocode/kernel/kernel_event.dart';
-import 'package:baocode/kernel/kernel_registry.dart';
-import 'package:baocode/kernel/kernel_types.dart';
-import 'package:baocode/kernel/transcript.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/chat_session.dart';
+import 'package:caocode/kernel/agent_kernel.dart';
+import 'package:caocode/kernel/codex/ask_codex.dart';
+import 'package:caocode/kernel/codex/codex_choices.dart';
+import 'package:caocode/kernel/codex/codex_kernel.dart';
+import 'package:caocode/kernel/codex/codex_process_io.dart';
+import 'package:caocode/kernel/codex/codex_rpc.dart';
+import 'package:caocode/kernel/codex/codex_transport.dart';
+import 'package:caocode/kernel/kernel_event.dart';
+import 'package:caocode/kernel/kernel_registry.dart';
+import 'package:caocode/kernel/kernel_types.dart';
+import 'package:caocode/kernel/transcript.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class Server implements CodexTransport {
   final output = StreamController<Map<String, Object?>>.broadcast(sync: true);
   final List<Map<String, Object?>> calls = [];
   String? reject;
+  int rejectCode = -32602;
+  String? serviceTier;
+  String? modelProvider;
+  bool experimentalApi = false;
   List<Map<String, Object?>>? savedTurns;
   List<Map<String, Object?>>? models;
   Map<String, Object?> config = {};
@@ -40,10 +44,26 @@ class Server implements CodexTransport {
   void write(Map<String, Object?> message) {
     calls.add(message);
     if (!message.containsKey('method') || !message.containsKey('id')) return;
+    if (message['method'] == 'initialize') {
+      final params = message['params'] as Map;
+      experimentalApi =
+          (params['capabilities'] as Map?)?['experimentalApi'] == true;
+    }
+    if (message['method'] == 'thread/settings/update' && !experimentalApi) {
+      output.add({
+        'id': message['id'],
+        'error': {
+          'code': -32600,
+          'message':
+              'thread/settings/update requires experimentalApi capability',
+        },
+      });
+      return;
+    }
     if (message['method'] == reject) {
       output.add({
         'id': message['id'],
-        'error': {'code': -32602, 'message': 'request rejected'},
+        'error': {'code': rejectCode, 'message': 'request rejected'},
       });
       return;
     }
@@ -57,9 +77,12 @@ class Server implements CodexTransport {
       },
       'config/read' => {'config': config},
       'thread/start' => {
+        'modelProvider': ?modelProvider,
         'thread': {'id': 'thread', 'cwd': '/project'},
       },
       'thread/resume' => {
+        'modelProvider': ?modelProvider,
+        'serviceTier': ?serviceTier,
         'thread': {
           'id': 'saved',
           'turns':
@@ -119,6 +142,401 @@ void main() {
     kernel.events.listen(events.add);
   });
   tearDown(() => kernel.dispose());
+
+  for (final entry in [
+    (
+      name: 'Priority name with whitespace',
+      metadata: <String, Object?>{
+        'serviceTiers': [
+          {'id': 'custom-fast', 'name': ' Priority '},
+        ],
+      },
+      tier: 'custom-fast',
+    ),
+    (
+      name: 'legacy tiers alongside an empty new list',
+      metadata: <String, Object?>{
+        'serviceTiers': <Object>[],
+        'additionalSpeedTiers': ['fast'],
+      },
+      tier: 'fast',
+    ),
+  ]) {
+    test('Fast recognizes ${entry.name}', () async {
+      server.models = [
+        {'model': 'custom-model', 'isDefault': true, ...entry.metadata},
+      ];
+      kernel.prepare();
+      await pumpEventQueue();
+      expect(kernel.fastAvailable, true);
+      await kernel.setFastMode(true);
+      kernel.send(const KernelTurn(id: 'one', text: 'hello'));
+      await pumpEventQueue();
+      expect((server.calls.last['params'] as Map)['serviceTier'], entry.tier);
+    });
+  }
+
+  test('Fast remains off when the CLI feature is disabled', () async {
+    server.config = {
+      'model_provider': 'custom',
+      'features': {'fast_mode': false},
+    };
+    server.models = [
+      {
+        'model': 'custom-model',
+        'isDefault': true,
+        'serviceTiers': <Object>[],
+        'additionalSpeedTiers': <Object>[],
+      },
+    ];
+    kernel.prepare();
+    await pumpEventQueue();
+    expect(kernel.fastAvailable, false);
+    await kernel.setFastMode(true);
+    expect(kernel.fastEnabled, false);
+    expect(
+      server.calls.where((call) => call['method'] == 'turn/start'),
+      isEmpty,
+    );
+  });
+
+  for (final providers in [
+    (configured: 'custom', reported: 'custom'),
+    (configured: 'openai', reported: 'custom'),
+    (configured: 'custom', reported: 'openai'),
+  ]) {
+    test('resumed custom-provider Fast with empty tiers follows model picks '
+        '(${providers.configured}/${providers.reported})', () async {
+      kernel.dispose();
+      server = Server();
+      server.serviceTier = 'fast';
+      server.modelProvider = providers.reported;
+      server.config = {
+        'model_provider': providers.configured,
+        'service_tier': 'fast',
+      };
+      server.models = [
+        for (final id in ['gpt-6.1-sol', 'gpt-6-sol', 'gpt-5.6-sol'])
+          {
+            'model': id,
+            'isDefault': id == 'gpt-6-sol',
+            'serviceTiers': <Object>[],
+            'additionalSpeedTiers': <Object>[],
+            'supportedReasoningEfforts': [
+              {'reasoningEffort': 'high'},
+            ],
+          },
+      ];
+      kernel = CodexKernel(
+        KernelRegistry.codex,
+        server,
+        context: KernelContext(
+          cwd: '/project',
+          resume: SessionRecord(
+            id: 'saved',
+            title: 'Saved',
+            updatedAt: DateTime(2026),
+            cwd: '/project',
+          ),
+          settings: const {'model': 'gpt-5.6-sol'},
+        ),
+      );
+      kernel.prepare();
+      await pumpEventQueue();
+      expect(kernel.fastAvailable, true);
+      expect(kernel.fastEnabled, true);
+      await kernel.setFastMode(false);
+      expect(kernel.fastEnabled, false);
+      expect(kernel.fastAvailable, true);
+
+      for (final id in ['gpt-6.1-sol', 'gpt-6-sol', 'gpt-5.6-sol']) {
+        kernel.model.select(id);
+        expect(kernel.fastAvailable, true);
+        await kernel.setFastMode(true);
+        expect(kernel.fastEnabled, true);
+        expect(server.calls.last['method'], 'thread/settings/update');
+        expect(server.calls.last['params'], {
+          'threadId': 'saved',
+          'model': id,
+          'effort': 'high',
+          'serviceTier': 'fast',
+        });
+        await kernel.setFastMode(false);
+        expect(kernel.fastEnabled, false);
+        expect(kernel.fastAvailable, true);
+      }
+      expect(
+        server.calls.where((call) => call['method'] == 'turn/start'),
+        isEmpty,
+      );
+      kernel.send(const KernelTurn(id: 'one', text: 'next message'));
+      await pumpEventQueue();
+      final turn = server.calls.last['params'] as Map;
+      expect(turn['model'], 'gpt-5.6-sol');
+      expect(turn['serviceTier'], 'default');
+    });
+  }
+
+  test('custom-provider fallback honors explicit non-Fast tiers', () async {
+    server.config = {'model_provider': 'custom'};
+    server.models = [
+      {
+        'model': 'custom-model',
+        'isDefault': true,
+        'serviceTiers': [
+          {'id': 'flex', 'name': 'Flex'},
+        ],
+        'additionalSpeedTiers': <Object>[],
+      },
+    ];
+    kernel.prepare();
+    await pumpEventQueue();
+    expect(kernel.fastAvailable, false);
+  });
+
+  test(
+    'toolbar Fast changes take effect without creating a chat turn',
+    () async {
+      await kernel.setFastMode(true);
+      expect(kernel.fastEnabled, true);
+      expect(kernel.fastChanging, false);
+      expect(events.whereType<TurnStarted>(), isEmpty);
+      expect(events.whereType<ItemUpserted>(), isEmpty);
+      expect(
+        server.calls.where((call) => call['method'] == 'turn/start'),
+        isEmpty,
+      );
+      kernel.send(const KernelTurn(id: 'one', text: 'hello'));
+      await pumpEventQueue();
+      expect((server.calls.last['params'] as Map)['serviceTier'], 'fast');
+    },
+  );
+
+  test(
+    'Send waits for a toolbar change and duplicate picks do not race',
+    () async {
+      kernel.send(const KernelTurn(id: 'one', text: 'hello'));
+      await pumpEventQueue();
+      server.notify('turn/completed', {
+        'turn': {'id': 'server-1', 'status': 'completed'},
+      });
+      server.delayed.add('thread/settings/update');
+      final changing = kernel.setFastMode(true);
+      await pumpEventQueue();
+      expect(kernel.fastChanging, true);
+      await kernel.setFastMode(true);
+      kernel.send(const KernelTurn(id: 'two', text: 'next'));
+      await pumpEventQueue();
+      expect(server.turns, 1);
+      expect(server.delayedReplies.length, 1);
+      server.output.add(server.delayedReplies.removeAt(0));
+      await changing;
+      await pumpEventQueue();
+      expect(kernel.fastChanging, false);
+      expect(server.turns, 2);
+      expect((server.calls.last['params'] as Map)['serviceTier'], 'fast');
+    },
+  );
+
+  test(
+    'rejected toolbar changes retain the old state and remain usable',
+    () async {
+      kernel.send(const KernelTurn(id: 'one', text: 'hello'));
+      await pumpEventQueue();
+      server.notify('turn/completed', {
+        'turn': {'id': 'server-1', 'status': 'completed'},
+      });
+      server.reject = 'thread/settings/update';
+      await kernel.setFastMode(true);
+      expect(kernel.fastEnabled, false);
+      expect(kernel.fastChanging, false);
+      expect(kernel.health.status, KernelHealthStatus.ready);
+      expect(events.whereType<TurnStarted>(), hasLength(1));
+      expect(events.whereType<ItemUpserted>().last.item, isA<NoticeItem>());
+      kernel.send(const KernelTurn(id: 'two', text: 'still usable'));
+      await pumpEventQueue();
+      expect(server.turns, 2);
+    },
+  );
+
+  test(
+    'Fast commands are local and apply fast/default to subsequent turns',
+    () async {
+      kernel.send(const KernelTurn(id: 'fast-on', text: '/Fast on'));
+      await pumpEventQueue();
+      expect(kernel.fastEnabled, true);
+      expect(server.calls.where((c) => c['method'] == 'turn/start'), isEmpty);
+      expect(server.calls.where((c) => c['method'] == 'thread/start'), isEmpty);
+      expect(events.whereType<TurnEnded>().last.turnId, 'fast-on');
+      kernel.send(const KernelTurn(id: 'one', text: 'hello'));
+      await pumpEventQueue();
+      expect((server.calls.last['params'] as Map)['serviceTier'], 'fast');
+      server.notify('turn/completed', {
+        'turn': {'id': 'server-1', 'status': 'completed'},
+      });
+      kernel.send(const KernelTurn(id: 'fast-off', text: '/FAST OFF'));
+      await pumpEventQueue();
+      expect(kernel.fastEnabled, false);
+      final update = server.calls.last;
+      expect(update['method'], 'thread/settings/update');
+      expect((update['params'] as Map)['serviceTier'], 'default');
+      kernel.send(const KernelTurn(id: 'two', text: 'next'));
+      await pumpEventQueue();
+      expect((server.calls.last['params'] as Map)['serviceTier'], 'default');
+    },
+  );
+
+  test(
+    'Fast status and invalid arguments do not start inference or change state',
+    () async {
+      server.config = {'service_tier': 'fast'};
+      for (final text in ['/fast', '/fast invalid', '/fast on extra']) {
+        kernel.send(KernelTurn(id: text, text: text));
+        await pumpEventQueue();
+        expect(kernel.fastEnabled, true);
+      }
+      expect(server.calls.where((c) => c['method'] == 'turn/start'), isEmpty);
+      kernel.send(const KernelTurn(id: 'off', text: '/fast off'));
+      await pumpEventQueue();
+      expect(kernel.fastEnabled, false);
+      kernel.send(const KernelTurn(id: 'one', text: 'hello'));
+      await pumpEventQueue();
+      expect((server.calls.last['params'] as Map)['serviceTier'], 'default');
+    },
+  );
+
+  test(
+    'Fast respects advertised model tiers and uses the catalog tier ID',
+    () async {
+      server.models = [
+        {'model': 'standard', 'isDefault': true, 'serviceTiers': <Object>[]},
+        {
+          'model': 'speedy',
+          'serviceTiers': [
+            {'id': 'priority', 'name': 'Fast'},
+          ],
+        },
+      ];
+      kernel.send(const KernelTurn(id: 'unsupported', text: '/fast on'));
+      await pumpEventQueue();
+      expect(kernel.fastEnabled, false);
+      kernel.model.select('speedy');
+      kernel.send(const KernelTurn(id: 'supported', text: '/fast on'));
+      await pumpEventQueue();
+      expect(kernel.fastEnabled, true);
+      kernel.send(const KernelTurn(id: 'one', text: 'hello'));
+      await pumpEventQueue();
+      expect((server.calls.last['params'] as Map)['serviceTier'], 'priority');
+      server.notify('turn/completed', {
+        'turn': {'id': 'server-1', 'status': 'completed'},
+      });
+      kernel.model.select('standard');
+      expect(kernel.fastEnabled, false);
+      kernel.send(const KernelTurn(id: 'two', text: 'standard model'));
+      await pumpEventQueue();
+      expect((server.calls.last['params'] as Map)['serviceTier'], 'default');
+    },
+  );
+
+  test('older CLIs apply Fast through turn/start when settings update is unavailable', () async {
+    kernel.send(const KernelTurn(id: 'one', text: 'hello'));
+    await pumpEventQueue();
+    server.notify('turn/completed', {
+      'turn': {'id': 'server-1', 'status': 'completed'},
+    });
+    server.reject = 'thread/settings/update';
+    server.rejectCode = -32601;
+    kernel.send(const KernelTurn(id: 'fast-on', text: '/fast on'));
+    await pumpEventQueue();
+    expect(kernel.fastEnabled, true);
+    kernel.send(const KernelTurn(id: 'two', text: 'next'));
+    await pumpEventQueue();
+    expect((server.calls.last['params'] as Map)['serviceTier'], 'fast');
+  });
+
+  test(
+    'Fast reads resumed state and preserves an explicit off across reconnects',
+    () async {
+      kernel.dispose();
+      server = Server()..serviceTier = 'priority';
+      final nextServer = Server();
+      kernel = CodexKernel(
+        KernelRegistry.codex,
+        server,
+        context: KernelContext(
+          resume: SessionRecord(
+            id: 'saved',
+            title: 'Saved',
+            updatedAt: DateTime(2026),
+            cwd: '/project',
+          ),
+        ),
+        reconnect: () => nextServer,
+      );
+      kernel.prepare();
+      await pumpEventQueue();
+      expect(kernel.fastEnabled, true);
+      kernel.send(const KernelTurn(id: 'off', text: '/fast off'));
+      await pumpEventQueue();
+      kernel.release();
+      await kernel.stopped;
+      kernel.prepare();
+      await pumpEventQueue();
+      expect(kernel.fastEnabled, false);
+      final resumed = nextServer.calls.singleWhere(
+        (call) => call['method'] == 'thread/resume',
+      );
+      expect((resumed['params'] as Map)['serviceTier'], 'default');
+    },
+  );
+
+  test(
+    'rejected Fast changes preserve the previous state and healthy session',
+    () async {
+      kernel.send(const KernelTurn(id: 'one', text: 'hello'));
+      await pumpEventQueue();
+      server.notify('turn/completed', {
+        'turn': {'id': 'server-1', 'status': 'completed'},
+      });
+      server.reject = 'thread/settings/update';
+      kernel.send(const KernelTurn(id: 'fast-on', text: '/fast on'));
+      await pumpEventQueue();
+      expect(kernel.fastEnabled, false);
+      expect(kernel.health.status, KernelHealthStatus.ready);
+      expect(events.whereType<TurnEnded>().last.turnId, 'fast-on');
+    },
+  );
+
+  test(
+    'a model change during a Fast update does not carry an unsupported tier',
+    () async {
+      server.models = [
+        {
+          'model': 'speedy',
+          'isDefault': true,
+          'serviceTiers': [
+            {'id': 'fast', 'name': 'Fast'},
+          ],
+        },
+        {'model': 'standard', 'serviceTiers': <Object>[]},
+      ];
+      kernel.send(const KernelTurn(id: 'one', text: 'hello'));
+      await pumpEventQueue();
+      server.notify('turn/completed', {
+        'turn': {'id': 'server-1', 'status': 'completed'},
+      });
+      server.delayed.add('thread/settings/update');
+      final changing = kernel.setFastMode(true);
+      await pumpEventQueue();
+      kernel.model.select('standard');
+      server.output.add(server.delayedReplies.removeAt(0));
+      await changing;
+      expect(kernel.fastEnabled, false);
+      kernel.send(const KernelTurn(id: 'two', text: 'standard'));
+      await pumpEventQueue();
+      expect((server.calls.last['params'] as Map)['serviceTier'], 'default');
+    },
+  );
 
   test(
     'initialization is shared and respects the CLI default model and cwd',

@@ -29,7 +29,7 @@ import 'settings_widgets.dart';
 /// agents write credit (`chat.commitAttribution` in settings.json), whether
 /// the app sends its usage data (`telemetry.telemetryLevel`), the
 /// Claude Code to run (`claudeCode.path`), the `code` shell command, and
-/// Open with BaoCode in Finder's or Explorer's context menu. A choice is
+/// Open with Caocode in Finder's or Explorer's context menu. A choice is
 /// written at once; the default is not written.
 class GeneralSettingsPage extends StatelessWidget {
   const GeneralSettingsPage({
@@ -52,7 +52,7 @@ class GeneralSettingsPage extends StatelessWidget {
   static String attributionName(BuildContext context, CommitAttribution value) {
     final l10n = context.l10n;
     return switch (value) {
-      CommitAttribution.baocode => 'BaoCode',
+      CommitAttribution.caocode => 'Caocode',
       CommitAttribution.agent => l10n.generalSettingsAttributionAgent,
       CommitAttribution.none => l10n.generalSettingsAttributionNone,
     };
@@ -64,7 +64,7 @@ class GeneralSettingsPage extends StatelessWidget {
   ) {
     final l10n = context.l10n;
     return switch (value) {
-      CommitAttribution.baocode => CommitAttribution.baoCodeCommit,
+      CommitAttribution.caocode => CommitAttribution.baoCodeCommit,
       CommitAttribution.agent => l10n.generalSettingsAttributionAgentDetail,
       CommitAttribution.none => l10n.generalSettingsAttributionNoneDetail,
     };
@@ -264,7 +264,7 @@ class GeneralSettingsPage extends StatelessWidget {
                   below: [
                     SelectableText(
                       detail,
-                      style: current == CommitAttribution.baocode
+                      style: current == CommitAttribution.caocode
                           ? SettingsText.path
                           : SettingsText.description,
                     ),
@@ -423,7 +423,7 @@ class _ShellCommandSettingState extends State<_ShellCommandSetting> {
   }
 }
 
-/// Whether Open with BaoCode and Open with Fast Ide are in the system's
+/// Whether Open with Caocode and Open with Fast Ide are in the system's
 /// context menu (see ContextMenu), and the buttons to turn them on or off
 /// (and, on macOS, System Settings' extensions); what failed, under them.
 class _ContextMenuSetting extends StatefulWidget {
@@ -515,7 +515,7 @@ class _ContextMenuSettingState extends State<_ContextMenuSetting> {
                 ? () => unawaited(
                     _run(
                       () => ContextMenu.install((
-                        agent: l10n.contextMenuOpenWith('BaoCode'),
+                        agent: l10n.contextMenuOpenWith('Caocode'),
                         ide: l10n.contextMenuOpenWith('Fast Ide'),
                       )),
                     ),

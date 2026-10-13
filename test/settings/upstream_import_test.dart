@@ -2,18 +2,18 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:baocode/theme/codicons.dart';
-import 'package:baocode/l10n/app_localizations.dart';
-import 'package:baocode/models/featured_upstreams.dart';
-import 'package:baocode/models/model_icons.dart';
-import 'package:baocode/models/model_provider.dart';
-import 'package:baocode/models/model_providers.dart';
-import 'package:baocode/models/secret_store.dart';
-import 'package:baocode/models/upstream.dart';
-import 'package:baocode/models/upstream_import.dart';
-import 'package:baocode/settings/pages/featured_upstreams_strip.dart';
-import 'package:baocode/settings/pages/models_page.dart';
-import 'package:baocode/settings/pages/upstream_import_dialog.dart';
+import 'package:caocode/theme/codicons.dart';
+import 'package:caocode/l10n/app_localizations.dart';
+import 'package:caocode/models/featured_upstreams.dart';
+import 'package:caocode/models/model_icons.dart';
+import 'package:caocode/models/model_provider.dart';
+import 'package:caocode/models/model_providers.dart';
+import 'package:caocode/models/secret_store.dart';
+import 'package:caocode/models/upstream.dart';
+import 'package:caocode/models/upstream_import.dart';
+import 'package:caocode/settings/pages/featured_upstreams_strip.dart';
+import 'package:caocode/settings/pages/models_page.dart';
+import 'package:caocode/settings/pages/upstream_import_dialog.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -114,7 +114,7 @@ void main() {
       expect(find.text('alpha.example.com'), findsNothing);
 
       // Why they show, at a click, not a hover.
-      const why = 'These sites are officially listed by BaoCode';
+      const why = 'These sites are officially listed by Caocode';
       await gesture.moveTo(
         tester.getCenter(find.text('Why am I seeing this?')),
       );
@@ -127,7 +127,7 @@ void main() {
       expect(find.text(why), findsNothing);
       await click(find.text('Why am I seeing this?'));
       await click(find.text('List My Site Too'));
-      expect(opened.last, Uri.parse('https://baocode.dev/upstreams'));
+      expect(opened.last, Uri.parse('https://caocode.dev/upstreams'));
       expect(find.text(why), findsNothing);
     });
 
@@ -220,7 +220,7 @@ void main() {
     });
 
     testWidgets('Settings → Models shows the list kept at once, the new one '
-        'as baocode.dev answers, a site of theirs then leading', (
+        'as caocode.dev answers, a site of theirs then leading', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(1000, 1400);
@@ -497,7 +497,7 @@ void main() {
     }
 
     const link =
-        'baocode://provider/import?v=1&name=Alpha&protocol=anthropic'
+        'caocode://provider/import?v=1&name=Alpha&protocol=anthropic'
         '&url=https%3A%2F%2Fapi.alpha.example.com&key=sk-alpha-1234567890';
 
     testWidgets('nothing is added unless the user says yes', (tester) async {
@@ -524,7 +524,7 @@ void main() {
       );
       await tester.tap(find.text('go'));
       await tester.pumpAndSettle();
-      // As BaoCode lists the site.
+      // As Caocode lists the site.
       expect(find.text('Alpha API'), findsOneWidget);
       expect(find.text('Officially listed'), findsOneWidget);
       expect(find.text('Alpha API, cheaply'), findsOneWidget);
@@ -564,7 +564,7 @@ void main() {
               onPressed: () => showUpstreamImportDialog(
                 context,
                 UpstreamImport.parse(
-                  'baocode://provider/import?v=1&protocol=anthropic'
+                  'caocode://provider/import?v=1&protocol=anthropic'
                   '&url=https%3A%2F%2Fapi.gamma.example.com%2Fv1&name=Gamma',
                 )!,
                 providers: providers,

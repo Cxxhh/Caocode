@@ -9,12 +9,12 @@
 // is not upstream.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/terminal/shell_integration/capabilities/capabilities.dart';
-import 'package:baocode/ide/terminal/shell_integration/capabilities/command_detection/terminal_command.dart';
-import 'package:baocode/ide/terminal/shell_integration/decoration_styles.dart';
-import 'package:baocode/ide/terminal/terminal_colors.dart';
+import 'package:caocode/ide/terminal/shell_integration/capabilities/capabilities.dart';
+import 'package:caocode/ide/terminal/shell_integration/capabilities/command_detection/terminal_command.dart';
+import 'package:caocode/ide/terminal/shell_integration/decoration_styles.dart';
+import 'package:caocode/ide/terminal/terminal_colors.dart';
 import 'package:bao_xterm/headless/terminal.dart';
-import 'package:baocode/theme/codicons.dart';
+import 'package:caocode/theme/codicons.dart';
 
 import 'shell_integration_test_helpers.dart';
 

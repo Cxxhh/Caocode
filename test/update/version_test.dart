@@ -1,12 +1,20 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/update/version.dart';
+import 'package:caocode/update/version.dart';
 
 AppVersion v(String text) => AppVersion.parse(text);
 
 void main() {
   group('AppVersion', () {
+    test('labels the Codex edition without changing numeric comparisons', () {
+      final version = v('1.1.0+12');
+      expect(version.display, '1.1.0c');
+      expect(version.releaseTag, 'v1.1.0c');
+      expect('$version', '1.1.0+12');
+      expect(version > v('1.1.0+11'), isTrue);
+      expect(v('1.2.0-beta.1+13').display, '1.2.0c-beta.1');
+    });
     test('reads pubspec.yaml\'s form', () {
       final version = v('1.2.3+45');
       expect(

@@ -8,7 +8,7 @@ import 'process_transport_stub.dart'
 Future<ClaudeCodeTransport> startClaudeProcess(ClaudeLaunch launch) =>
     platform.ProcessTransport.start(launch);
 
-/// [executable], run locally, refused an option BaoCode starts it with:
+/// [executable], run locally, refused an option Caocode starts it with:
 /// whether another, newer, may be run instead (one downloaded for it, if
 /// need be); false on the web.
 Future<bool> rejectTooOldClaudeProcess(String executable) =>

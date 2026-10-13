@@ -1,7 +1,8 @@
 param(
     [ValidateSet('Release', 'Debug')][string]$Mode = 'Release',
     [string]$FlutterSdk = (Join-Path $env:USERPROFILE 'develop\flutter-3.47.5'),
-    [switch]$DoctorOnly
+    [switch]$DoctorOnly,
+    [switch]$Installer
 )
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
@@ -24,12 +25,27 @@ if ($DoctorOnly) {
     if ($LASTEXITCODE -ne 0) { throw 'Flutter 环境检查失败' }
     exit 0
 }
+$displayVersion = $null
+if ($Installer) {
+    if ($Mode -ne 'Release') { throw '安装包仅支持 Release 编译' }
+    $pubspec = Get-Content -LiteralPath (Join-Path $root 'pubspec.yaml') -Raw -Encoding UTF8
+    if ($pubspec -notmatch '(?m)^version:\s*(\d+\.\d+\.\d+)\+(\d+)\s*$') {
+        throw '无法读取安装包版本'
+    }
+    $appVersion = $Matches[1] + '+' + $Matches[2]
+    $displayVersion = $Matches[1] + 'c'
+    $env:CAOCODE_BUNDLE_OUTPUT = Join-Path $root "build\windows\x64\runner\Package\$displayVersion"
+}
 . (Join-Path $PSScriptRoot 'flutter-tools.ps1')
 Invoke-CaocodePubGet $flutter $root
 & (Join-Path $PSScriptRoot 'cache-windows-sdk.ps1') -FlutterSdk $FlutterSdk
 & $flutter build windows ('--' + $Mode.ToLowerInvariant())
 if ($LASTEXITCODE -ne 0) { throw 'Windows 编译失败' }
-$bundle = Join-Path $root "build\windows\x64\runner\$Mode"
+$bundle = if ($Installer) {
+    Join-Path $env:CAOCODE_BUNDLE_OUTPUT $Mode
+} else {
+    Join-Path $root "build\windows\x64\runner\$Mode"
+}
 if ($Mode -eq 'Release') {
     $engine = Join-Path $bundle 'flutter_windows.dll'
     $stockHash = (Get-FileHash -LiteralPath $engine -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -50,3 +66,19 @@ foreach ($relative in @([IO.Path]::GetFileName($executable), 'flutter_windows.dl
     if (-not (Test-Path -LiteralPath (Join-Path $bundle $relative))) { throw "编译产物缺失：$relative" }
 }
 Write-Output "编译完成：$executable"
+if ($Installer) {
+    $candidates = @(
+        (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe'),
+        (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'),
+        (Join-Path $env:ProgramFiles 'Inno Setup 6\ISCC.exe')
+    )
+    $iscc = $candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+    if (-not $iscc) { throw '请先安装 Inno Setup 6' }
+    $outDir = Join-Path $root 'build\installers'
+    [void][IO.Directory]::CreateDirectory($outDir)
+    & $iscc "/DBundleDir=$bundle" "/DAppVersion=$appVersion" "/DOutDir=$outDir" (Join-Path $root 'tool\caocode.iss')
+    if ($LASTEXITCODE -ne 0) { throw 'Windows 安装包编译失败' }
+    $package = Join-Path $outDir "Caocode-$displayVersion-setup.exe"
+    if (-not (Test-Path -LiteralPath $package)) { throw '安装包产物缺失' }
+    Write-Output "安装包完成：$package"
+}

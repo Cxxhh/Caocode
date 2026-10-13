@@ -1,4 +1,4 @@
-import 'package:baocode/ide/git/git_service.dart';
+import 'package:caocode/ide/git/git_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 

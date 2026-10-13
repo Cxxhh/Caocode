@@ -42,7 +42,7 @@ if (process.argv.length > 4) throw new Error('Usage: node --experimental-transfo
 async function download(path) {
   for (let attempt = 1; ; attempt++) {
     try {
-      const response = await fetch(path.startsWith('https:') ? path : source + path, { headers: { 'User-Agent': 'baocode-textmate-fixtures' } });
+      const response = await fetch(path.startsWith('https:') ? path : source + path, { headers: { 'User-Agent': 'caocode-textmate-fixtures' } });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return Buffer.from(await response.arrayBuffer());
     } catch (error) {
@@ -52,7 +52,7 @@ async function download(path) {
   }
 }
 
-const temporary = await mkdtemp(join(tmpdir(), 'baocode-textmate-fixtures-'));
+const temporary = await mkdtemp(join(tmpdir(), 'caocode-textmate-fixtures-'));
 try {
   // --- Pinned engine, installed outside the repository ---
   await writeFile(join(temporary, 'package.json'), '{"private":true,"type":"module"}');
@@ -467,7 +467,7 @@ try {
   const themes = [];
   await rm(join(fixtures, 'themes'), { recursive: true, force: true });
   await mkdir(join(fixtures, 'themes'), { recursive: true });
-  // VS Code's themes; BaoCode's own (generate_textmate_assets.mjs `localThemes`)
+  // VS Code's themes; Caocode's own (generate_textmate_assets.mjs `localThemes`)
   // have no upstream to match.
   for (const contribution of manifest.themes.filter(theme => theme.extension !== 'theme-bao')) {
     if (/[\\/:*?"<>|]/.test(contribution.id)) throw new Error(`Theme id ${contribution.id} is not a portable file name`);

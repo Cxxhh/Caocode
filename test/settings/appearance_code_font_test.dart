@@ -1,13 +1,13 @@
 import 'package:bao_editor/monaco/flutter/editor_surface.dart';
-import 'package:baocode/chat/user_message_style.dart';
-import 'package:baocode/chat/widgets/chat_minimap.dart';
-import 'package:baocode/chat/widgets/pixel_loader.dart';
-import 'package:baocode/ide/ide_color_theme_picker.dart';
-import 'package:baocode/settings/pages/appearance_page.dart';
-import 'package:baocode/settings/pages/settings_dropdown.dart';
-import 'package:baocode/settings/pages/settings_widgets.dart';
-import 'package:baocode/settings/user_settings.dart';
-import 'package:baocode/theme/code_font.dart';
+import 'package:caocode/chat/user_message_style.dart';
+import 'package:caocode/chat/widgets/chat_minimap.dart';
+import 'package:caocode/chat/widgets/pixel_loader.dart';
+import 'package:caocode/ide/ide_color_theme_picker.dart';
+import 'package:caocode/settings/pages/appearance_page.dart';
+import 'package:caocode/settings/pages/settings_dropdown.dart';
+import 'package:caocode/settings/pages/settings_widgets.dart';
+import 'package:caocode/settings/user_settings.dart';
+import 'package:caocode/theme/code_font.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

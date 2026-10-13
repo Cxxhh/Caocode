@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:super_sliver_list/super_sliver_list.dart';
-import 'package:baocode/chat/chat_feed.dart';
-import 'package:baocode/chat/chat_history_view.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/composer/composer_draft.dart';
-import 'package:baocode/chat/widgets/turn_footer.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:caocode/chat/chat_feed.dart';
+import 'package:caocode/chat/chat_history_view.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/chat_session.dart';
+import 'package:caocode/chat/composer/composer_draft.dart';
+import 'package:caocode/chat/widgets/turn_footer.dart';
+import 'package:caocode/theme/app_theme.dart';
 
 /// A conversation held in a list, changed by hand.
 class _Feed extends ChangeNotifier implements ChatFeed {

@@ -1,23 +1,9 @@
-# Builds the remote server (baocode-server, the app's side on an SSH host)
-# for Linux and macOS, x64 and arm64, and runs it on each. docs/ssh-remote.md
-# (9.3) has where the builds go and how the app finds them.
-#
-#   git tag server-foo && git push origin server-foo
-#                                      build, and publish the builds at
-#                                      dl.baocode.dev/releases/remote/
-#                                      <VERSION>/, latest.json there naming
-#                                      them: for apps packaged locally with
-#                                      --remote-release (tool/build_*.dart)
-#   Actions → Remote server → Run workflow
-#                                      build only, to try the build
-#
-# Release (release.yml) calls it too, for the builds both apps name; it
-# publishes them itself, with the release.
+# Optional manual builds of Caocode's remote-server foundation for Linux and
+# macOS. This produces artifacts only. Remote Codex is still under migration;
+# the first Windows release does not publish or depend on these artifacts.
 name: Remote server
 
 on:
-  push:
-    tags: ['server-*']
   workflow_dispatch:
   workflow_call:
 
@@ -53,7 +39,7 @@ jobs:
           unzip -q "$RUNNER_TEMP/dart-x64.zip" -d "$RUNNER_TEMP/dart-x64"
           "$RUNNER_TEMP/dart-x64/dart-sdk/bin/dart" --version
       # Once, for both apps: they carry its servers.json, and download the
-      # build a host needs from dl.baocode.dev (docs/ssh-remote.md, 9.3).
+      # build a host needs from GitHub Releases (docs/ssh-remote.md, 9.3).
       - name: Build for Linux and macOS, x64 and arm64
         run: |
           dart run tool/build_remote_server.dart --out build/remote --all \
@@ -76,7 +62,7 @@ jobs:
           if-no-files-found: error
           path: |
             build/remote/VERSION
-            build/remote/baocode-server-linux-*
+            build/remote/caocode-server-linux-*
             !build/remote/*.gz
 
   linux:
@@ -95,61 +81,5 @@ jobs:
       - name: Run it on Linux distributions, in Docker
         run: |
           # Artifacts keep no modes.
-          chmod 755 build/remote/baocode-server-linux-*
+          chmod 755 build/remote/caocode-server-linux-*
           tool/test_remote_server.sh build/remote
-
-  publish:
-    name: Publish to dl.baocode.dev/releases/remote/
-    needs: [build, linux]
-    # Its own server-* tag only: called by Release, the release publishes.
-    if: github.event_name == 'push' && startsWith(github.ref_name, 'server-')
-    runs-on: ubuntu-latest
-    # The release environment's R2 token (it has to let server-* tags in).
-    environment: release
-    concurrency:
-      group: remote-publish
-      cancel-in-progress: false
-    env:
-      VERSION: ${{ needs.build.outputs.version }}
-      R2_BUCKET: ${{ vars.R2_BUCKET }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION: auto
-      AWS_ENDPOINT_URL: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
-      # R2 does not take every checksum newer AWS CLIs send by default.
-      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
-      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: remote
-          path: dist/remote
-      - name: Upload the builds and their servers.json
-        run: |
-          # Named by what was built, so never changed once there.
-          aws s3 cp dist/remote "s3://$R2_BUCKET/releases/remote/$VERSION/" \
-            --recursive --cache-control 'public, max-age=31536000, immutable'
-      - name: Check they are served
-        run: |
-          jq -r '.files[] | "\(.url) \(.size)"' dist/remote/servers.json |
-          while read -r url expected; do
-            served=$(curl -fsSI "$url" | tr -d '\r' | awk 'tolower($1) == "content-length:" { print $2 }')
-            echo "$url: $served bytes (expected $expected)"
-            [ "$served" = "$expected" ] || { echo "::error::$url is not served as uploaded"; exit 1; }
-          done
-      - name: Name them in latest.json, last
-        run: |
-          jq -n --arg version "$VERSION" --arg tag "$GITHUB_REF_NAME" --arg commit "$GITHUB_SHA" \
-            '{version: $version, tag: $tag, commit: $commit}' > latest.json
-          aws s3 cp latest.json "s3://$R2_BUCKET/releases/remote/latest.json" \
-            --cache-control 'public, max-age=60' --content-type application/json
-          {
-            echo "## Remote server \`$VERSION\` (\`$GITHUB_REF_NAME\`, ${GITHUB_SHA::7})"
-            echo
-            echo "Package an app that downloads it:"
-            echo
-            echo '```'
-            echo "dart run tool/build_windows.dart --remote-release $VERSION"
-            echo "dart run tool/build_macos.dart --remote-release $VERSION"
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"

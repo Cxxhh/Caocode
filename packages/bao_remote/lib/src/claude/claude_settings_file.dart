@@ -21,7 +21,7 @@ abstract final class ClaudeSettingsFile {
     if (folder == null || !folder.existsSync()) {
       final temp =
           parent ?? Directory(Directory.systemTemp.resolveSymbolicLinksSync());
-      folder = _folder = temp.createTempSync('baocode-settings-');
+      folder = _folder = temp.createTempSync('caocode-settings-');
     }
     return folder;
   }

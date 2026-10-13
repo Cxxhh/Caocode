@@ -7,7 +7,7 @@ import '../update/version.dart';
 
 /// settings.json's `telemetry.telemetryLevel`, as VS Code's. The app sends
 /// usage data only at `all` (the default): `error`, `crash` and `off`,
-/// which VS Code's users may have brought along, are all off, as BaoCode
+/// which VS Code's users may have brought along, are all off, as Caocode
 /// sends no error or crash reports by itself (the diagnostic logs only as
 /// the user explicitly provides them).
 abstract final class TelemetrySetting {
@@ -90,7 +90,7 @@ class TelemetryService {
        _inFront = inFront ?? (() => true),
        _newId = newId ?? randomInstallId;
 
-  static const defaultUrl = 'https://stats.baocode.dev/v1/ping';
+  static const defaultUrl = 'https://stats.caocode.dev/v1/ping';
 
   /// The version of the report's body.
   static const schema = 1;

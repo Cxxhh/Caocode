@@ -42,7 +42,7 @@ typedef ClaudeSessionForker = Future<String> Function(
 /// plan usage, if one does.
 typedef ClaudeUsageSwitch = Future<String?> Function();
 
-/// [executable], run in [cwd], refused an option BaoCode starts Claude
+/// [executable], run in [cwd], refused an option Caocode starts Claude
 /// Code with: whether another, newer, may be started instead.
 typedef ClaudeTooOldHandler = Future<bool> Function(
   String cwd,
@@ -153,7 +153,7 @@ class ClaudeCodeKernel
   final ClaudeSessionForker? _forkSession;
   final ClaudeUsageSwitch _usageOffBy;
 
-  /// A build that refused an option BaoCode starts it with, run in a
+  /// A build that refused an option Caocode starts it with, run in a
   /// folder: whether another, newer, may be started instead (see
   /// [_launch]). None: the user is told to update it.
   final ClaudeTooOldHandler? _rejectTooOld;
@@ -1963,13 +1963,13 @@ class ClaudeCodeKernel
     );
   }
 
-  /// Whether the CLI refused an option BaoCode starts it with: one from
+  /// Whether the CLI refused an option Caocode starts it with: one from
   /// before the option was.
   static bool _tooOld(String stderr) => stderr.contains("unknown option '--");
 
   static String _failureMessage(String stderr) {
     if (_tooOld(stderr)) {
-      return 'Claude Code is older than BaoCode needs. Update it '
+      return 'Claude Code is older than Caocode needs. Update it '
           '(`claude update`) and try again.';
     }
     final lower = stderr.toLowerCase();

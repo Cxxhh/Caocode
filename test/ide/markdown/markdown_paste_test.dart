@@ -2,11 +2,11 @@ import 'dart:typed_data';
 
 import 'package:bao_editor/monaco/flutter/editor_document_model.dart';
 import 'package:bao_editor/monaco/flutter/editor_surface_controller.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/composer/composer_files.dart';
-import 'package:baocode/ide/file_service.dart';
-import 'package:baocode/ide/markdown/markdown_paste.dart';
-import 'package:baocode/l10n/l10n.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/composer/composer_files.dart';
+import 'package:caocode/ide/file_service.dart';
+import 'package:caocode/ide/markdown/markdown_paste.dart';
+import 'package:caocode/l10n/l10n.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 

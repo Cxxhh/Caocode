@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:baocode/chat/widgets/code_citation.dart';
-import 'package:baocode/chat/widgets/markdown_view.dart';
-import 'package:baocode/chat/widgets/mermaid_code_block.dart';
-import 'package:baocode/theme/codicons.dart';
-import 'package:baocode/theme/workbench_theme.dart';
+import 'package:caocode/chat/widgets/code_citation.dart';
+import 'package:caocode/chat/widgets/markdown_view.dart';
+import 'package:caocode/chat/widgets/mermaid_code_block.dart';
+import 'package:caocode/theme/codicons.dart';
+import 'package:caocode/theme/workbench_theme.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,7 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mermaid_core/mermaid_core.dart' as mermaid;
 import 'package:mermaid_flutter/mermaid_flutter.dart';
 
-final _fontPath = Platform.environment['BAOCODE_MERMAID_FONT'];
+final _fontPath = Platform.environment['CAOCODE_MERMAID_FONT'];
 
 const _flow =
     'flowchart TD\n'
@@ -68,7 +68,7 @@ Future<TestGesture> _hover(WidgetTester tester) async {
 }
 
 Future<void> _snapshot(WidgetTester tester, String name) async {
-  final directory = Platform.environment['BAOCODE_MERMAID_SNAPSHOTS'];
+  final directory = Platform.environment['CAOCODE_MERMAID_SNAPSHOTS'];
   if (directory == null) return;
   await tester.runAsync(() async {
     final image = await captureImage(tester.element(find.byType(MarkdownView)));

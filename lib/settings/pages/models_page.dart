@@ -336,7 +336,7 @@ class _ModelsSettingsPageState extends State<ModelsSettingsPage> {
               onEnabled: (value) =>
                   unawaited(_providers.setBuiltinHidden(!value)),
             ),
-            // The newest at a site BaoCode lists first (one imported later
+            // The newest at a site Caocode lists first (one imported later
             // takes the place of one before); the rest in their order.
             for (final provider in [
               ?pinned,

@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:baocode/extensions/vsix/engine_version.dart';
-import 'package:baocode/extensions/vsix/extension_manifest.dart';
-import 'package:baocode/extensions/vsix/semver.dart';
-import 'package:baocode/extensions/vsix/target_platform.dart';
-import 'package:baocode/extensions/vsix/vsix_reader.dart';
-import 'package:baocode/extensions/vsix/zip_reader.dart';
+import 'package:caocode/extensions/vsix/engine_version.dart';
+import 'package:caocode/extensions/vsix/extension_manifest.dart';
+import 'package:caocode/extensions/vsix/semver.dart';
+import 'package:caocode/extensions/vsix/target_platform.dart';
+import 'package:caocode/extensions/vsix/vsix_reader.dart';
+import 'package:caocode/extensions/vsix/zip_reader.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'engine_version_cases.dart';

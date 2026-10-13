@@ -1,7 +1,7 @@
 // An SVG that picks its light or dark drawing with a style, as the
 // JetBrains icon theme's "Auto" icons do.
 
-import 'package:baocode/platform/svg_color_scheme.dart';
+import 'package:caocode/platform/svg_color_scheme.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _auto =

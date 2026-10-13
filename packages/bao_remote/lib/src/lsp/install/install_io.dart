@@ -47,7 +47,7 @@ class HttpDownloader implements Downloader {
     String destination, {
     void Function(int received, int? total)? onProgress,
   }) async {
-    final client = _client()..userAgent = 'baocode-ide';
+    final client = _client()..userAgent = 'caocode-ide';
     final partial = File('$destination.part');
     try {
       final request = await client.getUrl(url);

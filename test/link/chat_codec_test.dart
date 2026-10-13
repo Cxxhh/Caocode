@@ -1,5 +1,5 @@
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/link/chat_codec.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/link/chat_codec.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

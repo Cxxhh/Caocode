@@ -3,13 +3,13 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/keybindings/default_keybindings.dart';
-import 'package:baocode/keybindings/key_chord.dart';
+import 'package:caocode/keybindings/default_keybindings.dart';
+import 'package:caocode/keybindings/key_chord.dart';
 import 'package:bao_editor/monaco/flutter/keybinding_entry.dart';
-import 'package:baocode/keybindings/keybinding_resolver.dart';
-import 'package:baocode/keybindings/keybinding_service.dart';
-import 'package:baocode/keybindings/keymap.dart';
-import 'package:baocode/settings/jsonc.dart';
+import 'package:caocode/keybindings/keybinding_resolver.dart';
+import 'package:caocode/keybindings/keybinding_service.dart';
+import 'package:caocode/keybindings/keymap.dart';
+import 'package:caocode/settings/jsonc.dart';
 
 import 'fake_home.dart';
 
@@ -324,10 +324,10 @@ void main() {
 
     test('registers the keybindings of commands the catalog lacks', () {
       service.registerExtraDefaults(const [
-        KeybindingEntry(command: 'baocode.extra', key: 'cmd+k cmd+x'),
+        KeybindingEntry(command: 'caocode.extra', key: 'cmd+k cmd+x'),
       ]);
-      expect(service.isSupported('baocode.extra'), isTrue);
-      expect(service.labelFor('baocode.extra'), '⌘K ⌘X');
+      expect(service.isSupported('caocode.extra'), isTrue);
+      expect(service.labelFor('caocode.extra'), '⌘K ⌘X');
     });
 
     test('resolves a key event, by its character too', () {

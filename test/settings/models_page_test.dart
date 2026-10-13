@@ -1,22 +1,22 @@
 import 'dart:async';
 
-import 'package:baocode/icons/brand_logos.dart';
-import 'package:baocode/icons/project_icon.dart';
-import 'package:baocode/ide/ide_hover.dart';
-import 'package:baocode/kernel/claude_code/claude_haiku.dart';
-import 'package:baocode/models/codex/codex_service.dart';
-import 'package:baocode/models/codex/codex_usage.dart';
-import 'package:baocode/models/model_provider.dart';
-import 'package:baocode/models/model_providers.dart';
-import 'package:baocode/models/secret_store.dart';
-import 'package:baocode/models/upstream.dart';
-import 'package:baocode/settings/pages/model_dialogs.dart';
-import 'package:baocode/settings/pages/models_page.dart';
-import 'package:baocode/settings/pages/settings_widgets.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:caocode/icons/brand_logos.dart';
+import 'package:caocode/icons/project_icon.dart';
+import 'package:caocode/ide/ide_hover.dart';
+import 'package:caocode/kernel/claude_code/claude_haiku.dart';
+import 'package:caocode/models/codex/codex_service.dart';
+import 'package:caocode/models/codex/codex_usage.dart';
+import 'package:caocode/models/model_provider.dart';
+import 'package:caocode/models/model_providers.dart';
+import 'package:caocode/models/secret_store.dart';
+import 'package:caocode/models/upstream.dart';
+import 'package:caocode/settings/pages/model_dialogs.dart';
+import 'package:caocode/settings/pages/models_page.dart';
+import 'package:caocode/settings/pages/settings_widgets.dart';
+import 'package:caocode/workspace/workspace.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/widgets/pixel_loader.dart';
+import 'package:caocode/chat/widgets/pixel_loader.dart';
 
 /// Accounts signed in to by hand: [finish] ends the sign-in under way.
 class _FakeCodex extends CodexService {

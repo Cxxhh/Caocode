@@ -39,6 +39,8 @@ class CodexRpcClient {
   Future<void> _initialize() async {
     await request('initialize', {
       'clientInfo': {'name': 'caocode', 'title': 'Caocode', 'version': '0.1.0'},
+      // Required by thread/settings/update on current CLI versions.
+      'capabilities': {'experimentalApi': true},
     });
     transport.write({'method': 'initialized'});
   }

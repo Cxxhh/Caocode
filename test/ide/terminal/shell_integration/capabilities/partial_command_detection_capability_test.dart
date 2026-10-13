@@ -9,7 +9,7 @@
 // terminal.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/terminal/shell_integration/capabilities/partial_command_detection_capability.dart';
+import 'package:caocode/ide/terminal/shell_integration/capabilities/partial_command_detection_capability.dart';
 import 'package:bao_xterm/common/buffer/types.dart';
 import 'package:bao_xterm/common/event.dart';
 import 'package:bao_xterm/headless/terminal.dart';

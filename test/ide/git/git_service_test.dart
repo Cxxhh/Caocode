@@ -5,9 +5,9 @@ import 'dart:io';
 
 import 'package:bao_remote/local.dart' show runGit;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/git/git_model.dart';
-import 'package:baocode/ide/git/git_repository.dart';
-import 'package:baocode/ide/git/git_service.dart';
+import 'package:caocode/ide/git/git_model.dart';
+import 'package:caocode/ide/git/git_repository.dart';
+import 'package:caocode/ide/git/git_service.dart';
 import 'package:path/path.dart' as p;
 
 /// Runs local Git (no network) in a temporary repository whose own config
@@ -36,7 +36,7 @@ void main() {
   }
 
   setUp(() async {
-    temp = await Directory.systemTemp.createTemp('baocode_git_');
+    temp = await Directory.systemTemp.createTemp('caocode_git_');
     root = p.normalize((await temp.resolveSymbolicLinks()));
     await git(['init', '-q', '-b', 'main']);
     final hooks = await Directory(p.join(root, '.no-hooks')).create();
@@ -178,7 +178,7 @@ void main() {
   }, skip: hasGit ? false : 'Git is not installed');
 
   test('outside a repository there is no status', () async {
-    final outside = await Directory.systemTemp.createTemp('baocode_nogit_');
+    final outside = await Directory.systemTemp.createTemp('caocode_nogit_');
     addTearDown(() => outside.delete(recursive: true));
     final service = IdeGitService(outside.path);
     expect(await service.status(), isNull);

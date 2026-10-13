@@ -4,7 +4,7 @@ library;
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:baocode/ide/file_service.dart';
+import 'package:caocode/ide/file_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -15,7 +15,7 @@ void main() {
   late IdeFileService files;
 
   setUp(() {
-    project = Directory.systemTemp.createTempSync('baocode-write-bytes-');
+    project = Directory.systemTemp.createTempSync('caocode-write-bytes-');
     files = IdeFileService(project.path);
   });
   tearDown(() => project.deleteSync(recursive: true));

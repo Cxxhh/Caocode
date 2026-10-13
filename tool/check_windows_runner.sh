@@ -26,7 +26,7 @@ flutter_root="${FLUTTER_ROOT:-$(dirname "$(dirname "$(readlink -f "$(command -v 
 engine="$flutter_root/engine/src/flutter/shell/platform"
 [ -d "$engine/windows/client_wrapper" ] || { echo "no engine source under $flutter_root" >&2; exit 2; }
 
-out="$(mktemp -d "${TMPDIR:-/tmp}/baocode-windows-runner.XXXXXX")"
+out="$(mktemp -d "${TMPDIR:-/tmp}/caocode-windows-runner.XXXXXX")"
 trap 'rm -rf "$out"' EXIT
 
 # The layout of Flutter's Windows artifacts: the public headers, and the
@@ -99,7 +99,7 @@ fi
 libs=(-ldwmapi -lole32 -lshell32 -lwindowscodecs -lwinmm -ldbghelp -luuid -loleaut32)
 
 # What the DLLs must give: the names left over without them.
-"$cxx" -municode -mwindows -o "$out/BaoCode.exe" "$out"/obj/*.o "${libs[@]}" 2>"$out/link.log" || true
+"$cxx" -municode -mwindows -o "$out/Caocode.exe" "$out"/obj/*.o "${libs[@]}" 2>"$out/link.log" || true
 grep -oE "undefined reference to \`[^']+'" "$out/link.log" |
   sed "s/undefined reference to \`//; s/'\$//; s/^__imp_//" | sort -u >"$out/undefined.txt"
 
@@ -138,5 +138,5 @@ for def in "$out"/*.def; do
   x86_64-w64-mingw32-dlltool -d "$def" -l "$out/lib$name.dll.a"
   imports+=("-l$name.dll")
 done
-"$cxx" -municode -mwindows -o "$out/BaoCode.exe" "$out"/obj/*.o -L"$out" "${imports[@]}" "${libs[@]}"
-echo "linked: $(file -b "$out/BaoCode.exe")"
+"$cxx" -municode -mwindows -o "$out/Caocode.exe" "$out"/obj/*.o -L"$out" "${imports[@]}" "${libs[@]}"
+echo "linked: $(file -b "$out/Caocode.exe")"

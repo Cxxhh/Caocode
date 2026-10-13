@@ -10,24 +10,11 @@ import '../../platform/child_process_registry.dart';
 import '../../platform/data_dir.dart';
 import 'codex_rpc.dart';
 import 'codex_path_setting.dart';
+import 'codex_config_setting.dart';
+import 'codex_config_file.dart';
+import 'codex_host.dart';
 import 'codex_transport.dart';
-
-typedef WslProject = ({String distribution, String path, String prefix});
-
-WslProject? wslProject(String? path) {
-  if (path == null) return null;
-  final normalized = path.replaceAll('\\', '/');
-  final match = RegExp(
-    r'^//(wsl\.localhost|wsl\$)/([^/]+)(/.*)?$',
-    caseSensitive: false,
-  ).firstMatch(normalized);
-  if (match == null) return null;
-  return (
-    distribution: match.group(2)!,
-    path: match.group(3) ?? '/',
-    prefix: '//${match.group(1)}/${match.group(2)}',
-  );
-}
+export 'codex_host.dart';
 
 String? codexServerPath(String? path) =>
     Platform.isWindows ? wslProject(path)?.path ?? path : path;
@@ -110,6 +97,14 @@ class CodexProcessTransport implements CodexTransport, CodexTransportLifecycle {
     }
     final environment = await ClaudeEnvironment.of();
     final proxy = await NetworkProxy.instance.environment();
+    final configPath = CodexConfigSetting.current();
+    final config = configPath == null
+        ? null
+        : await CodexConfigFile.resolve(
+            cwd: cwd,
+            configPath: configPath,
+            environment: environment,
+          );
     String program;
     List<String> launchArguments;
     if (executable != null) {
@@ -125,9 +120,11 @@ class CodexProcessTransport implements CodexTransport, CodexTransportLifecycle {
         '--exec',
         'bash',
         '-lic',
-        r'exec "${1:-${CAOCODE_CODEX_PATH:-codex}}" app-server --listen stdio://',
+        r'if [ -n "$2" ]; then export CODEX_HOME="$2"; fi; '
+            r'exec "${1:-${CAOCODE_CODEX_PATH:-codex}}" app-server --listen stdio://',
         'caocode',
         CodexPathSetting.current() ?? '',
+        config?.serverHome ?? '',
       ];
       workingDirectory =
           Platform.environment['USERPROFILE'] ?? Directory.current.path;
@@ -141,7 +138,11 @@ class CodexProcessTransport implements CodexTransport, CodexTransportLifecycle {
       program,
       launchArguments,
       workingDirectory: workingDirectory,
-      environment: {...environment, ...proxy},
+      environment: {
+        ...environment,
+        ...proxy,
+        if (config != null && wsl == null) 'CODEX_HOME': config.serverHome,
+      },
       includeParentEnvironment: Platform.isWindows,
     );
     _process = process;

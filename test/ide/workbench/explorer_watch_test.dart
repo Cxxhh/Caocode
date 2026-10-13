@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/ide_explorer.dart';
+import 'package:caocode/ide/ide_explorer.dart';
 import 'package:path/path.dart' as p;
 
 import 'fake_files.dart';

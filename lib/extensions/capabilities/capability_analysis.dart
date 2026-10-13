@@ -1,4 +1,4 @@
-// What of an extension BaoCode uses: its color themes and file icon themes
+// What of an extension Caocode uses: its color themes and file icon themes
 // (and the colors and icons they refer to). No extension code runs, so the
 // rest of it does nothing here. Told from its manifest alone, before it is
 // installed (a .vsix, a folder, a gallery entry) or after.
@@ -63,7 +63,7 @@ class CapabilityReport {
   String toString() => 'CapabilityReport(${level.name}, $findings)';
 }
 
-/// The contributions BaoCode applies.
+/// The contributions Caocode applies.
 const themeContributions = {'themes', 'iconThemes'};
 
 /// What goes with them: the colors and icons themes refer to, and what

@@ -7,9 +7,9 @@
 
 import 'dart:io';
 
-import 'package:baocode/extensions/gallery/extension_management_backend.dart';
-import 'package:baocode/extensions/ui/vsix_drop.dart';
-import 'package:baocode/extensions/vsix/target_platform.dart';
+import 'package:caocode/extensions/gallery/extension_management_backend.dart';
+import 'package:caocode/extensions/ui/vsix_drop.dart';
+import 'package:caocode/extensions/vsix/target_platform.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

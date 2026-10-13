@@ -46,7 +46,7 @@ Future<void> _install(SshHost host, Directory? downloads) async {
   final build = await release.current(ClaudeRelease.platformOf(platform));
   final file = File(
     p.join(
-      (downloads ?? Directory(p.join(Directory.systemTemp.path, 'baocode')))
+      (downloads ?? Directory(p.join(Directory.systemTemp.path, 'caocode')))
           .path,
       'claude-${build.version}-${build.platform}',
     ),

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/terminal/pty.dart';
-import 'package:baocode/ide/terminal/terminal_service.dart';
+import 'package:caocode/ide/terminal/pty.dart';
+import 'package:caocode/ide/terminal/terminal_service.dart';
 
 import 'fake_pty.dart';
 import 'fake_terminal.dart';

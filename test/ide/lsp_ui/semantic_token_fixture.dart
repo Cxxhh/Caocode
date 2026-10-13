@@ -10,7 +10,7 @@ import 'dart:ui' show Color;
 import 'package:bao_editor/monaco/vs/workbench/services/themes/common/color_theme_data.dart';
 import 'package:bao_editor/monaco/vs/workbench/services/themes/common/workbench_theme_service.dart';
 import 'package:bao_editor/textmate/textmate_manifest.dart';
-import 'package:baocode/ide/lsp_ui/semantic_tokens.dart';
+import 'package:caocode/ide/lsp_ui/semantic_tokens.dart';
 
 class SemanticTokenFixture {
   SemanticTokenFixture._(Map<String, Object?> json)

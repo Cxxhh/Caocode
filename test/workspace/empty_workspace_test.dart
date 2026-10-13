@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/panels/interaction_panel.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:caocode/chat/panels/interaction_panel.dart';
+import 'package:caocode/main.dart';
+import 'package:caocode/workspace/workspace.dart';
 
 void main() {
   testWidgets('with no project open, the window has its text style, and '
@@ -10,7 +10,7 @@ void main() {
     tester.view.physicalSize = const Size(1200, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(BaoCodeApp(workspace: Workspace()));
+    await tester.pumpWidget(CaocodeApp(workspace: Workspace()));
     await tester.pump();
 
     // Not the error style text falls back to with no Material above it

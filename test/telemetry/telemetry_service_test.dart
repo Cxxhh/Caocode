@@ -6,9 +6,9 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/telemetry/telemetry_io.dart';
-import 'package:baocode/telemetry/telemetry_service.dart';
-import 'package:baocode/update/version.dart';
+import 'package:caocode/telemetry/telemetry_io.dart';
+import 'package:caocode/telemetry/telemetry_service.dart';
+import 'package:caocode/update/version.dart';
 
 /// Answers each report with [status]; throws when it is null (offline).
 class FakeSender implements TelemetrySender {

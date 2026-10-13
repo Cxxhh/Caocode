@@ -5,21 +5,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_history_view.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/composer/composer_embeds.dart';
-import 'package:baocode/chat/composer/composer_picker.dart';
-import 'package:baocode/chat/composer/suggestion_menu.dart';
-import 'package:baocode/chat/panels/interaction_panel.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/kernel/kernel_types.dart';
-import 'package:baocode/kernel/mock/mock_kernels.dart';
-import 'package:baocode/keybindings/chat_keybindings.dart';
+import 'package:caocode/chat/chat_history_view.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/chat_screen.dart';
+import 'package:caocode/chat/chat_session.dart';
+import 'package:caocode/chat/composer/composer_embeds.dart';
+import 'package:caocode/chat/composer/composer_picker.dart';
+import 'package:caocode/chat/composer/suggestion_menu.dart';
+import 'package:caocode/chat/panels/interaction_panel.dart';
+import 'package:caocode/kernel/agent_kernel.dart';
+import 'package:caocode/kernel/kernel_types.dart';
+import 'package:caocode/kernel/mock/mock_kernels.dart';
+import 'package:caocode/keybindings/chat_keybindings.dart';
 import 'package:bao_editor/monaco/flutter/keybinding_entry.dart';
-import 'package:baocode/keybindings/keybinding_service.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:caocode/keybindings/keybinding_service.dart';
+import 'package:caocode/theme/app_theme.dart';
 
 Future<ChatSession> pumpChat(
   WidgetTester tester, {
@@ -65,7 +65,7 @@ String composerMessage(WidgetTester tester) => [
 void pickFiles(WidgetTester tester, List<String> paths) {
   final messenger = tester.binding.defaultBinaryMessenger;
   messenger.setMockMethodCallHandler(
-    const MethodChannel('baocode/window'),
+    const MethodChannel('caocode/window'),
     (call) async => switch (call.method) {
       'pickFiles' => [
         for (final path in paths) {'path': path, 'directory': false},
@@ -75,7 +75,7 @@ void pickFiles(WidgetTester tester, List<String> paths) {
   );
   addTearDown(
     () => messenger.setMockMethodCallHandler(
-      const MethodChannel('baocode/window'),
+      const MethodChannel('caocode/window'),
       null,
     ),
   );

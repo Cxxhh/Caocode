@@ -6,17 +6,17 @@ import 'package:flutter/gestures.dart' show kSecondaryButton;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/kernel/mock/mock_kernels.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/sidebar/sidebar.dart';
-import 'package:baocode/theme/codicons.dart';
-import 'package:baocode/workspace/new_chat_folder_bar.dart';
-import 'package:baocode/workspace/workspace.dart';
-import 'package:baocode/workspace/workspace_dialog.dart';
+import 'package:caocode/kernel/mock/mock_kernels.dart';
+import 'package:caocode/main.dart';
+import 'package:caocode/sidebar/sidebar.dart';
+import 'package:caocode/theme/codicons.dart';
+import 'package:caocode/workspace/new_chat_folder_bar.dart';
+import 'package:caocode/workspace/workspace.dart';
+import 'package:caocode/workspace/workspace_dialog.dart';
 
 import 'project_workspace_test.dart' show FakeWorkspaceDirectories;
 
-const _window = MethodChannel('baocode/window');
+const _window = MethodChannel('caocode/window');
 const _desktop = '/Users/me/Desktop';
 
 final _mac = TargetPlatformVariant.only(TargetPlatform.macOS);
@@ -55,7 +55,7 @@ Future<Workspace> _pumpNew(WidgetTester tester) async {
     kernels: [MockKernels.claudeCode],
     workspaceDirectories: FakeWorkspaceDirectories(),
   );
-  await tester.pumpWidget(BaoCodeApp(workspace: workspace));
+  await tester.pumpWidget(CaocodeApp(workspace: workspace));
   workspace.create(project: workspace.projects.first);
   await tester.pump();
   return workspace;

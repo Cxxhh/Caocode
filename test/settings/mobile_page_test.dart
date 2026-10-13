@@ -1,8 +1,8 @@
 import 'package:bao_link/bao_link.dart';
-import 'package:baocode/link/link_host.dart';
-import 'package:baocode/link/qr_view.dart';
-import 'package:baocode/settings/pages/mobile_page.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:caocode/link/link_host.dart';
+import 'package:caocode/link/qr_view.dart';
+import 'package:caocode/settings/pages/mobile_page.dart';
+import 'package:caocode/workspace/workspace.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

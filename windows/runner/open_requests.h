@@ -13,7 +13,7 @@
 // The paths the app is asked to open from outside it — what it is started
 // with (the `code` command, see lib/platform/shell_command_io.dart; Explorer's
 // Open with), and what another copy started later hands it — for Flutter,
-// over the `baocode/open` channel (as AppDelegate.swift's OpenRequests does;
+// over the `caocode/open` channel (as AppDelegate.swift's OpenRequests does;
 // see lib/platform/open_requests.dart):
 //
 //   takePending   the paths kept so far; Flutter is ready for each as it
@@ -55,18 +55,18 @@ constexpr ULONG_PTR kOpenRequestData = 0x42414F43;  // "BAOC"
 // lib/platform/shell_command_io.dart): the console's folder comes next, then
 // the arguments as typed (`-n`, `-r`, `-g file:line`, the paths), which
 // Flutter reads as VS Code's CLI does.
-constexpr char kCodeRequestFlag[] = "--baocode-cli";
+constexpr char kCodeRequestFlag[] = "--caocode-cli";
 
-// The flag Explorer's Open with BaoCode starts the app with (the context
-// menu the installer adds, see tool/baocode.iss), the path next: a new agent
+// The flag Explorer's Open with Caocode starts the app with (the context
+// menu the installer adds, see tool/caocode.iss), the path next: a new agent
 // in the chat's window, the file in its composer (lib/window/app_windows.dart's
 // openAgent).
-constexpr char kAgentRequestFlag[] = "--baocode-agent";
+constexpr char kAgentRequestFlag[] = "--caocode-agent";
 
-// The flag a baocode: link starts the app with (the URL scheme the installer
-// registers, see tool/baocode.iss), the link next: a site's one-click import
+// The flag a caocode: link starts the app with (the URL scheme the installer
+// registers, see tool/caocode.iss), the link next: a site's one-click import
 // of an upstream, which Flutter reads (lib/models/upstream_import.dart).
-constexpr char kLinkRequestFlag[] = "--baocode-link";
+constexpr char kLinkRequestFlag[] = "--caocode-link";
 
 // Whether |paths| are a request rather than paths: kCodeRequestFlag,
 // kAgentRequestFlag or kLinkRequestFlag first.
@@ -75,7 +75,7 @@ bool IsRequest(const std::vector<std::string>& paths);
 // The paths in the command line the app was started with, made absolute
 // from the folder it was started in, in UTF-8; its options (from `-`) left
 // out. Started by code.cmd, the request it makes instead, as it came; by
-// Open with BaoCode, its flag, then the paths; by a baocode: link, its flag,
+// Open with Caocode, its flag, then the paths; by a caocode: link, its flag,
 // then the link (see IsRequest).
 std::vector<std::string> OpenPathsFromCommandLine();
 

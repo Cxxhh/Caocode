@@ -8,7 +8,7 @@
 // of debugCommands.ts (`continue`, `pause`, `stepOver`…, `restart`,
 // `stop`/`disconnect`, `focusSession`).
 //
-// Deviations: hot reload is BaoCode's: a custom request where a debug type
+// Deviations: hot reload is Caocode's: a custom request where a debug type
 // has one ([DebugHotReload]), else the adapter's `restart` request.
 
 import 'dart:async';

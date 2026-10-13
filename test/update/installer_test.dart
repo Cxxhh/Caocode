@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
-import 'package:baocode/update/installer_io.dart';
-import 'package:baocode/update/update_manifest.dart';
-import 'package:baocode/update/update_service.dart';
+import 'package:caocode/update/installer_io.dart';
+import 'package:caocode/update/update_manifest.dart';
+import 'package:caocode/update/update_service.dart';
 
 import 'update_fakes.dart';
 
@@ -45,7 +45,7 @@ void main() {
   late Directory temp;
 
   setUp(() async {
-    temp = await Directory.systemTemp.createTemp('baocode-installer');
+    temp = await Directory.systemTemp.createTemp('caocode-installer');
   });
 
   tearDown(() async {
@@ -64,21 +64,21 @@ void main() {
     test('installs as the install there is: per machine or per user', () {
       expect(
         windowsPerMachineInstall(
-          r'C:\Program Files\BaoCode\baocode.exe',
+          r'C:\Program Files\Caocode\caocode.exe',
           environment,
         ),
         isTrue,
       );
       expect(
         windowsPerMachineInstall(
-          r'c:\program files (x86)\BaoCode\baocode.exe',
+          r'c:\program files (x86)\Caocode\caocode.exe',
           environment,
         ),
         isTrue,
       );
       expect(
         windowsPerMachineInstall(
-          r'C:\Users\me\AppData\Local\Programs\BaoCode\baocode.exe',
+          r'C:\Users\me\AppData\Local\Programs\Caocode\caocode.exe',
           environment,
         ),
         isFalse,
@@ -93,9 +93,9 @@ void main() {
       expect(
         windowsInstallerArguments(
           perMachine: true,
-          directory: r'C:\Program Files\BaoCode',
+          directory: r'C:\Program Files\Caocode',
           pid: 4242,
-          log: r'C:\Users\me\AppData\Roaming\baocode\updates\install.log',
+          log: r'C:\Users\me\AppData\Roaming\caocode\updates\install.log',
         ),
         [
           '/SILENT',
@@ -104,9 +104,9 @@ void main() {
           '/CLOSEAPPLICATIONS',
           '/RELAUNCH',
           '/ALLUSERS',
-          r'/DIR=C:\Program Files\BaoCode',
+          r'/DIR=C:\Program Files\Caocode',
           '/WAITPID=4242',
-          r'/LOG=C:\Users\me\AppData\Roaming\baocode\updates\install.log',
+          r'/LOG=C:\Users\me\AppData\Roaming\caocode\updates\install.log',
         ],
       );
       expect(
@@ -124,7 +124,7 @@ void main() {
       Directory app,
       _FakeProcesses processes,
     ) => WindowsUpdateInstaller(
-      executable: p.join(app.path, 'baocode.exe'),
+      executable: p.join(app.path, 'caocode.exe'),
       pid: 4242,
       environment: environment,
       updatesDirectory: p.join(temp.path, 'updates'),
@@ -132,7 +132,7 @@ void main() {
     );
 
     test('updates only an app its installer installed', () async {
-      final app = Directory(p.join(temp.path, 'BaoCode'))..createSync();
+      final app = Directory(p.join(temp.path, 'Caocode'))..createSync();
       final processes = _FakeProcesses((_, _) => _result(1));
       final installer = installerIn(app, processes);
       await expectLater(
@@ -159,7 +159,7 @@ void main() {
 
     test('takes the install mode from where Setup registered it', () async {
       // Per machine, in a folder of its own outside Program Files.
-      final app = Directory(p.join(temp.path, 'BaoCode'))..createSync();
+      final app = Directory(p.join(temp.path, 'Caocode'))..createSync();
       File(p.join(app.path, 'unins000.exe')).createSync();
       bool Function(String hive) registered = (hive) => hive == 'HKLM';
       final processes = _FakeProcesses((executable, arguments) {
@@ -194,18 +194,18 @@ void main() {
 
     setUp(() {
       applications = Directory(p.join(temp.path, 'Applications'))..createSync();
-      app = p.join(applications.path, 'BaoCode.app');
+      app = p.join(applications.path, 'Caocode.app');
       Directory(p.join(app, 'Contents', 'MacOS')).createSync(recursive: true);
       final version = Directory(p.join(temp.path, 'updates', '1.2.0+12'))
         ..createSync(recursive: true);
-      zip = p.join(version.path, 'BaoCode-1.2.0-mac.zip');
+      zip = p.join(version.path, 'Caocode-1.2.0-mac.zip');
       File(zip).createSync();
     });
 
     /// What macOS's tools answer: ditto unpacks [unpacked] apps; bundle ids
     /// by path; codesign as [signed] and [teams] say.
     _FakeProcesses tools({
-      List<String> unpacked = const ['BaoCode.app'],
+      List<String> unpacked = const ['Caocode.app'],
       Map<String, String> ids = const {},
       Set<String> signed = const {},
       Map<String, String> teams = const {},
@@ -222,7 +222,7 @@ void main() {
           final id =
               ids[p.basename(p.dirname(bundle))] ??
               ids[p.basename(bundle)] ??
-              'dev.baocode.desktop';
+              'dev.caocode.desktop';
           return _result(0, '$id\n');
         case '/usr/bin/codesign' when arguments.first == '--verify':
           return _result(signed.contains(_where(arguments.last)) ? 0 : 1);
@@ -239,7 +239,7 @@ void main() {
 
     MacUpdateInstaller installerOf(_FakeProcesses processes, {String? at}) =>
         MacUpdateInstaller(
-          executable: p.join(at ?? app, 'Contents', 'MacOS', 'BaoCode'),
+          executable: p.join(at ?? app, 'Contents', 'MacOS', 'Caocode'),
           pid: 4242,
           updatesDirectory: p.join(temp.path, 'updates'),
           processes: processes,
@@ -263,7 +263,7 @@ void main() {
       final text = File(script).readAsStringSync();
       expect(text, contains('pid=4242\n'));
       expect(text, contains("target='$app'\n"));
-      expect(text, contains("source='${p.join(staging, 'BaoCode.app')}'\n"));
+      expect(text, contains("source='${p.join(staging, 'Caocode.app')}'\n"));
       expect(text, contains("staging='$staging'\n"));
       expect(
         text,
@@ -282,7 +282,7 @@ void main() {
         throwsA(isA<UpdateVerificationException>()),
       );
       await expectLater(
-        installerOf(tools(unpacked: ['BaoCode.app', 'Other.app']))
+        installerOf(tools(unpacked: ['Caocode.app', 'Other.app']))
             .prepare(zip, _release()),
         throwsA(isA<UpdateVerificationException>()),
       );
@@ -335,7 +335,7 @@ void main() {
         'AppTranslocation',
         'ABC',
         'd',
-        'BaoCode.app',
+        'Caocode.app',
       );
       await expectLater(
         installerOf(tools(), at: translocated).prepare(zip, _release()),
@@ -344,7 +344,7 @@ void main() {
       await expectLater(
         installerOf(
           tools(),
-          at: p.join(temp.path, 'build', 'baocode'),
+          at: p.join(temp.path, 'build', 'caocode'),
         ).prepare(zip, _release()),
         throwsA(isA<ManualUpdateRequired>()),
       );
@@ -358,13 +358,13 @@ void main() {
     test('the script waits, swaps, restores on failure, and reopens', () {
       final text = macUpdateScript(
         pid: 7,
-        source: "/tmp/it's/BaoCode.app",
-        target: '/Applications/BaoCode.app',
+        source: "/tmp/it's/Caocode.app",
+        target: '/Applications/Caocode.app',
         staging: '/tmp/staging',
         log: '/tmp/install.log',
       );
       expect(text, startsWith('#!/bin/bash\n'));
-      expect(text, contains(r"source='/tmp/it'\''s/BaoCode.app'"));
+      expect(text, contains(r"source='/tmp/it'\''s/Caocode.app'"));
       final order = [
         'kill -0 "\$pid"',
         'exit 1',

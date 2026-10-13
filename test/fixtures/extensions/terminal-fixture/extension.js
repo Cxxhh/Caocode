@@ -11,7 +11,7 @@ exports.activate = (context) => {
       events.push(`close:${t.name}:${t.exitStatus && t.exitStatus.code}:${t.exitStatus && t.exitStatus.reason}`)),
     vscode.window.onDidChangeActiveTerminal((t) => events.push(`active:${t && t.name}`)),
   );
-  context.environmentVariableCollection.replace('BAOCODE_FIXTURE_ENV', 'from-extension');
+  context.environmentVariableCollection.replace('CAOCODE_FIXTURE_ENV', 'from-extension');
 
   const command = (id, run) =>
     context.subscriptions.push(vscode.commands.registerCommand(id, run));
@@ -49,7 +49,7 @@ exports.activate = (context) => {
       });
     });
     const execution = integration.executeCommand(
-      'echo "var=$FIXTURE_VAR env=$BAOCODE_FIXTURE_ENV"; pwd; false',
+      'echo "var=$FIXTURE_VAR env=$CAOCODE_FIXTURE_ENV"; pwd; false',
     );
     let output = '';
     for await (const data of execution.read()) output += data;

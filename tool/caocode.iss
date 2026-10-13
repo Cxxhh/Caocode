@@ -1,15 +1,16 @@
-; The Windows installer for BaoCode, compiled by tool/build_windows.dart.
+; The Windows installer for Caocode, compiled by tool/build_windows.dart.
 ;
 ; It is compiled with three /D defines, all required:
-;   BundleDir  the Release bundle to pack (the folder holding baocode.exe)
+;   BundleDir  the Release bundle to pack (the folder holding caocode.exe)
 ;   AppVersion the version pubspec.yaml carries, as it writes it (1.0.0+1)
 ;   OutDir     where to write the installer (build/installers)
 ;
-; Output: BaoCode-<version>-setup.exe
+; Output: Caocode-<version>-setup.exe
 
 #ifndef BundleDir
   #error BundleDir is not defined: pass /DBundleDir=<release bundle folder>
 #endif
+
 #ifndef AppVersion
   #error AppVersion is not defined: pass /DAppVersion=<version from pubspec.yaml>
 #endif
@@ -24,25 +25,31 @@
   #undef VersionNumber
   #define VersionNumber AppVersion
 #endif
+#define DisplayVersion VersionNumber + "c"
 
 [Setup]
 ; Base of the identity Windows uses for the installed app. It must not change
 ; between versions, or an upgrade installs beside the old one instead of over
 ; it.
-AppId={{6fdd732b-95c6-4c37-af6f-ff574358deb5}
-AppName=BaoCode
-AppVersion={#VersionNumber}
-AppPublisher=BaoCode
-AppVerName=BaoCode {#VersionNumber}
-DefaultDirName={autopf}\BaoCode
-DefaultGroupName=BaoCode
-UninstallDisplayName=BaoCode
-UninstallDisplayIcon={app}\baocode.exe
-OutputBaseFilename=BaoCode-{#VersionNumber}-setup
+AppId={{da15d7fd-aed2-4f72-b2af-34c18d5db30c}
+AppName=Caocode
+AppVersion={#DisplayVersion}
+AppPublisher=Caocode
+AppVerName=Caocode {#DisplayVersion}
+DefaultDirName={autopf}\Caocode
+DefaultGroupName=Caocode
+UninstallDisplayName=Caocode
+UninstallDisplayIcon={app}\caocode.exe
+OutputBaseFilename=Caocode-{#DisplayVersion}-setup
 OutputDir={#OutDir}
 ; What Explorer shows for the installer itself. Windows wants four numbers,
 ; where pubspec's version has three.
 VersionInfoVersion={#VersionNumber}.0
+VersionInfoProductTextVersion={#DisplayVersion}
+AppPublisherURL=https://github.com/Cxxhh/Caocode
+AppSupportURL=https://github.com/Cxxhh/Caocode/issues
+AppUpdatesURL=https://github.com/Cxxhh/Caocode/releases/latest
+LicenseFile=..\LICENSE
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
@@ -59,7 +66,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 DisableProgramGroupPage=yes
-; A running BaoCode is asked to close (it quits on WM_ENDSESSION, see
+; A running Caocode is asked to close (it quits on WM_ENDSESSION, see
 ; windows/runner/flutter_window.cpp), and ended if it does not: a version
 ; from before that, or one stuck, would otherwise hold Setup at "Closing
 ; applications..." for good.
@@ -75,25 +82,26 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; \
   GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
-Name: "addtopath"; Description: "Add BaoCode to the PATH"; \
+Name: "addtopath"; Description: "Add Caocode to the PATH"; \
   GroupDescription: "Other:"; Flags: unchecked
 Name: "contextmenu"; \
-  Description: "Add ""Open with BaoCode"" and ""Open with Fast Ide"" to Explorer's context menu"; \
+  Description: "Add ""Open with Caocode"" and ""Open with Fast Ide"" to Explorer's context menu"; \
   GroupDescription: "Other:"
 
 [Files]
-; The whole bundle: baocode.exe, the engine and plugin DLLs, data\ (the
+Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
+; The whole bundle: caocode.exe, the engine and plugin DLLs, data\ (the
 ; AOT app.so and flutter_assets) which sit beside the executable, and
-; remote\ (VERSION and servers.json: which baocode-server remote projects
+; remote\ (VERSION and servers.json: which caocode-server remote projects
 ; run on their host, and where the app downloads it; tool/build_windows.dart
 ; puts them there).
 Source: "{#BundleDir}\*"; DestDir: "{app}"; \
   Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\BaoCode"; Filename: "{app}\baocode.exe"
-Name: "{group}\{cm:UninstallProgram,BaoCode}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\BaoCode"; Filename: "{app}\baocode.exe"; Tasks: desktopicon
+Name: "{group}\Caocode"; Filename: "{app}\caocode.exe"
+Name: "{group}\{cm:UninstallProgram,Caocode}"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\Caocode"; Filename: "{app}\caocode.exe"; Tasks: desktopicon
 
 [Registry]
 ; Only when asked for. Which hive follows the install mode: a per-machine
@@ -108,103 +116,103 @@ Root: HKCU; Subkey: "Environment"; ValueType: expandsz; ValueName: "Path"; \
   Check: (not IsAdminInstallMode) and NeedsAddPath(ExpandConstant('{app}'), False)
 
 ; Explorer's context menu, on a file, a folder and a folder's background,
-; each in a new window: Open with BaoCode, a new agent in a narrow window of
+; each in a new window: Open with Caocode, a new agent in a narrow window of
 ; its own (a file in its composer; see AppWindows.openAgent), and Open with
 ; Fast Ide, as `code -n` opens it (the path its own working folder: it is
 ; absolute). HKA is the install mode's hive (HKLM per machine, HKCU per
 ; user). Windows 11 lists them under "Show more options". Unticked on a
 ; reinstall, they go. Settings → General writes the same keys under HKCU
 ; (lib/platform/context_menu_io.dart), for the user alone.
-Root: HKA; Subkey: "Software\Classes\*\shell\BaoCode"; ValueType: string; \
-  ValueName: ""; ValueData: "{code:MenuLabel|BaoCode}"; Tasks: contextmenu; \
+Root: HKA; Subkey: "Software\Classes\*\shell\Caocode"; ValueType: string; \
+  ValueName: ""; ValueData: "{code:MenuLabel|Caocode}"; Tasks: contextmenu; \
   Flags: uninsdeletekey
-Root: HKA; Subkey: "Software\Classes\*\shell\BaoCode"; ValueType: string; \
-  ValueName: "Icon"; ValueData: """{app}\baocode.exe"""; Tasks: contextmenu
-Root: HKA; Subkey: "Software\Classes\*\shell\BaoCode\command"; \
+Root: HKA; Subkey: "Software\Classes\*\shell\Caocode"; ValueType: string; \
+  ValueName: "Icon"; ValueData: """{app}\caocode.exe"""; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\*\shell\Caocode\command"; \
   ValueType: string; ValueName: ""; \
-  ValueData: """{app}\baocode.exe"" --baocode-agent ""%1"""; Tasks: contextmenu
-Root: HKA; Subkey: "Software\Classes\Directory\shell\BaoCode"; \
-  ValueType: string; ValueName: ""; ValueData: "{code:MenuLabel|BaoCode}"; \
+  ValueData: """{app}\caocode.exe"" --caocode-agent ""%1"""; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\Directory\shell\Caocode"; \
+  ValueType: string; ValueName: ""; ValueData: "{code:MenuLabel|Caocode}"; \
   Tasks: contextmenu; Flags: uninsdeletekey
-Root: HKA; Subkey: "Software\Classes\Directory\shell\BaoCode"; \
-  ValueType: string; ValueName: "Icon"; ValueData: """{app}\baocode.exe"""; \
+Root: HKA; Subkey: "Software\Classes\Directory\shell\Caocode"; \
+  ValueType: string; ValueName: "Icon"; ValueData: """{app}\caocode.exe"""; \
   Tasks: contextmenu
-Root: HKA; Subkey: "Software\Classes\Directory\shell\BaoCode\command"; \
+Root: HKA; Subkey: "Software\Classes\Directory\shell\Caocode\command"; \
   ValueType: string; ValueName: ""; \
-  ValueData: """{app}\baocode.exe"" --baocode-agent ""%V"""; Tasks: contextmenu
-Root: HKA; Subkey: "Software\Classes\Directory\Background\shell\BaoCode"; \
-  ValueType: string; ValueName: ""; ValueData: "{code:MenuLabel|BaoCode}"; \
+  ValueData: """{app}\caocode.exe"" --caocode-agent ""%V"""; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\Directory\Background\shell\Caocode"; \
+  ValueType: string; ValueName: ""; ValueData: "{code:MenuLabel|Caocode}"; \
   Tasks: contextmenu; Flags: uninsdeletekey
-Root: HKA; Subkey: "Software\Classes\Directory\Background\shell\BaoCode"; \
-  ValueType: string; ValueName: "Icon"; ValueData: """{app}\baocode.exe"""; \
+Root: HKA; Subkey: "Software\Classes\Directory\Background\shell\Caocode"; \
+  ValueType: string; ValueName: "Icon"; ValueData: """{app}\caocode.exe"""; \
   Tasks: contextmenu
-Root: HKA; Subkey: "Software\Classes\Directory\Background\shell\BaoCode\command"; \
+Root: HKA; Subkey: "Software\Classes\Directory\Background\shell\Caocode\command"; \
   ValueType: string; ValueName: ""; \
-  ValueData: """{app}\baocode.exe"" --baocode-agent ""%V"""; Tasks: contextmenu
-Root: HKA; Subkey: "Software\Classes\*\shell\BaoCodeFastIde"; \
+  ValueData: """{app}\caocode.exe"" --caocode-agent ""%V"""; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\*\shell\CaocodeFastIde"; \
   ValueType: string; ValueName: ""; ValueData: "{code:MenuLabel|Fast Ide}"; \
   Tasks: contextmenu; Flags: uninsdeletekey
-Root: HKA; Subkey: "Software\Classes\*\shell\BaoCodeFastIde"; \
-  ValueType: string; ValueName: "Icon"; ValueData: """{app}\baocode.exe"""; \
+Root: HKA; Subkey: "Software\Classes\*\shell\CaocodeFastIde"; \
+  ValueType: string; ValueName: "Icon"; ValueData: """{app}\caocode.exe"""; \
   Tasks: contextmenu
-Root: HKA; Subkey: "Software\Classes\*\shell\BaoCodeFastIde\command"; \
+Root: HKA; Subkey: "Software\Classes\*\shell\CaocodeFastIde\command"; \
   ValueType: string; ValueName: ""; \
-  ValueData: """{app}\baocode.exe"" --baocode-cli ""%1"" -n ""%1"""; \
+  ValueData: """{app}\caocode.exe"" --caocode-cli ""%1"" -n ""%1"""; \
   Tasks: contextmenu
-Root: HKA; Subkey: "Software\Classes\Directory\shell\BaoCodeFastIde"; \
+Root: HKA; Subkey: "Software\Classes\Directory\shell\CaocodeFastIde"; \
   ValueType: string; ValueName: ""; ValueData: "{code:MenuLabel|Fast Ide}"; \
   Tasks: contextmenu; Flags: uninsdeletekey
-Root: HKA; Subkey: "Software\Classes\Directory\shell\BaoCodeFastIde"; \
-  ValueType: string; ValueName: "Icon"; ValueData: """{app}\baocode.exe"""; \
+Root: HKA; Subkey: "Software\Classes\Directory\shell\CaocodeFastIde"; \
+  ValueType: string; ValueName: "Icon"; ValueData: """{app}\caocode.exe"""; \
   Tasks: contextmenu
-Root: HKA; Subkey: "Software\Classes\Directory\shell\BaoCodeFastIde\command"; \
+Root: HKA; Subkey: "Software\Classes\Directory\shell\CaocodeFastIde\command"; \
   ValueType: string; ValueName: ""; \
-  ValueData: """{app}\baocode.exe"" --baocode-cli ""%V"" -n ""%V"""; \
+  ValueData: """{app}\caocode.exe"" --caocode-cli ""%V"" -n ""%V"""; \
   Tasks: contextmenu
-Root: HKA; Subkey: "Software\Classes\Directory\Background\shell\BaoCodeFastIde"; \
+Root: HKA; Subkey: "Software\Classes\Directory\Background\shell\CaocodeFastIde"; \
   ValueType: string; ValueName: ""; ValueData: "{code:MenuLabel|Fast Ide}"; \
   Tasks: contextmenu; Flags: uninsdeletekey
-Root: HKA; Subkey: "Software\Classes\Directory\Background\shell\BaoCodeFastIde"; \
-  ValueType: string; ValueName: "Icon"; ValueData: """{app}\baocode.exe"""; \
+Root: HKA; Subkey: "Software\Classes\Directory\Background\shell\CaocodeFastIde"; \
+  ValueType: string; ValueName: "Icon"; ValueData: """{app}\caocode.exe"""; \
   Tasks: contextmenu
-Root: HKA; Subkey: "Software\Classes\Directory\Background\shell\BaoCodeFastIde\command"; \
+Root: HKA; Subkey: "Software\Classes\Directory\Background\shell\CaocodeFastIde\command"; \
   ValueType: string; ValueName: ""; \
-  ValueData: """{app}\baocode.exe"" --baocode-cli ""%V"" -n ""%V"""; \
+  ValueData: """{app}\caocode.exe"" --caocode-cli ""%V"" -n ""%V"""; \
   Tasks: contextmenu
-; The baocode: URL scheme, always: a site's one-click import of an upstream
-; (baocode.dev/import opens baocode://provider/import?…; see
-; docs/upstream-import.md). The link comes after --baocode-link, which the
+; The caocode: URL scheme, always: a site's one-click import of an upstream
+; (caocode.dev/import opens caocode://provider/import?…; see
+; docs/upstream-import.md). The link comes after --caocode-link, which the
 ; runner hands Flutter as a request (windows/runner/open_requests.cpp).
-Root: HKA; Subkey: "Software\Classes\baocode"; ValueType: string; \
-  ValueName: ""; ValueData: "URL:BaoCode"; Flags: uninsdeletekey
-Root: HKA; Subkey: "Software\Classes\baocode"; ValueType: string; \
+Root: HKA; Subkey: "Software\Classes\caocode"; ValueType: string; \
+  ValueName: ""; ValueData: "URL:Caocode"; Flags: uninsdeletekey
+Root: HKA; Subkey: "Software\Classes\caocode"; ValueType: string; \
   ValueName: "URL Protocol"; ValueData: ""
-Root: HKA; Subkey: "Software\Classes\baocode\DefaultIcon"; ValueType: string; \
-  ValueName: ""; ValueData: """{app}\baocode.exe"",0"
-Root: HKA; Subkey: "Software\Classes\baocode\shell\open\command"; \
+Root: HKA; Subkey: "Software\Classes\caocode\DefaultIcon"; ValueType: string; \
+  ValueName: ""; ValueData: """{app}\caocode.exe"",0"
+Root: HKA; Subkey: "Software\Classes\caocode\shell\open\command"; \
   ValueType: string; ValueName: ""; \
-  ValueData: """{app}\baocode.exe"" --baocode-link ""%1"""
+  ValueData: """{app}\caocode.exe"" --caocode-link ""%1"""
 ; Unticked: what an earlier install added goes.
-Root: HKA; Subkey: "Software\Classes\*\shell\BaoCode"; ValueType: none; \
+Root: HKA; Subkey: "Software\Classes\*\shell\Caocode"; ValueType: none; \
   Tasks: not contextmenu; Flags: deletekey
-Root: HKA; Subkey: "Software\Classes\Directory\shell\BaoCode"; ValueType: none; \
+Root: HKA; Subkey: "Software\Classes\Directory\shell\Caocode"; ValueType: none; \
   Tasks: not contextmenu; Flags: deletekey
-Root: HKA; Subkey: "Software\Classes\Directory\Background\shell\BaoCode"; \
+Root: HKA; Subkey: "Software\Classes\Directory\Background\shell\Caocode"; \
   ValueType: none; Tasks: not contextmenu; Flags: deletekey
-Root: HKA; Subkey: "Software\Classes\*\shell\BaoCodeFastIde"; ValueType: none; \
+Root: HKA; Subkey: "Software\Classes\*\shell\CaocodeFastIde"; ValueType: none; \
   Tasks: not contextmenu; Flags: deletekey
-Root: HKA; Subkey: "Software\Classes\Directory\shell\BaoCodeFastIde"; \
+Root: HKA; Subkey: "Software\Classes\Directory\shell\CaocodeFastIde"; \
   ValueType: none; Tasks: not contextmenu; Flags: deletekey
-Root: HKA; Subkey: "Software\Classes\Directory\Background\shell\BaoCodeFastIde"; \
+Root: HKA; Subkey: "Software\Classes\Directory\Background\shell\CaocodeFastIde"; \
   ValueType: none; Tasks: not contextmenu; Flags: deletekey
 
 [Run]
-Filename: "{app}\baocode.exe"; Description: "{cm:LaunchProgram,BaoCode}"; \
+Filename: "{app}\caocode.exe"; Description: "{cm:LaunchProgram,Caocode}"; \
   Flags: nowait postinstall skipifsilent
 ; An update the app ran (lib/update/installer_io.dart) is silent, which
 ; skips the entry above: /RELAUNCH opens the app again once it is in place,
 ; as the user who ran it rather than the administrator Setup elevated to.
-Filename: "{app}\baocode.exe"; Flags: nowait runasoriginaluser; \
+Filename: "{app}\caocode.exe"; Flags: nowait runasoriginaluser; \
   Check: RelaunchRequested
 
 [Code]
@@ -264,7 +272,7 @@ begin
     end;
 end;
 
-// The context menu's labels (see [Registry]): "Open with BaoCode", in
+// The context menu's labels (see [Registry]): "Open with Caocode", in
 // Chinese where Windows is. Written as code points, so the script's encoding
 // does not matter.
 function MenuLabel(Param: String): String;

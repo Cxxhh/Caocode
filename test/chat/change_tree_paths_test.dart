@@ -1,8 +1,8 @@
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/panels/change_tree.dart';
-import 'package:baocode/ide/git/git_model.dart';
-import 'package:baocode/ide/git/scm_tree.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:caocode/chat/chat_models.dart';
+import 'package:caocode/chat/panels/change_tree.dart';
+import 'package:caocode/ide/git/git_model.dart';
+import 'package:caocode/ide/git/scm_tree.dart';
+import 'package:caocode/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;

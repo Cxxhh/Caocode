@@ -10,7 +10,7 @@ class ClaudeUnavailable implements Exception {
   String toString() => message;
 }
 
-/// Claude Code is not on the machine: neither the user's nor one BaoCode
+/// Claude Code is not on the machine: neither the user's nor one Caocode
 /// installed.
 class ClaudeNotInstalled extends ClaudeUnavailable {
   const ClaudeNotInstalled(super.message, {super.detail});

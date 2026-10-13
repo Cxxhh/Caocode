@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:bao_remote/client.dart';
-import 'package:baocode/remote/remote_binaries.dart';
+import 'package:caocode/remote/remote_binaries.dart';
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -57,7 +57,7 @@ void main() {
     String key = 'linux-x64',
   }) {
     final bytes = gzip.encode(build);
-    served['/remote/$version/baocode-server-linux-x64.gz'] = gz ?? bytes;
+    served['/remote/$version/caocode-server-linux-x64.gz'] = gz ?? bytes;
     File(p.join(remote, 'VERSION')).writeAsStringSync('$version\n');
     File(p.join(remote, 'servers.json')).writeAsStringSync(
       jsonEncode({
@@ -66,7 +66,7 @@ void main() {
           key: {
             'url':
                 'http://127.0.0.1:${server.port}/remote/$version/'
-                'baocode-server-linux-x64.gz',
+                'caocode-server-linux-x64.gz',
             'size': bytes.length,
             'sha256': '${crypto.sha256.convert(bytes)}',
           },
@@ -76,15 +76,15 @@ void main() {
   }
 
   RemoteServerBinaries? found() => bundledServerBinaries(
-    environment: {'BAOCODE_REMOTE_SERVER_DIR': remote},
-    executable: p.join(temp.path, 'app', 'baocode'),
+    environment: {'CAOCODE_REMOTE_SERVER_DIR': remote},
+    executable: p.join(temp.path, 'app', 'caocode'),
     current: temp.path,
     cacheDir: cache,
   );
 
   test('the builds in the folder, when they are there', () async {
     installer();
-    File(p.join(remote, 'baocode-server-linux-x64')).writeAsStringSync('raw');
+    File(p.join(remote, 'caocode-server-linux-x64')).writeAsStringSync('raw');
     final binaries = found();
     expect(binaries, isA<DirectoryServerBinaries>());
     expect(utf8.decode((await binaries!.read('linux-x64'))!), 'raw');
@@ -103,7 +103,7 @@ void main() {
       expect(await binaries.read('linux-x64'), build);
       expect(requested, hasLength(1));
       expect(
-        File(p.join(cache, '1.0.0.1-abc', 'baocode-server-linux-x64.gz'))
+        File(p.join(cache, '1.0.0.1-abc', 'caocode-server-linux-x64.gz'))
             .existsSync(),
         isTrue,
       );
@@ -122,7 +122,7 @@ void main() {
     // The checkout the installer's app was built in.
     final checkout = Directory(p.join(temp.path, 'build', 'remote'))
       ..createSync(recursive: true);
-    File(p.join(checkout.path, 'baocode-server-linux-x64'))
+    File(p.join(checkout.path, 'caocode-server-linux-x64'))
         .writeAsStringSync('built');
     File(p.join(checkout.path, 'VERSION')).writeAsStringSync('1.0.0.1-abc\n');
     final binaries = found();
@@ -165,13 +165,13 @@ void main() {
     installer();
     final binaries = found()!;
     final saved = served.remove(
-      '/remote/1.0.0.1-abc/baocode-server-linux-x64.gz',
+      '/remote/1.0.0.1-abc/caocode-server-linux-x64.gz',
     )!;
     await expectLater(
       binaries.read('linux-x64'),
       throwsA(isA<SshConnectException>()),
     );
-    served['/remote/1.0.0.1-abc/baocode-server-linux-x64.gz'] = saved;
+    served['/remote/1.0.0.1-abc/caocode-server-linux-x64.gz'] = saved;
     expect(await binaries.read('linux-x64'), build);
   });
 
@@ -193,7 +193,7 @@ void main() {
 
   test('the macOS builds in the folder', () async {
     installer();
-    File(p.join(remote, 'baocode-server-darwin-arm64'))
+    File(p.join(remote, 'caocode-server-darwin-arm64'))
         .writeAsStringSync('mac');
     final binaries = found()!;
     expect(binaries, isA<DirectoryServerBinaries>());

@@ -4,21 +4,21 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/ide/terminal/pty.dart';
-import 'package:baocode/ide/terminal/pty_io.dart';
-import 'package:baocode/kernel/claude_code/process_transport_io.dart';
-import 'package:baocode/platform/data_dir.dart';
-import 'package:baocode/window/app_windows.dart';
-import 'package:baocode/window/window_host.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:caocode/l10n/l10n.dart';
+import 'package:caocode/main.dart';
+import 'package:caocode/ide/terminal/pty.dart';
+import 'package:caocode/ide/terminal/pty_io.dart';
+import 'package:caocode/kernel/claude_code/process_transport_io.dart';
+import 'package:caocode/platform/data_dir.dart';
+import 'package:caocode/window/app_windows.dart';
+import 'package:caocode/window/window_host.dart';
+import 'package:caocode/workspace/workspace.dart';
 
 // Runs against the real Windows embedder, not FakeWindowHost:
 // flutter run -d windows -t tool/windows_close_smoke.dart
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final data = await Directory.systemTemp.createTemp('baocode-window-smoke-');
+  final data = await Directory.systemTemp.createTemp('caocode-window-smoke-');
   DataDirectory.current = DataDirectory(data.path);
   final folder = await Directory('${data.path}/project').create();
   final workspace = Workspace.mock();
@@ -30,7 +30,7 @@ Future<void> main() async {
     hasTray: () => true,
   );
   if (!await windows.start()) throw StateError('Windows host unavailable');
-  runWidget(BaoCodeApp(workspace: workspace, windows: windows));
+  runWidget(CaocodeApp(workspace: workspace, windows: windows));
   await WidgetsBinding.instance.endOfFrame;
   for (var cycle = 1; cycle <= 5; cycle++) {
     stdout.writeln('WINDOW_SMOKE $cycle: opening IDE');
@@ -86,7 +86,7 @@ Future<void> main() async {
     }
     await Future<void>.delayed(const Duration(milliseconds: 500));
     stdout.writeln('WINDOW_SMOKE $cycle: closing IDE ${ide.viewId}');
-    await MethodChannel('baocode/window.${ide.viewId}')
+    await MethodChannel('caocode/window.${ide.viewId}')
         .invokeMethod<void>('windowCommand', 'close');
     final deadline = DateTime.now().add(const Duration(seconds: 10));
     while (host.viewOf(ide.viewId) != null) {

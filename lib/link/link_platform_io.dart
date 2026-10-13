@@ -64,7 +64,7 @@ class IoLinkPlatform implements LinkPlatform {
       final broadcast = BonsoirBroadcast(
         printLogs: false,
         service: BonsoirService(
-          name: advert.name.isEmpty ? 'BaoCode' : advert.name,
+          name: advert.name.isEmpty ? 'Caocode' : advert.name,
           type: LinkDiscovery.type,
           port: advert.port,
           attributes: advert.attributes,

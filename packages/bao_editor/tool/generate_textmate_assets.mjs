@@ -69,7 +69,7 @@ const extensionBase = extension => extensionBases.get(extension) ?? `extensions/
 async function download(path) {
   for (let attempt = 1; ; attempt++) {
     try {
-      const response = await fetch(path.startsWith('https:') ? path : source + path, { headers: { 'User-Agent': 'baocode-textmate-assets' } });
+      const response = await fetch(path.startsWith('https:') ? path : source + path, { headers: { 'User-Agent': 'caocode-textmate-assets' } });
       if (response.status === 404) return null;
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return Buffer.from(await response.arrayBuffer());
@@ -307,7 +307,7 @@ for (const extension of themeExtensions) {
     themes.push({ extension, id: theme.id, label: theme.label, uiTheme: theme.uiTheme, path: await copyTheme(extension, theme.path) });
   }
 }
-// BaoCode's own themes, kept in tool/textmate_themes/<extension>/: each includes
+// Caocode's own themes, kept in tool/textmate_themes/<extension>/: each includes
 // a bundled theme (`../../theme-defaults/...`) and sets its colors over it.
 const localThemes = [
   { extension: 'theme-bao', id: 'Bao Dark', label: 'Bao Dark', uiTheme: 'vs-dark', path: 'themes/bao-dark-color-theme.json' },
@@ -368,7 +368,7 @@ for (const installed of installedExtensions) {
   );
 }
 const license = [
-  `Except for the installed extensions at the end and BaoCode's own themes`,
+  `Except for the installed extensions at the end and Caocode's own themes`,
   `(themes/${[...new Set(localThemes.map(theme => theme.extension))].join(', themes/')}), the files in this directory`,
   `were downloaded from Visual Studio Code (https://github.com/microsoft/vscode)`,
   `at revision ${revision}`,

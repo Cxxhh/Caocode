@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:bao_editor/monaco/flutter/editor_document_model.dart';
-import 'package:baocode/ide/markdown/markdown_preview.dart';
+import 'package:caocode/ide/markdown/markdown_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';

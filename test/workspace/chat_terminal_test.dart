@@ -5,20 +5,20 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bao_editor/monaco/flutter/keybinding_entry.dart';
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/ide/ide_hover.dart';
-import 'package:baocode/ide/terminal/terminal_instance.dart';
-import 'package:baocode/keybindings/keybinding_service.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/workspace/chat_terminal.dart';
-import 'package:baocode/workspace/window_header/window_header.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:caocode/chat/chat_screen.dart';
+import 'package:caocode/ide/ide_hover.dart';
+import 'package:caocode/ide/terminal/terminal_instance.dart';
+import 'package:caocode/keybindings/keybinding_service.dart';
+import 'package:caocode/main.dart';
+import 'package:caocode/workspace/chat_terminal.dart';
+import 'package:caocode/workspace/window_header/window_header.dart';
+import 'package:caocode/workspace/workspace.dart';
 
 import '../ide/terminal/fake_pty.dart';
 import '../ide/terminal/fake_terminal.dart';
 import 'chat_window_keys_test.dart' show press;
 
-const _window = MethodChannel('baocode/window');
+const _window = MethodChannel('caocode/window');
 
 Future<Workspace> _pumpApp(
   WidgetTester tester, {
@@ -39,7 +39,7 @@ Future<Workspace> _pumpApp(
   );
   final workspace = Workspace.mock();
   await tester.pumpWidget(
-    BaoCodeApp(workspace: workspace, terminalBackend: terminalBackend),
+    CaocodeApp(workspace: workspace, terminalBackend: terminalBackend),
   );
   await tester.pump();
   return workspace;

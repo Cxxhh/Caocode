@@ -4,7 +4,7 @@
 # Inline style attributes only for /upstreams' sample buttons, which carry
 # their own style to be copied.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self'; media-src 'self'; connect-src 'self' https://dl.baocode.dev; frame-ancestors 'none'; base-uri 'self'; form-action 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self'; media-src 'self'; connect-src 'self' https://dl.caocode.dev; frame-ancestors 'none'; base-uri 'self'; form-action 'none'
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
@@ -19,7 +19,7 @@
 /icon.png
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
 
-# BaoCode's icons, loaded by upstreams' key pages (/upstreams): from any
+# Caocode's icons, loaded by upstreams' key pages (/upstreams): from any
 # site, kept a day as the rest.
 /brand/*
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800

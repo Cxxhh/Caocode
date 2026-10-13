@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Import to BaoCode</title>
-<meta name="description" content="Add an upstream to BaoCode in one click.">
+<title>Import to Caocode</title>
+<meta name="description" content="Add an upstream to Caocode in one click.">
 <meta name="robots" content="noindex">
 <link rel="icon" href="icon.png">
 <link rel="stylesheet" href="style.css">
@@ -17,49 +17,49 @@
   <symbol id="ic-download" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3m9 12v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10l5 5l5-5"/></g></symbol>
 </svg>
 <header class="top">
-  <a class="brand" href="/"><img src="icon.png" alt="">BaoCode</a>
+  <a class="brand" href="/"><img src="icon.png" alt="">Caocode</a>
   <a href="/download">Download</a>
   <a href="/changelog">Changelog</a>
-  <a href="https://github.com/baocode-dev/baocode"><svg class="ic" aria-hidden="true"><use href="#ic-github"/></svg>GitHub</a>
+  <a href="https://github.com/Cxxhh/Caocode"><svg class="ic" aria-hidden="true"><use href="#ic-github"/></svg>GitHub</a>
   <a class="lang" href="/zh/import" hreflang="zh" lang="zh-CN">中文</a>
 </header>
 
 <!-- import.js reads what to import from the address, fills the fields in
-     and opens BaoCode; the words for it are here. -->
+     and opens Caocode; the words for it are here. -->
 <main class="page" data-import="en">
-  <h1>Import to BaoCode</h1>
+  <h1>Import to Caocode</h1>
 
   <section data-state="ready" hidden>
-    <p class="subtitle">Opening BaoCode to add <strong data-field="name"></strong>. BaoCode shows you what it is and asks before it adds anything.</p>
+    <p class="subtitle">Opening Caocode to add <strong data-field="name"></strong>. Caocode shows you what it is and asks before it adds anything.</p>
     <dl class="import">
       <dt>Address</dt><dd data-field="url"></dd>
       <dt>Protocol</dt><dd data-field="protocol"></dd>
       <dt>Key</dt><dd data-field="key"></dd>
     </dl>
     <div class="actions">
-      <a class="button primary" data-open href="/download">Open BaoCode</a>
-      <a class="button" href="/download" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#ic-download"/></svg>Download BaoCode</a>
+      <a class="button primary" data-open href="/download">Open Caocode</a>
+      <a class="button" href="/download" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#ic-download"/></svg>Download Caocode</a>
     </div>
-    <p class="missing" data-missing hidden>Nothing opened? BaoCode may not be installed yet. Download and install it, then come back to this tab and click Open BaoCode again.</p>
+    <p class="missing" data-missing hidden>Nothing opened? Caocode may not be installed yet. Download and install it, then come back to this tab and click Open Caocode again.</p>
     <p class="note">Your conversations and code will go to <strong data-field="host"></strong>. Import only from sites you trust.</p>
-    <p class="note">The key never reaches baocode.dev: it is after the # in the link, which browsers keep to themselves, and this page takes it off the address bar once it has read it.</p>
+    <p class="note">The key never reaches caocode.dev: it is after the # in the link, which browsers keep to themselves, and this page takes it off the address bar once it has read it.</p>
   </section>
 
   <section data-state="invalid" hidden>
     <p class="subtitle">This import link can’t be used.</p>
-    <p>It needs a base URL (http or https) and a protocol BaoCode knows. Ask the site for a new link, or add the upstream yourself in BaoCode’s Settings → Models.</p>
+    <p>It needs a base URL (http or https) and a protocol Caocode knows. Ask the site for a new link, or add the upstream yourself in Caocode’s Settings → Models.</p>
   </section>
 
-  <noscript><p>This page needs JavaScript to hand the upstream over to BaoCode. You can also add it yourself in BaoCode’s Settings → Models.</p></noscript>
+  <noscript><p>This page needs JavaScript to hand the upstream over to Caocode. You can also add it yourself in Caocode’s Settings → Models.</p></noscript>
 
   <div hidden>
     <span data-protocol-name="anthropic">Anthropic compatible</span>
     <span data-protocol-name="openai-chat">OpenAI Chat Completions</span>
     <span data-protocol-name="openai-responses">OpenAI Responses</span>
-    <span data-no-key>none: you can add one in BaoCode</span>
+    <span data-no-key>none: you can add one in Caocode</span>
   </div>
 
-  <p class="note">Run a site? <a href="/upstreams">Add the one-click import</a>, and BaoCode lists your site for free.</p>
+  <p class="note">Run a site? <a href="/upstreams">Add the one-click import</a>, and Caocode lists your site for free.</p>
 </main>
 
 <script src="site.js"></script>

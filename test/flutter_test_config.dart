@@ -10,15 +10,15 @@ import 'package:bao_editor/textmate/textmate_manifest.dart'
     show textMateAssetRoot;
 import 'package:bao_editor/textmate/textmate_syntax.dart';
 import 'package:bao_editor/textmate/textmate_worker.dart';
-import 'package:baocode/chat/user_message_style.dart';
-import 'package:baocode/customize/customize_view.dart';
-import 'package:baocode/ide/lsp/packs/language_packs.dart';
-import 'package:baocode/kernel/kernel_registry.dart';
-import 'package:baocode/models/featured_upstreams.dart';
-import 'package:baocode/kernel/mock/mock_kernels.dart';
-import 'package:baocode/platform/context_menu.dart';
-import 'package:baocode/platform/shell_command.dart';
-import 'package:baocode/theme/workbench_theme.dart';
+import 'package:caocode/chat/user_message_style.dart';
+import 'package:caocode/customize/customize_view.dart';
+import 'package:caocode/ide/lsp/packs/language_packs.dart';
+import 'package:caocode/kernel/kernel_registry.dart';
+import 'package:caocode/models/featured_upstreams.dart';
+import 'package:caocode/kernel/mock/mock_kernels.dart';
+import 'package:caocode/platform/context_menu.dart';
+import 'package:caocode/platform/shell_command.dart';
+import 'package:caocode/theme/workbench_theme.dart';
 
 import 'semantics_tree.dart';
 
@@ -33,7 +33,7 @@ import 'semantics_tree.dart';
 /// for, not the app's default. The `code` command and
 /// the context menu are stand-ins, never installed: none looks at the
 /// machine's own. No MCP server is started to see whether it answers, and
-/// the upstreams Settings → Models lists are not got from baocode.dev.
+/// the upstreams Settings → Models lists are not got from caocode.dev.
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   checkDesktopSemantics();
   KernelRegistry.use(MockKernels.all);

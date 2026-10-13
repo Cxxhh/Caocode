@@ -2,14 +2,14 @@
 // and what an agent started in one is given of its folders.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/kernel/claude_code/claude_code_kernel.dart';
-import 'package:baocode/kernel/claude_code/claude_code_transport.dart';
-import 'package:baocode/kernel/claude_code/mock_claude_code_transport.dart';
-import 'package:baocode/kernel/mock/mock_kernels.dart';
-import 'package:baocode/workspace/preference_store.dart';
-import 'package:baocode/workspace/project_workspace.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:caocode/kernel/agent_kernel.dart';
+import 'package:caocode/kernel/claude_code/claude_code_kernel.dart';
+import 'package:caocode/kernel/claude_code/claude_code_transport.dart';
+import 'package:caocode/kernel/claude_code/mock_claude_code_transport.dart';
+import 'package:caocode/kernel/mock/mock_kernels.dart';
+import 'package:caocode/workspace/preference_store.dart';
+import 'package:caocode/workspace/project_workspace.dart';
+import 'package:caocode/workspace/workspace.dart';
 
 /// Workspaces' folders under [root], nothing written.
 class FakeWorkspaceDirectories extends ProjectWorkspaceDirectories {

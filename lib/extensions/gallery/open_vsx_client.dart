@@ -445,7 +445,7 @@ class OpenVsxClient {
         '${extension.id}@${extension.version} has no download',
       );
     }
-    final dir = cacheDir ?? p.join(Directory.systemTemp.path, 'baocode-vsix');
+    final dir = cacheDir ?? p.join(Directory.systemTemp.path, 'caocode-vsix');
     await Directory(dir).create(recursive: true);
     final target = File(p.join(dir, fileName));
     final sidecar = File('${target.path}.sha256');

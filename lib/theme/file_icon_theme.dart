@@ -126,7 +126,7 @@ class FileIconThemeData {
             final extension = p.extension(file).toLowerCase();
             if (!const {'.ttf', '.otf', '.woff'}.contains(extension)) continue;
             try {
-              final family = 'baocode-file-icons-${_fonts++}';
+              final family = 'caocode-file-icons-${_fonts++}';
               final bytes = sfntFromWoff(await File(file).readAsBytes());
               await (FontLoader(
                 family,

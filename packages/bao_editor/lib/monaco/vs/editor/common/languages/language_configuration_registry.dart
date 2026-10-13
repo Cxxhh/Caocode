@@ -124,7 +124,7 @@ class ResolvedLanguageConfiguration {
 /// VS Code's `LanguageConfigurationRegistry` keeps one configuration per
 /// language (the built-in one, then extension contributions merged in as
 /// they load); the editor reads it when it creates or changes a document's
-/// language. BaoCode resolves one configuration per document instead, so
+/// language. Caocode resolves one configuration per document instead, so
 /// this holds the extension-contributed ones (`contributes.languages`'
 /// `configuration`) for the caller to pick.
 ///

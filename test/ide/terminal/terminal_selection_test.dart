@@ -6,8 +6,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/terminal/terminal_mouse.dart';
-import 'package:baocode/ide/terminal/terminal_selection.dart';
+import 'package:caocode/ide/terminal/terminal_mouse.dart';
+import 'package:caocode/ide/terminal/terminal_selection.dart';
 import 'package:bao_xterm/common/buffer/buffer_line.dart';
 import 'package:bao_xterm/common/buffer/cell_data.dart';
 import 'package:bao_xterm/common/buffer/types.dart';

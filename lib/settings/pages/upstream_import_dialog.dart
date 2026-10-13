@@ -21,7 +21,7 @@ import 'model_dialogs.dart';
 import 'models_page.dart';
 
 /// Asks whether to add the upstream a site handed over ([UpstreamImport]):
-/// the site, as BaoCode lists it when it does, its name (to change), where
+/// the site, as Caocode lists it when it does, its name (to change), where
 /// requests go, how, and its key masked; then fetches its models ([list])
 /// for the user to check those to offer, and adds it with them; or, when it
 /// is one there already, gives that one the key. Nothing is added without
@@ -366,7 +366,7 @@ class _ImportDialogState extends State<_ImportDialog> {
   }
 }
 
-/// The site's mark, [size] square: the logo BaoCode lists it with, else its
+/// The site's mark, [size] square: the logo Caocode lists it with, else its
 /// site's icon, else a globe.
 class _SiteLogo extends StatelessWidget {
   const _SiteLogo({required this.import, required this.listed, this.size = 40});
@@ -416,7 +416,7 @@ class _SiteLogo extends StatelessWidget {
 }
 
 /// "Officially listed", between the halves of a laurel wreath: the site
-/// is one BaoCode lists.
+/// is one Caocode lists.
 class _Badge extends StatelessWidget {
   const _Badge(this.label);
 

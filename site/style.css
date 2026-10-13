@@ -181,7 +181,7 @@ pre code { padding: 0; background: none; font-size: 13.5px; line-height: 1.6; wh
 .copyable pre { max-height: 360px; overflow-y: auto; padding-right: 76px; }
 .copyable .copy { position: absolute; top: 8px; right: 8px; height: 28px; padding: 0 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--muted); font: 500 13px var(--sans); cursor: pointer; }
 .copyable .copy:hover { color: var(--ink); border-color: var(--faint); }
-/* BaoCode's icons for sites' buttons (/upstreams), each on the ground it is for. */
+/* Caocode's icons for sites' buttons (/upstreams), each on the ground it is for. */
 .assets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 0 0 1.1em; }
 .asset .swatch { display: flex; align-items: center; justify-content: center; height: 96px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
 .asset .swatch.dark { background: var(--ink); border-color: var(--ink); }
@@ -207,7 +207,7 @@ pre code { padding: 0; background: none; font-size: 13.5px; line-height: 1.6; wh
 .pick:hover::after, .pick:focus-visible::after, .pick.copied::after { opacity: 1; transform: translate(-50%, 0); }
 .pick.copied::after { background: #3F6B3A; }
 
-/* /upstreams: BaoCode's Settings → Models, drawn in Bao Light (the theme's
+/* /upstreams: Caocode's Settings → Models, drawn in Bao Light (the theme's
    colors: its paper, side bar, text, lines and sand gold), a site's card
    among those at the top and the site just imported below. */
 .mock { --bg: #FDFCF8; --side: #F5F4EE; --card: #F4F2EC; --sel: #E8E5DC; --line: #E9E7DF; --text: #2B2925; --dim: #69655A; --faint: #8E8A7E; --sand: #E2B373; --sand-text: #8F6528; --green: #5C8B4C;

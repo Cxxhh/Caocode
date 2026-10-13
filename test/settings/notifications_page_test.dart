@@ -3,11 +3,11 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/notifications/attention_host.dart';
-import 'package:baocode/notifications/attention_settings.dart';
-import 'package:baocode/settings/pages/notifications_page.dart';
-import 'package:baocode/settings/pages/settings_dropdown.dart';
-import 'package:baocode/settings/user_settings.dart';
+import 'package:caocode/notifications/attention_host.dart';
+import 'package:caocode/notifications/attention_settings.dart';
+import 'package:caocode/settings/pages/notifications_page.dart';
+import 'package:caocode/settings/pages/settings_dropdown.dart';
+import 'package:caocode/settings/user_settings.dart';
 import 'package:path/path.dart' as p;
 
 class _FakeHost implements AttentionHost {
@@ -50,7 +50,7 @@ void main() {
   late _FakeHost host;
 
   setUp(() async {
-    data = await Directory.systemTemp.createTemp('baocode-notifications');
+    data = await Directory.systemTemp.createTemp('caocode-notifications');
     settings = UserSettings(p.join(data.path, 'settings.json'));
     await settings.load();
     host = _FakeHost();

@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/widgets/code_citation.dart';
-import 'package:baocode/chat/widgets/markdown_view.dart';
-import 'package:baocode/theme/codicons.dart';
+import 'package:caocode/chat/widgets/code_citation.dart';
+import 'package:caocode/chat/widgets/markdown_view.dart';
+import 'package:caocode/theme/codicons.dart';
 
 Future<void> pumpMarkdown(
   WidgetTester tester,

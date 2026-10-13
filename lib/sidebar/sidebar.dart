@@ -2683,7 +2683,7 @@ class _UpdateButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final release = updates.release!;
-    final version = release.version.marketing;
+    final version = release.version.display;
     final message = updates.isMandatory(release)
         ? l10n.updateMandatory(version)
         : updates.status == UpdateStatus.ready

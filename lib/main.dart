@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:ui' show AppExitResponse, AppExitType;
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show kIsWeb, LicenseRegistry, LicenseEntryWithLineBreaks;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show ServicesBinding;
+import 'package:flutter/services.dart' show ServicesBinding, rootBundle;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:path/path.dart' as p;
@@ -29,6 +30,7 @@ import 'icons/icon_library.dart';
 import 'icons/icon_storage.dart';
 import 'icons/site_icons.dart';
 import 'kernel/codex/codex_path_setting.dart';
+import 'kernel/codex/codex_config_setting.dart';
 import 'kernel/codex/codex_process.dart';
 import 'kernel/commit_attribution.dart';
 import 'keybindings/keybindings_sync.dart';
@@ -83,6 +85,11 @@ import 'workspace/window_controls.dart';
 import 'workspace/workspace.dart';
 
 Future<void> main(List<String> arguments) async {
+  LicenseRegistry.addLicense(() async* {
+    yield LicenseEntryWithLineBreaks([
+      'cc-switch',
+    ], await rootBundle.loadString('assets/licenses/cc-switch.txt'));
+  });
   final startup = StartupLog();
   await startup.run(() => _startApplication(arguments, startup));
 }
@@ -133,6 +140,8 @@ Future<void> _startApplication(
     // agent starts.
     CodexPathSetting.current = () =>
         CodexPathSetting.parse(files.settings[CodexPathSetting.settingKey]);
+    CodexConfigSetting.current = () =>
+        CodexConfigSetting.parse(files.settings[CodexConfigSetting.settingKey]);
     // Settings → Models: the upstreams, kept in settings.json.
     ModelProviders.current = ModelProviders.settings(files.settings);
     // The upstreams' sites' icons, for those that show no other: in the
@@ -227,7 +236,7 @@ Future<void> _startApplication(
   // What shows at launch (settings.json's `workbench.mainWindow`): with
   // windows of the IDE's own, the chat's and those to open again; with
   // the IDE in the main window, its layout. Started for something (Open
-  // with BaoCode or Fast Ide, the `code` command), that alone.
+  // with Caocode or Fast Ide, the `code` command), that alone.
   final request = AppPlatform.isMacOS
       ? await OpenRequests.launchRequest()
       : LaunchRequest.of(arguments);
@@ -298,7 +307,7 @@ Future<void> _startApplication(
     themeExtensions.followIconThemeSetting(files!.settings);
   }
   startup.stage = '初始化主窗口';
-  final app = BaoCodeApp(
+  final app = CaocodeApp(
     windows: windows,
     workspace: workspace,
     appLocale: locale,
@@ -321,7 +330,7 @@ Future<void> _startApplication(
     terminalBackend: TerminalBackend(settings: files?.settings),
     conversations: CodexConversationSearch(),
   );
-  // With windows, each is a view of its own (see [BaoCodeApp.build]).
+  // With windows, each is a view of its own (see [CaocodeApp.build]).
   startup.stage = '绘制主窗口首帧';
   if (windows.started) {
     runWidget(app);
@@ -331,11 +340,9 @@ Future<void> _startApplication(
 }
 
 /// The app's updates (lib/update/): looked for as settings.json's
-/// `update.mode` says, from baocode.dev, installed as the app quits. None
+/// `update.mode` says, from the Caocode GitHub releases, installed on quit. None
 /// where the build does not update itself.
 UpdateController? _startUpdates(SettingsFiles files) {
-  const enabled = bool.fromEnvironment('CAOCODE_ENABLE_UPSTREAM_SERVICES');
-  if (!enabled) return null;
   final platform = platformUpdates(
     updatesDirectory: DataDirectory.current.updatesDir,
   );
@@ -390,8 +397,8 @@ void _startTelemetry(SettingsFiles files) {
   AppLifecycleListener(onResume: telemetry.markActive);
 }
 
-class BaoCodeApp extends StatefulWidget {
-  const BaoCodeApp({
+class CaocodeApp extends StatefulWidget {
+  const CaocodeApp({
     super.key,
     this.workspace,
     this.themeExtensions,
@@ -443,10 +450,10 @@ class BaoCodeApp extends StatefulWidget {
   final TerminalBackend? terminalBackend;
 
   @override
-  State<BaoCodeApp> createState() => _BaoCodeAppState();
+  State<CaocodeApp> createState() => _CaocodeAppState();
 }
 
-class _BaoCodeAppState extends State<BaoCodeApp> {
+class _CaocodeAppState extends State<CaocodeApp> {
   late final Workspace _workspace =
       widget.workspace ??
       (Workspace(preferences: PreferenceStore.file())..load());

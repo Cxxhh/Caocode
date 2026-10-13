@@ -9,7 +9,7 @@ import 'featured_upstreams_stub.dart'
 /// An upstream Settings → Models shows a card of, free of charge, for
 /// adding the one-click import (see docs/upstream-import.md): listed in
 /// site/featured/upstreams.json, by a pull request after its issue, and
-/// read from baocode.dev ([feed]): shown as soon as the site is deployed,
+/// read from caocode.dev ([feed]): shown as soon as the site is deployed,
 /// with no release of the app.
 @immutable
 class FeaturedUpstream {
@@ -81,7 +81,9 @@ class FeaturedUpstream {
       description.values.firstOrNull;
 
   /// The list, its logos beside it.
-  static final feed = Uri.parse('https://baocode.dev/featured/upstreams.json');
+  static final feed = Uri.parse(
+    'https://raw.githubusercontent.com/Cxxhh/Caocode/main/site/featured/upstreams.json',
+  );
 
   /// A logo's name: a file beside the list, never a path.
   static bool isLogoName(String name) =>
@@ -128,7 +130,7 @@ class FeaturedUpstream {
   );
 
   /// [known], from the list kept last time, while there are none: at the
-  /// app's start, with no asking baocode.dev.
+  /// app's start, with no asking caocode.dev.
   static Future<void> readKept() async {
     if (known.value.isNotEmpty) return;
     try {

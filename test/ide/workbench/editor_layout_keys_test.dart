@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/ide_explorer.dart';
-import 'package:baocode/ide/ide_workbench.dart';
-import 'package:baocode/keybindings/keybinding_service.dart';
+import 'package:caocode/ide/ide_explorer.dart';
+import 'package:caocode/ide/ide_workbench.dart';
+import 'package:caocode/keybindings/keybinding_service.dart';
 
 import 'fake_files.dart';
 
