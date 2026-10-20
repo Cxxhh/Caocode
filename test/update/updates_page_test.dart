@@ -12,8 +12,10 @@ import 'package:caocode/update/update_controller.dart';
 import 'package:caocode/update/update_service.dart';
 import 'package:caocode/update/update_settings.dart';
 import 'package:caocode/update/version.dart';
+import 'package:caocode/update/codex_cli_update.dart';
 
 import 'update_fakes.dart';
+import 'codex_cli_update_test.dart' show FakeCliUpdates;
 
 void main() {
   final l10n = englishLocalizations;
@@ -193,5 +195,61 @@ void main() {
   testWidgets('no diagnostics card without an uploader', (tester) async {
     await show(tester, UpdatesSettingsPage(settings: settings));
     expect(find.text(l10n.diagnosticsTitle), findsNothing);
+  });
+
+  testWidgets('CLI checks and updates even when application updates are off', (
+    tester,
+  ) async {
+    await tester.runAsync(() => settings.update(UpdateMode.settingKey, 'none'));
+    final backend = FakeCliUpdates();
+    await show(
+      tester,
+      UpdatesSettingsPage(
+        settings: settings,
+        codexUpdates: () => CodexCliUpdateService(backend),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final check = find.byKey(const ValueKey('codex-cli-check'));
+    final update = find.byKey(const ValueKey('codex-cli-update'));
+    expect(find.text('0.162.1 · Linux'), findsOneWidget);
+    expect(tester.widget<IdeButton>(check).onPressed, isNotNull);
+    expect(tester.widget<IdeButton>(update).onPressed, isNull);
+    expect(backend.updates, 0);
+    await tester.ensureVisible(check);
+    await tester.tap(check);
+    await tester.pumpAndSettle();
+    expect(find.text('Version 0.163.0 is available'), findsOneWidget);
+    expect(tester.widget<IdeButton>(update).onPressed, isNotNull);
+    await tester.tap(update);
+    await tester.pumpAndSettle();
+    expect(find.text('0.163.0 · Linux'), findsOneWidget);
+    expect(
+      find.textContaining('New sessions use the new version'),
+      findsOneWidget,
+    );
+    expect(tester.widget<IdeButton>(update).onPressed, isNull);
+    expect(backend.updates, 1);
+  });
+
+  testWidgets('CLI check failure remains visible and can be retried', (
+    tester,
+  ) async {
+    final backend = FakeCliUpdates()..problem = StateError('offline');
+    await show(
+      tester,
+      UpdatesSettingsPage(codexUpdates: () => CodexCliUpdateService(backend)),
+    );
+    await tester.pumpAndSettle();
+    final check = find.byKey(const ValueKey('codex-cli-check'));
+    await tester.ensureVisible(check);
+    await tester.tap(check);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('offline'), findsOneWidget);
+    expect(tester.widget<IdeButton>(check).onPressed, isNotNull);
+    backend.problem = null;
+    await tester.tap(check);
+    await tester.pumpAndSettle();
+    expect(find.text('Version 0.163.0 is available'), findsOneWidget);
   });
 }

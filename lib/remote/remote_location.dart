@@ -1,5 +1,7 @@
 import 'package:path/path.dart' as p;
 
+import '../kernel/codex/codex_host.dart';
+
 /// Where a project is: a folder of this machine (its path), or of a host
 /// reached over SSH, `ssh://<host>/<absolute path>` (the host as the user
 /// gave it: an alias of `~/.ssh/config`, or `user@host`, with a port after
@@ -21,7 +23,9 @@ abstract final class RemoteLocation {
 
   /// [location]'s path on its host: itself for a local one.
   static String pathOf(String location) {
-    if (!isRemote(location)) return location;
+    if (!isRemote(location)) {
+      return p.style == p.Style.windows ? wslWindowsPath(location) : location;
+    }
     final rest = location.substring(scheme.length);
     final slash = rest.indexOf('/');
     if (slash < 0) return '/';

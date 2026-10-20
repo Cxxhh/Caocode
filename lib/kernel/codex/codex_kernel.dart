@@ -7,11 +7,14 @@ import '../../chat/chat_models.dart';
 import '../agent_kernel.dart';
 import '../kernel_event.dart';
 import '../kernel_types.dart';
+import '../transcript.dart';
 import 'codex_catalog.dart';
 import 'codex_choices.dart';
 import 'codex_process.dart';
 import 'codex_rpc.dart';
 import 'codex_transport.dart';
+
+part 'codex_subagents.dart';
 
 /// Adapts `codex app-server` to [AgentKernel]. Codex keeps no background
 /// commands and cannot put files back, so it does not declare
@@ -30,6 +33,7 @@ class CodexKernel
         ReportsContext,
         RewindsConversation,
         RenamesSession,
+        BrowsesSubagents,
         AcceptsImages {
   CodexKernel(
     this.descriptor,
@@ -52,19 +56,21 @@ class CodexKernel
   CodexTransport _transport;
   final KernelContext _context;
   final CodexTransport Function()? reconnect;
+  late final _CodexSubagents _subagents = _CodexSubagents(this);
+
+  @override
+  void viewSubagent(String? id) => _subagents.view(id);
+  @override
+  SubagentHistoryState subagentHistory(String id) => _subagents.history(id);
+  @override
+  Future<void> refreshSubagent(String id, {bool earlier = false}) =>
+      _subagents.refresh(id, earlier: earlier);
   late CodexRpcClient _rpc;
   late StreamSubscription<Map<String, Object?>> _subscription;
 
   @override
   late final LocalChoice model = LocalChoice(
-    const [
-      KernelOption(
-        'default',
-        'CLI 默认',
-        Icons.bolt_rounded,
-        '使用 Codex CLI 的模型配置',
-      ),
-    ],
+    const [],
     onChanged: (_) {
       if (fastEnabled) _serviceTierOverride = _fastTier ?? 'default';
       emitInfoChanged();
@@ -194,8 +200,15 @@ class CodexKernel
 
   @override
   void release() {
-    if (_turn != null || _disposed || _released || reconnect == null) return;
+    if (_turn != null ||
+        _subagents.hasRunning ||
+        _disposed ||
+        _released ||
+        reconnect == null) {
+      return;
+    }
     _released = true;
+    _subagents.suspend();
     _generation++;
     _rpc.close();
     _shutdown = _rpc.stopped;
@@ -248,6 +261,7 @@ class CodexKernel
       _loadConfig(generation, rpc),
     ]);
     if (_disposed || _released || generation != _generation) return;
+    _resolveModelChoice();
     _health = KernelHealth.ready;
     emitInfoChanged();
     _takeNext();
@@ -264,23 +278,32 @@ class CodexKernel
           if (raw['model'] case final String id) MapEntry(id, raw),
       ]);
     effort.loadModels(data);
+  }
+
+  void _resolveModelChoice() {
+    final configured = _config['model'] as String?;
+    final selected = model.selected;
+    final id = selected != null && selected != 'default'
+        ? selected
+        : configured ??
+              _modelsById.entries
+                  .where((entry) => entry.value['isDefault'] == true)
+                  .firstOrNull
+                  ?.key ??
+              _modelsById.keys.firstOrNull;
     model.options = [
-      const KernelOption(
-        'default',
-        'CLI 默认',
-        Icons.bolt_rounded,
-        '使用 Codex CLI 的模型配置',
-      ),
-      for (final raw in data)
-        if (raw['model'] is String)
-          KernelOption(
-            raw['model'] as String,
-            raw['displayName'] as String? ?? raw['model'] as String,
-            Icons.bolt_rounded,
-            raw['description'] as String? ?? '',
-          ),
+      for (final MapEntry(key: id, value: raw) in _modelsById.entries)
+        KernelOption(
+          id,
+          raw['displayName'] as String? ?? id,
+          Icons.bolt_rounded,
+          raw['description'] as String? ?? '',
+        ),
+      // A custom provider's configured model need not appear in model/list.
+      if (id != null && !_modelsById.containsKey(id))
+        KernelOption(id, id, Icons.bolt_rounded, ''),
     ];
-    emitInfoChanged();
+    model.reported = id;
   }
 
   Future<Map> _readConfig() async {
@@ -309,6 +332,9 @@ class CodexKernel
         if (_context.cwd != null) 'cwd': codexServerPath(_context.cwd),
       });
       if (_disposed || _released || generation != _generation) return;
+      if (model.selected == null || model.selected == 'default') {
+        model.reported = resumed['model'] as String?;
+      }
       _reportedModelProvider = resumed['modelProvider'] as String?;
       if (resumed.containsKey('serviceTier')) {
         _reportedServiceTier = resumed['serviceTier'] as String? ?? 'default';
@@ -317,6 +343,7 @@ class CodexKernel
         _replay((resumed['thread'] as Map?) ?? const {});
         _historyLoaded = true;
       }
+      _subagents.resume();
     }
   }
 
@@ -385,6 +412,7 @@ class CodexKernel
 
   @override
   void emit(KernelEvent event) {
+    _subagents.interaction(event);
     final replay = _replayEvents;
     if (replay != null) {
       replay.add(event);
@@ -445,6 +473,7 @@ class CodexKernel
 
   /// Pending approvals: our request id → the server's JSON-RPC id.
   final Map<String, Object?> _approvals = {};
+  final Map<String, String> _approvalThreads = {};
   final Map<String, List<String>> _questions = {};
   final Map<String, Map<String, Object?>> _permissions = {};
 
@@ -747,6 +776,7 @@ class CodexKernel
   void answer(String requestId, InteractionAnswer answer) {
     if (!_approvals.containsKey(requestId)) return;
     final rpcId = _approvals.remove(requestId);
+    _approvalThreads.remove(requestId);
     emit(InteractionResolved(nextSeq, requestId));
     if (_questions.remove(requestId) case final keys?) {
       final picks = answer is QuestionAnswer && !answer.skipped
@@ -860,6 +890,7 @@ class CodexKernel
   void dispose() {
     if (_disposed) return;
     _disposed = true;
+    _subagents.dispose();
     unawaited(_subscription.cancel());
     _rpc.close();
     _shutdown = _rpc.stopped;
@@ -876,7 +907,11 @@ class CodexKernel
     }
     if (params?['threadId'] case final String threadId
         when _threadId != null && threadId != _threadId) {
+      _subagents.receive(message, threadId);
       return;
+    }
+    if (method == 'thread/started') {
+      _subagents.started((params?['thread'] as Map?) ?? const {});
     }
     if (message.containsKey('id')) {
       _serverRequest(message['id'], method, params ?? const {});
@@ -923,6 +958,7 @@ class CodexKernel
                 .where((id) => _approvals[id] == rpcId)
                 .toList()) {
           _approvals.remove(id);
+          _approvalThreads.remove(id);
           _questions.remove(id);
           _permissions.remove(id);
           emit(InteractionResolved(nextSeq, id));
@@ -995,8 +1031,10 @@ class CodexKernel
   void _serverRequest(
     Object? rpcId,
     String method,
-    Map<String, Object?> params,
-  ) {
+    Map<String, Object?> params, {
+    String? agent,
+  }) {
+    String heading(String text) => agent == null ? text : '$agent · $text';
     if (method == 'item/tool/requestUserInput') {
       final id = 'question:$rpcId';
       final questions = [
@@ -1012,7 +1050,7 @@ class CodexKernel
           nextSeq,
           QuestionRequest(
             id: id,
-            title: 'Codex 需要你的选择',
+            title: heading('Codex 需要你的选择'),
             questions: [
               for (final question in questions)
                 Question(
@@ -1044,7 +1082,7 @@ class CodexKernel
           ApprovalRequest(
             id: id,
             toolName: 'permissions',
-            title: 'Codex 请求权限',
+            title: heading('Codex 请求权限'),
             reason: params['reason'] as String?,
             preview: CommandPreview(jsonEncode(params['permissions'])),
             alwaysAllowLabel: '本次会话允许',
@@ -1075,7 +1113,7 @@ class CodexKernel
         nextSeq,
         ApprovalRequest(
           id: id,
-          title: title,
+          title: heading(title),
           toolName: method.split('/')[1],
           reason: params['reason'] as String?,
           preview: preview,
@@ -1088,6 +1126,11 @@ class CodexKernel
   void _itemStarted(Map<String, Object?> item) {
     final id = item['id'] as String;
     switch (item['type']) {
+      case 'subAgentActivity':
+        _subagents.activity(item, _threadId);
+      case 'collabAgentToolCall':
+      case 'collabToolCall':
+        _subagents.tool(item, _threadId);
       case 'reasoning':
         _reasoning[id] = StringBuffer();
         _reasoningClock[id] = Stopwatch()..start();
@@ -1124,6 +1167,11 @@ class CodexKernel
   void _itemCompleted(Map<String, Object?> item) {
     final id = item['id'] as String;
     switch (item['type']) {
+      case 'subAgentActivity':
+        _subagents.activity(item, _threadId);
+      case 'collabAgentToolCall':
+      case 'collabToolCall':
+        _subagents.tool(item, _threadId);
       case 'reasoning':
         final buffer = _reasoning.remove(id);
         final clock = _reasoningClock.remove(id)?..stop();
@@ -1310,12 +1358,15 @@ class CodexKernel
     for (final item in [..._commands.values]) {
       _itemCompleted({...item, 'status': 'failed'});
     }
-    for (final id in _approvals.keys) {
+    for (final id
+        in _approvals.keys
+            .where((id) => !_approvalThreads.containsKey(id))
+            .toList()) {
       emit(InteractionResolved(nextSeq, id));
+      _approvals.remove(id);
+      _questions.remove(id);
+      _permissions.remove(id);
     }
-    _approvals.clear();
-    _questions.clear();
-    _permissions.clear();
     emit(
       TurnEnded(
         nextSeq,
@@ -1327,5 +1378,6 @@ class CodexKernel
         },
       ),
     );
+    _subagents.restoreRequests();
   }
 }

@@ -6,6 +6,7 @@ import '../../ide/ide_button.dart';
 import '../../ide/ide_menu.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/codicons.dart';
+import '../../update/codex_cli_update.dart';
 import '../../update/update_controller.dart';
 import '../../update/update_service.dart';
 import '../../update/update_settings.dart';
@@ -18,13 +19,21 @@ import 'settings_widgets.dart';
 /// another, what it found (Restart to Update), `update.mode`, and the new
 /// version's notes (this one's, where it is the newest).
 class UpdatesSettingsPage extends StatefulWidget {
-  const UpdatesSettingsPage({super.key, this.updates, this.settings});
+  const UpdatesSettingsPage({
+    super.key,
+    this.updates,
+    this.settings,
+    this.codexUpdates,
+  });
 
   /// None where the build does not update itself (a debug build).
   final UpdateController? updates;
 
   /// settings.json; none under test, where choices are not kept.
   final UserSettings? settings;
+
+  /// Created once for this page and the project host from which it was opened.
+  final CodexCliUpdateService? Function()? codexUpdates;
 
   static String modeName(BuildContext context, UpdateMode mode) {
     final l10n = context.l10n;
@@ -43,6 +52,20 @@ class _UpdatesSettingsPageState extends State<UpdatesSettingsPage> {
   /// Why Restart to Update did not: a [ManualUpdateRequired], or the
   /// error.
   Object? _problem;
+  CodexCliUpdateService? _codex;
+
+  @override
+  void initState() {
+    super.initState();
+    _codex = widget.codexUpdates?.call();
+    unawaited(_codex?.load());
+  }
+
+  @override
+  void dispose() {
+    _codex?.dispose();
+    super.dispose();
+  }
 
   UpdateService? get _service => widget.updates?.service;
 
@@ -78,7 +101,7 @@ class _UpdatesSettingsPageState extends State<UpdatesSettingsPage> {
   Widget build(BuildContext context) {
     final settings = widget.settings;
     return ListenableBuilder(
-      listenable: Listenable.merge([?settings, ?_service]),
+      listenable: Listenable.merge([?settings, ?_service, ?_codex]),
       builder: (context, _) => _page(
         context,
         _service?.mode ?? UpdateMode.parse(settings?[UpdateMode.settingKey]),
@@ -144,6 +167,7 @@ class _UpdatesSettingsPageState extends State<UpdatesSettingsPage> {
             ),
           ],
         ),
+        if (_codex case final cli?) _codexCard(context, cli),
         if (notes != null)
           SettingsGroup(
             title: l10n.updateReleaseNotesFor(noted!.version.display),
@@ -157,6 +181,94 @@ class _UpdatesSettingsPageState extends State<UpdatesSettingsPage> {
               ),
             ],
           ),
+      ],
+    );
+  }
+
+  Widget _codexCard(BuildContext context, CodexCliUpdateService cli) {
+    final zh = Localizations.localeOf(context).languageCode == 'zh';
+    String text(String chinese, String english) => zh ? chinese : english;
+    final installed = cli.installation;
+    final version = cli.latest?.marketing;
+    final status = switch (cli.status) {
+      CodexCliUpdateStatus.idle => text(
+        '点击检查更新以获取最新版本。',
+        'Check for the latest version.',
+      ),
+      CodexCliUpdateStatus.loading => text(
+        '正在读取 CLI 版本…',
+        'Reading CLI version…',
+      ),
+      CodexCliUpdateStatus.checking => text('正在检查更新…', 'Checking for updates…'),
+      CodexCliUpdateStatus.available => text(
+        '发现新版本 $version',
+        'Version $version is available',
+      ),
+      CodexCliUpdateStatus.upToDate => text(
+        '当前已是最新版本。',
+        'Codex CLI is up to date.',
+      ),
+      CodexCliUpdateStatus.updating => text(
+        '正在更新 Codex CLI…',
+        'Updating Codex CLI…',
+      ),
+      CodexCliUpdateStatus.updated => text(
+        '更新完成。新版本将在新会话中生效；已有会话请重启应用后继续。',
+        'Updated. New sessions use the new version. Restart the app to continue existing sessions with it.',
+      ),
+      CodexCliUpdateStatus.failed => text(
+        '操作失败：${cli.error}',
+        'Operation failed: ${cli.error}',
+      ),
+    };
+    return SettingsGroup(
+      title: 'Codex CLI',
+      children: [
+        SettingsCard(
+          children: [
+            SettingsRow(
+              label: text('当前版本', 'Current version'),
+              description: installed == null
+                  ? status
+                  : '${installed.version.marketing} · ${installed.host}',
+              below: [
+                if (installed != null) ...[
+                  SelectableText(installed.path, style: SettingsText.path),
+                  Text(status, style: SettingsText.description),
+                  if (!installed.canUpdate)
+                    Text(
+                      text(
+                        '此安装不支持自动更新，请使用原安装方式升级。',
+                        'Use the original installation method to update this CLI.',
+                      ),
+                      style: SettingsText.description,
+                    ),
+                ],
+              ],
+              trailing: Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                alignment: WrapAlignment.end,
+                children: [
+                  IdeButton(
+                    key: const ValueKey('codex-cli-check'),
+                    label: context.l10n.updateCheckNow,
+                    icon: Codicons.refresh,
+                    secondary: true,
+                    onPressed: cli.busy ? null : () => unawaited(cli.check()),
+                  ),
+                  IdeButton(
+                    key: const ValueKey('codex-cli-update'),
+                    label: text('更新 Codex CLI', 'Update Codex CLI'),
+                    onPressed: cli.canUpdate
+                        ? () => unawaited(cli.update())
+                        : null,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }

@@ -139,6 +139,42 @@ class ChatSession extends ChangeNotifier implements ChatFeed {
   /// outermost first): shown again when the view comes back to it.
   List<String> openAgents = const [];
 
+  /// Delegation remains owned by the parent kernel while its transcript is
+  /// inspected. Kernels without independent thread histories need no action.
+  void viewSubagent(String? id) {
+    if (_kernel case final BrowsesSubagents browser) browser.viewSubagent(id);
+  }
+
+  SubagentHistoryState? subagentHistory(String id) => switch (_kernel) {
+    final BrowsesSubagents browser => browser.subagentHistory(id),
+    _ => null,
+  };
+
+  Future<void> refreshSubagent(String id, {bool earlier = false}) async {
+    if (_kernel case final BrowsesSubagents browser) {
+      await browser.refreshSubagent(id, earlier: earlier);
+    }
+  }
+
+  List<({AgentItem agent, List<String> path})> get subagents =>
+      _cached(#subagents, () {
+        final found = <({AgentItem agent, List<String> path})>[];
+        void visit(AgentItem agent, List<String> parent) {
+          final id = agent.id;
+          if (id == null) return;
+          final path = [...parent, id];
+          found.add((agent: agent, path: path));
+          for (final nested in agent.children.whereType<AgentItem>()) {
+            visit(nested, path);
+          }
+        }
+
+        for (final (_, item) in _transcript.liveItems) {
+          if (item case final AgentItem agent) visit(agent, const []);
+        }
+        return found;
+      });
+
   late AgentKernel _kernel;
   StreamSubscription<KernelEvent>? _subscription;
   late Transcript _transcript;

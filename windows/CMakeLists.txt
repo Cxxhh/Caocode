@@ -93,6 +93,17 @@ set(INSTALL_BUNDLE_LIB_DIR "${CMAKE_INSTALL_PREFIX}")
 install(TARGETS ${BINARY_NAME} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}"
   COMPONENT Runtime)
 
+# Local WSL uses the Linux file server over wsl.exe stdio. Ship the native
+# binaries so opening a project needs neither a download nor a Dart SDK.
+set(CAOCODE_WSL_SERVER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../build/remote")
+if(EXISTS "${CAOCODE_WSL_SERVER_DIR}/VERSION")
+  install(FILES
+    "${CAOCODE_WSL_SERVER_DIR}/VERSION"
+    "${CAOCODE_WSL_SERVER_DIR}/caocode-server-linux-x64"
+    "${CAOCODE_WSL_SERVER_DIR}/caocode-server-linux-arm64"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/remote" COMPONENT Runtime)
+endif()
+
 # The browsers' native messaging host and its manifest, beside the app.
 install(TARGETS caocode-browser-host RUNTIME
   DESTINATION "${CMAKE_INSTALL_PREFIX}" COMPONENT Runtime)

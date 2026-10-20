@@ -8508,7 +8508,7 @@ abstract class AppLocalizations {
   /// No description provided for @workspaceOpenProjectFolderDetail.
   ///
   /// In en, this message translates to:
-  /// **'Its Claude Code sessions show in the sidebar; new agents run in it.'**
+  /// **'Choose where your agent works; project sessions appear in the sidebar.'**
   String get workspaceOpenProjectFolderDetail;
 
   /// No description provided for @settingsFileError.

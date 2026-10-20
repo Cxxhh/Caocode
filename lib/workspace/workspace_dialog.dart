@@ -17,6 +17,7 @@ import '../theme/codicons.dart';
 import '../theme/workbench_theme.dart' show themeColors;
 import 'project_workspace.dart';
 import 'window_controls.dart';
+import 'codex_environment_picker.dart';
 import 'workspace.dart';
 
 /// Asks for a new workspace's name and folders ([folders] in it to begin
@@ -55,8 +56,7 @@ class WorkspaceDialog extends StatefulWidget {
 
   /// Picks a folder; replaceable under test.
   @visibleForTesting
-  static Future<String?> Function() pickDirectory =
-      WindowControls.pickDirectory;
+  static Future<String?> Function()? pickDirectory;
 
   /// Whether a folder can be picked in the file manager; replaceable under
   /// test.
@@ -108,7 +108,9 @@ class _WorkspaceDialogState extends State<WorkspaceDialog> {
   });
 
   Future<void> _pick() async {
-    final folder = await WorkspaceDialog.pickDirectory();
+    final folder =
+        await (WorkspaceDialog.pickDirectory?.call() ??
+            pickCodexProjectDirectory(context));
     if (folder == null || !mounted) return;
     setState(() {
       if (!_folders.contains(folder)) _folders.add(folder);

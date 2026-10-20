@@ -15,6 +15,8 @@ import '../icons/emoji_sheet.dart';
 import '../icons/icon_library.dart';
 import '../icons/project_icon.dart';
 import '../kernel/agent_kernel.dart';
+import '../kernel/codex/codex_environment.dart';
+import '../kernel/codex/codex_host.dart';
 import '../kernel/kernel_registry.dart';
 import '../kernel/kernel_types.dart';
 import '../l10n/l10n.dart';
@@ -27,6 +29,7 @@ import 'chat_grid.dart';
 import 'editor_launcher.dart';
 import 'preference_store.dart';
 import 'project_workspace.dart';
+import 'session_history.dart';
 
 /// The arrangement of the project and its conversation in the window.
 enum WorkspaceLayout { chat, ide }
@@ -96,7 +99,7 @@ class AgentThread {
   Project project;
 
   /// The kept session it continues, if any.
-  final SessionRecord? record;
+  SessionRecord? record;
 
   final KernelDescriptor _kernel;
   final ChatSession Function() _open;
@@ -230,11 +233,15 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
     List<KernelDescriptor>? kernels,
     PreferenceStore? preferences,
     PreferenceStore? drafts,
+    this.historyCache,
+    this.historyTimeout = const Duration(seconds: 15),
     IconLibrary? icons,
     this.titler,
     AppLocalizations Function()? l10n,
+    CodexEnvironmentController? environments,
     this.workspaceDirectories = const ProjectWorkspaceDirectories(),
-  }) : _projects = [...projects],
+  }) : environments = environments ?? CodexEnvironmentController.instance,
+       _projects = [...projects],
        icons = icons ?? IconLibrary(),
        l10n = l10n ?? (() => englishLocalizations),
        kernels = kernels ?? KernelRegistry.all,
@@ -244,6 +251,101 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
     this.icons
       ..onRemoved = _forgetIconImage
       ..addListener(notifyListeners);
+    _environment = this.environments.selected.id;
+    this.environments.addListener(_environmentChanged);
+  }
+
+  final CodexEnvironmentController environments;
+  final PreferenceStore? historyCache;
+  final Duration historyTimeout;
+  final _histories = <String, SessionHistoryState>{};
+  final _failedHistoryProjects = <String, Set<Project>>{};
+  SessionHistoryState _historyFor(String environment) =>
+      _histories.putIfAbsent(environment, SessionHistoryState.new);
+  SessionHistoryState get history => _historyFor(_environment);
+  int get historyCount => _threads
+      .where(
+        (thread) =>
+            inEnvironment(thread.project.path) &&
+            thread.record != null &&
+            !thread.archived,
+      )
+      .length;
+  final _catalogSnapshots = <String, List<SessionRecord>>{};
+  final _historyCursors = <String, Map<String, String>>{};
+  final _listedHistoryProjects = <String, Set<String>>{};
+  Future<void>? _readingCache;
+  bool _cacheRead = false;
+  static const _historyFreshness = Duration(seconds: 30);
+  late String _environment;
+  final _environmentViews =
+      <
+        String,
+        ({ChatGrid<AgentThread> grid, AgentThread? selected, String? ideFolder})
+      >{};
+
+  /// Remote hosts keep their own picker; local projects belong to one CLI.
+  bool inEnvironment(String path) =>
+      !environments.supported ||
+      RemoteLocation.isRemote(path) ||
+      environments.selected.accepts(path);
+
+  bool _sameProjectPath(String a, String b) {
+    if (!environments.supported) return a == b;
+    final left = wslProject(a);
+    final right = wslProject(b);
+    if (left != null || right != null) {
+      return left != null &&
+          right != null &&
+          left.distribution.toLowerCase() == right.distribution.toLowerCase() &&
+          p.posix.normalize(left.path) == p.posix.normalize(right.path);
+    }
+    return RemoteLocation.isRemote(a) || RemoteLocation.isRemote(b)
+        ? a == b
+        : p.windows.equals(a, b);
+  }
+
+  void _environmentChanged() {
+    final next = environments.selected.id;
+    if (!environments.supported || next == _environment) return;
+    _environmentViews[_environment] = (
+      grid: _grid.copy(),
+      selected: _selected,
+      ideFolder: _ideFolder,
+    );
+    _environment = next;
+    _grid.clear();
+    _selected = null;
+    _ideFolder = null;
+    final view = _environmentViews[next];
+    if (view != null) {
+      _grid.restore(view.grid.cells);
+      _grid.columnRatio = view.grid.columnRatio;
+      _grid.rowRatio = view.grid.rowRatio;
+      for (final thread in _grid.panes) {
+        if (!_threads.contains(thread) ||
+            thread.archived ||
+            !inEnvironment(thread.project.path)) {
+          _grid.remove(thread);
+        }
+      }
+      _selected = view.selected != null && _grid.contains(view.selected!)
+          ? view.selected
+          : _grid.panes.firstOrNull;
+      _ideFolder = view.ideFolder;
+    }
+    _sidebarHost = null;
+    _sidebarAll = false;
+    _showEnvironmentProject();
+    _save();
+    notifyListeners();
+    unawaited(refresh(force: false));
+  }
+
+  void _showEnvironmentProject() {
+    if (_selected != null) return;
+    final project = sidebarProjectsHere.firstOrNull;
+    if (project != null) create(project: project);
   }
 
   /// The kernels new agents may run on.
@@ -258,7 +360,9 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   /// are kept with the session, so are in the language of when given.
   final AppLocalizations Function() l10n;
 
-  List<Project> get projects => List.unmodifiable(_projects);
+  List<Project> get projects => List.unmodifiable(
+    _projects.where((project) => inEnvironment(project.path)),
+  );
   final List<Project> _projects;
 
   List<AgentThread> get threads => List.unmodifiable(_threads);
@@ -277,98 +381,293 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   final ChatGrid<AgentThread> _grid = ChatGrid();
 
   bool _loading = false;
-  bool get loading => _loading;
+  bool get loading =>
+      history.loading || (_loading && _loadEnvironment == _environment);
+  String? _loadEnvironment;
 
   // --- Loading -------------------------------------------------------------
 
   /// Lists the projects and sessions the kernels keep, then opens a new
   /// agent in the most recent project.
   Future<void> load() async {
+    final environment = _environment;
+    _loadEnvironment = environment;
     _loading = true;
     notifyListeners();
     unawaited(icons.load());
     await (_restoring = _restore());
-    var complete = true;
-    final listed = <String>{};
-    for (final kernel in kernels) {
-      final catalog = kernel.catalog;
-      if (catalog == null) continue;
-      List<ProjectRecord> records;
-      try {
-        records = await catalog.projects();
-      } on Object {
-        records = const [];
-        complete = false;
-      }
-      for (final record in records) {
-        listed.add(record.path);
-        final project = _project(record.path);
-        for (final session in record.sessions) {
-          _addKept(kernel, project, session);
-        }
-      }
-    }
     // Listed though nothing was asked there yet, nor is its folder opened.
     for (final workspace in _workspaces.values) {
       _project(workspace.path);
     }
     for (final folder in _folders) {
-      if (listed.contains(folder)) continue;
       final project = _project(folder);
       // A remote project's sessions are its host's: no catalog lists them
       // with this machine's, so they are asked for there (not waited for).
       if (RemoteLocation.isRemote(folder)) unawaited(_listKept(project));
     }
-    // Only once all were read: what one failed to list is not gone. Nor
-    // while remote projects' sessions are still to be listed (or cannot
-    // be, their host away): what is kept of those must stay.
-    if (complete && !_folders.any(RemoteLocation.isRemote)) {
-      _forgetGone(listed);
+    await refresh();
+    if (_disposed) return;
+    // Partial catalogs cannot establish that data on another host is gone.
+    if (_historyFor(environment).error == null &&
+        !environments.supported &&
+        !_folders.any(RemoteLocation.isRemote)) {
+      _forgetGone(_listedHistoryProjects[environment] ?? {});
     }
     _loading = false;
     for (final folder in {?_ideFolder, ..._windowFolders}) {
       _ensureIdeChat(folder);
     }
-    _restoreChatView();
-    if (_selected == null && _projects.isNotEmpty) {
+    if (environment == _environment) _presentHistory(complete: true);
+    if (_ideFolder != null && !inEnvironment(_ideFolder!)) _ideFolder = null;
+    if (_selected == null && sidebarProjects.isNotEmpty) {
       create();
     } else {
       notifyListeners();
     }
   }
 
-  Future<void>? _refreshing;
+  final Map<String, Future<void>> _refreshes = {};
+  final _readTokens = <String, Object>{};
 
   /// Picks up sessions the kernels kept since [load] (e.g. ones started in
   /// a terminal). What is listed stays as it is.
-  Future<void> refresh() =>
-      _refreshing ??= _refresh().whenComplete(() => _refreshing = null);
+  Future<void> loadMoreHistory() => history.loading || !history.hasMore
+      ? Future.value()
+      : refresh(more: true);
 
-  Future<void> _refresh() async {
-    if (_loading) return;
-    final before = _threads.length;
-    for (final kernel in kernels) {
-      final List<ProjectRecord> records;
-      try {
-        records = await kernel.catalog?.projects() ?? const [];
-      } on Object {
-        continue;
+  Future<void> retryHistory() async {
+    final failed =
+        _failedHistoryProjects[_environment]?.toList() ?? const <Project>[];
+    await Future.wait([
+      refresh(),
+      for (final project in failed) _listKept(project),
+    ]);
+  }
+
+  Future<void> refresh({bool force = true, bool more = false}) {
+    final environment = _environment;
+    if (_refreshes[environment] case final pending?) return pending;
+    final updatedAt = history.updatedAt;
+    if (!more &&
+        !force &&
+        updatedAt != null &&
+        DateTime.now().difference(updatedAt) < _historyFreshness) {
+      return Future.value();
+    }
+    // Capture each reader now: selecting another environment cannot reroute it.
+    final token = _readTokens[environment] = Object();
+    final readers = [
+      for (final kernel in kernels)
+        (
+          kernel: kernel,
+          key: kernel.catalog is ProgressiveSessionCatalog
+              ? '${kernel.id}:${(kernel.catalog as ProgressiveSessionCatalog).cacheKey}'
+              : null,
+          pages: switch (kernel.catalog) {
+            final ProgressiveSessionCatalog catalog => _projectPage(
+              catalog,
+              environment,
+              kernel.id,
+              token,
+              more: more,
+            ),
+            final SessionCatalog catalog => Stream.fromFuture(
+              catalog.projects(),
+            ),
+            null => const Stream<List<ProjectRecord>>.empty(),
+          },
+        ),
+    ];
+    final state = _historyFor(environment)..begin();
+    state.loadingMore = more;
+    final pending = _refreshes[environment] = _refresh(environment, readers)
+        .whenComplete(() {
+          _refreshes.remove(environment);
+          _readTokens.remove(environment);
+          state.pending--;
+          if (!_disposed) notifyListeners();
+        });
+    notifyListeners();
+    return pending;
+  }
+
+  Stream<List<ProjectRecord>> _projectPage(
+    ProgressiveSessionCatalog catalog,
+    String environment,
+    String kernel,
+    Object token, {
+    required bool more,
+  }) {
+    final cursor = more ? (_historyCursors[environment]?[kernel]) : null;
+    // Start now so the catalog captures its host before a later switch.
+    final page = Future.sync(() => catalog.projectPage(cursor: cursor));
+    return Stream.fromFuture(
+      page.then((result) {
+        if (!identical(_readTokens[environment], token)) return result.projects;
+        final cursors = _historyCursors.putIfAbsent(environment, () => {});
+        if (result.nextCursor case final next?) {
+          cursors[kernel] = next;
+        } else {
+          cursors.remove(kernel);
+        }
+        _historyFor(environment).hasMore = cursors.isNotEmpty;
+        return result.projects;
+      }),
+    );
+  }
+
+  Future<void> _readHistoryCache() => _readingCache ??= (() async {
+    final data = await historyCache?.read();
+    if (data == null || data['version'] != 1 || data['catalogs'] is! Map) {
+      return;
+    }
+    for (final entry in (data['catalogs'] as Map).entries) {
+      if (entry.key is! String || entry.value is! List) continue;
+      _catalogSnapshots[entry.key as String] = [
+        for (final raw in entry.value as List)
+          if (raw case {
+            'id': final String id,
+            'title': final String title,
+            'cwd': final String cwd,
+            'updatedAt': final int time,
+          })
+            SessionRecord(
+              id: id,
+              title: title,
+              cwd: cwd,
+              updatedAt: DateTime.fromMillisecondsSinceEpoch(time),
+              path: raw['path'] as String?,
+            ),
+      ];
+    }
+  })();
+
+  Future<void> _saveHistoryCache() async => historyCache?.write({
+    'version': 1,
+    'catalogs': {
+      for (final entry in _catalogSnapshots.entries)
+        entry.key: [
+          for (final session in entry.value)
+            {
+              'id': session.id,
+              'title': session.title,
+              'cwd': session.cwd,
+              'updatedAt': session.updatedAt.millisecondsSinceEpoch,
+              'path': ?session.path,
+            },
+        ],
+    },
+  });
+
+  void _cacheSessions(String key, List<SessionRecord> sessions) {
+    final merged = {
+      for (final session in _catalogSnapshots[key] ?? const <SessionRecord>[])
+        session.id: session,
+    };
+    for (final session in sessions) {
+      merged[session.id] = session;
+    }
+    _catalogSnapshots[key] = merged.values.toList();
+  }
+
+  void _ingest(KernelDescriptor kernel, Iterable<ProjectRecord> records) {
+    for (final record in records) {
+      final known = _projects.any(
+        (project) => _sameProjectPath(project.path, record.path),
+      );
+      final project = _project(record.path);
+      if (!known) {
+        _projects
+          ..remove(project)
+          ..insert(0, project);
       }
-      for (final record in records) {
-        final known = _projects.any((project) => project.path == record.path);
-        final project = _project(record.path);
-        if (!known) {
-          // Newest first, like the kept projects.
-          _projects
-            ..remove(project)
-            ..insert(0, project);
-        }
-        for (final session in record.sessions) {
-          _addKept(kernel, project, session);
-        }
+      for (final session in record.sessions) {
+        _addKept(kernel, project, session);
       }
     }
-    if (_threads.length != before) notifyListeners();
+  }
+
+  void _presentHistory({bool complete = false}) {
+    if (!_chatViewRestored && (complete || _keptChatView == null)) {
+      _restoreChatView();
+    }
+    if (_chatViewRestored) _showEnvironmentProject();
+  }
+
+  Future<void> _refresh(
+    String environment,
+    List<
+      ({
+        KernelDescriptor kernel,
+        String? key,
+        Stream<List<ProjectRecord>> pages,
+      })
+    >
+    readers,
+  ) async {
+    final state = _historyFor(environment);
+    try {
+      if (!_cacheRead) {
+        await _readHistoryCache();
+        _cacheRead = true;
+      }
+    } on Object {
+      // A disposable snapshot can be rebuilt through the CLI.
+    }
+    if (_disposed) return;
+    for (final reader in readers) {
+      final cached = _catalogSnapshots[reader.key];
+      if (cached == null) continue;
+      _ingest(reader.kernel, [
+        for (final session in cached)
+          ProjectRecord(path: session.cwd, sessions: [session]),
+      ]);
+    }
+    if (environment == _environment) {
+      _presentHistory(
+        complete: readers.any(
+          (reader) => _catalogSnapshots[reader.key]?.isNotEmpty == true,
+        ),
+      );
+      notifyListeners();
+    }
+    var succeeded = true;
+    final listed = _listedHistoryProjects[environment] = <String>{};
+    for (final reader in readers) {
+      final snapshot = <SessionRecord>[];
+      try {
+        await for (final records in reader.pages.timeout(historyTimeout)) {
+          if (_disposed) return;
+          listed.addAll(records.map((record) => record.path));
+          _ingest(reader.kernel, records);
+          final sessions = records.expand((record) => record.sessions);
+          snapshot.addAll(sessions);
+          state.received += sessions.length;
+          if (environment == _environment) {
+            _presentHistory();
+            notifyListeners();
+          }
+        }
+        if (reader.key case final key?) {
+          _cacheSessions(key, snapshot);
+        }
+      } on Object catch (error) {
+        succeeded = false;
+        state.error = error;
+      }
+    }
+    if (_disposed) return;
+    if (succeeded) state.updatedAt = DateTime.now();
+    if (environment == _environment) {
+      _presentHistory(complete: true);
+      notifyListeners();
+    }
+    try {
+      await _saveHistoryCache();
+    } on Object {
+      /* Rebuildable cache. */
+    }
   }
 
   /// Opens [path] as a project (if not yet) and a new agent in it.
@@ -395,7 +694,9 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   Project _openProject(String path) {
     // Opened again: listed again.
     _unhide(path);
-    final known = _projects.any((project) => project.path == path);
+    final known = _projects.any(
+      (project) => _sameProjectPath(project.path, path),
+    );
     final project = _project(path);
     if (!known) {
       // Newest first, like the kept projects.
@@ -411,30 +712,74 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
         _sshHosts.add(host);
         _save();
       }
-      unawaited(_listKept(project));
     }
+    unawaited(_listKept(project));
     return project;
   }
 
   /// Lists the sessions the kernels keep in [project]. Not waited for: to
   /// find them, Claude Code's are all read, which may take a while.
-  Future<void> _listKept(Project project) async {
-    final before = _threads.length;
-    for (final kernel in kernels) {
-      final List<SessionRecord> sessions;
+  final Map<String, Future<void>> _listingProjects = {};
+  Future<void> _listKept(Project project) => _listingProjects.putIfAbsent(
+    project.path,
+    () =>
+        _readKept(project)
+            .whenComplete(() => _listingProjects.remove(project.path)),
+  );
+
+  Future<void> _readKept(Project project) async {
+    if (!kernels.any((kernel) => kernel.catalog != null)) return;
+    final environment = _environment;
+    final state = _historyFor(environment)..begin();
+    if (!_disposed) notifyListeners();
+    try {
+      var succeeded = true;
+      for (final kernel in kernels) {
+        final catalog = kernel.catalog;
+        final cacheKey =
+            catalog is ProgressiveSessionCatalog && inEnvironment(project.path)
+            ? '${kernel.id}:${catalog.cacheKey}'
+            : null;
+        final snapshot = <SessionRecord>[];
+        try {
+          final pages = catalog is ProgressiveSessionCatalog
+              ? catalog.sessionPages(project.path)
+              : Stream.fromFuture(
+                  catalog?.sessionsIn(project.path) ??
+                      Future.value(<SessionRecord>[]),
+                );
+          await for (final sessions in pages.timeout(historyTimeout)) {
+            if (_disposed) return;
+            for (final session in sessions) {
+              _addKept(kernel, project, session);
+            }
+            snapshot.addAll(sessions);
+            state.received += sessions.length;
+            if (environment == _environment) notifyListeners();
+          }
+          if (cacheKey != null) _cacheSessions(cacheKey, snapshot);
+        } on Object catch (error) {
+          succeeded = false;
+          state.error = error;
+          // Its host out of reach: listed once it is reached.
+          if (project.host case final host?) _listWhenReached(host, project);
+        }
+      }
+      final failed = _failedHistoryProjects.putIfAbsent(environment, () => {});
+      if (succeeded) {
+        failed.remove(project);
+      } else {
+        failed.add(project);
+      }
       try {
-        sessions = await kernel.catalog?.sessionsIn(project.path) ?? const [];
+        await _saveHistoryCache();
       } on Object {
-        // Its host out of reach: listed once it is reached.
-        if (project.host case final host?) _listWhenReached(host, project);
-        continue;
+        /* Rebuildable cache. */
       }
-      if (_disposed) return;
-      for (final session in sessions) {
-        _addKept(kernel, project, session);
-      }
+    } finally {
+      state.pending--;
+      if (!_disposed) notifyListeners();
     }
-    if (_threads.length != before) notifyListeners();
   }
 
   /// The listeners of the hosts that could not be reached to list their
@@ -468,7 +813,7 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
 
   Project _project(String path) {
     for (final project in _projects) {
-      if (project.path == path) return project;
+      if (_sameProjectPath(project.path, path)) return project;
     }
     final project = _projectNamed(path);
     _projects.add(project);
@@ -488,11 +833,21 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   ) {
     if (_removed.contains(session.id)) return;
     // Listed already, or it is an agent of this run.
-    if (_threads.any(
-      (thread) =>
-          thread.record?.id == session.id ||
-          (thread.isOpen && thread.session.sessionId == session.id),
-    )) {
+    final existing = _threads
+        .where(
+          (thread) =>
+              thread.record?.id == session.id ||
+              (thread.isOpen && thread.session.sessionId == session.id),
+        )
+        .firstOrNull;
+    if (existing != null) {
+      if (existing.record != null) {
+        existing.record = session;
+        existing.updatedAt = session.updatedAt;
+        existing._title =
+            _names[session.id] ??
+            (session.title.isEmpty ? l10n().agentImageUntitled : session.title);
+      }
       return;
     }
     final id = session.id;
@@ -669,11 +1024,13 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   /// new folder in the IDE still works as before.
   List<String> get recentFolders => List.unmodifiable([
     for (final path in _recentFolders)
-      if (!_projects.any((project) => project.path == path) ||
-          !_hiddenProjects.containsKey(path))
+      if (inEnvironment(path) &&
+          (!_projects.any((project) => project.path == path) ||
+              !_hiddenProjects.containsKey(path)))
         path,
   ]);
-  List<String> get recentFiles => List.unmodifiable(_recentFiles);
+  List<String> get recentFiles =>
+      List.unmodifiable(_recentFiles.where(inEnvironment));
   final List<String> _recentFolders = [], _recentFiles = [];
 
   /// Recent folders and files kept, each.
@@ -702,7 +1059,7 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   /// [path]'s project: the listed one, or one that is not (yet) listed.
   Project projectAt(String path) {
     for (final project in _projects) {
-      if (project.path == path) return project;
+      if (_sameProjectPath(project.path, path)) return project;
     }
     for (final thread in _threads) {
       if (thread.project.path == path) return thread.project;
@@ -1112,6 +1469,7 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   /// to (but the one shown), nor one of a project not listed (the IDE's
   /// folder's, until it is sent something).
   bool listsInSidebar(AgentThread thread) =>
+      inEnvironment(thread.project.path) &&
       _projects.contains(thread.project) &&
       (!_isUntouched(thread) || _grid.contains(thread));
 
@@ -1265,7 +1623,7 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   List<Project> get sidebarProjects {
     final shown = [
       for (final project in _projects)
-        if (!isHidden(project)) project,
+        if (!isHidden(project) && inEnvironment(project.path)) project,
     ];
     final rank = {for (final (i, path) in _projectOrder.indexed) path: i};
     final ranked = [
@@ -2371,7 +2729,9 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
         },
         _ => null,
       };
-      if (thread != null && !shown.containsValue(thread)) {
+      if (thread != null &&
+          inEnvironment(thread.project.path) &&
+          !shown.containsValue(thread)) {
         shown[pane] = thread;
       }
     }
@@ -2461,13 +2821,20 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   /// untouched new agent there is reused rather than piling up.
   AgentThread create({Project? project}) {
     project ??= switch (_selected?.project) {
-      final current? when !isHidden(current) && listsHost(current.host) =>
+      final current?
+          when inEnvironment(current.path) &&
+              !isHidden(current) &&
+              listsHost(current.host) =>
         current,
       final current =>
         sidebarProjectsHere.firstOrNull ??
-            (current != null && !isHidden(current) ? current : null) ??
+            (current != null &&
+                    inEnvironment(current.path) &&
+                    !isHidden(current)
+                ? current
+                : null) ??
             sidebarProjects.firstOrNull ??
-            _projects.firstOrNull,
+            projects.firstOrNull,
     };
     if (project == null) {
       throw StateError('No project to create an agent in');
@@ -2507,6 +2874,11 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
       // Settings → Models' pick, if any, over the last one.
       KernelChoiceKind.model.name: ?ModelProviders.current.defaultModel,
     };
+    if (kernel.id == 'codex') {
+      // New chats follow this project's CLI configuration, including its
+      // Windows/WSL environment, rather than the last project's model.
+      settings.remove(KernelChoiceKind.model.name);
+    }
     final cwd = project.path;
     final thread = AgentThread._(
       project: project,
@@ -2703,6 +3075,10 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
         thread.record?.id ?? (thread.isOpen ? thread.session.sessionId : null);
     if (id != null) {
       _removed.add(id);
+      for (final snapshot in _catalogSnapshots.values) {
+        snapshot.removeWhere((session) => session.id == id);
+      }
+      unawaited(_saveHistoryCache().catchError((Object _) {}));
       _forgetDraft(id);
       final kept = [_pinned.remove(id), _archived.remove(id)];
       final named = _names.remove(id) != null;
@@ -2739,7 +3115,10 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
     if (_grid.isEmpty) {
       final candidates = [
         for (final thread in _threads)
-          if (!thread.archived && _projects.contains(thread.project)) thread,
+          if (!thread.archived &&
+              inEnvironment(thread.project.path) &&
+              _projects.contains(thread.project))
+            thread,
       ]..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
       if (candidates.isNotEmpty) {
         _focus(candidates.first);
@@ -2764,6 +3143,7 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
     final candidates = [
       for (final thread in _threads)
         if (!thread.archived &&
+            inEnvironment(thread.project.path) &&
             !identical(thread, gone) &&
             _projects.contains(thread.project))
           thread,
@@ -2782,6 +3162,7 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   @override
   void dispose() {
     _disposed = true;
+    environments.removeListener(_environmentChanged);
     icons.removeListener(notifyListeners);
     for (final MapEntry(key: path, value: listener) in _unreached.entries) {
       SshHosts.instance[RemoteLocation.hostOf(path)!].removeListener(listener);

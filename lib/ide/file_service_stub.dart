@@ -2,6 +2,9 @@ import 'dart:typed_data';
 
 import 'file_service.dart';
 
+IdeFileService createIdeFileService(String root) => LocalIdeFileService(root);
+Future<void> closeIdeFileServices() async {}
+
 class LocalIdeFileService implements IdeFileService {
   LocalIdeFileService(this.root);
 

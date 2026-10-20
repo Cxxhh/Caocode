@@ -216,6 +216,24 @@ abstract interface class RunsBackgroundTasks {
   void moveToBackground(String toolUseId);
 }
 
+/// Browses delegated threads without taking ownership of their execution.
+abstract interface class BrowsesSubagents {
+  void viewSubagent(String? id);
+  SubagentHistoryState subagentHistory(String id);
+  Future<void> refreshSubagent(String id, {bool earlier = false});
+}
+
+class SubagentHistoryState {
+  const SubagentHistoryState({
+    this.loading = false,
+    this.error,
+    this.hasEarlier = false,
+  });
+  final bool loading;
+  final String? error;
+  final bool hasEarlier;
+}
+
 /// Takes messages while busy, and runs them in turn.
 abstract interface class QueuesMessages {
   /// Takes back a queued message not yet started; completes with whether
@@ -363,6 +381,21 @@ abstract interface class SessionCatalog {
   /// Deletes the session [id] and everything kept with it, for good.
   /// Deleting one that is gone (or never was) does nothing.
   Future<void> delete(String id);
+}
+
+/// Metadata arrives a page at a time; existing catalogs may keep the batch API.
+abstract interface class ProgressiveSessionCatalog implements SessionCatalog {
+  /// Separates snapshots when the host or CLI configuration changes.
+  String get cacheKey;
+  Future<ProjectCatalogPage> projectPage({String? cursor});
+  Stream<List<ProjectRecord>> projectPages();
+  Stream<List<SessionRecord>> sessionPages(String cwd);
+}
+
+class ProjectCatalogPage {
+  const ProjectCatalogPage(this.projects, {this.nextCursor});
+  final List<ProjectRecord> projects;
+  final String? nextCursor;
 }
 
 // --- Registration -----------------------------------------------------------

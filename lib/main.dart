@@ -13,6 +13,7 @@ import 'package:bao_editor/textmate/textmate_syntax.dart';
 import 'package:bao_editor/monaco/flutter/language_assets.dart';
 
 import 'browser/browser_bridge.dart';
+import 'ide/file_service.dart' show closeIdeFileServices;
 import 'browser/browser_tools.dart' show BrowserHistory;
 import 'chat/composer/composer_files.dart' show ComposerFile, pastedAsPicture;
 import 'chat/chat_width.dart';
@@ -37,6 +38,8 @@ import 'icons/icon_library.dart';
 import 'icons/icon_storage.dart';
 import 'icons/site_icons.dart';
 import 'kernel/codex/codex_path_setting.dart';
+import 'kernel/codex/codex_environment.dart';
+import 'kernel/codex/codex_host_settings.dart';
 import 'kernel/codex/codex_config_setting.dart';
 import 'kernel/codex/codex_process.dart';
 import 'kernel/claude_code/claude_code_kernel.dart';
@@ -157,6 +160,14 @@ Future<void> _startApplication(
   final files = kIsWeb ? null : SettingsFiles.instance;
   startup.stage = '加载用户设置';
   await files?.load();
+  if (files != null) {
+    CodexEnvironmentController.instance
+      ..restore(
+        files.storage.get<Object>(CodexEnvironmentController.storageKey),
+      )
+      ..save = (value) =>
+          files.storage.set(CodexEnvironmentController.storageKey, value);
+  }
   if (files != null) keepLanguageModes(files.storage);
   files?.watch();
   if (files != null) {
@@ -174,6 +185,7 @@ Future<void> _startApplication(
     // agent starts.
     CodexPathSetting.current = () =>
         CodexPathSetting.parse(files.settings[CodexPathSetting.settingKey]);
+    CodexHostSettings.read = (key) => files.settings[key];
     CodexConfigSetting.current = () =>
         CodexConfigSetting.parse(files.settings[CodexConfigSetting.settingKey]);
     // Read as each message is sent.
@@ -266,6 +278,11 @@ Future<void> _startApplication(
   final locale = AppLocale(storage: files?.argv);
   final workspace = Workspace(
     preferences: PreferenceStore.file(),
+    historyCache: kIsWeb
+        ? null
+        : PreferenceStore.file(
+            p.join(DataDirectory.current.cacheDir, 'session-index.json'),
+          ),
     // Beside state.json: written as the user types.
     drafts: kIsWeb
         ? null
@@ -685,6 +702,7 @@ class _CaocodeAppState extends State<CaocodeApp> {
       }
       await Future.wait([
         stopCodexProcesses(),
+        closeIdeFileServices(),
         RemoteClaudeTransport.stopAll(),
         stopModelProxy(),
         stopLspProcesses(),

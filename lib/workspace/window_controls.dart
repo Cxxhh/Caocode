@@ -205,7 +205,10 @@ abstract final class WindowControls {
   /// Keeps the macOS traffic lights level with the title bar Flutter draws
   /// as the interface is zoomed: [drop] (the window's points) below where
   /// the system puts them. Said once a change; 0 is where they start.
-  static Future<void> setTitleBarDrop(double drop, {required int viewId}) async {
+  static Future<void> setTitleBarDrop(
+    double drop, {
+    required int viewId,
+  }) async {
     if (!AppPlatform.isMacOS) return;
     if ((_titleBarDrops[viewId] ?? 0) == drop) return;
     _titleBarDrops[viewId] = drop;
@@ -307,10 +310,19 @@ abstract final class WindowControls {
 
   /// Asks the user for a folder (the native open panel); null if they
   /// cancel or there is no such panel.
-  static Future<String?> pickDirectory() async {
+  static Future<String?> pickDirectory({String? initialDirectory}) async {
     if (!canPickDirectory) return null;
     try {
-      return await _channel.invokeMethod<String>('pickDirectory');
+      return await _channel.invokeMethod<String>(
+        'pickDirectory',
+        initialDirectory == null
+            ? null
+            : {
+                'directory': AppPlatform.isWindows
+                    ? initialDirectory.replaceAll('/', '\\')
+                    : initialDirectory,
+              },
+      );
     } on MissingPluginException {
       return null;
     }

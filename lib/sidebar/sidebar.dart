@@ -184,11 +184,13 @@ class Sidebar extends StatefulWidget {
     this.updates,
     this.onUpdate,
     this.setup,
+    this.environment,
   });
 
   /// Over the foot's row: the setup checklist folded ("Setup n/m"), which
   /// shows nothing when the checklist does not fold there.
   final Widget? setup;
+  final Widget? environment;
 
   final Workspace workspace;
 
@@ -722,6 +724,14 @@ class _SidebarState extends State<Sidebar>
             // The toggle lives in the window's header on Windows (see
             // window_header/), which is where this row would have been.
             if (!WindowControls.drawsHeader) _buildTopBar(),
+            if (widget.environment case final environment?)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: environment,
+                ),
+              ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 8,
@@ -1809,7 +1819,9 @@ class _SidebarState extends State<Sidebar>
   /// SSH host switched to).
   bool Function(AgentThread thread) get _here {
     final workspace = _workspace;
-    return (thread) => workspace.listsHost(thread.project.host);
+    return (thread) =>
+        workspace.inEnvironment(thread.project.path) &&
+        workspace.listsHost(thread.project.host);
   }
 
   int get _archivedCount {

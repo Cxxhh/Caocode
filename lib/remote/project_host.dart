@@ -58,7 +58,7 @@ class LocalHost implements ProjectHost {
   p.Context get paths => p.context;
 
   @override
-  String pathOf(String location) => location;
+  String pathOf(String location) => RemoteLocation.pathOf(location);
 
   @override
   IdeFileService files(String root) => IdeFileService(root);

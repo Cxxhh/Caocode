@@ -322,6 +322,44 @@ void main() {
     expect(session.selected(KernelChoiceKind.permission), 'custom');
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'Codex model menu only picks models; effort stays in the toolbar',
+    (tester) async {
+      final session = ChatSession(
+        kernel: MockKernels.codex,
+        kernels: [MockKernels.codex],
+        historyCount: 0,
+      );
+      addTearDown(session.dispose);
+      await pumpComposer(tester, session);
+      expect(session.models!.selected.id, 'gpt-5.5-codex');
+      expect(find.text('CLI 默认'), findsNothing);
+      final modelPicker = find.byWidgetPredicate(
+        (widget) => widget is ComposerPicker && widget.settingsOf != null,
+      );
+      final picker = tester.widget<ComposerPicker>(modelPicker);
+      expect(picker.label, 'GPT-5.5 Codex');
+      for (final model in picker.options) {
+        expect(picker.settingsOf!(model), isEmpty);
+        expect(model.id, isNot('default'));
+      }
+      await tester.tap(modelPicker);
+      await tester.pumpAndSettle();
+      expect(find.text('CLI 默认'), findsNothing);
+      expect(find.text('推理强度'), findsNothing);
+      await tester.tap(find.text('GPT-5.5 mini').last);
+      await tester.pumpAndSettle();
+      expect(session.models!.selected.id, 'gpt-5.5-mini');
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is ComposerPicker && widget.tooltip == '推理强度',
+        ),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
 
 // The Windows CLI's custom-provider catalog exposes empty speed-tier lists.

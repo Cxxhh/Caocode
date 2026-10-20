@@ -4895,8 +4895,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get workspaceOpenProjectFolder => '打开项目文件夹';
 
   @override
-  String get workspaceOpenProjectFolderDetail =>
-      '其中的 Claude Code 会话显示在侧边栏中；新智能体也在其中运行。';
+  String get workspaceOpenProjectFolderDetail => '选择智能体的工作目录，项目会话显示在侧边栏中。';
 
   @override
   String settingsFileError(String file, String error) {

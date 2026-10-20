@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 
 import '../channel/channel_setup.dart';
 import '../kernel/kernel_types.dart';
+import '../ide/ide_button.dart';
 import '../keybindings/chat_keybindings.dart';
 import '../l10n/l10n.dart';
 import '../models/model_welcome.dart';
@@ -16,6 +17,7 @@ import '../stash/stash_store.dart';
 import '../theme/app_theme.dart';
 import '../workspace/title_bar_double_click.dart';
 import 'agent_view.dart';
+import 'subagent_switcher.dart';
 import 'chat_column.dart';
 import 'chat_feed.dart';
 import 'chat_history_view.dart';
@@ -268,6 +270,7 @@ class _ChatScreenState extends State<ChatScreen>
     );
     setState(() => _layers.add(layer));
     _session.openAgents = layer.feed.path;
+    _session.viewSubagent(id);
     layer.controller.forward();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) layer.backFocus.requestFocus();
@@ -287,6 +290,7 @@ class _ChatScreenState extends State<ChatScreen>
       top.leaving = true;
     });
     _session.openAgents = keep == 0 ? const [] : _layers[keep - 1].feed.path;
+    _session.viewSubagent(_session.openAgents.lastOrNull);
     for (final layer in between) {
       layer.dispose();
     }
@@ -313,6 +317,11 @@ class _ChatScreenState extends State<ChatScreen>
     _session.addListener(_followPlan);
     _session.addListener(_welcomeToModels);
     _restoreAgents();
+    if (_session.openAgents.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _session.viewSubagent(_session.openAgents.last);
+      });
+    }
     ChatWidth.current.addListener(_widthChanged);
     ChatMinimap.enabled.addListener(_widthChanged);
     if (widget.autofocus) {
@@ -330,6 +339,7 @@ class _ChatScreenState extends State<ChatScreen>
 
   @override
   void dispose() {
+    _session.viewSubagent(null);
     _session.removeListener(_checkStarting);
     _session.removeListener(_followPlan);
     _session.removeListener(_welcomeToModels);
@@ -352,7 +362,11 @@ class _ChatScreenState extends State<ChatScreen>
 
   void _answer(InteractionAnswer answer) {
     _session.answer(answer);
-    _composerKey.currentState?.focus();
+    if (_agentShown case final layer?) {
+      layer.backFocus.requestFocus();
+    } else {
+      _composerKey.currentState?.focus();
+    }
   }
 
   /// The sequence of the plan writing last shown.
@@ -708,6 +722,11 @@ class _ChatScreenState extends State<ChatScreen>
           // (macOS draws a title bar of its own over it; see AppMetrics).
           if (!widget.embedded && (widget.titleBar || _renaming))
             _buildTitleBar(),
+          SubagentSwitcher(
+            session: _session,
+            selected: _agentShown?.feed.path.last,
+            onSelect: _switchAgent,
+          ),
           // Esc goes back from a subagent: a keybinding of the chat's
           // (closeSubagent).
           Expanded(
@@ -853,6 +872,82 @@ class _ChatScreenState extends State<ChatScreen>
             minimap: _minimap,
           ),
         ),
+        ListenableBuilder(
+          listenable: _session,
+          builder: (context, _) {
+            final history = _session.subagentHistory(layer.feed.path.last);
+            if (history == null) return const SizedBox.shrink();
+            final zh = Localizations.localeOf(context).languageCode == 'zh';
+            return ChatColumn(
+              maxWidth: _maxContentWidth + 48,
+              right: math.max(0, ChatColumnInset.of(context) - 24),
+              left: math.max(0, ChatColumnInset.leftOf(context) - 24),
+              room: _minimap ? ChatMinimap.room - 24 : 0,
+              roomFrom: ChatMinimap.roomFrom + 48,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 24, 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            history.loading
+                                ? (zh ? '正在加载对话…' : 'Loading conversation…')
+                                : '${layer.feed.agent?.model ?? (zh ? '子代理对话' : 'Subagent conversation')} · ${zh ? '只读' : 'Read only'}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: AppColors.textMuted,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        if (history.hasEarlier) ...[
+                          IdeButton(
+                            label: zh ? '加载更早消息' : 'Load earlier',
+                            secondary: true,
+                            onPressed: history.loading
+                                ? null
+                                : () => unawaited(
+                                    _session.refreshSubagent(
+                                      layer.feed.path.last,
+                                      earlier: true,
+                                    ),
+                                  ),
+                          ),
+                          const SizedBox(width: 6),
+                        ],
+                        IdeButton(
+                          label: history.error == null
+                              ? (zh ? '刷新' : 'Refresh')
+                              : (zh ? '重试' : 'Retry'),
+                          secondary: true,
+                          onPressed: history.loading
+                              ? null
+                              : () => unawaited(
+                                  _session.refreshSubagent(
+                                    layer.feed.path.last,
+                                  ),
+                                ),
+                        ),
+                      ],
+                    ),
+                    if (history.error case final error?)
+                      Text(
+                        '${zh ? '无法读取子代理对话' : 'Could not read subagent conversation'}: $error',
+                        style: TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 12,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
         Expanded(
           child: ChatHistoryView(
             key: layer.historyKey,
@@ -860,12 +955,28 @@ class _ChatScreenState extends State<ChatScreen>
             maxContentWidth: _maxContentWidth,
             minimap: _minimap,
             onOpenAgent: _openAgent,
-            onSetGoal: _setGoal,
             onFindClosed: layer.backFocus.requestFocus,
           ),
         ),
       ],
     );
+  }
+
+  void _switchAgent(List<String> path) {
+    if (path.isEmpty) {
+      _back(0);
+      return;
+    }
+    if (_session.openAgents.join('/') == path.join('/')) return;
+    for (final layer in _layers) {
+      layer.dispose();
+    }
+    setState(() {
+      _layers.clear();
+      _session.openAgents = path;
+      _restoreAgents();
+    });
+    _session.viewSubagent(path.last);
   }
 
   /// Under the session's own conversation: its panels and the composer.

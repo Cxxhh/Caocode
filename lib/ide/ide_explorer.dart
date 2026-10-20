@@ -52,6 +52,7 @@ class IdeExplorerRow {
     this.message,
     this.error,
     this.isRoot = false,
+    this.loading = false,
   });
 
   final String path;
@@ -63,6 +64,7 @@ class IdeExplorerRow {
   /// A folder of a multi-folder workspace, at the top of the tree: not
   /// renamed, moved nor deleted from it, only taken out of the workspace.
   final bool isRoot;
+  final bool loading;
 
   /// A non-selectable note under a folder instead of an entry: the error
   /// reading it.
@@ -217,6 +219,19 @@ class IdeExplorerController extends ChangeNotifier {
   List<IdeExplorerRow> _buildRows() {
     final rows = <IdeExplorerRow>[];
     void add(String directory, int depth) {
+      if (_loads.containsKey(directory) && !_children.containsKey(directory)) {
+        rows.add(
+          IdeExplorerRow(
+            path: '$directory${paths.separator}',
+            name: '',
+            depth: depth,
+            isDirectory: false,
+            message: '',
+            loading: true,
+          ),
+        );
+        return;
+      }
       if (_errors[directory] case final error?) {
         rows.add(
           IdeExplorerRow(
@@ -314,7 +329,9 @@ class IdeExplorerController extends ChangeNotifier {
 
   Future<void> _load(String directory, {bool force = false}) {
     if (!force && _children.containsKey(directory)) return Future.value();
-    return _loads[directory] ??= () async {
+    if (_loads[directory] case final pending?) return pending;
+    _errors.remove(directory);
+    final pending = _loads[directory] = () async {
       try {
         final entries = await files.list(directory);
         _children[directory] = entries;
@@ -326,6 +343,8 @@ class IdeExplorerController extends ChangeNotifier {
         _changed();
       }
     }();
+    _changed();
+    return pending;
   }
 
   Future<void> expand(String directory) async {
@@ -2272,11 +2291,20 @@ class _ExplorerRowView extends StatelessWidget {
               child: IdeHover(
                 message: switch (row.error) {
                   final error? => localizedFileError(context.l10n, error),
-                  null => message,
+                  null =>
+                    row.loading ? context.l10n.quickOpenLoadingFiles : message,
                 },
                 followMouse: true,
                 child: Row(
                   children: [
+                    if (row.loading) ...[
+                      const SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(strokeWidth: 1.5),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
                     if (denied) ...[
                       Icon(
                         Codicons.lock,
@@ -2287,7 +2315,9 @@ class _ExplorerRowView extends StatelessWidget {
                     ],
                     Flexible(
                       child: Text(
-                        denied
+                        row.loading
+                            ? context.l10n.quickOpenLoadingFiles
+                            : denied
                             ? context.l10n.explorerNoPermission
                             : context.l10n.explorerCannotReadFolder(
                                 switch (row.error) {
@@ -2301,7 +2331,9 @@ class _ExplorerRowView extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: IdeListColors.errorForeground,
+                          color: row.loading
+                              ? themeColors['descriptionForeground']
+                              : IdeListColors.errorForeground,
                           fontSize: 12,
                         ),
                       ),

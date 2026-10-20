@@ -16,7 +16,7 @@ Future<String?> saveFileCopyAs(
   String path, {
   String? text,
 }) async {
-  final local = files is! IdeHostFiles;
+  final local = filesAvailableToSystem(files);
   final to = await WindowControls.pickSaveFile(
     // Not a folder of the host's: the panel is this machine's.
     directory: local ? p.dirname(path) : null,

@@ -5235,7 +5235,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workspaceOpenProjectFolderDetail =>
-      'Its Claude Code sessions show in the sidebar; new agents run in it.';
+      'Choose where your agent works; project sessions appear in the sidebar.';
 
   @override
   String settingsFileError(String file, String error) {

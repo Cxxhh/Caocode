@@ -5,7 +5,10 @@ import 'package:bao_remote/local.dart';
 import 'package:path/path.dart' as p;
 
 import '../platform/data_dir.dart';
+import '../kernel/codex/codex_host.dart';
+import '../remote/wsl_files_io.dart';
 import 'file_service.dart';
+import 'wsl_file_service.dart';
 
 export 'package:bao_remote/local.dart'
     show readFileBytes, walkProjectFiles, watchDirectory;
@@ -13,6 +16,17 @@ export 'package:bao_remote/local.dart'
 class LocalIdeFileService extends LocalFiles implements IdeFileService {
   LocalIdeFileService(super.root);
 }
+
+IdeFileService createIdeFileService(String root) {
+  final project = Platform.isWindows ? wslProject(root) : null;
+  if (project == null) return LocalIdeFileService(root);
+  return WslIdeFileService(
+    root,
+    <T>(operation) => WslFileHosts.run<T>(project.distribution, operation),
+  );
+}
+
+Future<void> closeIdeFileServices() => WslFileHosts.closeAll();
 
 /// How many bytes the file at [path] takes.
 Future<int> fileByteSize(String path) => File(path).length();

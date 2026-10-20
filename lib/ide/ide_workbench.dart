@@ -58,7 +58,12 @@ import 'explorer_history.dart'
     show explorerRedoCommandId, explorerUndoCommandId;
 import 'file_views.dart';
 import 'file_service.dart'
-    show IdeFileListing, IdeHostFiles, localizedFileError, readFileBytes;
+    show
+        IdeFileListing,
+        IdeHostFiles,
+        filesAvailableToSystem,
+        localizedFileError,
+        readFileBytes;
 import 'git/commit_message.dart';
 import 'git/git_change_editor.dart';
 import 'git/git_checkout.dart';
@@ -472,7 +477,7 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
   /// Whether the project's files are this machine's (not a remote host's):
   /// only then are they shown in the file manager, opened in other apps,
   /// or moved to the trash.
-  bool get _local => widget.workspace.files is! IdeHostFiles;
+  bool get _local => filesAvailableToSystem(widget.workspace.files);
   final _scmKey = GlobalKey<IdeScmViewState>();
   IdeGitRepository? _git;
 

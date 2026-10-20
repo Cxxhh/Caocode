@@ -4,6 +4,8 @@ import 'package:caocode/ide/ide_input.dart';
 import 'package:caocode/kernel/codex/cc_switch_providers.dart';
 import 'package:caocode/kernel/codex/codex_config_file.dart';
 import 'package:caocode/kernel/codex/codex_config_setting.dart';
+import 'package:caocode/kernel/codex/codex_environment.dart';
+import 'package:caocode/kernel/codex/codex_path_setting.dart';
 import 'package:caocode/kernel/codex/codex_provider_config.dart';
 import 'package:caocode/kernel/codex/codex_providers.dart';
 import 'package:caocode/l10n/app_localizations.dart';
@@ -14,6 +16,8 @@ import 'package:caocode/settings/user_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
+
+import '../kernel/codex_environment_test.dart' show FakeCodexEnvironments;
 
 void main() {
   late Directory directory;
@@ -107,6 +111,69 @@ void main() {
       'auth': {'OPENAI_API_KEY': token},
     },
   };
+
+  testWidgets(
+    'environment switch keeps Windows and WSL CLI paths independent',
+    (tester) async {
+      final before = CodexEnvironmentController.instance;
+      final environments = CodexEnvironmentController(
+        backend: FakeCodexEnvironments(),
+      );
+      CodexEnvironmentController.instance = environments;
+      addTearDown(() {
+        CodexEnvironmentController.instance = before;
+        environments.dispose();
+      });
+      await tester.runAsync(() async {
+        await settings.update(
+          '${CodexPathSetting.settingKey}.windows',
+          r'C:\tools\codex.exe',
+        );
+        await settings.update(
+          '${CodexPathSetting.settingKey}.wsl.Ubuntu',
+          '/opt/codex',
+        );
+      });
+      await pump(tester);
+      Finder pathInput() => find.descendant(
+        of: find.byWidgetPredicate(
+          (widget) =>
+              widget is SettingsTextField &&
+              widget.semanticLabel == 'Codex CLI path',
+        ),
+        matching: find.byType(EditableText),
+      );
+      expect(
+        tester.widget<EditableText>(pathInput()).controller.text,
+        r'C:\tools\codex.exe',
+      );
+      await environments.select(const CodexEnvironment.wsl('Ubuntu'));
+      await settle(tester);
+      expect(
+        tester.widget<EditableText>(pathInput()).controller.text,
+        '/opt/codex',
+      );
+      await tester.enterText(pathInput(), '/home/tester/.local/bin/codex');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await settle(tester);
+      expect(
+        settings['${CodexPathSetting.settingKey}.wsl.Ubuntu'],
+        '/home/tester/.local/bin/codex',
+      );
+      expect(
+        settings['${CodexPathSetting.settingKey}.windows'],
+        r'C:\tools\codex.exe',
+      );
+      await environments.select(const CodexEnvironment.windows());
+      await settle(tester);
+      expect(
+        tester.widget<EditableText>(pathInput()).controller.text,
+        r'C:\tools\codex.exe',
+      );
+      await tester.pumpWidget(const SizedBox());
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.windows),
+  );
 
   testWidgets(
     'CCS links, refreshes, activates and explicitly imports local copies',

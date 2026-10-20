@@ -7,11 +7,14 @@ import '../../ide/ide_dialog.dart';
 import '../../kernel/codex/cc_switch_providers.dart';
 import '../../kernel/codex/codex_config_file.dart';
 import '../../kernel/codex/codex_config_setting.dart';
+import '../../kernel/codex/codex_environment.dart';
+import '../../kernel/codex/codex_host_settings.dart';
 import '../../kernel/codex/codex_path_setting.dart';
 import '../../kernel/codex/codex_provider_config.dart';
 import '../../kernel/codex/codex_providers.dart';
 import '../../l10n/l10n.dart';
 import '../user_settings.dart';
+import '../../workspace/codex_environment_picker.dart';
 import 'codex_provider_editor.dart';
 import 'settings_widgets.dart';
 
@@ -60,14 +63,26 @@ class _CodexSettingsPageState extends State<CodexSettingsPage> {
 
   bool get _zh => context.l10n.localeName.startsWith('zh');
   String _label(String zh, String en) => _zh ? zh : en;
-  String? get _configPath =>
-      CodexConfigSetting.parse(widget.settings?[CodexConfigSetting.settingKey]);
+  String? get _cwd => CodexEnvironmentController.instance.supported
+      ? CodexEnvironmentController.instance.selected.settingsLocation(
+          widget.cwd,
+        )
+      : widget.cwd;
+  String _key(String base) => CodexHostSettings.key(base, _cwd);
+  String? _value(String base) => CodexHostSettings.value(
+    base,
+    _cwd,
+    CodexConfigSetting.parse(widget.settings?[base]),
+    readSetting: (key) => widget.settings?[key],
+  );
+  String? get _configPath => _value(CodexConfigSetting.settingKey);
 
   @override
   void initState() {
     super.initState();
     _providers.addListener(_changed);
     widget.settings?.addListener(_changed);
+    CodexEnvironmentController.instance.addListener(_environmentChanged);
     if (widget.settings != null || widget.resolveConfig != null) {
       unawaited(_run(_reloadAll));
     }
@@ -77,9 +92,14 @@ class _CodexSettingsPageState extends State<CodexSettingsPage> {
     if (mounted) setState(() {});
   }
 
+  void _environmentChanged() {
+    if (mounted) unawaited(_run(_reloadAll));
+  }
+
   @override
   void dispose() {
     widget.settings?.removeListener(_changed);
+    CodexEnvironmentController.instance.removeListener(_environmentChanged);
     _providers.removeListener(_changed);
     if (widget.providers == null) _providers.dispose();
     super.dispose();
@@ -107,7 +127,7 @@ class _CodexSettingsPageState extends State<CodexSettingsPage> {
 
   Future<CodexConfigFile> _resolve() =>
       widget.resolveConfig?.call(_configPath) ??
-      CodexConfigFile.resolve(cwd: widget.cwd, configPath: _configPath);
+      CodexConfigFile.resolve(cwd: _cwd, configPath: _configPath);
 
   List<CodexProvider> get _allProviders => [
     ..._providers.providers,
@@ -340,6 +360,9 @@ class _CodexSettingsPageState extends State<CodexSettingsPage> {
       );
     }
     final parsed = _source == null ? null : CodexProviderConfig(_source!);
+    final executableKey = _key(CodexPathSetting.settingKey);
+    final configKey = _key(CodexConfigSetting.settingKey);
+    final configCwd = _cwd;
     return SettingsPage(
       title: context.l10n.settingsSectionModels,
       description: _label(
@@ -352,6 +375,15 @@ class _CodexSettingsPageState extends State<CodexSettingsPage> {
           children: [
             SettingsCard(
               children: [
+                if (CodexEnvironmentController.instance.supported)
+                  SettingsRow(
+                    label: _label('运行环境', 'Execution environment'),
+                    description: _label(
+                      '分别管理 Windows 和 WSL2 的 CLI 与配置；打开项目时进入所选环境的目录。',
+                      'Manage Windows and WSL2 independently. Open Project starts in the selected environment.',
+                    ),
+                    trailing: const CodexEnvironmentPicker(),
+                  ),
                 SettingsRow(
                   label: _label('可执行文件路径', 'Executable path'),
                   description: _label(
@@ -359,19 +391,16 @@ class _CodexSettingsPageState extends State<CodexSettingsPage> {
                     'Leave empty to search PATH. WSL projects use Linux Codex in that distribution. Restart the session after changes.',
                   ),
                   trailing: SettingsTextField(
-                    value:
-                        CodexPathSetting.parse(
-                          widget.settings?[CodexPathSetting.settingKey],
-                        ) ??
-                        '',
+                    key: ValueKey(executableKey),
+                    value: _value(CodexPathSetting.settingKey) ?? '',
                     hint: 'codex',
                     semanticLabel: 'Codex CLI path',
                     width: 260,
                     onSubmitted: (value) => unawaited(
                       _run(() async {
                         await widget.settings?.update(
-                          CodexPathSetting.settingKey,
-                          CodexPathSetting.parse(value),
+                          executableKey,
+                          CodexPathSetting.parse(value) ?? '',
                         );
                       }),
                     ),
@@ -380,12 +409,13 @@ class _CodexSettingsPageState extends State<CodexSettingsPage> {
                 SettingsRow(
                   label: _label('自定义 config.toml', 'Custom config.toml'),
                   description: _label(
-                    '留空使用工程所在系统的默认配置。自定义文件名须为 config.toml，其目录也用于 Codex 登录与会话存储。',
-                    'Leave empty for the project host’s default. The file must be named config.toml; its directory also stores Codex login and sessions.',
+                    '留空使用所选环境的默认配置。自定义文件名须为 config.toml，其目录也用于 Codex 登录与会话存储。',
+                    'Leave empty for the selected environment’s default. The file must be named config.toml; its directory also stores Codex login and sessions.',
                   ),
                   below: [
                     LayoutBuilder(
                       builder: (context, constraints) => SettingsTextField(
+                        key: ValueKey(configKey),
                         value: _configPath ?? '',
                         hint: '~/.codex/config.toml',
                         width: constraints.maxWidth.clamp(0, 360),
@@ -395,12 +425,12 @@ class _CodexSettingsPageState extends State<CodexSettingsPage> {
                             final path = CodexConfigSetting.parse(value);
                             await (widget.resolveConfig?.call(path) ??
                                 CodexConfigFile.resolve(
-                                  cwd: widget.cwd,
+                                  cwd: configCwd,
                                   configPath: path,
                                 ));
                             await widget.settings?.update(
-                              CodexConfigSetting.settingKey,
-                              path,
+                              configKey,
+                              path ?? '',
                             );
                             await _reload();
                           }),

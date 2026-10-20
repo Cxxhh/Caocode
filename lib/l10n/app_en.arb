@@ -3701,7 +3701,7 @@
   "workspaceDesktopOnly": "Agents run in the desktop app",
   "workspaceDesktopOnlyDetail": "Claude Code runs as a local process, which a browser cannot start.",
   "workspaceOpenProjectFolder": "Open a project folder",
-  "workspaceOpenProjectFolderDetail": "Its Claude Code sessions show in the sidebar; new agents run in it.",
+  "workspaceOpenProjectFolderDetail": "Choose where your agent works; project sessions appear in the sidebar.",
   "settingsFileError": "{file} could not be applied: {error}. What was last read from it stays in effect until it is fixed.",
   "@settingsFileError": {
     "placeholders": {

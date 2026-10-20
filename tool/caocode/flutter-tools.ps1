@@ -1,5 +1,28 @@
 $ErrorActionPreference = 'Stop'
 
+function Initialize-CaocodeWslServer([string]$Root, [string]$FlutterSdk) {
+    $output = Join-Path $Root 'build\remote'
+    $stamp = Join-Path $output 'VERSION'
+    $sources = @(
+        (Join-Path $Root 'pubspec.yaml'),
+        (Join-Path $Root 'pubspec.lock'),
+        (Join-Path $Root 'tool\build_remote_server.dart')
+    )
+    $sources += Get-ChildItem -LiteralPath (Join-Path $Root 'packages\bao_remote'),
+        (Join-Path $Root 'packages\bao_agent') -Recurse -File |
+        Where-Object { $_.Extension -eq '.dart' -or $_.Name -eq 'pubspec.yaml' } |
+        Select-Object -ExpandProperty FullName
+    $latest = ($sources | Get-Item | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1).LastWriteTimeUtc
+    if ((Test-Path -LiteralPath $stamp) -and
+        (Get-Item -LiteralPath $stamp).LastWriteTimeUtc -ge $latest -and
+        (Test-Path -LiteralPath (Join-Path $output 'caocode-server-linux-x64')) -and
+        (Test-Path -LiteralPath (Join-Path $output 'caocode-server-linux-arm64'))) { return }
+    Write-Output '正在构建 WSL 原生文件服务（后续启动复用）…'
+    $dart = Join-Path $FlutterSdk 'bin\cache\dart-sdk\bin\dart.exe'
+    & $dart run tool/build_remote_server.dart
+    if ($LASTEXITCODE -ne 0) { throw 'WSL 文件服务编译失败' }
+}
+
 function Initialize-CaocodePluginJunctions([string]$Root) {
     $metadataPath = Join-Path $Root '.flutter-plugins-dependencies'
     if (-not (Test-Path -LiteralPath $metadataPath)) { return 0 }

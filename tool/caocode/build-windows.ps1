@@ -38,6 +38,7 @@ if ($Installer) {
 }
 . (Join-Path $PSScriptRoot 'flutter-tools.ps1')
 Invoke-CaocodePubGet $flutter $root
+Initialize-CaocodeWslServer $root $FlutterSdk
 & (Join-Path $PSScriptRoot 'cache-windows-sdk.ps1') -FlutterSdk $FlutterSdk
 & $flutter build windows ('--' + $Mode.ToLowerInvariant())
 if ($LASTEXITCODE -ne 0) { throw 'Windows 编译失败' }

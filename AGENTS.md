@@ -3,6 +3,8 @@
 - 使用简体中文沟通；WSL 中使用 Linux/Bash 语法。
 - 主开发目录为 `/home/noxae/Documents/Caocode`，工程根目录保留上游 Git 历史，开发分支为 `caocode/main`。
 - `reference/baocode` 是独立的上游参考仓库，固定版本见 `tool/caocode/toolchain.json`；应用修改在主工程进行。
+- 版本采用 `主版本.次版本.修订版本+build`，公开名称保留 `c` 后缀。主版本和次版本跟随实际合入的上游 BaoCode 版本，本地修改只递增修订版本。
+- 后续每次完成并交付一项小修改（包括功能、修复、配置及文档调整），都必须将修订版本和 build 各递增 1；同步更新 `pubspec.yaml` 与 `lib/update/version.dart` 中的当前版本。同一项修改的中间编辑和验证不重复升版。发布流程见 `docs/release.md`。
 - 本地读取、检索和定位优先使用 FastCtx；不可用时使用 `rg`。机械替换先预览，语义修改使用 `apply_patch`。
 - 使用 `./flutterw` 执行 WSL 的 Dart/Flutter 检查。修改后只运行相关测试，完整测试套件耗时很长。
 - 使用 `./dev.sh` 从 WSL 启动 Windows 调试窗口；`r` 增量同步并热重载，`R` 热重启，`q` 退出。原生代码或依赖变动需重新启动脚本。

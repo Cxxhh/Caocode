@@ -21,6 +21,8 @@ import '../tips/builtin_tips.dart';
 import '../tips/feature_tip.dart';
 import '../tips/feature_tips_controller.dart';
 import '../update/update_controller.dart';
+import '../update/codex_cli_update_platform.dart';
+import '../kernel/codex/codex_environment.dart';
 import '../workspace/workspace.dart';
 import 'app_locale.dart';
 import 'pages/about_page.dart';
@@ -216,7 +218,17 @@ class AppSettings {
           ),
         );
       case SettingsSection.updates:
-        return UpdatesSettingsPage(updates: updates, settings: files?.settings);
+        return UpdatesSettingsPage(
+          updates: updates,
+          settings: files?.settings,
+          codexUpdates: () => codexCliUpdates(
+            cwd: CodexEnvironmentController.instance.supported
+                ? CodexEnvironmentController.instance.selected.settingsLocation(
+                    cwd,
+                  )
+                : cwd,
+          ),
+        );
       case SettingsSection.about:
         return const AboutSettingsPage();
       case SettingsSection.dataDirectory:

@@ -18,6 +18,7 @@ import '../theme/app_theme.dart';
 import '../theme/codicons.dart';
 import '../theme/workbench_theme.dart' show themeColors;
 import 'window_controls.dart';
+import 'codex_environment_picker.dart';
 import 'workspace.dart';
 import 'workspace_dialog.dart';
 
@@ -62,13 +63,13 @@ class NewChatFolderBar extends StatelessWidget {
 
   /// Picks a folder; replaceable under test.
   @visibleForTesting
-  static Future<String?> Function() pickDirectory =
-      WindowControls.pickDirectory;
+  static Future<String?> Function()? pickDirectory;
 
   void _moveTo(String path) => workspace.moveNew(thread, path);
 
-  Future<void> _pick() async {
-    final path = await pickDirectory();
+  Future<void> _pick(BuildContext context) async {
+    final path =
+        await (pickDirectory?.call() ?? pickCodexProjectDirectory(context));
     if (path != null) workspace.moveNew(thread, path);
   }
 
@@ -261,7 +262,7 @@ class NewChatFolderBar extends StatelessWidget {
           _Button(
             icon: Codicons.folderOpened,
             label: l10n.newChatOpenFrom(fileManager),
-            onTap: _pick,
+            onTap: () => _pick(context),
           ),
         ],
       ],

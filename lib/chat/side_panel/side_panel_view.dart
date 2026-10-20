@@ -543,7 +543,7 @@ class AgentSidePanelView extends StatelessWidget {
             roots: roots,
             paths: _paths,
           );
-    final local = files is! IdeHostFiles;
+    final local = filesAvailableToSystem(files);
     // Whether this project's files page shows the text search in place of
     // the tree (the header's magnifier).
     final searching = root != null && panel.searchShown(root);
@@ -653,7 +653,7 @@ class AgentSidePanelView extends StatelessWidget {
     final l10n = context.l10n;
     final git = _git;
     final active = tabs.activeDiff;
-    final local = files is! IdeHostFiles;
+    final local = filesAvailableToSystem(files);
     final total = _gits.fold(0, (sum, git) => sum + (git.state?.count ?? 0));
     // No change anywhere: the view keeps its commit box, whose button then
     // publishes or syncs; the body says so where a change would show.
@@ -967,7 +967,7 @@ class AgentSidePanelView extends StatelessWidget {
   List<IdeMenuEntry> _planMenu(BuildContext context, SidePanelTab plan) {
     final l10n = context.l10n;
     final path = plan.path;
-    final local = files is! IdeHostFiles;
+    final local = filesAvailableToSystem(files);
     return ideMenuGroups([
       [
         IdeMenuAction(
@@ -1118,7 +1118,7 @@ class AgentSidePanelView extends StatelessWidget {
     final l10n = context.l10n;
     final path = tab.path;
     final root = _rootOf(path);
-    final local = files is! IdeHostFiles;
+    final local = filesAvailableToSystem(files);
     return ideMenuGroups([
       _closeItems(
         context,

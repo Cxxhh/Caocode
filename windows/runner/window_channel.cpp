@@ -438,7 +438,8 @@ std::vector<std::wstring> PickFiles(HWND window) {
 
 // The project folder the user picked through the system's own panel; null
 // when they cancel, or it cannot be shown.
-std::optional<std::string> PickDirectory(HWND window) {
+std::optional<std::string> PickDirectory(HWND window,
+                                       const std::string& directory) {
   ComPtr<IFileOpenDialog> dialog;
   if (FAILED(::CoCreateInstance(CLSID_FileOpenDialog, nullptr,
                                 CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&dialog)))) {
@@ -451,6 +452,7 @@ std::optional<std::string> PickDirectory(HWND window) {
   }
   dialog->SetTitle(L"Choose a project folder");
   dialog->SetOkButtonLabel(L"Open");
+  OpenIn(dialog.Get(), directory);
   // The panel runs its own message loop, which keeps Flutter drawing while
   // it is up.
   if (FAILED(dialog->Show(window))) {
@@ -511,7 +513,8 @@ void WindowChannel::HandleMethodCall(
   }
 
   if (method == "pickDirectory") {
-    const std::optional<std::string> path = PickDirectory(window_);
+    const std::optional<std::string> path =
+        PickDirectory(window_, String(arguments, "directory"));
     if (path.has_value()) {
       result->Success(flutter::EncodableValue(*path));
     } else {

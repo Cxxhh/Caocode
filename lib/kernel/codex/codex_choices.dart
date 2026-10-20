@@ -86,7 +86,10 @@ class CodexEffort implements ModelSetting {
     final options = optionsFor(model);
     for (final value in [
       _picked[model],
-      if (model == 'default') _configuredEffort,
+      if (model == 'default' || _resolve(model) == _resolve('default')) ...[
+        _picked['default'],
+        _configuredEffort,
+      ],
       _defaults[_resolve(model)],
     ]) {
       if (value != null && options.any((option) => option.id == value)) {

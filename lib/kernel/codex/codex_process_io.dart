@@ -3,12 +3,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:bao_remote/local.dart' show ClaudeEnvironment;
-import 'package:path/path.dart' as p;
 
 import '../../network/network_proxy_io.dart';
 import '../../platform/child_process_registry.dart';
 import '../../platform/data_dir.dart';
 import 'codex_rpc.dart';
+import 'codex_cli_io.dart';
 import 'codex_path_setting.dart';
 import 'codex_config_setting.dart';
 import 'codex_config_file.dart';
@@ -21,7 +21,9 @@ String? codexServerPath(String? path) =>
 
 String codexClientPath(String path, String? project) {
   final wsl = Platform.isWindows ? wslProject(project) : null;
-  return wsl != null && path.startsWith('/') ? '${wsl.prefix}$path' : path;
+  return wsl != null && path.startsWith('/')
+      ? wslWindowsPath('${wsl.prefix}$path')
+      : path;
 }
 
 CodexTransport localCodexTransport({String? cwd}) =>
@@ -97,7 +99,10 @@ class CodexProcessTransport implements CodexTransport, CodexTransportLifecycle {
     }
     final environment = await ClaudeEnvironment.of();
     final proxy = await NetworkProxy.instance.environment();
-    final configPath = CodexConfigSetting.current();
+    final configPath = CodexConfigSetting.forLocation(
+      cwd,
+      windows: Platform.isWindows,
+    );
     final config = configPath == null
         ? null
         : await CodexConfigFile.resolve(
@@ -123,15 +128,20 @@ class CodexProcessTransport implements CodexTransport, CodexTransportLifecycle {
         r'if [ -n "$2" ]; then export CODEX_HOME="$2"; fi; '
             r'exec "${1:-${CAOCODE_CODEX_PATH:-codex}}" app-server --listen stdio://',
         'caocode',
-        CodexPathSetting.current() ?? '',
+        CodexPathSetting.forLocation(cwd, windows: true) ?? '',
         config?.serverHome ?? '',
       ];
       workingDirectory =
           Platform.environment['USERPROFILE'] ?? Directory.current.path;
     } else {
-      final launch = _findCli(environment);
-      program = launch.$1;
-      launchArguments = [...launch.$2, 'app-server', '--listen', 'stdio://'];
+      final launch = CodexCli.locate(environment, cwd: cwd);
+      program = launch.executable;
+      launchArguments = [
+        ...launch.arguments,
+        'app-server',
+        '--listen',
+        'stdio://',
+      ];
     }
     if (_closing) return;
     final process = await Process.start(
@@ -208,54 +218,6 @@ class CodexProcessTransport implements CodexTransport, CodexTransportLifecycle {
     }
     if (!_messages.isClosed) unawaited(_messages.close());
     if (!_stopped.isCompleted) _stopped.complete();
-  }
-
-  static (String, List<String>) _findCli(Map<String, String> environment) {
-    final override =
-        CodexPathSetting.current() ?? environment['CAOCODE_CODEX_PATH'];
-    if (override != null &&
-        override.isNotEmpty &&
-        !File(override).existsSync()) {
-      throw CodexRpcException('指定的 Codex CLI 路径不存在：$override');
-    }
-    final home = environment[Platform.isWindows ? 'USERPROFILE' : 'HOME'];
-    final candidates = [
-      if (override != null && override.isNotEmpty) override,
-      for (final directory in (environment['PATH'] ?? '').split(
-        Platform.isWindows ? ';' : ':',
-      ))
-        if (directory.isNotEmpty)
-          for (final name
-              in Platform.isWindows
-                  ? ['codex.exe', 'codex.cmd', 'codex.ps1']
-                  : ['codex'])
-            p.join(directory, name),
-      if (home != null && !Platform.isWindows)
-        p.join(home, '.local', 'bin', 'codex'),
-    ];
-    for (final candidate in candidates) {
-      if (!File(candidate).existsSync()) continue;
-      if (!Platform.isWindows || candidate.toLowerCase().endsWith('.exe')) {
-        return (candidate, const []);
-      }
-      // npm's Windows shim: run Node directly to keep stdio and cancellation.
-      final directory = p.dirname(candidate);
-      final script = p.join(
-        directory,
-        'node_modules',
-        '@openai',
-        'codex',
-        'bin',
-        'codex.js',
-      );
-      if (File(script).existsSync()) {
-        final node = p.join(directory, 'node.exe');
-        return (File(node).existsSync() ? node : 'node.exe', [script]);
-      }
-    }
-    throw const CodexRpcException(
-      '未找到 Codex CLI。请安装并登录 Codex，或设置 CAOCODE_CODEX_PATH。',
-    );
   }
 
   @override

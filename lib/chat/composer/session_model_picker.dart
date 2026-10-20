@@ -42,6 +42,13 @@ class SessionModelPicker extends StatelessWidget {
   final Object? tapRegionGroupId;
   final FocusNode? focusNode;
 
+  List<ModelSettingChoice> _settings(String model) => [
+    for (final setting in session.modelSettings(model))
+      if (session.kernel.id != 'codex' ||
+          setting.kind != KernelChoiceKind.effort)
+        setting,
+  ];
+
   /// The model with its settings, e.g. "Opus · 1M · High": the context
   /// only when it is not the standard one; its upstream before it only
   /// when another upstream has a model of its name.
@@ -56,7 +63,7 @@ class SessionModelPicker extends StatelessWidget {
         ))
       group.label,
     model.label,
-    for (final setting in session.modelSettings(model.id))
+    for (final setting in _settings(model.id))
       if (setting.selected case final selected?
           when setting.kind != KernelChoiceKind.context ||
               selected != setting.options.first)
@@ -107,7 +114,7 @@ class SessionModelPicker extends StatelessWidget {
       // heading tell the rest.
       describes: false,
       settingsOf: (option) => [
-        for (final setting in session.modelSettings(option.id))
+        for (final setting in _settings(option.id))
           ModelSettingChoice(
             kind: setting.kind,
             options: [

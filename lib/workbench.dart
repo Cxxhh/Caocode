@@ -44,6 +44,7 @@ import 'ide/file_service.dart'
         IdeFileService,
         byteSizeThrough,
         IdeHostFiles,
+        filesAvailableToSystem,
         ideIsImagePath,
         readBytesThrough,
         readFileBytes;
@@ -128,6 +129,8 @@ import 'workspace/chat_terminal.dart';
 import 'workspace/editor_launcher.dart' show openExternal;
 import 'workspace/ssh_server_edit.dart';
 import 'workspace/new_chat_folder_bar.dart';
+import 'workspace/codex_environment_picker.dart';
+import 'workspace/session_history_status.dart';
 import 'workspace/open_in_editor_button.dart';
 import 'workspace/pin_window_button.dart';
 import 'workspace/project_workspace.dart' show ProjectWorkspace;
@@ -576,7 +579,7 @@ class _WorkbenchState extends State<Workbench> implements WindowDelegate {
 
   /// Add Folder to Workspace...: one picked in the file manager.
   Future<void> _addWorkspaceFolder(String location) async {
-    final path = await WindowControls.pickDirectory();
+    final path = await pickCodexProjectDirectory(context);
     if (path == null || !mounted) return;
     if (_workspace.workspaceAt(location) case final multi?) {
       _workspace.addWorkspaceFolder(multi, path);
@@ -1942,7 +1945,7 @@ class _WorkbenchState extends State<Workbench> implements WindowDelegate {
 
   Future<void> _pickIdeFolder() async {
     final held = _newWindowHeld;
-    final path = await WindowControls.pickDirectory();
+    final path = await pickCodexProjectDirectory(context);
     if (path == null || !mounted) return;
     _openIdeFolder(path, held: held);
   }
@@ -2099,7 +2102,7 @@ class _WorkbenchState extends State<Workbench> implements WindowDelegate {
   /// first save): where it is, or in the folder; noted among the recent.
   Future<String?> _askSavePath(IdeWorkspace space, IdeDocument doc) async {
     // A remote project's folders are not this machine's, where the panel is.
-    final local = space.files is! IdeHostFiles;
+    final local = filesAvailableToSystem(space.files);
     final path = await WindowControls.pickSaveFile(
       directory: !local
           ? null
@@ -2817,6 +2820,17 @@ class _WorkbenchState extends State<Workbench> implements WindowDelegate {
     // the chat's window and Customize are not its.
     final agent = _agentThread;
     return Sidebar(
+      environment: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: CodexEnvironmentPicker(),
+          ),
+          const SizedBox(height: 4),
+          SessionHistoryStatus(workspace: _workspace),
+        ],
+      ),
       workspace: _workspace,
       current: agent,
       onSelect: agent == null ? null : _showInWindow,
@@ -3334,7 +3348,7 @@ class _WorkbenchState extends State<Workbench> implements WindowDelegate {
   Rect _statusAnchor = Rect.zero;
 
   Future<void> _openFolder() async {
-    final path = await WindowControls.pickDirectory();
+    final path = await pickCodexProjectDirectory(context);
     if (path == null || !mounted) return;
     final thread = await _workspace.openFolder(path);
     _closeDrawer();
@@ -3888,6 +3902,7 @@ class _WorkbenchState extends State<Workbench> implements WindowDelegate {
         tips: _main ? _tips : null,
         narrow: _narrow,
         loading: _workspace.loading,
+        workspace: _workspace,
         leading: leading,
         titleBarInset: titleBarInset,
         onOpenFolder: WindowControls.canPickDirectory ? _openFolder : null,
@@ -4398,6 +4413,7 @@ class _EmptyWorkspace extends StatelessWidget {
     this.tips,
     this.narrow = false,
     required this.loading,
+    required this.workspace,
     required this.titleBarInset,
     this.leading,
     this.onOpenFolder,
@@ -4405,6 +4421,7 @@ class _EmptyWorkspace extends StatelessWidget {
   });
 
   final bool loading;
+  final Workspace workspace;
   final double titleBarInset;
   final Widget? leading;
   final VoidCallback? onOpenFolder;
@@ -4468,8 +4485,17 @@ class _EmptyWorkspace extends StatelessWidget {
                     style: TextStyle(color: AppColors.textFaint, fontSize: 12),
                   ),
                 ],
-                if (onOpenFolder case final open? when !loading) ...[
+                if (loading || workspace.history.error != null) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: 250,
+                    child: SessionHistoryStatus(workspace: workspace),
+                  ),
+                ],
+                if (onOpenFolder case final open?) ...[
                   const SizedBox(height: 16),
+                  const CodexEnvironmentPicker(),
+                  const SizedBox(height: 8),
                   // As wide as its label: a centred column would stretch it.
                   IntrinsicWidth(
                     child: PanelButton(

@@ -24,6 +24,7 @@ class Server implements CodexTransport {
   int rejectCode = -32602;
   String? serviceTier;
   String? modelProvider;
+  String? resumedModel;
   bool experimentalApi = false;
   List<Map<String, Object?>>? savedTurns;
   List<Map<String, Object?>>? models;
@@ -81,6 +82,7 @@ class Server implements CodexTransport {
         'thread': {'id': 'thread', 'cwd': '/project'},
       },
       'thread/resume' => {
+        'model': ?resumedModel,
         'modelProvider': ?modelProvider,
         'serviceTier': ?serviceTier,
         'thread': {
@@ -553,14 +555,12 @@ void main() {
         'thread/start',
         'turn/start',
       ]);
-      expect(kernel.model.options.map((option) => option.id), [
-        'default',
-        'custom-model',
-      ]);
+      expect(kernel.model.options.map((option) => option.id), ['custom-model']);
+      expect(kernel.model.selected, 'custom-model');
       final start = server.calls.last['params'] as Map;
       expect(start['cwd'], '/project');
       expect(start['summary'], 'auto');
-      expect(start.containsKey('model'), isFalse);
+      expect(start['model'], 'custom-model');
       expect(kernel.sessionId, 'thread');
       expect(kernel.health.status, KernelHealthStatus.ready);
     },
@@ -698,7 +698,7 @@ void main() {
   );
 
   test(
-    'model efforts use the catalog, keep each choice, and reset CLI defaults',
+    'model efforts use CLI defaults and keep each explicit model choice',
     () async {
       server.config = {
         'model': 'custom-model',
@@ -726,12 +726,11 @@ void main() {
       ];
       kernel.prepare();
       await pumpEventQueue();
-      expect(kernel.effort.optionsFor('default').map((option) => option.id), [
-        'low',
-        'medium',
-        'high',
-        'xhigh',
-      ]);
+      expect(kernel.model.selected, 'custom-model');
+      expect(
+        kernel.effort.optionsFor('custom-model').map((option) => option.id),
+        ['low', 'medium', 'high', 'xhigh'],
+      );
       expect(kernel.effort.selected, 'high');
       expect(kernel.effort.selectedFor('other-model'), 'low');
       kernel.effort.select('custom-model', 'xhigh');
@@ -750,22 +749,142 @@ void main() {
       kernel.send(const KernelTurn(id: 'explicit', text: 'hello'));
       await pumpEventQueue();
       expect((server.calls.last['params'] as Map)['effort'], 'xhigh');
-      server.notify('turn/completed', {
-        'threadId': 'thread',
-        'turn': {'id': 'server-1', 'status': 'completed'},
-      });
-      kernel.model.select('default');
-      kernel.send(const KernelTurn(id: 'default', text: 'again'));
-      await pumpEventQueue();
-      final params = server.calls.last['params'] as Map;
-      expect(params['model'], 'custom-model');
       expect(
-        params['effort'],
-        'high',
-        reason: 'CLI defaults replace the previous overrides',
+        kernel.model.options.any((option) => option.id == 'default'),
+        false,
       );
     },
   );
+
+  for (final lateResponse in ['config/read', 'model/list']) {
+    test(
+      'CLI configured model wins regardless of $lateResponse response order',
+      () async {
+        server.config = {
+          'model': 'configured',
+          'model_reasoning_effort': 'high',
+        };
+        server.models = [
+          {'model': 'first'},
+          {'model': 'catalog-default', 'isDefault': true},
+          {
+            'model': 'configured',
+            'defaultReasoningEffort': 'low',
+            'supportedReasoningEfforts': [
+              {'reasoningEffort': 'low'},
+              {'reasoningEffort': 'high'},
+            ],
+          },
+        ];
+        server.delayed.add(lateResponse);
+        kernel.prepare();
+        await pumpEventQueue();
+        expect(kernel.model.options, isEmpty);
+        for (final reply in server.delayedReplies) {
+          server.output.add(reply);
+        }
+        await pumpEventQueue();
+        expect(kernel.model.selected, 'configured');
+        expect(kernel.effort.selected, 'high');
+        kernel.send(const KernelTurn(id: 'configured', text: 'hello'));
+        await pumpEventQueue();
+        final params = server.calls.last['params'] as Map;
+        expect(params['model'], 'configured');
+        expect(params['effort'], 'high');
+      },
+    );
+  }
+
+  test(
+    'catalog default is selected when config leaves the model unset',
+    () async {
+      server.models = [
+        {'model': 'first'},
+        {'model': 'catalog-default', 'isDefault': true},
+      ];
+      kernel.prepare();
+      await pumpEventQueue();
+      expect(kernel.model.selected, 'catalog-default');
+    },
+  );
+
+  test(
+    'a configured custom model is shown even outside the CLI catalog',
+    () async {
+      server.config = {'model': 'private-model'};
+      server.models = [];
+      kernel.prepare();
+      await pumpEventQueue();
+      expect(kernel.model.selected, 'private-model');
+      expect(kernel.model.options.single.label, 'private-model');
+    },
+  );
+
+  test(
+    'legacy default selections resolve to the configured model and effort',
+    () async {
+      kernel.dispose();
+      server = Server();
+      kernel = CodexKernel(
+        KernelRegistry.codex,
+        server,
+        context: const KernelContext(
+          settings: {'model': 'default', 'effort': 'high'},
+        ),
+      );
+      server.config = {'model': 'custom-model'};
+      server.models = [
+        {
+          'model': 'custom-model',
+          'supportedReasoningEfforts': [
+            {'reasoningEffort': 'low'},
+            {'reasoningEffort': 'high'},
+          ],
+        },
+      ];
+      kernel.prepare();
+      await pumpEventQueue();
+      expect(kernel.model.selected, 'custom-model');
+      expect(kernel.effort.selected, 'high');
+      expect(kernel.model.options.single.id, 'custom-model');
+    },
+  );
+
+  for (final explicit in [false, true]) {
+    test(
+      'resumed model respects the saved choice (explicit: $explicit)',
+      () async {
+        kernel.dispose();
+        server = Server();
+        server.config = {'model': 'cli-default'};
+        server.resumedModel = 'historical-model';
+        kernel = CodexKernel(
+          KernelRegistry.codex,
+          server,
+          context: KernelContext(
+            resume: SessionRecord(
+              id: 'saved',
+              title: 'Saved',
+              updatedAt: DateTime(2026),
+              cwd: '/project',
+            ),
+            settings: {if (explicit) 'model': 'user-picked-model'},
+          ),
+        );
+        kernel.prepare();
+        await pumpEventQueue();
+        final expected = explicit ? 'user-picked-model' : 'historical-model';
+        expect(kernel.model.selected, expected);
+        expect(
+          kernel.model.options.map((option) => option.id),
+          contains(expected),
+        );
+        kernel.send(const KernelTurn(id: 'continue', text: 'hello'));
+        await pumpEventQueue();
+        expect((server.calls.last['params'] as Map)['model'], expected);
+      },
+    );
+  }
 
   test(
     'saved permission and per-model efforts are restored and validated',

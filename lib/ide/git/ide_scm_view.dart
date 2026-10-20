@@ -51,7 +51,7 @@ import '../../theme/material_file_icons.dart';
 import '../../theme/workbench_theme.dart';
 import '../../workspace/editor_launcher.dart' show openExternal;
 import '../../workspace/window_controls.dart';
-import '../file_service.dart' show IdeHostFiles;
+import '../file_service.dart' show filesAvailableToSystem;
 import '../ide_animated_list.dart';
 import '../ide_commands.dart';
 import '../ide_dates.dart';
@@ -2412,7 +2412,7 @@ class IdeScmViewState extends State<IdeScmView>
   /// Whether the project's files are this machine's: a remote project's
   /// are not shown in the file manager, opened in its apps, nor copied to
   /// the system's clipboard.
-  bool get _local => widget.host.files is! IdeHostFiles;
+  bool get _local => filesAvailableToSystem(widget.host.files);
 
   /// The paths of [resources] still on disk.
   static List<String> _present(List<IdeGitResource> resources) => [

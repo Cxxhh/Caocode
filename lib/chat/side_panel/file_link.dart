@@ -1,5 +1,7 @@
 import 'package:path/path.dart' as p;
 
+import '../../kernel/codex/codex_host.dart';
+
 /// Lines of a file, from 1: [start] to [end], at [column] (from 1) when
 /// one is said.
 class FileLineRange {
@@ -112,6 +114,18 @@ class FileLink {
   static String? resolvePath(String path, String root, {p.Context? paths}) {
     final context = paths ?? p.context;
     if (path.isEmpty || path.startsWith('~')) return null;
+    // Codex inside WSL emits Linux absolute paths. Windows considers them
+    // drive-rooted paths, which otherwise fall outside the UNC workspace.
+    final wsl = wslProject(root);
+    if (wsl != null && context.style == p.Style.windows) {
+      root = wslWindowsPath(root);
+    }
+    if (wsl != null && path.startsWith('/') && !path.startsWith('//')) {
+      path = '${wsl.prefix}${p.posix.normalize(path)}';
+    }
+    if (wsl != null && context.style == p.Style.windows) {
+      path = wslWindowsPath(path);
+    }
     final full = context.normalize(
       context.isAbsolute(path) ? path : context.join(root, path),
     );

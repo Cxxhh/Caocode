@@ -18,6 +18,7 @@ if ($LASTEXITCODE -ne 0) { throw '无法读取 Flutter 版本' }
 if ($version.frameworkRevision -ne $toolchain.flutterRevision) { throw 'Flutter SDK 版本不匹配' }
 . (Join-Path $PSScriptRoot 'flutter-tools.ps1')
 Invoke-CaocodePubGet $flutter $root
+Initialize-CaocodeWslServer $root $FlutterSdk
 & (Join-Path $PSScriptRoot 'cache-windows-sdk.ps1') -FlutterSdk $FlutterSdk
 & $flutter run --device-id windows --debug --no-pub --machine
 if ($LASTEXITCODE -ne 0) { throw 'Windows 开发启动失败' }

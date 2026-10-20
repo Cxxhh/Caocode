@@ -16,7 +16,7 @@ export 'package:bao_remote/files.dart';
 /// any other opened, as VS Code opens a file outside its workspace. The
 /// web cannot access local files.
 abstract interface class IdeFileService {
-  factory IdeFileService(String root) = platform.LocalIdeFileService;
+  factory IdeFileService(String root) => platform.createIdeFileService(root);
 
   Future<List<IdeFile>> list(String directory);
 
@@ -50,6 +50,8 @@ abstract interface class IdeFileService {
   Future<void> writeBytes(String path, Uint8List bytes);
 }
 
+Future<void> closeIdeFileServices() => platform.closeIdeFileServices();
+
 /// A file service of files on another machine (a remote project's host):
 /// what the IDE does on the disk besides reading and writing text, it does
 /// through it too.
@@ -66,6 +68,13 @@ abstract interface class IdeHostFiles implements IdeFileService {
   /// The text search of the IDE's Search view, run there.
   Stream<Object> searchText(String root, IdeTextQuery query);
 }
+
+/// Native host operations with paths the desktop OS can also open (WSL
+/// UNC shares). Reveal, drag and clipboard use those paths directly.
+abstract interface class IdeMountedFiles implements IdeHostFiles {}
+
+bool filesAvailableToSystem(IdeFileService files) =>
+    files is! IdeHostFiles || files is IdeMountedFiles;
 
 /// A host's files read a stretch at a time: a big one downloads without
 /// holding up the rest of the connection (the agent's output, its pings),
