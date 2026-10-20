@@ -249,6 +249,20 @@ void main() {
     );
   });
 
+  testWidgets('definitions are read with the project host\'s path syntax', (
+    tester,
+  ) async {
+    // A remote project's (a Mac's `/Users/…` opened from Windows) is not
+    // this machine's: its targets must not be spelled as local paths.
+    final workspace = await pumpLanguageWorkbench(
+      tester,
+      _files,
+      FakeLanguageFeatures(),
+      open: [_a],
+    );
+    expect(languageSession(tester).paths, same(workspace.paths));
+  });
+
   testWidgets('Ctrl/Cmd+click goes to the definition under the pointer and '
       'underlines it as a link while hovering', (tester) async {
     final languages = FakeLanguageFeatures()

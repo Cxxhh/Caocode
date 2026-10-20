@@ -15,6 +15,8 @@ import 'package:caocode/ide/ide_workbench.dart';
 import 'package:caocode/main.dart';
 import 'package:caocode/workspace/workspace.dart';
 
+import 'settle_explorers.dart';
+
 const _window = MethodChannel('caocode/window');
 const _open = MethodChannel('caocode/open');
 
@@ -42,7 +44,7 @@ Future<Workspace> _pumpApp(WidgetTester tester) async {
 Future<void> _showIde(WidgetTester tester, Workspace workspace) async {
   workspace.layout = WorkspaceLayout.ide;
   await tester.pump();
-  await tester.pump();
+  await settleFileExplorers(tester);
 }
 
 IdeWorkbenchState _ide(WidgetTester tester) =>
@@ -81,7 +83,7 @@ void main() {
     await _showIde(tester, workspace);
     await tester.runAsync(() => _ide(tester).widget.workspace.open(file.path));
     await tester.pump();
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     final title = tester.widget<IdeChatTitle>(find.byType(IdeChatTitle));
     expect(title.current?.project.path, folder.path);
@@ -467,7 +469,7 @@ void main() {
     Future<void> choose(AgentThread t, String item) async {
       final tab = find.descendant(of: title, matching: find.text(t.title));
       await tester.ensureVisible(tab);
-      await tester.pumpAndSettle();
+      await settleFileExplorers(tester);
       await tester.tap(tab, buttons: kSecondaryMouseButton);
       await tester.pumpAndSettle();
       await tester.tap(find.text(item));
@@ -506,7 +508,7 @@ void main() {
     Future<void> openMenu(AgentThread t) async {
       final tab = find.descendant(of: title, matching: find.text(t.title));
       await tester.ensureVisible(tab);
-      await tester.pumpAndSettle();
+      await settleFileExplorers(tester);
       await tester.tap(tab, buttons: kSecondaryMouseButton);
       await tester.pumpAndSettle();
     }
@@ -546,6 +548,34 @@ void main() {
     expect(workspace.threads, isNot(contains(thread)));
   });
 
+  testWidgets('a chat tab shown again is the chat as it was, not built anew; '
+      'the others hidden, without the keyboard', (tester) async {
+    final workspace = await _pumpApp(tester);
+    final thread = workspace.current!;
+    final folder = thread.project.path;
+    final other = workspace.threads.firstWhere(
+      (t) => t.project == thread.project && t != thread && !t.archived,
+    );
+    workspace.openInIde(thread);
+    await tester.pump();
+    await tester.pump();
+    final first = tester.state(find.byType(ChatScreen));
+    workspace.openIdeChat(folder, other);
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(ChatScreen), findsOneWidget);
+    expect(tester.state(find.byType(ChatScreen)), isNot(same(first)));
+    expect(find.byType(ChatScreen, skipOffstage: false), findsNWidgets(2));
+    workspace.openIdeChat(folder, thread);
+    await tester.pump();
+    await tester.pump();
+    expect(tester.state(find.byType(ChatScreen)), same(first));
+    // Closed, its tab's chat goes.
+    workspace.closeIdeChat(folder, other);
+    await tester.pump();
+    expect(find.byType(ChatScreen, skipOffstage: false), findsOneWidget);
+  });
+
   testWidgets('⌘W/Ctrl+W from the chat closes its tab shown, the next '
       'then; from an editor, the editor', (tester) async {
     final workspace = await _pumpApp(tester);
@@ -557,7 +587,7 @@ void main() {
     workspace.openInIde(thread);
     workspace.openIdeChat(folder, other);
     await tester.pump();
-    await tester.pump();
+    await settleFileExplorers(tester);
     _ide(tester).runCommand('workbench.action.files.newUntitledFile');
     await tester.pump();
     List<Object> docs() => tester

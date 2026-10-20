@@ -2335,12 +2335,12 @@ class _WorkbenchState extends State<Workbench> implements WindowDelegate {
               if (current == null)
                 const SizedBox.shrink()
               else
-                _buildChat(
-                  showToggle: false,
-                  embedded: true,
-                  pane: current,
-                  openEditor: openEditor,
-                ),
+                for (final thread in _keepIdeChats(folder, current))
+                  _keptIdeChat(
+                    thread,
+                    shown: identical(thread, current),
+                    openEditor: openEditor,
+                  ),
               // Over the chat, which keeps what it was at underneath.
               ValueListenableBuilder(
                 valueListenable: _ideHistory,
@@ -2370,6 +2370,55 @@ class _WorkbenchState extends State<Workbench> implements WindowDelegate {
           ),
         ),
       ],
+    );
+  }
+
+  /// The IDE chat tabs shown last in each folder, the one shown first,
+  /// kept built ([_keptIdeChat]): a long conversation takes a while to
+  /// build, which a tab shown again went through each time.
+  final Map<String, List<AgentThread>> _ideChatsKept = {};
+
+  /// Each kept chat as last built while shown.
+  final Map<AgentThread, Widget> _ideChatWidgets = {};
+
+  static const _ideChatsKeptCount = 5;
+
+  /// [folder]'s kept chats, [current] first, those whose tabs are open.
+  List<AgentThread> _keepIdeChats(String folder, AgentThread current) {
+    final open = _workspace.ideChats(folder);
+    final kept = _ideChatsKept[folder] = [
+      current,
+      for (final thread in _ideChatsKept[folder] ?? const <AgentThread>[])
+        if (!identical(thread, current) && open.contains(thread)) thread,
+    ].take(_ideChatsKeptCount).toList();
+    final all = {for (final chats in _ideChatsKept.values) ...chats};
+    _ideChatWidgets.removeWhere((thread, _) => !all.contains(thread));
+    return kept;
+  }
+
+  /// [thread]'s chat in the IDE, kept built while another tab shows: as it
+  /// was last built then, rebuilt as the window is only while shown.
+  Widget _keptIdeChat(
+    AgentThread thread, {
+    required bool shown,
+    required OpenEditor? Function() openEditor,
+  }) {
+    Widget build() => _buildChat(
+      showToggle: false,
+      embedded: true,
+      pane: thread,
+      openEditor: openEditor,
+    );
+    final chat = shown
+        ? _ideChatWidgets[thread] = build()
+        : _ideChatWidgets[thread] ??= build();
+    return Offstage(
+      key: ObjectKey(thread),
+      offstage: !shown,
+      child: TickerMode(
+        enabled: shown,
+        child: ExcludeFocus(excluding: !shown, child: chat),
+      ),
     );
   }
 

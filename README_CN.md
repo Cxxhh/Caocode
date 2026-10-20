@@ -83,7 +83,7 @@ dart run tool/build_remote_server.dart    # 用于 Linux x64 和 arm64 的 SSH �
 
 ## 反馈
 
-欢迎提交 Issue。项目上游不接受 Pull Request。
+欢迎提交 Issue 和 Pull Request。改动请先在 Issue 里讨论；太大的 PR、未经讨论的 PR，不会被接受。详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 许可证
 

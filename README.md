@@ -57,6 +57,10 @@ Caocode 的数据与上游独立：Windows 默认使用 `%APPDATA%\caocode`，WS
 
 当前发布验证覆盖 Windows。SSH 远程 Codex、目标和子代理等迁移范围见 [Codex 迁移说明](docs/caocode-migration.md)；上游 Claude 实现保留用于迁移参考和回归测试。
 
+## 参与贡献
+
+欢迎提交 Issue 和 Pull Request；功能或行为改动请先在 Issue 中讨论，见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
 ## 许可证与来源
 
 Caocode 保留上游 Git 历史，基于 GPL-3.0-only 发布，见 [LICENSE](LICENSE)。`packages/` 及第三方资源的许可证保留在各自目录中。上游来源与固定版本见 [toolchain.json](tool/caocode/toolchain.json)。

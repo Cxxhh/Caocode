@@ -30,15 +30,67 @@
   <h1>Changelog</h1>
   <p class="subtitle">What changed in each version of Caocode.</p>
 
+  <section class="release" id="v1.5.6">
+    <h2 class="plain"><a href="#v1.5.6">1.5.6</a></h2>
+    <p>Faster switching, clearer diffs</p>
+    <p>Includes BaoCode 1.5.0 and subsequent fixes, with Caocode's Codex CLI, subagent navigation and Windows/WSL environment support.</p>
+    <ul>
+    <li>Keep the five most recently viewed IDE chat pages, preserving their state when switching back.</li>
+    <li>Use the IDE diff editor in the side panel: inline at narrow widths, side by side when wide, with a change overview.</li>
+    <li>Cache long-file width measurements to avoid repeated scans.</li>
+    <li>Resolve remote F12 targets using the project host's path rules.</li>
+    <li>Let zoomed images fill the preview window without clipping to their initial size.</li>
+    <li>Open the command menu with <code>/</code> at the start of any word in a message.</li>
+    <li>Fix freezes caused by edited input fields repeatedly stealing focus from each other.</li>
+    </ul>
+    <p>New conversations still select the current environment's configured CLI model directly. Reasoning effort remains in the outer toolbar.</p>
+  </section>
+
+  <section class="release" id="v1.5.0">
+    <h2 class="plain"><a href="#v1.5.0">1.5.0</a></h2>
+    <p>Easy SSH</p>
+    <p>Connecting to a server no longer starts with setting up ssh in a terminal: type its address in BaoCode and connect, with the password, key and jump host in one form, and no terminal to accept the server's key the first time. Settings has a new SSH Servers page, where all your servers are kept, each with the core it runs.</p>
+    <p>New</p>
+    <ul>
+    <li>Add an SSH server: Add SSH Server… in the list of remote projects asks for the host, port and user, and how to sign in: a password, a private key, or Automatic (as ssh does in a terminal). A pasted user@host:port is split up, the keys in ~/.ssh are offered, and a password is kept in the system keychain. Saved, it connects in one click; a failed connection's page and the sidebar edit it too.</li>
+    <li>Jump hosts: pick a saved server to connect through, each asking for its own password.</li>
+    <li>A server connected to for the first time has its key remembered by itself. One whose key changed is told as such, and once you know it was reinstalled, its old key can be removed to connect again.</li>
+    <li>Settings → SSH Servers: the servers added in the app and the hosts the sidebar has used, to edit, connect, disconnect or remove; the hosts of ~/.ssh/config are listed apart, their file a click away.</li>
+    <li>A core for each server: Automatic (the server's Claude Code CLI if it has one, else the built-in core), the built-in core, or the Claude Code CLI (installed there if missing). Remote hosts no longer follow this machine's core setting.</li>
+    <li>Passwords on Windows 10: the installer carries a recent OpenSSH, used where the system's is too old or missing.</li>
+    <li>Settings → About: the version, the site, the changelog and the issues, and a way to star BaoCode on GitHub. Accounts is now Git Accounts.</li>
+    <li>The browser extension works on Linux, in Chrome, Chromium, Edge, Brave and Vivaldi.</li>
+    <li>A file another tool asks BaoCode to open as file:line:column (a front-end inspector's Open in Editor, say) opens at that line and column.</li>
+    </ul>
+    <p>Improved</p>
+    <ul>
+    <li>Typing in the IDE is smoother: an edit goes through only the lines it changed, the input method is given only the lines around the caret, and typing no longer redraws the whole IDE.</li>
+    <li>Switching chat tabs in the IDE is faster: the chats seen last are kept, shown again at once where you left them.</li>
+    <li>Changes in the side panel open in the IDE's diff editor: the deleted code in the text where it is narrow, side by side once wide enough, with the overview of the changes at the right, and long files no longer slow it down.</li>
+    <li>The live time, speed and tokens under a reply while the agent works are one switch now (Settings → General).</li>
+    <li>Through OpenCode's gateway, the requests of a conversation hit its prompt cache: faster, and cheaper.</li>
+    <li>The model menu opens scrolled to the model in use.</li>
+    </ul>
+    <p>Fixed</p>
+    <ul>
+    <li>A picture zoomed in the preview is no longer clipped to its first size.</li>
+    <li>Generated images, screenshots and pictures read stay in a conversation switched away from and back to.</li>
+    <li>After switching to another provider's model mid-conversation, messages go to the model picked; with the model in use removed, the one the picker shows is used rather than &quot;Not logged in&quot;.</li>
+    <li>Go to Definition (F12) centers its target, even one already on screen.</li>
+    <li>Windows: zoomed in, the title bar's buttons are clickable all the way to their right edge; installing language servers no longer fails with &quot;not a valid Win32 application&quot;.</li>
+    <li>The file manager is called by each system's own name (Finder, File Explorer…).</li>
+    </ul>
+  </section>
+
   <section class="release" id="v1.4.0">
     <h2 class="plain"><a href="#v1.4.0">1.4.0</a></h2>
     <p>Hello, Linux</p>
-    <p>Caocode runs on Linux now: a package for Ubuntu and other Debian-based distributions, x64 and arm64, that keeps itself up to date like the Mac and Windows apps. And setting up a model the first time is a welcome rather than an error.</p>
+    <p>BaoCode runs on Linux now: a package for Ubuntu and other Debian-based distributions, x64 and arm64, that keeps itself up to date like the Mac and Windows apps. And setting up a model the first time is a welcome rather than an error.</p>
     <p>New</p>
     <ul>
-    <li>Linux: download the .deb for your processor from caocode.dev/download (Ubuntu 22.04 or later, and other Debian-based distributions). It opens folders and files with the system's dialogs, has the system's right-click menus, and pastes text, files and pictures. Thanks to qyh1221, whose port this is.</li>
-    <li>Linux updates itself: a new version is downloaded and checked as on the other systems, then installed once you enter your password, and Caocode opens again. A copy run from the tarball is pointed to the download page instead.</li>
-    <li>Setting up a model: with no model to run on yet (Caocode's own core, before any upstream is added), a welcome explains what an upstream is and adds one in a click, opening its page in Settings → Models. The conversation starts by itself as soon as a model is there, with no retry. Until then, Set Up a Model sits in the model picker's place under the input, and in the command palette.</li>
+    <li>Linux: download the .deb for your processor from baocode.dev/download (Ubuntu 22.04 or later, and other Debian-based distributions). It opens folders and files with the system's dialogs, has the system's right-click menus, and pastes text, files and pictures. Thanks to qyh1221, whose port this is.</li>
+    <li>Linux updates itself: a new version is downloaded and checked as on the other systems, then installed once you enter your password, and BaoCode opens again. A copy run from the tarball is pointed to the download page instead.</li>
+    <li>Setting up a model: with no model to run on yet (BaoCode's own core, before any upstream is added), a welcome explains what an upstream is and adds one in a click, opening its page in Settings → Models. The conversation starts by itself as soon as a model is there, with no retry. Until then, Set Up a Model sits in the model picker's place under the input, and in the command palette.</li>
     <li>From your phone, Start on a plan the agent put to you starts it, as the desktop's button does.</li>
     </ul>
     <p>Improved</p>
@@ -50,16 +102,16 @@
   <section class="release" id="v1.3.0">
     <h2 class="plain"><a href="#v1.3.0">1.3.0</a></h2>
     <p>Good Friends with Chrome</p>
-    <p>This release is about the browser: agents can use your own Chrome now, opening pages, clicking, typing and debugging with your sign-ins, every step of it in view in the side panel. Agents can also make pictures with your upstreams' image models, and pictures show right in the chat. Caocode has a core of its own; an agent's changes can be reviewed part by part beside the chat; long conversations open faster, and the mouse wheel keeps up with your hand. And a batch of problems is fixed.</p>
+    <p>This release is about the browser: agents can use your own Chrome now, opening pages, clicking, typing and debugging with your sign-ins, every step of it in view in the side panel. Agents can also make pictures with your upstreams' image models, and pictures show right in the chat. BaoCode has a core of its own; an agent's changes can be reviewed part by part beside the chat; long conversations open faster, and the mouse wheel keeps up with your hand. And a batch of problems is fixed.</p>
     <p>New</p>
     <ul>
-    <li>The browser: add the Caocode extension (from the Chrome Web Store, or as a zip loaded unpacked) and agents can open pages, read them, click and type in your own Chrome, Edge, Brave or Arc, signed in as you are. They touch only the tabs you share with them (the Caocode button in the browser's toolbar shares the tab you're on). The side panel shows the page they're working in as it happens, and you can work in it too. Turn it on or off and install it in Settings → Browser, on macOS and Windows.</li>
+    <li>The browser: add the BaoCode extension (from the Chrome Web Store, or as a zip loaded unpacked) and agents can open pages, read them, click and type in your own Chrome, Edge, Brave or Arc, signed in as you are. They touch only the tabs you share with them (the BaoCode button in the browser's toolbar shares the tab you're on). The side panel shows the page they're working in as it happens, and you can work in it too. Turn it on or off and install it in Settings → Browser, on macOS and Windows.</li>
     <li>Debugging in the browser: agents read the console and network requests, set breakpoints and step through code, see variables by their source-mapped names, find a page's React and Vue components and event handlers, look into performance, memory and unused CSS, block, mock and rewrite requests, and run a tab as on a phone or a slow network.</li>
     <li>A debugging history of the browser: the pages, requests and console errors and warnings of the tabs you share are kept as they happen, with no recording to start. Say &quot;saving just failed&quot; and the agent looks it up itself. Detailed history keeps request and response bodies too, and your clicks and typing (never passwords). It stays on this computer; Settings shows how much room it takes and clears it, and you're told once it passes 1 GB.</li>
     <li>Show the agent how: an agent can ask you to do something once in the browser, keep each step as a file in the project, and do it again in your browser later.</li>
     <li>Making pictures: agents generate images with your upstreams' image models (the Images API, chat interfaces such as OpenRouter's and Gemini's, Codex's gpt-image-2). Pick the default image model in Settings → Models, or Ask each time to choose in the chat; image models stay out of the chat's model picker.</li>
     <li>Pictures in the chat: what a tool returns as a picture (an image file read, a browser screenshot, an MCP tool's image) and local images in a message show in the conversation. Click one to see it whole, and ← → go through every picture in the chat; right-click to open it in the side panel or the IDE, copy its path or show it in Finder. Image files open in the side panel too.</li>
-    <li>The built-in core: Caocode's own Claude Code core, with CLAUDE.md, skills, subagents, commands, hooks, plugins and MCP servers, on remote hosts too. Switch in Settings → General → Claude Code → Core: the CLI where Claude Code is installed, the built-in core otherwise. The built-in core uses only the upstreams added in Settings → Models; pick the CLI for a Claude subscription.</li>
+    <li>The built-in core: BaoCode's own Claude Code core, with CLAUDE.md, skills, subagents, commands, hooks, plugins and MCP servers, on remote hosts too. Switch in Settings → General → Claude Code → Core: the CLI where Claude Code is installed, the built-in core otherwise. The built-in core uses only the upstreams added in Settings → Models; pick the CLI for a Claude subscription.</li>
     <li>Reviewing changes beside the chat: the side panel's editor shows an agent's pending changes in the code, as the IDE does, each part to undo or keep on its own. The bar above goes to the previous and next change and keeps or undoes a file, or everything at once. The side panel's editor finds and replaces too.</li>
     <li>Live usage: while an agent works, the time so far, the writing speed and the tokens roll by under the status line; a finished turn shows its time, speed, cost and tokens, still there when the session is opened again.</li>
     <li>The status line's musings are now mostly about the step just done, its command or file by name.</li>
@@ -105,7 +157,7 @@
     <ul>
     <li>Stash: an inbox for whatever comes to mind. Set a global shortcut in Settings → Stash and press it in any app to bring up a floating panel and note something down (none is set by default, so as not to clash with other apps). Text, screenshots, files, links, code, tables and formulas all go in, and each note has its own number, like an issue.</li>
     <li>Keeping Stash tidy: pin notes, drag them into order, filter by time, project and status, and merge duplicates; search finds text inside images too, and AI search finds notes by meaning.</li>
-    <li>Handing a note to an agent: click Implement in Caocode and choose a new git worktree or the current branch, or @ the note in a chat. The chat and the note are linked, and the note's card shows how the chat is going.</li>
+    <li>Handing a note to an agent: click Implement in BaoCode and choose a new git worktree or the current branch, or @ the note in a chat. The chat and the note are linked, and the note's card shows how the chat is going.</li>
     <li>AI to say it clearly: Polish smooths the selected text, and Clarify turns a one-liner into a full request, using its images and attachments; both can be undone.</li>
     <li>Accounts (Settings → Accounts): sign in to GitHub or GitLab, in the browser or with a token, GitHub Enterprise and self-hosted GitLab included. Issues and pull requests linked from Stash show their latest state and checks; import issues from your projects' repositories, and reply to or close an issue once you've confirmed, with a warning first if the text looks like it holds a local path or a secret. Tokens are kept only in this computer's keychain.</li>
     <li>The phone app (beta): download it for Android or iOS from the download page, pair it with your computer, and follow and steer its agents from your phone.</li>
@@ -181,7 +233,7 @@
     <p>A wide-ranging release: import upstreams from a site in one click, manage SSH hosts from the sidebar, undo and drag files in and out of the explorer, get Claude Code downloaded for you on first use, and a batch of long-standing fixes.</p>
     <p>New</p>
     <ul>
-    <li>One-click upstream import: click the import button on a site that offers it and, once you confirm, the upstream is added with your own key (only its name, protocol, address and key are taken). Settings → Models lists the sites officially listed at the top, those you use first; the list follows caocode.dev, with no new release needed.</li>
+    <li>One-click upstream import: click the import button on a site that offers it and, once you confirm, the upstream is added with your own key (only its name, protocol, address and key are taken). Settings → Models lists the sites officially listed at the top, those you use first; the list follows baocode.dev, with no new release needed.</li>
     <li>The model picker shows each model's maker logo, and each upstream's heading has an icon. Pick one yourself (a maker's logo, the site's icon, an emoji, a built-in icon or an image you upload); unset, the maker is told from the address, or the site's icon is fetched.</li>
     <li>Queued messages: what you send while the agent works no longer lands in the conversation. It waits above the input, sent in turn, and each can be taken back to edit, sent now (stopping the current task), or removed.</li>
     <li>Open Project in the sidebar, and SSH hosts managed there: switch between this machine and a host, add, rename, disconnect or remove hosts. The new chat's folder menu lists SSH hosts and their projects too, and picks a folder on a host directly.</li>
@@ -190,7 +242,7 @@
     <li>Auto save: turn on Auto Save in the File menu, or set files.autoSave (after a pause in editing, on switching editors or on leaving the window), as in VS Code.</li>
     <li>The Skills page (formerly Customize) works for remote projects, managing the skills, subagents, commands, rules and MCP servers on the remote host. New ones can have Chinese names.</li>
     <li>Each MCP server is checked for whether it connects: one that doesn't says why (its exit code, a timeout, a sign-in it needs) with its output log, and can be checked again, one or all.</li>
-    <li>Claude Code installed for you: with none on this machine, your first conversation downloads it, showing progress. By default the newest of those installed and downloaded by Caocode is used; set a path in Settings → General to use one of your own.</li>
+    <li>Claude Code installed for you: with none on this machine, your first conversation downloads it, showing progress. By default the newest of those installed and downloaded by BaoCode is used; set a path in Settings → General to use one of your own.</li>
     <li>Settings → Updates → Diagnostic Logs: when something goes wrong, upload the error logs to the developer with a note, and get a report ID back. Nothing is sent until you click Upload, and your home folder shows as ~ in the logs.</li>
     <li>The settings' page list can be resized by dragging and hidden with ⌘B; in a narrow window it becomes a drawer.</li>
     <li>Models that summarize their thinking, such as GPT, show a thought by its summary's title, its text when opened.</li>
@@ -210,7 +262,7 @@
     <ul>
     <li>After stopping a task, tools, commands and subagents still running no longer spin forever: they show as failed (Claude Code and Codex).</li>
     <li>A long conversation's scrollbar is to scale and no longer jumps as you drag it. A turn the agent takes up on its own (a background task's report, say) no longer jumps to the bottom or folds away what you are reading.</li>
-    <li>Tools running code --version and the like no longer open an empty Caocode window.</li>
+    <li>Tools running code --version and the like no longer open an empty BaoCode window.</li>
     <li>Cancelling an SSH sign-in, or a wrong password, no longer brings the password prompt back again and again; remote projects restored at launch no longer each ask.</li>
     <li>On Windows, opening the changed files of an SSH project no longer shows a grey error box.</li>
     <li>On macOS, commands the agent runs can send Apple Events to other apps (e.g. with osascript); they were refused outright before.</li>
@@ -243,7 +295,7 @@
     </ul>
     <p>Interface</p>
     <ul>
-    <li>An empty conversation shows the Caocode logo.</li>
+    <li>An empty conversation shows the BaoCode logo.</li>
     <li>Message bubbles and the input share one fill and border; the focused input shows a shadow instead of changing its border color.</li>
     <li>With several conversations side by side, the current one has a faint outline, inset from the window's edges.</li>
     <li>Conversations fade out at their top and bottom edges as they scroll.</li>
@@ -268,7 +320,7 @@
     </ul>
     <p>Changed</p>
     <ul>
-    <li>Removed six themes: Monokai, Abyss, Quiet Light, Dark (Visual Studio), Dark 2026 and Light 2026. If you were using one, Caocode switches you to Bao Dark or Bao Light.</li>
+    <li>Removed six themes: Monokai, Abyss, Quiet Light, Dark (Visual Studio), Dark 2026 and Light 2026. If you were using one, BaoCode switches you to Bao Dark or Bao Light.</li>
     </ul>
   </section>
 
@@ -335,11 +387,11 @@
     <h2 class="plain"><a href="#v1.0.3">1.0.3</a></h2>
     <p>1.0.2 won't open on Windows?</p>
     <ul>
-    <li>If 1.0.2 quits as soon as it starts, without a window, its built-in update can't run either: download 1.0.3 from <a href="https://caocode.dev/download">https://caocode.dev/download</a> and install it over the old version. Your settings and conversations are kept.</li>
+    <li>If 1.0.2 quits as soon as it starts, without a window, its built-in update can't run either: download 1.0.3 from <a href="https://baocode.dev/download">https://baocode.dev/download</a> and install it over the old version. Your settings and conversations are kept.</li>
     </ul>
     <p>Fixed</p>
     <ul>
-    <li>Windows: on some PCs 1.0.2 quit right after starting, without showing a window (when the Visual C++ runtime installed was an older one). Caocode now carries the runtime it needs instead of using the system's</li>
+    <li>Windows: on some PCs 1.0.2 quit right after starting, without showing a window (when the Visual C++ runtime installed was an older one). BaoCode now carries the runtime it needs instead of using the system's</li>
     <li>Windows: Claude Code installed with Volta failed to start, reported as not recognized</li>
     </ul>
   </section>
@@ -348,7 +400,7 @@
     <h2 class="plain"><a href="#v1.0.2">1.0.2</a></h2>
     <p>Update didn’t install?</p>
     <ul>
-    <li>If after Restart to Update the app closed and opened again on the old version (1.0.0 and the first 1.0.1 build may do this), please download 1.0.2 from <a href="https://caocode.dev/download">https://caocode.dev/download</a> and install it over your current version; your settings and conversations are kept.</li>
+    <li>If after Restart to Update the app closed and opened again on the old version (1.0.0 and the first 1.0.1 build may do this), please download 1.0.2 from <a href="https://baocode.dev/download">https://baocode.dev/download</a> and install it over your current version; your settings and conversations are kept.</li>
     </ul>
     <p>New</p>
     <ul>
@@ -397,7 +449,7 @@
     <p>To 1.0.0 users</p>
     <ul>
     <li>Our mistake: 1.0.0 can’t install updates. After Restart to Update the app closes, and opens again as 1.0.0. We’re sorry.</li>
-    <li>Please download 1.0.1 from <a href="https://caocode.dev/download">https://caocode.dev/download</a> and install it over your current version; your settings and conversations are kept. From 1.0.1 on, updates install by themselves.</li>
+    <li>Please download 1.0.1 from <a href="https://baocode.dev/download">https://baocode.dev/download</a> and install it over your current version; your settings and conversations are kept. From 1.0.1 on, updates install by themselves.</li>
     </ul>
     <p>New</p>
     <ul>
@@ -438,7 +490,7 @@
 
   <section class="release" id="v1.0.0">
     <h2 class="plain"><a href="#v1.0.0">1.0.0</a></h2>
-    <p>The first release of Caocode: a desktop app for Claude Code, with a fast IDE built in. For macOS (Apple silicon and Intel) and Windows.</p>
+    <p>The first release of BaoCode: a desktop app for Claude Code, with a fast IDE built in. For macOS (Apple silicon and Intel) and Windows.</p>
     <p>Chat</p>
     <ul>
     <li>Steps fold into single lines, and the current task and its progress stay above the input</li>
@@ -472,7 +524,7 @@
     <p>Around the app</p>
     <ul>
     <li>Notifications, a sound and a count on the app’s icon when an agent needs you; agents keep running in the menu bar or tray when the window is closed</li>
-    <li>Open a folder in Caocode from Finder or Explorer, and keep a window on top of others</li>
+    <li>Open a folder in BaoCode from Finder or Explorer, and keep a window on top of others</li>
     <li>In English and Chinese</li>
     <li>Updates itself in the background, and asks before restarting</li>
     </ul>

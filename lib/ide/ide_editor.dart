@@ -452,6 +452,7 @@ class IdeEditorState extends State<IdeEditor> {
       onApplyWorkspaceEdit: applyWorkspaceEdit,
       onFocusEditor: focus,
       onFormatterMissing: _formatterMissing,
+      paths: widget.workspace.paths,
       semanticTokenStyler: _semanticTokenStyler,
       languageId: _textMateDocuments[doc]?.$2.languageId ?? 'plaintext',
       semanticSource: _semanticSources[doc],

@@ -232,6 +232,28 @@ void main() {
     expect(composerText(tester), '/');
   });
 
+  testWidgets('a / starting a word within the message opens the menu too; '
+      'one starting no command, or within a word, stays text', (tester) async {
+    await pumpChat(tester);
+    await typeText(tester, '/');
+    SuggestionMenu menu() => tester.widget(find.byType(SuggestionMenu));
+    final command = menu().matches.first.suggestion;
+    composer(tester).clear();
+
+    await typeText(tester, '111 /${command.label}');
+    expect(menu().matches.first.suggestion.label, command.label);
+    await press(tester, LogicalKeyboardKey.enter);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byType(SuggestionMenu), findsNothing);
+    expect(composerMessage(tester), '111 /${command.value}');
+
+    composer(tester).clear();
+    await typeText(tester, 'see /zzqqxx');
+    expect(find.byType(SuggestionMenu), findsNothing);
+    await typeText(tester, 'src/${command.label}');
+    expect(find.byType(SuggestionMenu), findsNothing);
+  });
+
   testWidgets('↑ at the start shows the messages sent before, ↓ at the end '
       'the ones after, then what was typed', (tester) async {
     final session = await pumpChat(tester);

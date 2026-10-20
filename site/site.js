@@ -34,9 +34,14 @@ const attribution = (() => {
   const toDb = (r) => within(store('readwrite', (kv) => kv.put(r, KEY)).then(() => true, () => false), 1500, false);
   const fromLocal = () => { try { return JSON.parse(localStorage.getItem(`caocode.${KEY}`)); } catch { return null; } };
   const toLocal = (r) => { try { localStorage.setItem(`caocode.${KEY}`, JSON.stringify(r)); return true; } catch { return false; } };
+  // Written by /dl/ for a download from another site's frame (below), whose
+  // storage was that site's alone.
+  const fromCookie = () => {
+    try { return JSON.parse(decodeURIComponent(document.cookie.match(/(?:^|; )attribution=([^;]*)/)?.[1] || 'null')); } catch { return null; }
+  };
 
-  /** The later of the two kept, if either is: one may not have been written last time. */
-  const kept = async () => [await fromDb(), fromLocal()].filter(valid).sort((a, b) => (a.at > b.at ? -1 : 1))[0] || null;
+  /** The latest of those kept, if any is: one may not have been written last time. */
+  const kept = async () => [await fromDb(), fromLocal(), fromCookie()].filter(valid).sort((a, b) => (a.at > b.at ? -1 : 1))[0] || null;
 
   // ?ch=abc, ?utm_source=abc, else the first other: ?abc, ?abc=, ?from=abc.
   // Lower case, blanks and a trailing / (a link pasted sloppily) taken off.
@@ -87,6 +92,32 @@ const attribution = (() => {
     if (channel) history.replaceState(history.state, '', location.pathname + location.hash);
     return source;
   })();
+
+  // In another site's frame, what this page keeps is kept for that site
+  // alone (the browser keeps a frame's storage apart): /activate, opened
+  // on its own by the channel build's first start, would find nothing. So
+  // there a download, a channel kept, goes by /dl/ in a tab of its own,
+  // the channel with it: the Worker keeps it in a cookie of this site's
+  // own (site-worker/index.js), and picks the build. A link off the site
+  // (GitHub, the Chrome Web Store by /dl/) opens in a tab of its own too:
+  // most sites refuse to show in a frame.
+  let framedChannel = null;
+  if (window.top !== window) {
+    ready.then((r) => { framedChannel = r?.source === 'channel' ? r.value : null; });
+    const DESKTOP = new Set(['windows', 'macos-arm64', 'macos-x64', 'linux-x64', 'linux-arm64']);
+    const newTab = (a) => { a.target = '_blank'; a.rel = 'noopener'; };
+    document.addEventListener('click', (event) => {
+      const a = event.target.closest?.('a[href]');
+      if (!a) return;
+      if (a.hasAttribute('data-file')) {
+        if (!framedChannel || !DESKTOP.has(a.dataset.file)) return;
+        a.href = `${location.origin}/dl/${a.dataset.file}?ch=${encodeURIComponent(framedChannel)}`;
+        newTab(a);
+      } else if (a.origin !== location.origin || a.pathname.startsWith('/dl/')) {
+        newTab(a);
+      }
+    }, true);
+  }
 
   return { kept, ready };
 })();

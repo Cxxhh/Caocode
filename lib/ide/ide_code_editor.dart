@@ -40,16 +40,17 @@ import 'lsp_ui/minimal_edits.dart';
 /// text's tokens kept until [release]d, so a text shown again is colored at
 /// once rather than tokenized anew, as the IDE's editor keeps its tabs'.
 class IdeCodeHighlights {
-  late final TextMateSyntax syntax = TextMateSyntax(
+  late final TextMateSyntax _textMate = TextMateSyntax(
     themes: WorkbenchThemeService.instance,
   );
   bool _started = false;
   final Map<EditorSurfaceController, (String, TextMateDocument)> _documents =
       {};
 
-  TextMateSyntax get _syntax {
+  /// The worker, started as it is first asked for; gone with these.
+  TextMateSyntax get syntax {
     _started = true;
-    return syntax;
+    return _textMate;
   }
 
   /// [controller]'s highlighting as the language of [path], if kept.
@@ -80,7 +81,7 @@ class IdeCodeHighlights {
       document.dispose();
     }
     _documents.clear();
-    if (_started) syntax.dispose();
+    if (_started) _textMate.dispose();
   }
 }
 
@@ -177,7 +178,7 @@ class IdeCodeEditorState extends State<IdeCodeEditor> {
   TextMateDocument? _highlight;
 
   TextMateSyntax get _textMate =>
-      widget.highlights?._syntax ??
+      widget.highlights?.syntax ??
       (_ownTextMate ??= TextMateSyntax(themes: _themes));
 
   /// Bumped as the language is to be picked anew: an older pick is dropped.

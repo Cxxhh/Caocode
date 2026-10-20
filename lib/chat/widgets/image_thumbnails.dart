@@ -373,24 +373,28 @@ class _ImagePreviewState extends State<_ImagePreview> {
           child: Stack(
             children: [
               Positioned.fill(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: several ? 72 : 40,
-                    vertical: 40,
-                  ),
-                  child: Center(
-                    child: !_read.containsKey(_index)
-                        ? const SizedBox.shrink()
-                        : image == null
-                        ? Icon(
-                            Codicons.fileMedia,
-                            size: 32,
-                            color: Colors.white54,
-                          )
-                        : InteractiveViewer(
-                            // Each anew: not zoomed as the one before.
-                            key: ValueKey(_index),
-                            maxScale: 6,
+                child: !_read.containsKey(_index)
+                    ? const SizedBox.shrink()
+                    : image == null
+                    ? Center(
+                        child: Icon(
+                          Codicons.fileMedia,
+                          size: 32,
+                          color: Colors.white54,
+                        ),
+                      )
+                    // The whole window, not the picture's own size: zoomed,
+                    // it fills the window, not clipped to where it was.
+                    : InteractiveViewer(
+                        // Each anew: not zoomed as the one before.
+                        key: ValueKey(_index),
+                        maxScale: 6,
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: several ? 72 : 40,
+                            vertical: 40,
+                          ),
+                          child: Center(
                             child: GestureDetector(
                               onSecondaryTapUp: (details) =>
                                   _showMenu(context, details.globalPosition),
@@ -400,8 +404,8 @@ class _ImagePreviewState extends State<_ImagePreview> {
                               ),
                             ),
                           ),
-                  ),
-                ),
+                        ),
+                      ),
               ),
               if (several) ...[
                 Positioned(

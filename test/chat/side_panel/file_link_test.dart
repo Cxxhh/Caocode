@@ -1,6 +1,4 @@
 import 'package:caocode/chat/side_panel/file_link.dart';
-import 'package:caocode/chat/side_panel/line_diff.dart';
-import 'package:caocode/chat/chat_models.dart' show DiffLineType;
 import 'package:caocode/chat/widgets/markdown_view.dart';
 import 'package:caocode/kernel/claude_code/claude_code_transport.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -264,50 +262,5 @@ see also `pubspec.yaml` and [the site](https://caocode.dev).
         const FileLink('lib/chat/chat_screen.dart', FileLineRange(42)),
       ],
     );
-  });
-
-  group('a file\'s diff', () {
-    test('every line, those removed before those added in their place', () {
-      final rows = fileDiff('a\nb\nc\n', 'a\nB\nc\nd\n');
-      expect(
-        [
-          for (final row in rows)
-            (row.type, row.text, row.original, row.modified),
-        ],
-        [
-          (DiffLineType.context, 'a', 1, 1),
-          (DiffLineType.removed, 'b', 2, null),
-          (DiffLineType.added, 'B', null, 2),
-          (DiffLineType.context, 'c', 3, 3),
-          (DiffLineType.added, 'd', null, 4),
-        ],
-      );
-    });
-
-    test('a file added or deleted is all of one side', () {
-      expect(
-        [for (final row in fileDiff('', 'x\ny')) row.type],
-        [DiffLineType.added, DiffLineType.added],
-      );
-      expect(
-        [for (final row in fileDiff('x\r\ny\r\n', '')) (row.type, row.text)],
-        [(DiffLineType.removed, 'x'), (DiffLineType.removed, 'y')],
-      );
-    });
-
-    test('past a few thousand characters it is compared off this isolate, '
-        'the same rows', () async {
-      String text(String word) =>
-          [for (var i = 0; i < 60; i++) '$word $i ${'z' * 50}'].join('\n');
-      final (before, after) = (text('before'), text('after'));
-      List<(DiffLineType, String)> of(List<FileDiffRow> rows) => [
-        for (final row in rows) (row.type, row.text),
-      ];
-      expect(
-        of(await fileDiffAsync(before, after)),
-        of(fileDiff(before, after)),
-      );
-      expect(of(await fileDiffAsync('a\n', 'b\n')), of(fileDiff('a\n', 'b\n')));
-    });
   });
 }

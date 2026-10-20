@@ -14,6 +14,7 @@ import '../../kernel/agent_kernel.dart';
 import '../../kernel/kernel_types.dart';
 import '../../keybindings/chat_keybindings.dart';
 import '../../l10n/l10n.dart';
+import '../../platform/quill_focus.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/workbench_theme.dart' show WorkbenchColors, themeColors;
 import '../chat_keys.dart';
@@ -45,8 +46,8 @@ import '../../ide/file_service.dart' show IdeFileService;
 import '../../ide/ide_notifications.dart';
 import 'remote_drops.dart';
 
-/// An open query: a /command's, the slash starting the message, or a
-/// mention's (an @ starting a word: a file, a folder or a conversation);
+/// An open query: a /command's (a slash starting a word), or a mention's
+/// (an @ starting a word: a file, a folder or a conversation);
 /// [query] is the text between it and the caret.
 class _Trigger {
   const _Trigger(this.kind, this.start, this.query);
@@ -706,6 +707,7 @@ class ChatComposerState extends State<ChatComposer>
 
   void _handleFocusChanged() {
     if (!_focusNode.hasFocus) _closeMenu();
+    releaseQuillFocus(_editorKey);
     setState(() {});
   }
 
@@ -841,6 +843,16 @@ class ChatComposerState extends State<ChatComposer>
           _sessions.isNotEmpty ||
           _stashes.isNotEmpty;
     }
+    // A / within the message that starts no command's name (e.g. a path's)
+    // stays text.
+    List<SuggestionMatch>? commands;
+    if (visible &&
+        trigger != null &&
+        trigger.kind == SuggestionKind.command &&
+        trigger.start > 0) {
+      commands = rankSuggestions(vocabulary.commands, trigger.query);
+      visible = commands.isNotEmpty;
+    }
 
     if (visible) {
       final queryChanged =
@@ -852,7 +864,8 @@ class ChatComposerState extends State<ChatComposer>
             unawaited(_lookUpFiles(trigger, suggest));
           }
         } else {
-          _matches = rankSuggestions(vocabulary.commands, trigger.query);
+          _matches =
+              commands ?? rankSuggestions(vocabulary.commands, trigger.query);
         }
         _highlighted = 0;
       }
@@ -929,25 +942,21 @@ class ChatComposerState extends State<ChatComposer>
     // Only at the end of a query: a caret moved into existing text (e.g.
     // `/re|view`) is not typing one.
     if (caret < plain.length && !isBoundary(plain[caret])) return null;
-    if (plain.startsWith('/')) {
-      final query = plain.substring(1, caret);
-      if (!query.split('').any(isBoundary)) {
-        return _Trigger(SuggestionKind.command, 0, query);
-      }
-    }
-    // An @ starting the word the caret ends: a file or a conversation to
-    // refer to.
+    // A / or an @ starting the word the caret ends: a command, or a file or
+    // a conversation to refer to.
     final vocabulary = ComposerVocabulary.read(context);
-    if (vocabulary.sessions == null &&
-        vocabulary.suggestFiles == null &&
-        vocabulary.stashes == null) {
-      return null;
-    }
+    final mentions =
+        vocabulary.sessions != null ||
+        vocabulary.suggestFiles != null ||
+        vocabulary.stashes != null;
     for (var i = caret - 1; i >= 0; i--) {
       final char = plain[i];
       if (isBoundary(char)) return null;
-      if (char == '@' && (i == 0 || isBoundary(plain[i - 1]))) {
-        return _Trigger(SuggestionKind.file, i, plain.substring(i + 1, caret));
+      if (i > 0 && !isBoundary(plain[i - 1])) continue;
+      final query = plain.substring(i + 1, caret);
+      if (char == '/') return _Trigger(SuggestionKind.command, i, query);
+      if (char == '@' && mentions) {
+        return _Trigger(SuggestionKind.file, i, query);
       }
     }
     return null;

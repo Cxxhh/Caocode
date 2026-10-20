@@ -89,6 +89,12 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byType(InteractiveViewer), findsOneWidget);
+    // Zooming must have the whole window to paint into, even for a tiny
+    // image; the original image's bounds used to clip the zoomed content.
+    expect(
+      tester.getRect(find.byType(InteractiveViewer)),
+      Offset.zero & (tester.view.physicalSize / tester.view.devicePixelRatio),
+    );
     expect(find.byKey(const ValueKey('image-next')), findsNothing);
     expect(find.textContaining(' / '), findsNothing);
   });

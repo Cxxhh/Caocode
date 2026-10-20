@@ -35,6 +35,7 @@ import '../ide/ide_menu.dart';
 import '../l10n/l10n.dart';
 import '../models/auxiliary_model_menu.dart';
 import '../models/model_providers.dart';
+import '../platform/quill_focus.dart';
 import '../theme/app_theme.dart';
 import '../theme/codicons.dart';
 import '../theme/material_file_icons.dart';
@@ -244,7 +245,7 @@ class StashEditorState extends State<StashEditor> implements FileDropDelegate {
   void initState() {
     super.initState();
     _controller.addListener(_selectionChanged);
-    _focus.addListener(_selectionChanged);
+    _focus.addListener(_focusChanged);
     _linkFocus.addListener(_linkFocusChanged);
     _listenToDocument();
     StashEditor._pasting[_controller] = _paste;
@@ -267,10 +268,10 @@ class StashEditorState extends State<StashEditor> implements FileDropDelegate {
       _lastCaret = null;
     }
     if (oldWidget.focusNode != widget.focusNode) {
-      _focus.removeListener(_selectionChanged);
+      _focus.removeListener(_focusChanged);
       if (oldWidget.focusNode == null) _focus.dispose();
       _focus = widget.focusNode ?? FocusNode();
-      _focus.addListener(_selectionChanged);
+      _focus.addListener(_focusChanged);
     }
     if (oldWidget.scrollController != widget.scrollController) {
       if (oldWidget.scrollController == null) _scroll.dispose();
@@ -282,7 +283,7 @@ class StashEditorState extends State<StashEditor> implements FileDropDelegate {
   void dispose() {
     _controller.removeListener(_selectionChanged);
     StashEditor._pasting[_controller] = null;
-    _focus.removeListener(_selectionChanged);
+    _focus.removeListener(_focusChanged);
     unawaited(_changes?.cancel());
     _linkFocus.dispose();
     _linkText.dispose();
@@ -301,6 +302,11 @@ class StashEditorState extends State<StashEditor> implements FileDropDelegate {
       );
     }
     _focus.requestFocus();
+  }
+
+  void _focusChanged() {
+    _selectionChanged();
+    releaseQuillFocus(_editorKey);
   }
 
   void _selectionChanged() {
@@ -1833,10 +1839,8 @@ class StashEditorState extends State<StashEditor> implements FileDropDelegate {
 
   /// The bar, told when a menu opened from it shows and hides: while one
   /// does, the bar stays (see [_barMenuShown]).
-  Widget _barWithMenus(BuildContext context, Rect around) => IdeMenuAnchorScope(
-    onMenu: _barMenuShown,
-    child: _bar(context, around),
-  );
+  Widget _barWithMenus(BuildContext context, Rect around) =>
+      IdeMenuAnchorScope(onMenu: _barMenuShown, child: _bar(context, around));
 
   /// Whether the selection has one of the marks under "…".
   bool _moreActive() {

@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:bao_editor/monaco/flutter/diff_editor.dart';
+import 'package:bao_editor/monaco/flutter/editor_surface.dart';
+
 import 'package:caocode/ide/ide_notifications.dart';
 import 'package:caocode/chat/chat_models.dart';
 import 'package:caocode/kernel/kernel_types.dart';
@@ -22,6 +25,7 @@ import 'package:caocode/ide/file_service.dart';
 import 'package:caocode/ide/git/commit_message.dart';
 import 'package:caocode/ide/git/git_repository.dart';
 import 'package:caocode/ide/git/ide_scm_view.dart';
+import 'package:caocode/ide/ide_code_diff.dart';
 import 'package:caocode/ide/ide_code_editor.dart';
 import 'package:caocode/ide/ide_explorer.dart';
 import 'package:caocode/ide/ide_list.dart';
@@ -48,6 +52,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
 import '../../ide/git/fake_git.dart';
+import '../../ide/settle_explorers.dart';
 import '../../ide/terminal/fake_pty.dart';
 import '../../ide/terminal/fake_terminal.dart';
 import '../../workspace/chat_window_keys_test.dart' show press;
@@ -403,8 +408,9 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('read-only file and diff rows follow code size, not interface '
-      'size', (tester) async {
+  testWidgets('read-only file rows follow code size, not interface size', (
+    tester,
+  ) async {
     final scale = ValueNotifier(1.0);
     final originalSize = CodeFont.size.value;
     addTearDown(scale.dispose);
@@ -460,18 +466,13 @@ void main() {
       expect(lineHeight(), greaterThan(initial * 1.3));
     }
 
+    // Changes asked for, without the text before them: the text.
     await check(const FileOpenRequest('/p/a.dart', diff: true));
-    await check(
-      FileOpenRequest(
-        '/p/a.dart',
-        diff: true,
-        original: () async => 'one\nold',
-      ),
-    );
   });
 
-  testWidgets('file and diff line numbers stay visible during horizontal '
-      'scrolling', (tester) async {
+  testWidgets('file line numbers stay visible during horizontal scrolling', (
+    tester,
+  ) async {
     final ascii = 'x' * 175;
     final wide = '汉字' * 75;
     final files = _Files({'/p/a.dart': 'one\n$ascii\n$wide'});
@@ -527,13 +528,6 @@ void main() {
     }
 
     await check(const FileOpenRequest('/p/a.dart', diff: true));
-    await check(
-      FileOpenRequest(
-        '/p/a.dart',
-        diff: true,
-        original: () async => 'two\n$ascii\n$wide',
-      ),
-    );
   });
 
   testWidgets('short preview lines do not create horizontal overflow', (
@@ -572,8 +566,8 @@ void main() {
     expect(controller.position.maxScrollExtent, 0);
   });
 
-  testWidgets('lines selected in a diff copy one to a line, and paste '
-      'into the composer as a reference to them', (tester) async {
+  testWidgets('a diff shows in the IDE\'s diff editor; its lines copied '
+      'paste into the composer as a reference to them', (tester) async {
     addTearDown(CopiedCode.clear);
     String? copied;
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -599,25 +593,21 @@ void main() {
             diff: true,
             original: () async => 'one\ntwo\nthree',
           ),
-          files: _Files({'/p/a.dart': 'one\ntwo\nthree'}),
+          files: _Files({'/p/a.dart': 'one\nTWO\nthree'}),
         ),
       ),
     );
     await tester.pumpAndSettle();
-    final drag = await tester.startGesture(
-      tester.getTopLeft(find.text('one')) + const Offset(1, 4),
-      kind: PointerDeviceKind.mouse,
-    );
-    await tester.pump();
-    await drag.moveTo(tester.getBottomRight(find.text('three')));
-    await tester.pump();
-    await drag.up();
+    expect(find.byType(DiffEditor), findsOneWidget);
+    final surface = find.byType(EditorSurface).last;
+    await tester.tap(surface);
     await tester.pump();
     await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyA);
     await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
     await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
     await tester.pump();
-    expect(copied, 'one\ntwo\nthree');
+    expect(copied, 'one\nTWO\nthree');
     final reference = CopiedCode.matching(copied!);
     expect(
       (reference?.path, reference?.start, reference?.end),
@@ -1023,26 +1013,23 @@ void main() {
     );
     await tester.pumpAndSettle();
     final preview = find.byType(FilePreview);
-    for (final line in ['head one', 'main line 1', 'main line 2']) {
-      expect(
-        find.descendant(of: preview, matching: find.text(line)),
-        findsOneWidget,
-        reason: line,
+    (String, String) compared() {
+      final diff = tester.widget<IdeCodeDiff>(
+        find.descendant(of: preview, matching: find.byType(IdeCodeDiff)),
       );
+      return (diff.original, diff.modified);
     }
+
+    expect(compared(), (
+      'head one\nmain line 2\n',
+      'main line 1\nmain line 2\n',
+    ));
     // The staged one: HEAD against the index, not the file.
     await tester.tap(
       find.descendant(of: list, matching: find.text('staged.dart')),
     );
     await tester.pumpAndSettle();
-    expect(
-      find.descendant(of: preview, matching: find.text('staged text')),
-      findsOneWidget,
-    );
-    expect(
-      find.descendant(of: preview, matching: find.text('on disk')),
-      findsNothing,
-    );
+    expect(compared(), ('before staging\n', 'staged text\n'));
     expect(panel.tabsOf(session).diffs, hasLength(2));
 
     // As a list, from the Source Control view's View & Sort: each file with
@@ -1677,14 +1664,14 @@ void main() {
       (LogicalKeyboardKey.keyT, SidePanelSection.terminal, false, true),
     ]) {
       await press(tester, key, meta: true, shift: shift, alt: alt);
-      await tester.pumpAndSettle();
+      await settleFileExplorers(tester);
       expect(
         tester.widget<IdeEditorTab>(find.byKey(ValueKey(section))).active,
         isTrue,
       );
     }
     workspace.openInIde(workspace.current!);
-    await tester.pumpAndSettle();
+    await settleFileExplorers(tester);
     expect(find.byType(SidePanelRail), findsNothing);
     expect(find.byType(AgentSidePanelView), findsNothing);
   }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
@@ -1768,21 +1755,22 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final preview = find.byType(FilePreview);
-    for (final line in ['one', 'two', 'TWO', 'three']) {
-      expect(
-        find.descendant(of: preview, matching: find.text(line)),
-        findsOneWidget,
-        reason: line,
-      );
-    }
+    final model = tester
+        .widget<DiffEditor>(
+          find.descendant(
+            of: find.byType(FilePreview),
+            matching: find.byType(DiffEditor),
+          ),
+        )
+        .model;
+    expect(model.originalSnapshot?.text, 'one\ntwo\nthree\n');
+    expect(model.modified.text, 'one\nTWO\nthree\n');
     expect(
-      find.descendant(of: preview, matching: find.text('-')),
-      findsOneWidget,
-    );
-    expect(
-      find.descendant(of: preview, matching: find.text('+')),
-      findsOneWidget,
+      [
+        for (final change in model.mappings!)
+          (change.original.startLineNumber, change.modified.startLineNumber),
+      ],
+      [(2, 2)],
     );
   });
 
@@ -2067,11 +2055,11 @@ void main() {
           meta: meta,
           control: !meta,
         );
-        await tester.pumpAndSettle();
+        await settleFileExplorers(tester);
       }
 
       await tester.tap(find.byType(SidePanelToggle));
-      await tester.pumpAndSettle();
+      await settleFileExplorers(tester);
       final view = tester.widget<AgentSidePanelView>(
         find.byType(AgentSidePanelView),
       );
@@ -2079,7 +2067,7 @@ void main() {
       panel
         ..open(session, const FileOpenRequest('/p/a.dart'))
         ..open(session, const FileOpenRequest('/p/b.dart'));
-      await tester.pumpAndSettle();
+      await settleFileExplorers(tester);
       List<String> open() => [
         for (final tab in panel.tabsOf(session).files) p.basename(tab.path),
       ];
