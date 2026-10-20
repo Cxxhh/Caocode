@@ -20,6 +20,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
+import '../../base/smooth_scroll.dart';
 import '../../debug/ui/debug_strings.dart';
 import '../../keybindings/keybinding_service.dart';
 import '../../l10n/l10n.dart';
@@ -604,7 +605,7 @@ class _PanelList extends StatefulWidget {
 class _PanelListState extends State<_PanelList>
     with IdeKeyboardList<_PanelList> {
   final _focus = FocusNode(debugLabel: 'panel list');
-  final _scroll = ScrollController();
+  final _scroll = SmoothScrollController();
   IdePanelListModel? _own;
 
   IdePanelListModel get _model =>

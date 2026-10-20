@@ -1252,6 +1252,12 @@ extension _ScmKeys on IdeWorkbenchState {
   void _gitCheckout() {
     final git = widget.workspace.git;
     if (git == null) return;
+    _gitCheckoutOf(git);
+  }
+
+  /// Checkout to… on [git] (a repository's `...` in Source Control's
+  /// REPOSITORIES, through [IdeScmView.onCheckout]).
+  void _gitCheckoutOf(IdeGitRepository git) {
     unawaited(
       ideGitCheckout(
         git,
@@ -1263,8 +1269,8 @@ extension _ScmKeys on IdeWorkbenchState {
     );
   }
 
-  /// Git: Commit, Git: Checkout to… and Focus on Changes View, for the
-  /// palette.
+  /// Git: Commit, Git: Checkout to…, Git: Fetch, Git: Pull, Git: Push and
+  /// Focus on Changes View, for the palette.
   List<IdeCommand> _scmCommands() => [
     _catalogCommand(
       'git.commit',
@@ -1274,6 +1280,26 @@ extension _ScmKeys on IdeWorkbenchState {
     _catalogCommand(
       'git.checkout',
       _gitCheckout,
+      enabled: widget.workspace.git?.state != null,
+    ),
+    _catalogCommand(
+      'git.fetch',
+      () => _onScmView((view) => unawaited(view.fetch())),
+      enabled: widget.workspace.git?.state != null,
+    ),
+    _catalogCommand(
+      'git.fetchAll',
+      () => _onScmView((view) => unawaited(view.fetchAll())),
+      enabled: widget.workspace.repositories.isNotEmpty,
+    ),
+    _catalogCommand(
+      'git.pull',
+      () => _onScmView((view) => unawaited(view.pull())),
+      enabled: widget.workspace.git?.state != null,
+    ),
+    _catalogCommand(
+      'git.push',
+      () => _onScmView((view) => unawaited(view.push())),
       enabled: widget.workspace.git?.state != null,
     ),
     _catalogCommand(

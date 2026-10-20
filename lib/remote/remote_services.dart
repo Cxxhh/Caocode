@@ -91,7 +91,7 @@ void _awaitClient(
 }
 
 /// The files of the project at [root] on [host].
-class RemoteIdeFileService implements IdeHostFiles {
+class RemoteIdeFileService implements IdeHostFiles, IdeRangeFiles {
   RemoteIdeFileService(this.host, this.root);
 
   final SshHost host;
@@ -133,6 +133,18 @@ class RemoteIdeFileService implements IdeHostFiles {
   @override
   Future<Uint8List> readBytes(String path) async =>
       (await _client).readBytes(path);
+
+  @override
+  Future<({Uint8List bytes, int size})> readRange(
+    String path,
+    int offset,
+    int length, {
+    Future<void>? cancel,
+  }) async => (await _client).readRange(path, offset, length, cancel: cancel);
+
+  @override
+  Future<int> sizeOf(List<String> paths, {int? limit}) async =>
+      (await _client).sizeOf(paths, limit: limit);
 
   @override
   Stream<void> watchDirectory(String directory) => resilientStream(

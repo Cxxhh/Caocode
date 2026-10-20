@@ -1175,6 +1175,7 @@ class CodexKernel
             '$id:$index',
             change['path'] as String,
             change['diff'] as String,
+            kind: (change['kind'] as Map?)?['type'] as String?,
           );
         }
     }
@@ -1224,8 +1225,9 @@ class CodexKernel
     );
   }
 
-  /// A unified diff as a diff card and a pending change.
-  void _fileChange(String id, String path, String diff) {
+  /// A unified diff as a diff card and a pending change. A file added or
+  /// deleted ([kind]) has its whole text for a diff.
+  void _fileChange(String id, String path, String diff, {String? kind}) {
     final lines = <DiffLine>[];
     var added = 0;
     var removed = 0;
@@ -1285,6 +1287,11 @@ class CodexKernel
             removed: removed,
           ),
           turnId: _turn,
+          original: switch (kind) {
+            'add' => const OriginalText(null),
+            'delete' => OriginalText(diff),
+            _ => OriginalByPatch(diff),
+          },
         ),
       );
     }

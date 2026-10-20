@@ -1,8 +1,8 @@
 // The title over the IDE's chat: the folder's chats as tabs, each
 // closable (by a right click, the others too) and dragged to order, its agent's status on it (as the
-// sidebar's), a button for a new one, and one listing the folder's agents to
-// open one as a tab (as VS Code's chat view titles its New Chat and Show
-// Chats actions).
+// sidebar's), a button for a new one, and one showing the folder's agents
+// in a panel over the chat to open one as a tab (as VS Code's chat view titles its New
+// Chat and Show Chats actions; see [IdeChatHistory]).
 
 import 'dart:async';
 
@@ -13,36 +13,36 @@ import '../chat/widgets/pixel_loader.dart';
 import '../keybindings/chat_keybindings.dart';
 import '../keybindings/keybinding_service.dart';
 import '../l10n/l10n.dart';
-import '../theme/app_theme.dart' show AppColors;
 import '../theme/codicons.dart';
 import '../theme/workbench_theme.dart' show themeColors;
+import '../workspace/thread_status_mark.dart';
 import '../workspace/workspace.dart';
-import 'ide_dates.dart';
+import 'ide_chat_history.dart';
 import 'ide_hover.dart';
 import 'ide_menu.dart';
-import 'ide_quick_input.dart';
 import 'ide_tab_bar.dart';
-import 'ide_workbench.dart';
 import 'tab_strip_scroll.dart';
 
 class IdeChatTitle extends StatelessWidget {
   const IdeChatTitle({
     super.key,
     required this.tabs,
-    required this.threads,
     required this.current,
     required this.onNew,
     required this.onOpen,
     required this.onClose,
     required this.onPin,
     required this.onMove,
+    required this.onRename,
+    required this.onFork,
+    required this.onArchive,
+    required this.onDelete,
+    required this.onHistory,
+    this.historyOpen = false,
   });
 
   /// The chats open as tabs, in order.
   final List<AgentThread> tabs;
-
-  /// The folder's agents, archived ones included (they are left out).
-  final List<AgentThread> threads;
 
   /// The agent the chat shows.
   final AgentThread? current;
@@ -61,54 +61,25 @@ class IdeChatTitle extends StatelessWidget {
   /// Moves a tab dragged to [index] among the tabs.
   final void Function(AgentThread thread, int index) onMove;
 
-  /// The agents as the history lists them: pinned ones first, then by date.
-  /// A new one nothing was sent to has no history yet.
-  List<AgentThread> get _listed {
-    final listed = [
-      for (final thread in threads)
-        if (!thread.archived && !thread.untouched) thread,
-    ]..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-    return [
-      ...listed.where((thread) => thread.pinned),
-      ...listed.where((thread) => !thread.pinned),
-    ];
-  }
+  /// Renames an agent to the given title, as the sidebar's Rename does.
+  final void Function(AgentThread thread, String title) onRename;
 
-  void _showHistory(BuildContext context) {
-    final workbench = context.findAncestorStateOfType<IdeWorkbenchState>();
-    if (workbench == null) return;
-    final l10n = context.l10n;
-    final items = <AgentThread, IdeQuickPickItem>{
-      for (final thread in _listed)
-        thread: IdeQuickPickItem(
-          label: thread.localizedTitle(l10n),
-          description: ideFromNow(thread.updatedAt, ago: true, l10n: l10n),
-          icon: _ThreadIcon(thread),
-          badge: _StatusBuilder(
-            thread,
-            (context, status) => switch (status) {
-              ThreadStatus.needsInput || ThreadStatus.unread => Padding(
-                padding: const EdgeInsetsDirectional.only(start: 6),
-                child: _StatusMark(status),
-              ),
-              _ => const SizedBox.shrink(),
-            },
-          ),
-          onAccept: () => onOpen(thread),
-        ),
-    };
-    workbench.showQuickPick(
-      IdeQuickPick(
-        items: items.isEmpty
-            ? [IdeQuickPickItem(label: l10n.ideChatNoAgents)]
-            : items.values.toList(),
-        placeholder: l10n.sidebarSearchAgents,
-        sortByLabel: false,
-        activeItems: [?items[current]],
-        onDidAccept: (item) => item?.onAccept?.call(),
-      ),
-    );
-  }
+  /// Copies the agent's conversation into a new one (as the sidebar's Fork),
+  /// opened as a tab.
+  final ValueChanged<AgentThread> onFork;
+
+  /// Archives an agent, or unarchives an archived one.
+  final ValueChanged<AgentThread> onArchive;
+
+  /// Deletes an agent's conversation, once confirmed.
+  final ValueChanged<AgentThread> onDelete;
+
+  /// Shows the folder's agents over the chat ([IdeChatHistory]), or the
+  /// chat again.
+  final VoidCallback onHistory;
+
+  /// Whether the history shows: its button pressed.
+  final bool historyOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -126,6 +97,10 @@ class IdeChatTitle extends StatelessWidget {
               onClose: onClose,
               onPin: onPin,
               onMove: onMove,
+              onRename: onRename,
+              onFork: onFork,
+              onArchive: onArchive,
+              onDelete: onDelete,
             ),
           ),
           // Squares nearer the strip's height than a view title's.
@@ -142,7 +117,8 @@ class IdeChatTitle extends StatelessWidget {
             icon: Codicons.history,
             size: 28,
             tooltip: l10n.ideChatHistory,
-            onPressed: () => _showHistory(context),
+            checked: historyOpen,
+            onPressed: onHistory,
           ),
           const SizedBox(width: 4),
         ],
@@ -162,6 +138,10 @@ class _ChatTabs extends StatefulWidget {
     required this.onClose,
     required this.onPin,
     required this.onMove,
+    required this.onRename,
+    required this.onFork,
+    required this.onArchive,
+    required this.onDelete,
   });
 
   final List<AgentThread> tabs;
@@ -170,6 +150,10 @@ class _ChatTabs extends StatefulWidget {
   final ValueChanged<List<AgentThread>> onClose;
   final ValueChanged<AgentThread> onPin;
   final void Function(AgentThread thread, int index) onMove;
+  final void Function(AgentThread thread, String title) onRename;
+  final ValueChanged<AgentThread> onFork;
+  final ValueChanged<AgentThread> onArchive;
+  final ValueChanged<AgentThread> onDelete;
 
   @override
   State<_ChatTabs> createState() => _ChatTabsState();
@@ -183,6 +167,9 @@ class _ChatTabsState extends State<_ChatTabs> {
   /// or after the last; none where it is already.
   AgentThread? _dragged;
   int? _spot;
+
+  /// The tab whose title is edited in place.
+  AgentThread? _renaming;
 
   @override
   void initState() {
@@ -198,6 +185,10 @@ class _ChatTabsState extends State<_ChatTabs> {
       _scheduleReveal();
     }
     _keys.removeWhere((thread, _) => !widget.tabs.contains(thread));
+    // A renamed tab gone from the tabs leaves no edit behind.
+    if (_renaming != null && !widget.tabs.contains(_renaming)) {
+      _renaming = null;
+    }
   }
 
   @override
@@ -268,7 +259,7 @@ class _ChatTabsState extends State<_ChatTabs> {
   }
 
   /// A tab's right-click menu, at [position]: as an editor tab's, its
-  /// closes; then its agent's pin.
+  /// closes; then its agent's, as the sidebar's (Rename, Pin, Fork…).
   void _showMenu(AgentThread thread, Offset position) {
     final tabs = widget.tabs;
     final at = tabs.indexOf(thread);
@@ -284,6 +275,10 @@ class _ChatTabsState extends State<_ChatTabs> {
         if (mounted) onSelected();
       },
     );
+    void act(VoidCallback action) {
+      if (mounted) action();
+    }
+
     unawaited(
       showIdeMenu(
         context,
@@ -305,14 +300,15 @@ class _ChatTabsState extends State<_ChatTabs> {
             }, enabled: at >= 0 && at < tabs.length - 1),
             item(l10n.tabCloseAll, () => widget.onClose([...widget.tabs])),
           ],
-          [
-            // A new one, nothing sent to it, is in no list to pin it in.
-            if (!thread.untouched && !thread.archived)
-              item(
-                thread.pinned ? l10n.sidebarUnpin : l10n.sidebarPin,
-                () => widget.onPin(thread),
-              ),
-          ],
+          ideAgentMenuActions(
+            context,
+            thread,
+            onRename: () => act(() => setState(() => _renaming = thread)),
+            onPin: (thread) => act(() => widget.onPin(thread)),
+            onArchive: (thread) => act(() => widget.onArchive(thread)),
+            onFork: (thread) => act(() => widget.onFork(thread)),
+          ),
+          [item(l10n.commonDelete, () => widget.onDelete(thread))],
         ]),
       ),
     );
@@ -342,6 +338,11 @@ class _ChatTabsState extends State<_ChatTabs> {
                   title: thread.localizedTitle(l10n),
                   active: identical(thread, widget.current),
                   closeTooltip: l10n.commonClose,
+                  renaming: identical(thread, _renaming),
+                  onRename: (text) {
+                    setState(() => _renaming = null);
+                    if (text != null) widget.onRename(thread, text);
+                  },
                   onSelect: () => widget.onOpen(thread),
                   onClose: () => widget.onClose([thread]),
                   onMenu: (position) => _showMenu(thread, position),
@@ -358,13 +359,13 @@ class _ChatTabsState extends State<_ChatTabs> {
 
 /// An agent's icon in the history: a spinner while it runs, as the
 /// sidebar shows it; else pinned, or a chat.
-class _ThreadIcon extends StatelessWidget {
-  const _ThreadIcon(this.thread);
+class IdeThreadIcon extends StatelessWidget {
+  const IdeThreadIcon(this.thread, {super.key});
 
   final AgentThread thread;
 
   @override
-  Widget build(BuildContext context) => _StatusBuilder(
+  Widget build(BuildContext context) => ThreadStatusBuilder(
     thread,
     (context, status) => status == ThreadStatus.running
         ? SizedBox.square(
@@ -374,48 +375,6 @@ class _ThreadIcon extends StatelessWidget {
             ),
           )
         : Icon(thread.pinned ? Codicons.pinned : Codicons.commentDiscussion),
-  );
-}
-
-/// Builds with [thread]'s status, again as it changes: a session not
-/// opened has none to change; one that is may start, stop or ask while
-/// shown.
-class _StatusBuilder extends StatelessWidget {
-  const _StatusBuilder(this.thread, this.builder);
-
-  final AgentThread thread;
-  final Widget Function(BuildContext context, ThreadStatus status) builder;
-
-  @override
-  Widget build(BuildContext context) {
-    if (!thread.isOpen) return builder(context, thread.shownStatus);
-    return ListenableBuilder(
-      listenable: thread.session,
-      builder: (context, _) => builder(context, thread.shownStatus),
-    );
-  }
-}
-
-/// What an agent needs, as the sidebar shows it: a spinner while it runs,
-/// an amber dot when it waits on a question, a blue dot when it finished
-/// unseen; nothing when idle.
-class _StatusMark extends StatelessWidget {
-  const _StatusMark(this.status);
-
-  final ThreadStatus status;
-
-  @override
-  Widget build(BuildContext context) => switch (status) {
-    ThreadStatus.running => const PixelLoader.agent(),
-    ThreadStatus.needsInput => _dot(themeColors['list.warningForeground']),
-    ThreadStatus.unread => _dot(AppColors.accent),
-    ThreadStatus.idle => const SizedBox.shrink(),
-  };
-
-  static Widget _dot(Color color) => Container(
-    width: 7,
-    height: 7,
-    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
   );
 }
 
@@ -504,6 +463,8 @@ class _ChatTab extends StatelessWidget {
     required this.title,
     required this.active,
     required this.closeTooltip,
+    required this.renaming,
+    required this.onRename,
     required this.onSelect,
     required this.onClose,
     required this.onMenu,
@@ -513,6 +474,11 @@ class _ChatTab extends StatelessWidget {
   final String title;
   final bool active;
   final String closeTooltip;
+
+  /// Its title edited in place; [onRename] takes the new one, or null when
+  /// the edit was cancelled.
+  final bool renaming;
+  final ValueChanged<String?> onRename;
   final VoidCallback onSelect;
   final VoidCallback onClose;
 
@@ -520,15 +486,17 @@ class _ChatTab extends StatelessWidget {
   final ValueChanged<Offset> onMenu;
 
   @override
-  Widget build(BuildContext context) => _StatusBuilder(
+  Widget build(BuildContext context) => ThreadStatusBuilder(
     thread,
     (context, status) => IdeEditorTab(
-      icon: _ThreadIcon(thread),
+      icon: IdeThreadIcon(thread),
       label: title,
       active: active,
+      renaming: renaming,
+      onRenamed: onRename,
       mark: switch (status) {
         ThreadStatus.needsInput ||
-        ThreadStatus.unread => (_) => Center(child: _StatusMark(status)),
+        ThreadStatus.unread => (_) => Center(child: ThreadStatusMark(status)),
         _ => null,
       },
       closeTooltip: closeTooltip,

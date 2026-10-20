@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bao_editor/monaco/flutter/editor_document_model.dart';
 import 'package:bao_editor/monaco/flutter/editor_surface.dart';
 import 'package:bao_editor/monaco/flutter/editor_surface_controller.dart';
+import 'package:bao_editor/monaco/vs/editor/common/languages/language_configuration.dart';
 
 void main() {
   test('revealSelection notifies without changing value or undo history', () {
@@ -521,7 +522,8 @@ void main() {
         scrollDelta: const Offset(0, -40),
       ),
     );
-    await tester.pump();
+    // A frame on: the notch is under way.
+    await tester.pump(const Duration(microseconds: 16667));
     expect(lastCaretTop(), greaterThan(before));
   });
 
@@ -561,4 +563,135 @@ void main() {
       expect(controller.value.text.length, lessThan(6));
     },
   );
+
+  testWidgets('the platform text input has only the lines around the caret', (
+    tester,
+  ) async {
+    final text = List.generate(300, (i) => 'line $i').join('\n');
+    final controller = EditorSurfaceController(
+      document: EditorDocumentModel(text),
+    );
+    controller.languageConfiguration = const LanguageConfiguration(
+      autoClosingPairs: [AutoClosingPairConditional('(', ')')],
+    );
+    final focus = FocusNode();
+    addTearDown(() {
+      focus.dispose();
+      controller.dispose();
+      controller.document.dispose();
+    });
+    final caret = text.indexOf('line 150') + 'line 150'.length;
+    controller.select(caret, caret);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Center(
+          child: SizedBox(
+            width: 300,
+            height: 200,
+            child: EditorSurface(controller: controller, focusNode: focus),
+          ),
+        ),
+      ),
+    );
+    focus.requestFocus();
+    await tester.pump();
+    // What the platform has: what it was last sent, or the value it last
+    // sent itself, as it keeps its own edits.
+    var platformValue = TextEditingValue.fromJSON(
+      tester.testTextInput.editingState!,
+    );
+    var seen = 0;
+    int sentCount() => tester.testTextInput.log
+        .where((call) => call.method == 'TextInput.setEditingState')
+        .length;
+    seen = sentCount();
+    TextEditingValue platform() {
+      if (sentCount() != seen) {
+        seen = sentCount();
+        platformValue = TextEditingValue.fromJSON(
+          tester.testTextInput.editingState!,
+        );
+      }
+      return platformValue;
+    }
+
+    Future<void> send(TextEditingValue value) async {
+      platform();
+      platformValue = value;
+      tester.testTextInput.updateEditingValue(value);
+      await tester.pump();
+    }
+
+    Future<void> type(String typed) async {
+      final window = platform();
+      final at = window.selection.baseOffset;
+      await send(
+        TextEditingValue(
+          text: window.text.replaceRange(at, at, typed),
+          selection: TextSelection.collapsed(offset: at + typed.length),
+        ),
+      );
+    }
+
+    expect(platform().text, 'line 148\nline 149\nline 150\nline 151\nline 152');
+    // Typed in the window, at its caret: the document is edited there and
+    // nothing is sent back.
+    var mark = sentCount();
+    await type('x');
+    await type('y');
+    expect(controller.document.text, text.replaceRange(caret, caret, 'xy'));
+    expect(controller.value.selection.baseOffset, caret + 2);
+    expect(sentCount(), mark);
+    // Auto-closed: the platform is given what the model made of it.
+    await type('(');
+    expect(controller.document.text, text.replaceRange(caret, caret, 'xy()'));
+    expect(sentCount(), mark + 1);
+    expect(platform().text, contains('line 150xy()\n'));
+    expect(
+      platform().text.substring(0, platform().selection.baseOffset),
+      endsWith('xy('),
+    );
+    // An input method's composition and its commit.
+    mark = sentCount();
+    final window = platform();
+    final at = window.selection.baseOffset;
+    await send(
+      TextEditingValue(
+        text: window.text.replaceRange(at, at, 'ni'),
+        selection: TextSelection.collapsed(offset: at + 2),
+        composing: TextRange(start: at, end: at + 2),
+      ),
+    );
+    expect(
+      controller.value.composing,
+      TextRange(start: caret + 3, end: caret + 5),
+    );
+    await send(
+      TextEditingValue(
+        text: window.text.replaceRange(at, at, '你'),
+        selection: TextSelection.collapsed(offset: at + 1),
+      ),
+    );
+    expect(controller.document.text, text.replaceRange(caret, caret, 'xy(你)'));
+    expect(controller.value.composing, TextRange.empty);
+    expect(sentCount(), mark);
+    // Moved far away, the platform is given the lines there.
+    final far = text.indexOf('line 10\n');
+    controller.select(far, far);
+    await tester.pump();
+    expect(platform().text, 'line 8\nline 9\nline 10\nline 11\nline 12');
+    expect(platform().selection, const TextSelection.collapsed(offset: 14));
+    // Deleted back to the window's start, the platform is given the lines
+    // before, for a soft keyboard to go on deleting.
+    final top = platform();
+    await send(
+      TextEditingValue(
+        text: top.text.substring(top.selection.baseOffset),
+        selection: const TextSelection.collapsed(offset: 0),
+      ),
+    );
+    expect(controller.document.text, contains('line 7\nline 10\n'));
+    expect(platform().text, startsWith('line 6\nline 7\nline 10'));
+    expect(platform().selection, const TextSelection.collapsed(offset: 14));
+  });
 }

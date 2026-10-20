@@ -484,6 +484,12 @@ class WorkbenchThemeScope extends StatefulWidget {
 
   final WidgetBuilder builder;
 
+  /// Counts the times everything was restyled (a color theme, the code's
+  /// font): what a widget keeping what it built (read from the theme's
+  /// colors without depending on them) builds anew on.
+  static int get restyles => _restyles;
+  static int _restyles = 0;
+
   @override
   State<WorkbenchThemeScope> createState() => _WorkbenchThemeScopeState();
 }
@@ -522,6 +528,7 @@ class _WorkbenchThemeScopeState extends State<WorkbenchThemeScope> {
 
   void _changed() {
     if (!mounted) return;
+    WorkbenchThemeScope._restyles++;
     void rebuild(Element element) {
       element.markNeedsBuild();
       element.visitChildren(rebuild);

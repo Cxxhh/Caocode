@@ -5,4 +5,7 @@ String? get homeDirectory => null;
 Future<bool> isDirectory(String path) async => false;
 
 /// No local files (the web).
+Future<bool> exists(String path) async => false;
+
+/// No local files (the web).
 Future<String?> takeFile(String path) async => null;

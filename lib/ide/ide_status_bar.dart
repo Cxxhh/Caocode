@@ -11,6 +11,7 @@ import 'package:bao_editor/monaco/flutter/document_snapshot.dart';
 import 'package:bao_editor/monaco/flutter/editor_document_model.dart'
     show EditorOffsetEdit;
 import 'package:bao_editor/monaco/flutter/language_assets.dart';
+import 'package:bao_editor/monaco/flutter/language_overrides.dart';
 import 'package:bao_editor/textmate/textmate_manifest.dart';
 
 import 'ide_editor.dart';
@@ -34,6 +35,7 @@ class IdeStatusBarItem {
     this.tooltip,
     this.tooltipContent,
     this.onTap,
+    this.onTapRect,
     this.onContextMenu,
     this.color,
     this.background,
@@ -49,6 +51,10 @@ class IdeStatusBarItem {
   /// Shown on hover instead of [tooltip] (e.g. a Markdown tooltip).
   final Widget? tooltipContent;
   final VoidCallback? onTap;
+
+  /// A click with where the entry is (global), for a menu anchored on it
+  /// (the remote indicator's); [onTap] where the position is not needed.
+  final void Function(Rect rect)? onTapRect;
 
   /// A secondary click at a global position (e.g. the menu that hides it).
   final void Function(Offset position)? onContextMenu;
@@ -138,11 +144,19 @@ class _StatusItem extends StatefulWidget {
 class _StatusItemState extends State<_StatusItem> {
   bool _hover = false;
 
+  /// Where the entry is, in the window (global): what a menu anchors on.
+  Rect? get _rect {
+    final box = context.findRenderObject();
+    if (box is! RenderBox || !box.attached || !box.hasSize) return null;
+    return box.localToGlobal(Offset.zero) & box.size;
+  }
+
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
     final colors = themeColors;
-    final hovered = _hover && item.onTap != null;
+    final tappable = item.onTap != null || item.onTapRect != null;
+    final hovered = _hover && tappable;
     // Its icons too (`color: inherit`); its own color stays on hover.
     final color =
         item.color ??
@@ -178,16 +192,20 @@ class _StatusItemState extends State<_StatusItem> {
         ],
       ),
     );
-    if (item.onTap != null || item.onContextMenu != null) {
+    if (tappable || item.onContextMenu != null) {
+      final anchor = item.onTapRect;
       child = MouseRegion(
-        cursor: item.onTap != null
-            ? SystemMouseCursors.click
-            : MouseCursor.defer,
+        cursor: tappable ? SystemMouseCursors.click : MouseCursor.defer,
         onEnter: (_) => setState(() => _hover = true),
         onExit: (_) => setState(() => _hover = false),
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: item.onTap,
+          onTapUp: anchor == null
+              ? null
+              : (_) {
+                  if (_rect case final rect?) anchor(rect);
+                },
           onSecondaryTapUp: item.onContextMenu == null
               ? null
               : (details) => item.onContextMenu!(details.globalPosition),
@@ -313,7 +331,61 @@ class IdeLanguageNames {
     unawaited(_loading!.then((_) => onLoaded()));
   }
 
+  /// Once the registrations are loaded (see [ensureLoaded]).
+  static Future<void> load() {
+    ensureLoaded(() {});
+    return _loading!;
+  }
+
+  /// Every language there is to pick (Change Language Mode): TextMate's
+  /// and Monaco's, each once by its id, named by its first alias, with
+  /// its extensions; by name.
+  static List<({String id, String name, List<String> extensions})>
+  get all {
+    final names = <String, String>{};
+    final extensions = <String, Set<String>>{};
+    void add(String id, List<String> aliases, List<String> more) {
+      if (id.isEmpty || id == EditorLanguageOverrides.plainText) return;
+      if (aliases.firstOrNull case final alias? when alias.isNotEmpty) {
+        names.putIfAbsent(id, () => alias);
+      }
+      (extensions[id] ??= {}).addAll(more);
+    }
+
+    for (final language in _textMateLanguages) {
+      add(language.id, language.aliases, language.extensions);
+    }
+    for (final registration in _registrations ?? const []) {
+      add(registration.id, registration.aliases, registration.extensions);
+    }
+    final all = [
+      for (final MapEntry(key: id, value: more) in extensions.entries)
+        (id: id, name: names[id] ?? id, extensions: more.toList()),
+    ];
+    all.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    return all;
+  }
+
+  /// The name of the language [id], as [forPath] names one.
+  static String nameOf(String id) {
+    if (id == EditorLanguageOverrides.plainText) return 'Plain Text';
+    for (final language in _textMateLanguages) {
+      if (language.id == id && language.aliases.isNotEmpty) {
+        return language.aliases.first;
+      }
+    }
+    for (final registration in _registrations ?? const []) {
+      if (registration.id == id && registration.aliases.isNotEmpty) {
+        return registration.aliases.first;
+      }
+    }
+    return id;
+  }
+
   static String forPath(String path) {
+    if (EditorLanguageOverrides.instance.of(path) case final picked?) {
+      return nameOf(picked);
+    }
     final registrations = _registrations;
     if (registrations == null) return languageNameForFile(path);
     final lower = p.basename(path).toLowerCase();

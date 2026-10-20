@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bao_editor/monaco/flutter/editor_document_model.dart';
 import 'package:bao_editor/monaco/vs/editor/common/core/range.dart';
 import 'package:caocode/ide/file_service.dart';
+import 'package:caocode/ide/file_views.dart';
+import 'package:flutter/widgets.dart' show SizedBox;
 import 'package:caocode/ide/ide_workspace.dart';
 import 'package:caocode/ide/lsp/lsp_protocol.dart';
 import 'package:path/path.dart' as p;
@@ -460,4 +462,26 @@ void main() {
       expect(project.existsSync(), isTrue);
     },
   );
+
+  test('a file of a FileView opens as that, its text not read', () async {
+    final note = p.join(root, '12.md');
+    FileViews.register(
+      FileView(
+        id: 'test',
+        matches: (path) => path == note,
+        build: (context, path) => const SizedBox(),
+      ),
+    );
+    addTearDown(() => FileViews.unregister('test'));
+    final files = _FakeIdeFileService({note: '# note', first: 'one'});
+    final workspace = IdeWorkspace(root, files: files);
+    addTearDown(workspace.dispose);
+
+    await workspace.open(note);
+    expect(workspace.active!.view, 'test');
+    expect(workspace.active!.isMedia, isTrue);
+    await workspace.open(first);
+    expect(workspace.active!.view, isNull);
+    expect(files.reads, [first]);
+  });
 }

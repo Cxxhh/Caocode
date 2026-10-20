@@ -191,6 +191,17 @@ void main() {
       expect(pixels.at(35, 5), _bg);
     });
 
+    test('a dim palette color is half of it, not transparent', () async {
+      // PSReadLine's inline prediction: bright white, dim, italic.
+      final h = _Harness();
+      addTearDown(h.dispose);
+      h.write('\x1b[97;2;3mP');
+      final pixels = await h.paint();
+      final white = Color(terminalAnsiColors()[15].toARGB32());
+      expect(h.renderer.debugCellColors(0, 0)!.fg, white.withAlpha(128));
+      expect(pixels.at(5, 5), isNot(_bg));
+    });
+
     test('bold stays in its color without drawBoldTextInBrightColors', () {
       final h = _Harness(
         configure: (o) => o.drawBoldTextInBrightColors = false,

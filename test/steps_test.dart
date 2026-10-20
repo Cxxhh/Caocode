@@ -636,6 +636,39 @@ void main() {
     );
   });
 
+  testWidgets('more than three subagents fold under a count', (tester) async {
+    Future<void> pump(int count) => tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 600,
+            child: ActivityStrip(
+              tasks: [
+                for (var i = 0; i < count; i++)
+                  KernelTask(
+                    id: 'a$i',
+                    description: 'agent $i',
+                    kind: KernelTaskKind.agent,
+                    status: CommandStatus.running,
+                    startedAt: DateTime.now(),
+                  ),
+              ],
+              changes: const [],
+              onKeep: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await pump(3);
+    expect(find.text('agent 2'), findsOneWidget);
+    expect(find.textContaining('subagents running'), findsNothing);
+    await pump(4);
+    expect(find.text('4 subagents running'), findsOneWidget);
+    expect(find.text('agent 0'), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('many running tasks scroll within the strip', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -663,8 +696,16 @@ void main() {
         ),
       ),
     );
-    // Four rows, the strip's padding and top border.
-    expect(tester.getSize(find.byType(ActivityStrip)).height, 28 * 4 + 6 + 1);
+    // Folded under a line counting them.
+    expect(find.text('10 background tasks running'), findsOneWidget);
+    expect(find.text('task 0'), findsNothing);
+    await tester.tap(find.text('10 background tasks running'));
+    await tester.pump();
+    // That line and four rows, the strip's padding and top border.
+    expect(
+      tester.getSize(find.byType(ActivityStrip)).height,
+      28 * 5 + 6 + 1,
+    );
     expect(find.text('task 0').hitTestable(), findsOneWidget);
     expect(find.text('task 9').hitTestable(), findsNothing);
 

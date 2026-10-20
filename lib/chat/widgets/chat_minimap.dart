@@ -11,7 +11,9 @@ import 'package:flutter/widgets.dart';
 import '../../theme/app_theme.dart';
 import '../chat_column.dart';
 import '../chat_models.dart';
+import '../composer/composer_files.dart' show splitCodeAppendix;
 import '../user_message_style.dart';
+import 'user_message_bubble.dart' show UserMessageBubble;
 
 /// Row [ChatMinimapRow.item] of a history as its minimap samples it: whether
 /// the item shows (a closed fold hides it), how many fold lines the row
@@ -141,8 +143,16 @@ class ChatMinimap extends StatefulWidget {
   static const room = _edgeGap + _narrow + _columnGap;
 
   /// The least a column keeps of its width to leave [room]; narrower than
-  /// that, it gives the room up, and the minimap is not shown.
-  static const roomFrom = 560.0;
+  /// that (a very narrow pane or window only), it gives the room up, and
+  /// the minimap is not shown.
+  static const roomFrom = 320.0;
+
+  /// How tall [item] samples in a column [width] wide, for tests.
+  @visibleForTesting
+  static double sampledHeight(ChatItem item, {double width = 720}) => _Sampler(
+    width,
+    bubbles: true,
+  ).sample((item: item, shown: true, foldLines: 0, gap: 0)).height;
 
   /// Kept above and below it.
   static const _inset = 14.0;
@@ -1361,8 +1371,9 @@ class _Sampler {
   }
 
   /// [text] as lines from [x] to [right], wrapped there: each but the last
-  /// a little short of it, as words wrap.
-  void _prose(
+  /// a little short of it, as words wrap. At most [maxRows] of them; how
+  /// many, back.
+  int _prose(
     String text, {
     double x = 0,
     double? right,
@@ -1370,18 +1381,26 @@ class _Sampler {
     double char = _char,
     double line = _line,
     double thickness = _stroke,
+    int? maxRows,
   }) {
     final room = math.max(char * 4, (right ?? width) - x);
     var left = _units(text) * char;
     var row = text.length;
+    var rows = 0;
     while (left > room) {
+      if (maxRows != null && rows + 1 >= maxRows) {
+        left = room;
+        break;
+      }
       final full = room * _ragged(row++);
       _bar(x, full, line, thickness, tone);
       _y += line * _scale;
       left -= full;
+      rows++;
     }
     if (left > 0) _bar(x, left, line, thickness, tone);
     _y += line * _scale;
+    return rows + 1;
   }
 
   /// How far short of the column's end a wrapped line ends, by [seed].
@@ -1415,7 +1434,9 @@ class _Sampler {
     const padY = 9.0;
     const thumb = 56.0;
     final most = bubbles ? width * 0.85 : width;
-    final lines = item.text.trimRight().split('\n');
+    // As the bubble shows it: what goes after its text (a long paste, lines
+    // of a file) only as the tag in it, and of a long one its first lines.
+    final lines = splitCodeAppendix(item.text).body.trimRight().split('\n');
     var widest = item.images.length * (thumb + 6);
     for (final line in lines) {
       widest = math.max(widest, _units(line) * _char);
@@ -1439,16 +1460,27 @@ class _Sampler {
       }
       _y += (thumb + 8) * _scale;
     }
+    final room = math.max(_char * 4, bubble - 2 * padX);
+    var rows = 0;
     for (final line in lines) {
+      rows += math.max(1, (_units(line) * _char / room).ceil());
+    }
+    // Up to one line more than it collapses to shows whole.
+    const collapsed = UserMessageBubble.collapsedLines;
+    if (rows > collapsed + 1) rows = collapsed;
+    for (final line in lines) {
+      if (rows <= 0) break;
       if (line.trim().isEmpty) {
         _y += _line * _scale;
+        rows--;
         continue;
       }
-      _prose(
+      rows -= _prose(
         line,
         x: left + padX,
         right: left + bubble - padX,
         tone: _Tone.user,
+        maxRows: rows,
       );
     }
     _y += padY * _scale;

@@ -23,6 +23,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../base/smooth_scroll.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/codicons.dart';
 import '../../theme/app_theme.dart';
@@ -400,25 +401,29 @@ class _IdeExtensionsViewState extends State<IdeExtensionsView> {
 
   Widget _list(List<IdeExtension> extensions) {
     if (extensions.isEmpty) return _message(context.l10n.extNoneFound);
-    return ListView.builder(
-      itemExtent: IdeExtensionRow.height,
-      itemCount: extensions.length,
-      itemBuilder: (context, index) {
-        final extension = extensions[index];
-        return IdeExtensionRow(
-          extension: extension,
-          busy: _session.busy[extension.id],
-          selected: _session.selected == extension.id,
-          focused: _listFocus.hasFocus,
-          onTap: () {
-            _session.selected = extension.id;
-            _listFocus.requestFocus();
-            _session.notify();
-          },
-          onInstall: () => unawaited(_install(extension)),
-          menu: () => _menu(extension),
-        );
-      },
+    // Each list its own (installed and recommended show at once).
+    return SmoothScrolling(
+      builder: (context, controller) => ListView.builder(
+        controller: controller,
+        itemExtent: IdeExtensionRow.height,
+        itemCount: extensions.length,
+        itemBuilder: (context, index) {
+          final extension = extensions[index];
+          return IdeExtensionRow(
+            extension: extension,
+            busy: _session.busy[extension.id],
+            selected: _session.selected == extension.id,
+            focused: _listFocus.hasFocus,
+            onTap: () {
+              _session.selected = extension.id;
+              _listFocus.requestFocus();
+              _session.notify();
+            },
+            onInstall: () => unawaited(_install(extension)),
+            menu: () => _menu(extension),
+          );
+        },
+      ),
     );
   }
 }

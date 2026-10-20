@@ -1,0 +1,3 @@
+// The Finder extension's settings: the machine's own, if it has them (see
+// Runner/Configs/AppInfo.xcconfig), signed as the app is.
+#include? "../Runner/Configs/Local.xcconfig"

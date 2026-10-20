@@ -98,7 +98,57 @@ class BaoWindow: NSWindow {
     ] {
       center.addObserver(self, selector: #selector(syncScale), name: name, object: self)
     }
+    // AppKit lays the traffic lights out again as the window changes.
+    for name in [
+      NSWindow.didResizeNotification, NSWindow.didExitFullScreenNotification,
+      NSWindow.didBecomeKeyNotification, NSWindow.didResignKeyNotification,
+    ] {
+      center.addObserver(self, selector: #selector(placeTrafficLights), name: name, object: self)
+    }
   }
+
+  /// How much lower than AppKit puts them the traffic lights are kept, so
+  /// they stay level with the title bar Flutter draws as the interface is
+  /// zoomed (see setTitleBarDrop), as VS Code's Electron moves them
+  /// (setWindowButtonPosition) as its window is.
+  private var trafficLightsDrop: CGFloat = 0
+
+  /// AppKit's own places: the title bar's height, and the close button's
+  /// center from its top. Read before the first move.
+  private var trafficLightsHome: (barHeight: CGFloat, center: CGFloat)?
+
+  /// Puts the traffic lights [trafficLightsDrop] below where AppKit does,
+  /// the title bar tall enough to hold them there; as Electron's
+  /// WindowButtonsProxy::RedrawTrafficLights does. Not in full screen,
+  /// where the title bar is the system's to show.
+  @objc func placeTrafficLights() {
+    guard !styleMask.contains(.fullScreen),
+          let close = standardWindowButton(.closeButton),
+          let titleBar = close.superview,
+          let container = titleBar.superview
+    else { return }
+    let buttonHeight = close.frame.height
+    let fromTop = { (y: CGFloat, height: CGFloat) in
+      titleBar.isFlipped ? y + buttonHeight / 2 : height - y - buttonHeight / 2
+    }
+    if trafficLightsHome == nil {
+      if trafficLightsDrop == 0 { return }
+      trafficLightsHome = (
+        container.frame.height, fromTop(close.frame.origin.y, container.frame.height)
+      )
+    }
+    guard let home = trafficLightsHome else { return }
+    let center = home.center + trafficLightsDrop
+    var bar = container.frame
+    bar.size.height = max(home.barHeight, center * 2)
+    bar.origin.y = frame.height - bar.size.height
+    container.frame = bar
+    let y = titleBar.isFlipped
+      ? center - buttonHeight / 2 : bar.height - center - buttonHeight / 2
+    for kind in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
+      guard let button = standardWindowButton(kind) else { continue }
+      button.setFrameOrigin(NSPoint(x: button.frame.origin.x, y: y))
+    }  }
 
   private var drops: FileDropView?
 
@@ -160,6 +210,12 @@ class BaoWindow: NSWindow {
         width: arguments?["width"] as? Double ?? 0,
         height: arguments?["height"] as? Double ?? 0
       ))
+      result(nil)
+    case "setTitleBarDrop":
+      // How much lower the traffic lights go, the title bar Flutter draws
+      // grown by twice that as the interface is zoomed (see ui_zoom.dart).
+      trafficLightsDrop = CGFloat(call.arguments as? Double ?? 0)
+      placeTrafficLights()
       result(nil)
     case "handleTitleDoubleClick":
       // A double click on the empty part of the title bar Flutter draws
@@ -398,7 +454,7 @@ class BaoWindow: NSWindow {
 
   /// An image file as the Flutter side takes it: its bytes, media type and
   /// name; nil if it is not a readable image.
-  private static func image(at url: URL) -> [String: Any]? {
+  static func image(at url: URL) -> [String: Any]? {
     let type = (try? url.resourceValues(forKeys: [.contentTypeKey]))?.contentType
     if let type, let mime = sentAsIs[type], let data = try? Data(contentsOf: url) {
       return ["bytes": FlutterStandardTypedData(bytes: data), "type": mime,
@@ -415,7 +471,7 @@ class BaoWindow: NSWindow {
 
   /// Puts an image's [data] on the clipboard, as PNG and TIFF: what apps
   /// paste a picture from. False when it is no image.
-  private static func writePasteboardImage(_ data: Data, png: Bool) -> Bool {
+  static func writePasteboardImage(_ data: Data, png: Bool) -> Bool {
     guard let tiff = NSImage(data: data)?.tiffRepresentation,
           let png = png ? data : pngData(tiff)
     else { return false }
@@ -431,7 +487,7 @@ class BaoWindow: NSWindow {
   /// text to paste, copied image data (a screenshot, an image from a
   /// browser). Text wins over image data: apps put a picture of copied
   /// text (e.g. cells) beside it.
-  private static func pasteboardImages() -> [[String: Any]] {
+  static func pasteboardImages() -> [[String: Any]] {
     let pasteboard = NSPasteboard.general
     let urls = pasteboard.readObjects(
       forClasses: [NSURL.self],
@@ -457,9 +513,17 @@ class BaoWindow: NSWindow {
 /// It also answers for the app what is the app's, not a window's: the color
 /// theme's appearance, the File menu.
 class MainFlutterWindow: BaoWindow {
+  /// Where its place and size are kept (the user defaults'), for the next
+  /// launch.
+  private static let frameName = "CaocodeMainWindow"
+
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
     setUp(flutter: flutterViewController, suffix: "", size: Self.defaultSize)
+    // Where the user left it, as big as they made it (kept in the user
+    // defaults as it changes); centered, as above, the first time.
+    setFrameUsingName(Self.frameName)
+    setFrameAutosaveName(Self.frameName)
 
     RegisterGeneratedPlugins(registry: flutterViewController)
 
@@ -468,6 +532,9 @@ class MainFlutterWindow: BaoWindow {
     // Notifications, the Dock's badge and the menu bar icon (see
     // lib/notifications/).
     attention = Attention(messenger: messenger, window: self)
+
+    // The channel build's login window (see lib/channel/account/).
+    loginWindow = LoginWindowChannel(messenger: messenger)
 
     // Paths the system asks the app to open (see AppDelegate.swift).
     OpenRequests.shared.attach(to: messenger)
@@ -480,6 +547,9 @@ class MainFlutterWindow: BaoWindow {
     // and the app opens to that alone; shown by the nib, the window would
     // come and go at once.
     AppWindows.shared = AppWindows(engine: flutterViewController.engine, main: self)
+    // The stash's shortcut, what was in front, the text in pictures (see
+    // StashPanel.swift).
+    StashChannel.shared = StashChannel(messenger: messenger)
     shownAtLaunch = AppWindows.mainShownAtLaunch
     holdingBack = true
     NotificationCenter.default.addObserver(
@@ -504,11 +574,12 @@ class MainFlutterWindow: BaoWindow {
     switch call.method {
     case "setAppearance":
       // The color theme's type: the material under the sidebar, the
-      // traffic lights and system menus follow it, in every window. Kept
-      // for the next start.
+      // traffic lights and system menus follow it, in every window (the
+      // stash's panel too: its edge and shadow are the appearance's, darker
+      // under a dark one). Kept for the next start.
       let dark = call.arguments as? Bool ?? true
       UserDefaults.standard.set(dark, forKey: Self.darkAppearanceKey)
-      for window in NSApp.windows where window is BaoWindow {
+      for window in NSApp.windows where window is FlutterHostWindow {
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
       }
       result(nil)
@@ -529,6 +600,7 @@ class MainFlutterWindow: BaoWindow {
   private var fileMenu: FileMenu?
 
   private var attention: Attention?
+  private var loginWindow: LoginWindowChannel?
 
   /// Kept out of sight while the nib shows it at launch, until the app
   /// has finished launching (see awakeFromNib).
@@ -612,7 +684,7 @@ private class VibrantContent: NSViewController {
 /// Flutter, which shows where they would go and puts them there (see
 /// lib/chat/composer/file_drop.dart): over the Flutter view, it answers no
 /// hit test, so clicks and the rest go on to Flutter; only drags stop here.
-private class FileDropView: NSView {
+final class FileDropView: NSView {
   private let channel: FlutterMethodChannel
 
   /// What Flutter last said of the drag: whether what is under it takes it.
@@ -1005,6 +1077,12 @@ private class FileMenu: NSObject {
 
   @objc private func runCommand(_ sender: NSMenuItem) {
     guard let command = sender.representedObject as? String else { return }
+    // The stash's panel in front: its own (Close closes it, not a window
+    // behind).
+    if let panel = NSApp.keyWindow as? StashPanel {
+      panel.menuCommand(command)
+      return
+    }
     let window = NSApp.keyWindow as? BaoWindow
       ?? NSApp.mainWindow as? BaoWindow
       ?? AppWindows.shared?.main
@@ -1020,7 +1098,7 @@ private class FileMenu: NSObject {
 /// A menu of the items the Flutter side sends: `id`, `label`, `enabled`,
 /// `key` (shown with ⌘), or `separator`. Answers the chosen item's id, or
 /// nil, once.
-private class ContextMenu: NSMenu {
+final class ContextMenu: NSMenu {
   private var answer: FlutterResult?
 
   /// Itself, until it has answered: the chosen item's action can come

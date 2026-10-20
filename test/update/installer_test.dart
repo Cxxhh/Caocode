@@ -187,6 +187,14 @@ void main() {
     expect(macUpdatePlatform(arm64: false, translated: true), 'macos-arm64');
   });
 
+  test('the channel build updates to the channel build', () {
+    expect(editionUpdatePlatform('macos-arm64', channel: false), 'macos-arm64');
+    expect(
+      editionUpdatePlatform('windows-x64', channel: true),
+      'windows-x64-channel',
+    );
+  });
+
   group('macOS', () {
     late Directory applications;
     late String app;

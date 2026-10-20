@@ -548,15 +548,13 @@ void main() {
     }
     final acceptEdits = kernel.permission.options[1];
     expect(
-      _zh.interactionStartWith(
-        localizedKernelOption(
-          _zh,
-          'claude-code',
-          KernelChoiceKind.permission,
-          acceptEdits,
-        ).label,
-      ),
-      '是，开始 · 自动接受编辑',
+      localizedKernelOption(
+        _zh,
+        'claude-code',
+        KernelChoiceKind.permission,
+        acceptEdits,
+      ).label,
+      '自动接受编辑',
     );
     final other = kernel.mode.options.first;
     expect(

@@ -24,11 +24,16 @@ import 'fade_curve.dart';
 /// and out (read at paint as well).
 ///
 /// Along a horizontal [axis], [top] and [bottom] are its left and right edges.
+///
+/// With [edges], which of them fade is read at paint instead (a scroll
+/// view's position, as it is laid out), [top] and [bottom] as they were
+/// last known.
 class EdgeFadeMask extends SingleChildRenderObjectWidget {
   const EdgeFadeMask({
     super.key,
     required this.top,
     required this.bottom,
+    this.edges,
     this.axis = Axis.vertical,
     this.fadeLength = 32,
     this.fadeOffset = 4,
@@ -41,6 +46,7 @@ class EdgeFadeMask extends SingleChildRenderObjectWidget {
 
   final bool top;
   final bool bottom;
+  final ValueGetter<({bool top, bool bottom})?>? edges;
   final Axis axis;
   final double fadeLength;
   final double fadeOffset;
@@ -57,6 +63,7 @@ class EdgeFadeMask extends SingleChildRenderObjectWidget {
   @override
   RenderEdgeFadeMask createRenderObject(BuildContext context) =>
       RenderEdgeFadeMask(top, bottom, fadeLength, fadeOffset)
+        ..edges = edges
         ..axis = axis
         ..topCover = topCover
         ..coverFade = coverFade
@@ -71,6 +78,7 @@ class EdgeFadeMask extends SingleChildRenderObjectWidget {
     renderObject
       ..top = top
       ..bottom = bottom
+      ..edges = edges
       ..axis = axis
       ..fadeLength = fadeLength
       ..fadeOffset = fadeOffset
@@ -130,6 +138,15 @@ class RenderEdgeFadeMask extends RenderProxyBox {
     markNeedsPaint();
   }
 
+  ValueGetter<({bool top, bool bottom})?>? _edges;
+  set edges(ValueGetter<({bool top, bool bottom})?>? value) {
+    if (value == _edges) return;
+    final composited = _edges != null;
+    _edges = value;
+    if (composited != (value != null)) markNeedsCompositingBitsUpdate();
+    markNeedsPaint();
+  }
+
   ValueGetter<double?>? _topCover;
   set topCover(ValueGetter<double?>? value) {
     if (value == _topCover) return;
@@ -173,8 +190,10 @@ class RenderEdgeFadeMask extends RenderProxyBox {
     super.detach();
   }
 
-  // Covered or not is only known at paint: with a cover, masked throughout.
-  bool get _masked => child != null && (_top || _bottom || _topCover != null);
+  // Covered or not is only known at paint: with a cover, masked throughout;
+  // so with the edges read then.
+  bool get _masked =>
+      child != null && (_top || _bottom || _topCover != null || _edges != null);
 
   @override
   bool get alwaysNeedsCompositing => _masked;
@@ -182,7 +201,13 @@ class RenderEdgeFadeMask extends RenderProxyBox {
   /// Over the child's [size] plus [_overshoot] before and after along [_axis];
   /// hidden down to [cover] when there is one, the fade at the top eased
   /// [amount] of the way in.
-  Shader _shader(Size size, double? cover, double amount) {
+  Shader _shader(
+    Size size,
+    double? cover,
+    double amount, {
+    required bool top,
+    required bool bottom,
+  }) {
     final vertical = _axis == Axis.vertical;
     final extent = vertical ? size.height : size.width;
     final height = extent + 2 * _overshoot;
@@ -206,7 +231,7 @@ class RenderEdgeFadeMask extends RenderProxyBox {
       for (final (t, opacity) in easedFade()) {
         stop(_overshoot + cover + t * _coverFade, atTop(opacity));
       }
-    } else if (_top) {
+    } else if (top) {
       stop(0, atTop(0));
       for (final (t, opacity) in easedFade()) {
         stop(hidden + t * length, atTop(opacity));
@@ -214,7 +239,7 @@ class RenderEdgeFadeMask extends RenderProxyBox {
     } else {
       stop(0, 1);
     }
-    if (_bottom) {
+    if (bottom) {
       for (final (t, opacity) in easedFade().toList().reversed) {
         stop(height - hidden - t * length, opacity);
       }
@@ -237,16 +262,17 @@ class RenderEdgeFadeMask extends RenderProxyBox {
   void paint(PaintingContext context, Offset offset) {
     final cover = _topCover?.call();
     final amount = (_topFadeAmount?.call() ?? 1).clamp(0.0, 1.0);
+    final (:top, :bottom) = _edges?.call() ?? (top: _top, bottom: _bottom);
     // Nothing faded: painted as it is.
     if (!_masked ||
-        ((cover == null || cover <= 0) && (!_top || amount == 0) && !_bottom)) {
+        ((cover == null || cover <= 0) && (!top || amount == 0) && !bottom)) {
       layer = null;
       super.paint(context, offset);
       return;
     }
     final mask = (layer as ShaderMaskLayer?) ?? ShaderMaskLayer();
     mask
-      ..shader = _shader(size, cover, amount)
+      ..shader = _shader(size, cover, amount, top: top, bottom: bottom)
       ..maskRect = _axis == Axis.vertical
           ? Rect.fromLTRB(
               offset.dx,

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
 /// Plain text, selectable under a [SelectionArea], that keeps its selection
@@ -222,11 +223,33 @@ class _LiveSelectable with Selectable, ChangeNotifier, SelectionRegistrant {
     hasContent: true,
   );
 
-  /// New text keeps the selection where it was, clamped to the text.
+  /// Its geometry is to be told once this frame's layout is done.
+  bool _geometryScheduled = false;
+  bool _disposed = false;
+
+  /// New text keeps the selection where it was, clamped to the text. Its
+  /// geometry (wrapped anew, say) is told after the frame's layout: the
+  /// containers it is told to read their own sizes, which a layout under
+  /// way does not allow.
   void didLayout() {
     if (_start != null) _start = math.min(_start!, _text.length);
     if (_end != null) _end = math.min(_end!, _text.length);
-    _updateGeometry();
+    // Nothing selected, nothing to tell, as text streams in.
+    if (textSelection == null && _geometry.status == SelectionStatus.none) {
+      return;
+    }
+    if (_geometryScheduled) return;
+    _geometryScheduled = true;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _geometryScheduled = false;
+      if (!_disposed && _render.attached) _updateGeometry();
+    });
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 
   void _updateGeometry() {

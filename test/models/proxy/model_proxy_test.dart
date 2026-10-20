@@ -446,6 +446,83 @@ void main() {
     expect(answer.data.last['type'], 'message_stop');
   });
 
+  group('Fast mode', () {
+    for (final fast in [false, true]) {
+      test(
+        'Responses uses Fast only when the model requests it ($fast)',
+        () async {
+          provider = provider.copyWith(
+            protocol: ProviderProtocol.openaiResponses,
+          );
+          upstream.reply = (_) => (200, const []);
+          await post(
+            await messages(),
+            {
+              'model': fast ? 'gpt-5(high;fast)' : 'gpt-5(high)',
+              'stream': true,
+              'messages': [
+                {'role': 'user', 'content': 'hi'},
+              ],
+            },
+            headers: {'authorization': 'Bearer tok'},
+          );
+          final sent = upstream.requests.single.body! as Map;
+          expect(sent['model'], 'gpt-5');
+          expect(sent['reasoning'], containsPair('effort', 'high'));
+          expect(sent['service_tier'], fast ? 'priority' : isNull);
+        },
+      );
+    }
+
+    for (final explicit in <Map<String, Object?>>[
+      {'speed': 'fast'},
+      {'service_tier': 'fast'},
+      {'service_tier': 'priority'},
+      {'speed': 'standard'},
+      {'service_tier': 'auto'},
+      {'service_tier': 'default'},
+    ]) {
+      for (final fast in [false, true]) {
+        test('Responses respects $explicit with Fast $fast', () async {
+          provider = provider.copyWith(
+            protocol: ProviderProtocol.openaiResponses,
+          );
+          upstream.reply = (_) => (200, const []);
+          await post(
+            await messages(),
+            {
+              'model': fast ? 'gpt-5(high;fast)' : 'gpt-5(high)',
+              'stream': true,
+              'messages': [],
+              ...explicit,
+            },
+            headers: {'authorization': 'Bearer tok'},
+          );
+          final sent = upstream.requests.single.body! as Map;
+          expect(
+            sent['service_tier'],
+            explicit.values.any((v) => v == 'fast' || v == 'priority')
+                ? 'priority'
+                : isNull,
+          );
+        });
+      }
+    }
+
+    test('Chat Completions ignores the Fast model suffix', () async {
+      upstream.reply = (_) => (200, const []);
+      await post(
+        await messages(),
+        {'model': 'gpt-5(high;fast)', 'stream': true, 'messages': []},
+        headers: {'authorization': 'Bearer tok'},
+      );
+      expect(
+        upstream.requests.single.body! as Map,
+        isNot(contains('service_tier')),
+      );
+    });
+  });
+
   group('prompt_cache_key', () {
     const session = '3f1c2a9e-0d4b-4c6e-9a7f-1b2c3d4e5f60';
     Map<String, Object?> request(String userId) => {
@@ -516,6 +593,42 @@ void main() {
         );
       });
     }
+  });
+
+  test('an upstream is asked with the provider\'s custom headers, their '
+      'variables filled, a key not overwritten', () async {
+    const session = '3f1c2a9e-0d4b-4c6e-9a7f-1b2c3d4e5f60';
+    provider = provider.copyWith(
+      headers: {
+        'x-session-id': '{{CLAUDE_SESSION_ID}}',
+        'x-model': '{{ANTHROPIC_MODEL}}',
+        'x-tenant': 'acme',
+        // A key must not go from here, and no auth header is overwritten.
+        'authorization': 'Bearer nope',
+        'x-api-key': 'nope',
+      },
+    );
+    upstream.reply = (_) => (200, const []);
+    await post(
+      await messages(),
+      {
+        'model': 'gpt-5',
+        'stream': true,
+        'metadata': {
+          'user_id': jsonEncode({'session_id': session}),
+        },
+        'messages': [
+          {'role': 'user', 'content': 'hi'},
+        ],
+      },
+      headers: {'authorization': 'Bearer tok'},
+    );
+    final sent = upstream.requests.single.headers;
+    expect(sent['x-session-id'], session);
+    expect(sent['x-model'], 'gpt-5');
+    expect(sent['x-tenant'], 'acme');
+    expect(sent['authorization'], 'Bearer sk-upstream');
+    expect(sent.containsKey('x-api-key'), isFalse);
   });
 
   test('an unknown provider or endpoint is not found', () async {

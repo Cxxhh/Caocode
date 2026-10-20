@@ -71,11 +71,12 @@ class AgentStep extends StatefulWidget {
   }
 
   /// "950", "8.2k", "1.4M".
-  static String formatTokens(int tokens) => switch (tokens) {
-    < 1000 => '$tokens',
-    < 1000000 => '${(tokens / 1000).toStringAsFixed(1)}k',
-    _ => '${(tokens / 1000000).toStringAsFixed(1)}M',
-  };
+  static String formatTokens(int tokens, {int decimals = 1}) =>
+      switch (tokens) {
+        < 1000 => '$tokens',
+        < 1000000 => '${(tokens / 1000).toStringAsFixed(decimals)}k',
+        _ => '${(tokens / 1000000).toStringAsFixed(decimals)}M',
+      };
 
   /// The tools it has used, e.g. "12 tools"; null before the first. In
   /// [l10n]'s language (English when null).

@@ -180,12 +180,8 @@ class LinkHost extends ChangeNotifier {
 
   DirectEndpoint? _parse(String address) {
     try {
-      final endpoint = DirectEndpoint.parse(address);
-      final hasPort =
-          address.contains(']:') ||
-          (!address.startsWith('[') && ':'.allMatches(address).length == 1);
       // No port given: this one's.
-      return hasPort ? endpoint : DirectEndpoint(endpoint.host, _port);
+      return DirectEndpoint.parse(address, defaultPort: _port);
     } on FormatException {
       return null;
     }

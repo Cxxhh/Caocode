@@ -54,6 +54,7 @@ abstract final class ChatCodec {
       'label': ?item.label,
       'status': item.status.name,
       'output': ?_head(item.output),
+      'tool': ?item.tool,
     },
     AgentItem() => {
       't': 'agent',
@@ -176,6 +177,7 @@ abstract final class ChatCodec {
         label: optional('label'),
         status: named(ToolStatus.values, 'status', ToolStatus.succeeded),
         output: optional('output'),
+        tool: optional('tool'),
       ),
       'agent' => AgentItem(
         description: text('description'),

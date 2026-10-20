@@ -2,6 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 
+import '../channel/channel_gate.dart';
+import '../channel/channel_setup.dart' show ChannelSetup;
+import '../forge/forge_accounts.dart';
+import '../customize/customization_store.dart';
 import '../kernel/claude_code/claude_path_setting.dart';
 import '../keybindings/import_dialog.dart';
 import '../keybindings/keybinding_service.dart';
@@ -11,6 +15,7 @@ import '../keybindings/keymap.dart';
 import '../keybindings/vscode_import.dart';
 import '../l10n/l10n.dart';
 import '../link/link_host.dart';
+import '../stash/stash_controller.dart';
 import '../theme/workbench_theme.dart' show WorkbenchThemeService;
 import '../tips/builtin_tips.dart';
 import '../tips/feature_tip.dart';
@@ -18,7 +23,12 @@ import '../tips/feature_tips_controller.dart';
 import '../update/update_controller.dart';
 import '../workspace/workspace.dart';
 import 'app_locale.dart';
+import 'pages/about_page.dart';
+import 'pages/accounts_page.dart';
 import 'pages/appearance_page.dart';
+import 'pages/browser_page.dart';
+import 'pages/channel_account_page.dart';
+import 'pages/customize_page.dart';
 import 'pages/data_dir_page.dart';
 import 'pages/general_page.dart';
 import 'pages/keybindings_page.dart';
@@ -28,6 +38,9 @@ import 'pages/language_page.dart';
 import 'pages/network_page.dart';
 import 'pages/notifications_page.dart';
 import 'pages/settings_widgets.dart' show SettingsPage;
+import 'pages/ssh_page.dart';
+import 'pages/stash_hotkey_field.dart';
+import 'pages/stash_page.dart';
 import 'pages/updates_page.dart';
 import 'settings_dialog.dart';
 import 'user_settings.dart';
@@ -47,6 +60,7 @@ class AppSettings {
     this.workspace,
     this.claudeStatus,
     this.link,
+    this.customizations,
   }) : keybindings = keybindings ?? KeybindingService.instance;
 
   final AppLocale locale;
@@ -80,6 +94,10 @@ class AppSettings {
   /// none under test, where it is not looked for.
   final Future<LocalClaudeStatus?> Function()? claudeStatus;
 
+  /// Claude Code's customizations, for Settings → Customize; none where
+  /// there are no files (the web), the page made over the default store.
+  final CustomizationStore? customizations;
+
   /// The feature tips (the setup checklist, the update's and the scenarios'
   /// notifications); none without settings files.
   late final FeatureTipsController? tips = switch (files?.storage) {
@@ -112,6 +130,13 @@ class AppSettings {
     ];
   }
 
+  /// What the settings dialog says above every page: the browser's
+  /// debugging history grown large.
+  Widget buildNotice(
+    BuildContext context,
+    void Function(SettingsSection section) open,
+  ) => BrowserHistoryNotice(open: () => open(SettingsSection.browser));
+
   /// [section]'s page of the settings dialog.
   Widget buildPage(
     BuildContext context,
@@ -133,6 +158,8 @@ class AppSettings {
           changes: themes,
           settings: files?.settings,
         );
+      case SettingsSection.models when ChannelSetup.channelBuild:
+        return ChannelAccountPage(gate: ChannelGate.current);
       case SettingsSection.models:
         return CodexSettingsPage(
           settings: files?.settings,
@@ -141,6 +168,8 @@ class AppSettings {
         );
       case SettingsSection.network:
         return NetworkSettingsPage(settings: files?.settings);
+      case SettingsSection.ssh:
+        return SshSettingsPage(workspace: workspace);
       case SettingsSection.mobile:
         return switch (link) {
           final link? => MobileSettingsPage(host: link),
@@ -150,8 +179,19 @@ class AppSettings {
             children: const [],
           ),
         };
+      case SettingsSection.browser:
+        return BrowserSettingsPage(settings: files?.settings);
       case SettingsSection.notifications:
         return NotificationsSettingsPage(settings: files?.settings);
+      case SettingsSection.stash:
+        return StashSettingsPage(settings: files?.settings);
+      case SettingsSection.accounts:
+        return AccountsSettingsPage(accounts: ForgeAccounts.current);
+      case SettingsSection.customize:
+        return CustomizeSettingsPage(
+          customizations: customizations,
+          workspace: workspace,
+        );
       case SettingsSection.language:
         return LanguageSettingsPage(locale: locale);
       case SettingsSection.keyboard:
@@ -167,10 +207,18 @@ class AppSettings {
             onImport: installs == null
                 ? null
                 : () => unawaited(showImport(context)),
+            global: StashController.current == null
+                ? null
+                : StashHotkeyCard(
+                    settings: files?.settings,
+                    label: context.l10n.stashHotkeyGlobal,
+                  ),
           ),
         );
       case SettingsSection.updates:
         return UpdatesSettingsPage(updates: updates, settings: files?.settings);
+      case SettingsSection.about:
+        return const AboutSettingsPage();
       case SettingsSection.dataDirectory:
         return const DataDirectoryPage();
     }

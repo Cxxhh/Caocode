@@ -27,7 +27,9 @@
 		33CC10F32044A3C60003C045 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 33CC10F22044A3C60003C045 /* Assets.xcassets */; };
 		33CC10F62044A3C60003C045 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 33CC10F42044A3C60003C045 /* MainMenu.xib */; };
 		3A7E5B012F00A00000000002 /* Attention.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A7E5B012F00A00000000001 /* Attention.swift */; };
+		3A7E5B012F00A00000000012 /* LoginWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A7E5B012F00A00000000011 /* LoginWindow.swift */; };
 		3A7E5B012F00A00000000004 /* AppWindows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A7E5B012F00A00000000003 /* AppWindows.swift */; };
+		3A7E5B012F00A00000000006 /* StashPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A7E5B012F00A00000000005 /* StashPanel.swift */; };
 		33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC11122044BFA00003C045 /* MainFlutterWindow.swift */; };
 		78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */; };
 		3A7E5C012F00A00000000002 /* FinderSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A7E5C012F00A00000000001 /* FinderSync.swift */; };
@@ -93,7 +95,9 @@
 		33CC10F52044A3C60003C045 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		33CC10F72044A3C60003C045 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Runner/Info.plist; sourceTree = "<group>"; };
 		3A7E5B012F00A00000000001 /* Attention.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Attention.swift; sourceTree = "<group>"; };
+		3A7E5B012F00A00000000011 /* LoginWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginWindow.swift; sourceTree = "<group>"; };
 		3A7E5B012F00A00000000003 /* AppWindows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppWindows.swift; sourceTree = "<group>"; };
+		3A7E5B012F00A00000000005 /* StashPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StashPanel.swift; sourceTree = "<group>"; };
 		33CC11122044BFA00003C045 /* MainFlutterWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainFlutterWindow.swift; sourceTree = "<group>"; };
 		33CEB47222A05771004F2AC0 /* Flutter-Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Flutter-Debug.xcconfig"; sourceTree = "<group>"; };
 		33CEB47422A05771004F2AC0 /* Flutter-Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Flutter-Release.xcconfig"; sourceTree = "<group>"; };
@@ -106,6 +110,7 @@
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		3A7E5C012F00A00000000001 /* FinderSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderSync.swift; sourceTree = "<group>"; };
 		3A7E5C012F00A00000000003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		3A7E5C012F00A00000000020 /* FinderExtension.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FinderExtension.xcconfig; sourceTree = "<group>"; };
 		3A7E5C012F00A00000000004 /* FinderExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FinderExtension.entitlements; sourceTree = "<group>"; };
 		3A7E5C012F00A00000000005 /* FinderExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FinderExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -206,7 +211,9 @@
 				33CC10F02044A3C60003C045 /* AppDelegate.swift */,
 				33CC11122044BFA00003C045 /* MainFlutterWindow.swift */,
 				3A7E5B012F00A00000000001 /* Attention.swift */,
+				3A7E5B012F00A00000000011 /* LoginWindow.swift */,
 				3A7E5B012F00A00000000003 /* AppWindows.swift */,
+				3A7E5B012F00A00000000005 /* StashPanel.swift */,
 				33E51913231747F40026EE4D /* DebugProfile.entitlements */,
 				33E51914231749380026EE4D /* Release.entitlements */,
 				33CC11242044D66E0003C045 /* Resources */,
@@ -228,6 +235,7 @@
 				3A7E5C012F00A00000000001 /* FinderSync.swift */,
 				3A7E5C012F00A00000000003 /* Info.plist */,
 				3A7E5C012F00A00000000004 /* FinderExtension.entitlements */,
+				3A7E5C012F00A00000000020 /* FinderExtension.xcconfig */,
 			);
 			path = FinderExtension;
 			sourceTree = "<group>";
@@ -263,6 +271,7 @@
 				33CC110E2044A8840003C045 /* Bundle Framework */,
 				3A7E5C012F00A0000000000C /* Embed Foundation Extensions */,
 				3399D490228B24CF009A79C7 /* ShellScript */,
+				3A7E5D012F00A00000000001 /* Browser Host */,
 			);
 			buildRules = (
 			);
@@ -380,6 +389,27 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		3A7E5D012F00A00000000001 /* Browser Host */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(PROJECT_DIR)/BrowserBridge/host.c",
+				"$(PROJECT_DIR)/BrowserBridge/build_host.sh",
+			);
+			name = "Browser Host";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(EXECUTABLE_FOLDER_PATH)/caocode-browser-host",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"$PROJECT_DIR/BrowserBridge/build_host.sh\"\n";
+		};
 		3399D490228B24CF009A79C7 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -435,7 +465,9 @@
 			files = (
 				33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */,
 				3A7E5B012F00A00000000002 /* Attention.swift in Sources */,
+				3A7E5B012F00A00000000012 /* LoginWindow.swift in Sources */,
 				3A7E5B012F00A00000000004 /* AppWindows.swift in Sources */,
+				3A7E5B012F00A00000000006 /* StashPanel.swift in Sources */,
 				33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */,
 				335BBD1B22A9A15E00E9071D /* GeneratedPluginRegistrant.swift in Sources */,
 			);
@@ -762,6 +794,7 @@
 		};
 		3A7E5C012F00A00000000010 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 3A7E5C012F00A00000000020 /* FinderExtension.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = FinderExtension/FinderExtension.entitlements;
@@ -783,6 +816,7 @@
 		};
 		3A7E5C012F00A00000000011 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 3A7E5C012F00A00000000020 /* FinderExtension.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = FinderExtension/FinderExtension.entitlements;
@@ -803,6 +837,7 @@
 		};
 		3A7E5C012F00A00000000012 /* Profile */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 3A7E5C012F00A00000000020 /* FinderExtension.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = FinderExtension/FinderExtension.entitlements;

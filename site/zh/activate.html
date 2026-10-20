@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>完成 Caocode 的设置</title>
+<meta name="description" content="Caocode 设置的最后一步。">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/icon.png">
+<link rel="stylesheet" href="/style.css">
+<script src="/head.js"></script>
+</head>
+<body>
+<canvas class="grid" aria-hidden="true"></canvas>
+<svg class="sprite" aria-hidden="true">
+  <!-- Lucide (ISC), https://lucide.dev -->
+  <symbol id="ic-github" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5c.08-1.25-.27-2.48-1-3.5c.28-1.15.28-2.35 0-3.5c0 0-1 0-3 1.5c-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5c-.39.49-.68 1.05-.85 1.65S8.93 17.38 9 18v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></g></symbol>
+</svg>
+<header class="top">
+  <a class="brand" href="/zh/"><img src="/icon.png" alt="">Caocode</a>
+  <a href="/zh/download">下载</a>
+  <a href="/zh/changelog">更新日志</a>
+  <a href="https://github.com/Cxxhh/Caocode"><svg class="ic" aria-hidden="true"><use href="#ic-github"/></svg>GitHub</a>
+  <a class="lang" href="/activate" hreflang="en" lang="en">English</a>
+</header>
+
+<!-- activate.js 把这个浏览器来官网的来源发给 stats.caocode.dev，
+     记在打开这一页的安装上；页面上的文字都在这里。 -->
+<main class="page" data-activate="zh">
+  <h1>完成 Caocode 的设置</h1>
+
+  <section data-state="sending" hidden>
+    <p class="subtitle">正在完成…</p>
+  </section>
+
+  <section data-state="done" hidden>
+    <p class="subtitle">已完成。回到 Caocode 就好，它马上会自动继续。</p>
+  </section>
+
+  <section data-state="failed" hidden>
+    <p class="subtitle">这个页面没能连上服务器。不要紧，用下面的办法交给 Caocode 就行。</p>
+  </section>
+
+  <section data-state="missing" hidden>
+    <p class="subtitle">这个浏览器之前没有打开过 caocode.dev。</p>
+    <p>你是在别的浏览器，或者微信之类的 App 里下载的 Caocode 吗？把这个链接拿到那里打开：</p>
+    <div class="copyable"><pre><code data-page-link></code></pre><button class="copy" type="button" data-copy data-done="已复制">复制</button></div>
+    <div class="actions">
+      <button class="button" type="button" data-continue>直接继续</button>
+    </div>
+  </section>
+
+  <section data-state="invalid" hidden>
+    <p class="subtitle">这个链接无法使用。</p>
+    <p>请从 Caocode 里重新打开：它首次启动时弹出的窗口里有对应的按钮。</p>
+  </section>
+
+  <div data-handover hidden>
+    <div class="actions">
+      <a class="button primary" data-open href="/zh/download">回到 Caocode</a>
+    </div>
+    <p class="note">Caocode 还在等？点“回到 Caocode”，或者复制下面的链接，粘贴到 Caocode 的窗口里（Linux 上只能这样）：</p>
+    <div class="copyable"><pre><code data-link></code></pre><button class="copy" type="button" data-copy data-done="已复制">复制</button></div>
+  </div>
+
+  <noscript><p>这个页面需要 JavaScript 才能完成 Caocode 的设置。</p></noscript>
+
+  <p class="note">Caocode 只记一次你来到 caocode.dev 的途径：最近一次带标识的链接里的标识，没有的话是你第一次点进来的那个网站，或者都没有。不记录关于你和你浏览的其他任何内容。</p>
+</main>
+
+<script src="/site.js"></script>
+<script src="/activate.js"></script>
+</body>
+</html>

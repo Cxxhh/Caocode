@@ -45,6 +45,11 @@ class FileDragData {
   final List<ComposerFile> files;
 }
 
+/// Whether a picture a pasted text refers to by its path (`@/…/shot.png`)
+/// goes in as the picture itself: those copied out of a stash (the stashes
+/// set it). Any other stays a tag of its path.
+bool Function(String path) pastedAsPicture = (_) => false;
+
 /// [path] as the composer shows and sends it: from the project's [root]
 /// when it is in the project, else as it is.
 String displayPath(String path, String? root) {
@@ -185,14 +190,33 @@ class CodeReference extends AppendedText {
 /// Text too long to paste into the composer as it is (laying it out there
 /// would hang the window, see [isLong]): the message refers to it as
 /// `[Pasted text #1 +120 lines]`, as Claude Code's own input does, and
-/// carries it after its text (see [codeAppendix]).
+/// carries it after its text (see [codeAppendix]); or, longer still, where
+/// it is kept ([file], see PasteStore).
 @immutable
 class PastedText extends AppendedText {
-  const PastedText({required this.number, required this.text});
+  const PastedText({
+    required this.number,
+    required this.text,
+    this.file,
+    this.lines,
+  });
 
   /// Of the pastes in the message, from 1.
   final int number;
+
+  /// What was pasted; empty for one kept in a [file], until read.
   final String text;
+
+  /// Where it is kept, when it was too long to send (absolute, on this
+  /// machine): the message names it for the agent to read.
+  final String? file;
+
+  /// A kept one's [extraLines], its text not at hand.
+  final int? lines;
+
+  /// This, kept at [path].
+  PastedText storedAt(String path) =>
+      PastedText(number: number, text: '', file: path, lines: extraLines);
 
   /// Pasted as a tag past this many characters…
   static const maxLength = 1000;
@@ -206,6 +230,7 @@ class PastedText extends AppendedText {
 
   /// Its line breaks, the last one aside: the lines past the first.
   int get extraLines {
+    if (lines case final lines?) return lines;
     final trimmed = text.endsWith('\n')
         ? text.substring(0, text.length - 1)
         : text;
@@ -220,20 +245,94 @@ class PastedText extends AppendedText {
     final lines => '[Pasted text #$number +$lines lines]',
   };
 
+  /// The text, or where it is kept (see [keptNote]).
   @override
-  String get content => text;
+  String get content => switch (file) {
+    final file? => keptNote(file),
+    null => text,
+  };
 
-  Map<String, Object> toJson() => {'number': number, 'text': text};
+  /// What a message says in place of a paste kept at [path].
+  static String keptNote(String path) =>
+      'Too long to include here, saved in full to `$path`: read it from '
+      'there.';
 
-  static PastedText fromJson(Map<String, Object?> json) =>
-      PastedText(number: json['number'] as int, text: json['text'] as String);
+  static final _keptNote = RegExp(
+    r'^Too long to include here, saved in full to `([^`]+)`: read it from '
+    r'there\.$',
+  );
+
+  Map<String, Object> toJson() => {
+    'number': number,
+    'text': text,
+    'file': ?file,
+    'lines': ?lines,
+  };
+
+  static PastedText fromJson(Map<String, Object?> json) => PastedText(
+    number: json['number'] as int,
+    text: json['text'] as String,
+    file: json['file'] as String?,
+    lines: json['lines'] as int?,
+  );
 
   @override
   bool operator ==(Object other) =>
-      other is PastedText && other.number == number && other.text == text;
+      other is PastedText &&
+      other.number == number &&
+      other.text == text &&
+      other.file == file &&
+      other.lines == lines;
 
   @override
-  int get hashCode => Object.hash(number, text);
+  int get hashCode => Object.hash(number, text, file, lines);
+}
+
+/// A stash (see lib/stash/), put in the composer by `@` or dragged there:
+/// the message refers to it as `[Stash #12]`, and carries its text after
+/// its own (see [codeAppendix]), so that an agent on any host can read it.
+@immutable
+class StashReference extends AppendedText {
+  const StashReference({required this.id, required this.text, this.title = ''});
+
+  /// Its number.
+  final int id;
+
+  /// What it says, as markdown (its pictures by their absolute paths).
+  final String text;
+
+  /// What the tag shows beside its number; not sent.
+  final String title;
+
+  /// `[Stash #12]`.
+  @override
+  String get reference => '[Stash #$id]';
+
+  @override
+  String get content => text;
+
+  Map<String, Object> toJson() => {'id': id, 'text': text, 'title': title};
+
+  static StashReference fromJson(Map<String, Object?> json) => StashReference(
+    id: json['id'] as int,
+    text: json['text'] as String,
+    title: json['title'] as String? ?? '',
+  );
+
+  @override
+  bool operator ==(Object other) =>
+      other is StashReference && other.id == id && other.text == text;
+
+  @override
+  int get hashCode => Object.hash(id, text);
+}
+
+/// What is dragged from the stash's page to a composer.
+@immutable
+class StashDragData {
+  const StashDragData(this.references);
+
+  final List<StashReference> references;
 }
 
 /// What the IDE's editor copied last, with where it is from: pasted into the
@@ -265,10 +364,19 @@ abstract final class CopiedCode {
 
 /// The code (and long pastes) a message refers to, as it is sent after the
 /// message's text: after an empty line, each reference in brackets on a
-/// line of its own, then its lines between fences of backticks.
+/// line of its own, then its lines between fences of backticks; a paste
+/// kept in a file, where it is (see [PastedText.keptNote]).
 String codeAppendix(Iterable<AppendedText> references) {
   final buffer = StringBuffer();
   for (final reference in references) {
+    if (reference case PastedText(file: _?)) {
+      buffer
+        ..write('\n\n')
+        ..write(reference.reference)
+        ..write('\n')
+        ..write(reference.content);
+      continue;
+    }
     final fence = _fenceFor(reference.content);
     var code = reference.content.replaceAll('\r\n', '\n');
     if (code.endsWith('\n')) code = code.substring(0, code.length - 1);
@@ -315,12 +423,28 @@ String _fenceFor(String code) {
 }
 
 final _referenceLine = RegExp(r'^\[(.+):(\d+)(?:-(\d+))?\]$');
-final _pastedLine = RegExp(r'^\[Pasted text #(\d+)(?: \+\d+ lines?)?\]$');
+final _pastedLine = RegExp(r'^\[Pasted text #(\d+)(?: \+(\d+) lines?)?\]$');
+final _stashLine = RegExp(r'^\[Stash #(\d+)\]$');
 
 /// The last block of a [codeAppendix] at the end of [text], and the text
 /// before it; null when it does not end in one.
 ({String body, AppendedText reference})? _lastBlock(String text) {
   final lines = text.split('\n');
+  // A paste kept in a file: an empty line, its reference, where it is.
+  if (PastedText._keptNote.firstMatch(lines.last) case final kept?
+      when lines.length >= 3 && lines[lines.length - 3].isEmpty) {
+    final match = _pastedLine.firstMatch(lines[lines.length - 2]);
+    if (match == null) return null;
+    return (
+      body: lines.sublist(0, lines.length - 3).join('\n'),
+      reference: PastedText(
+        number: int.parse(match[1]!),
+        text: '',
+        file: kept[1],
+        lines: int.parse(match[2] ?? '0'),
+      ),
+    );
+  }
   final fence = lines.last;
   if (fence.length < 3 || fence.replaceAll('`', '').isNotEmpty) return null;
   // No line of the code is the fence (see [_fenceFor]).
@@ -334,6 +458,8 @@ final _pastedLine = RegExp(r'^\[Pasted text #(\d+)(?: \+\d+ lines?)?\]$');
     reference = PastedText(number: int.parse(match[1]!), text: content);
     // Its count of lines is the text's own.
     if (reference.reference != header) return null;
+  } else if (_stashLine.firstMatch(header) case final match?) {
+    reference = StashReference(id: int.parse(match[1]!), text: content);
   } else if (_referenceLine.firstMatch(header) case final match?) {
     final start = int.parse(match[2]!);
     reference = CodeReference(

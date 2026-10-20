@@ -46,3 +46,11 @@ class LocalClaudeFailed extends LocalClaudeStatus {
 /// The Claude Code that runs on this machine now, nothing downloaded for
 /// it; null where there are no processes (the web).
 Future<LocalClaudeStatus?> localClaudeStatus() => LocalClaude.status();
+
+/// Whether Claude Code is on this machine, as last looked; never on the
+/// web.
+bool localClaudeInstalled() => LocalClaude.installed();
+
+/// Looks for Claude Code on this machine again, as the user's shell finds
+/// it.
+Future<void> lookForLocalClaude() => LocalClaude.lookForInstall();

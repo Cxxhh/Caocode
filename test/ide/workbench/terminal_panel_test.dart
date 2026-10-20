@@ -2,7 +2,12 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:caocode/chat/chat_models.dart' show CommandStatus;
+import 'package:caocode/chat/side_panel/terminal_preview.dart';
+import 'package:caocode/ide/ide_explorer.dart';
 import 'package:caocode/ide/ide_workbench.dart';
+import 'package:caocode/ide/terminal/terminal_tasks.dart';
+import 'package:caocode/kernel/kernel_types.dart';
 import 'package:caocode/ide/terminal/pty.dart';
 import 'package:caocode/ide/terminal/terminal_instance.dart';
 import 'package:caocode/ide/terminal/terminal_tabs.dart';
@@ -67,7 +72,73 @@ Future<void> _rename(WidgetTester tester, String text) async {
   await tester.pump();
 }
 
+/// An agent's background commands, changed by hand.
+class _Tasks extends ChangeNotifier implements TerminalTasks {
+  _Tasks(this.tasks);
+
+  @override
+  List<KernelTask> tasks;
+
+  final stopped = <String>[];
+
+  @override
+  String? commandOf(KernelTask task) => 'npm run dev';
+
+  @override
+  void stop(KernelTask task) => stopped.add(task.id);
+
+  @override
+  String get root => testRoot;
+}
+
 void main() {
+  testWidgets('the chat\'s background commands are listed with the '
+      'terminals, each in a group; one shows its output in the terminal\'s '
+      'place', (tester) async {
+    final tasks = _Tasks([
+      KernelTask(
+        id: 'b1',
+        description: 'Start the dev server',
+        kind: KernelTaskKind.command,
+        status: CommandStatus.running,
+        startedAt: DateTime(2026),
+      ),
+    ]);
+    await pumpWorkbench(tester, {'a.txt': 'a'}, terminalTasks: tasks);
+    _workbench(tester).showTerminalTask('b1');
+    await tester.pump();
+    await tester.pump();
+
+    // One terminal, and a command: the list shows, in groups.
+    expect(_inTabs(find.text('Terminals')), findsOneWidget);
+    expect(_inTabs(find.text('Background Tasks')), findsOneWidget);
+    expect(_inTabs(find.text('Start the dev server')), findsOneWidget);
+    expect(find.byType(TerminalPreview), findsOneWidget);
+    expect(find.byType(TerminalView), findsOneWidget);
+
+    // Back to the terminal from the list, and to the command again.
+    await tester.tap(_inTabs(find.text('zsh')));
+    await tester.pump();
+    expect(find.byType(TerminalPreview), findsNothing);
+    await tester.tap(_inTabs(find.text('Start the dev server')));
+    await tester.pump();
+    expect(find.byType(TerminalPreview), findsOneWidget);
+
+    // A group folds.
+    await tester.tap(_inTabs(find.text('Background Tasks')));
+    await tester.pump();
+    expect(_inTabs(find.text('Start the dev server')), findsNothing);
+
+    // Without commands, a single terminal has no list again.
+    tasks
+      ..tasks = const []
+      ..notifyListeners();
+    await tester.pump();
+    expect(find.byType(TerminalTabs), findsNothing);
+    expect(find.byType(TerminalPreview), findsNothing);
+    await tester.pump(kDoubleTapTimeout);
+  });
+
   testWidgets('⌃` opens the panel on TERMINAL with a terminal of its own, '
       'focused; hidden, the terminal keeps running', (tester) async {
     final ptys = <FakePty>[];
@@ -386,5 +457,46 @@ void main() {
     expect(workspace.active?.path, inRoot('lib/a.dart'));
     expect(find.text('Ln 2, Col 3'), findsOneWidget);
     await tester.pump(kDoubleTapTimeout);
+  });
+
+  testWidgets('the explorer\'s Open in Terminal starts a terminal in the '
+      'folder clicked, a file\'s in its folder', (tester) async {
+    final ptys = <FakePty>[];
+    await pumpWorkbench(tester, {
+      'lib/a.dart': 'a',
+      'README.md': 'r',
+    }, startPty: FakePty.starter(ptys));
+    await tester.pumpAndSettle();
+    expect(ptys, isEmpty);
+
+    Finder row(String name) => find.descendant(
+      of: find.byType(IdeExplorer),
+      matching: find.text(name),
+    );
+    Future<void> openInTerminal(String name) async {
+      await tester.tapAt(
+        tester.getCenter(row(name)),
+        buttons: kSecondaryMouseButton,
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open in Terminal'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
+    }
+
+    // A folder: the terminal starts in it.
+    await openInTerminal('lib');
+    expect(ptys, hasLength(1));
+    expect(ptys.single.launch!.workingDirectory, inRoot('lib'));
+    // It is shown, on the TERMINAL tab.
+    expect(find.text('TERMINAL'), findsOneWidget);
+    expect(_panelHeight(tester), greaterThan(0));
+
+    // A file: in the folder holding it.
+    await openInTerminal('README.md');
+    expect(ptys, hasLength(2));
+    expect(ptys.last.launch!.workingDirectory, testRoot);
   });
 }

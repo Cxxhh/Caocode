@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../vs/editor/common/core/position.dart';
 
 /// Immutable UTF-16 line geometry for a Flutter text value.
@@ -34,18 +36,207 @@ class DocumentSnapshot {
 
     return DocumentSnapshot._(
       text,
-      List<int>.unmodifiable(starts),
-      List<int>.unmodifiable(ends),
-      List<int>.unmodifiable(newlineLengths),
+      _frozen(Int32List.fromList(starts)),
+      _frozen(Int32List.fromList(ends)),
+      _frozen(Int32List.fromList(newlineLengths)),
     );
   }
 
-  const DocumentSnapshot._(
+  /// [before] with `[start, end)` replaced by [inserted]: only the lines the
+  /// edit touches are scanned, the others are copied (and moved), so typing
+  /// in a large file does not go through all of its text.
+  factory DocumentSnapshot.edited(
+    DocumentSnapshot before,
+    int start,
+    int end,
+    String inserted,
+  ) {
+    final old = before.text;
+    final text = old.substring(0, start) + inserted + old.substring(end);
+    final delta = inserted.length - (end - start);
+    final oldStarts = before.lineStarts;
+    final oldEnds = before.contentEnds;
+    final oldNewlines = before.newlineLengths;
+    final lineCount = oldStarts.length;
+    // The first line changed: the one with the edit's start, or the one
+    // before when its lone CR could take an inserted LF.
+    var first = _lineAt(oldStarts, start);
+    if (first > 0 && oldStarts[first] == start && oldNewlines[first - 1] == 1) {
+      if (old.codeUnitAt(start - 1) == 0x0D) first--;
+    }
+    // The first line whose content goes on after the edit's end: its own
+    // newline and every line after it are as they were, moved by delta.
+    var last = _lineAt(oldStarts, end);
+    while (last < lineCount && oldEnds[last] <= end) {
+      last++;
+    }
+    final scanEnd = last < lineCount ? oldEnds[last] + delta : text.length;
+    final starts = <int>[];
+    final ends = <int>[];
+    final newlines = <int>[];
+    var offset = oldStarts[first];
+    while (offset < scanEnd) {
+      final unit = text.codeUnitAt(offset);
+      if (unit == 0x0D || unit == 0x0A) {
+        final length =
+            unit == 0x0D &&
+                offset + 1 < text.length &&
+                text.codeUnitAt(offset + 1) == 0x0A
+            ? 2
+            : 1;
+        ends.add(offset);
+        newlines.add(length);
+        offset += length;
+        starts.add(offset);
+      } else {
+        offset++;
+      }
+    }
+    final tail = last < lineCount ? lineCount - last - 1 : 0;
+    final count = first + 1 + starts.length + tail;
+    final newStarts = Int32List(count);
+    final newEnds = Int32List(count);
+    final newNewlines = Int32List(count);
+    newStarts.setRange(0, first + 1, oldStarts);
+    newEnds.setRange(0, first, oldEnds);
+    newNewlines.setRange(0, first, oldNewlines);
+    var line = first;
+    for (var i = 0; i < starts.length; i++) {
+      newEnds[line] = ends[i];
+      newNewlines[line] = newlines[i];
+      newStarts[++line] = starts[i];
+    }
+    // The line the scan stopped in ends where it did, with its old newline.
+    newEnds[line] = scanEnd;
+    newNewlines[line] = last < lineCount ? oldNewlines[last] : 0;
+    for (var i = 1; i <= tail; i++) {
+      newStarts[line + i] = oldStarts[last + i] + delta;
+      newEnds[line + i] = oldEnds[last + i] + delta;
+      newNewlines[line + i] = oldNewlines[last + i];
+    }
+    return DocumentSnapshot._(
+      text,
+      _frozen(newStarts),
+      _frozen(newEnds),
+      _frozen(newNewlines),
+      before._editedTo(start, end, inserted.length),
+    );
+  }
+
+  /// [text], [before] with `[start, end)` replaced, scanned whole: for many
+  /// edits at once, [start] and [end] taking in them all.
+  factory DocumentSnapshot.replaced(
+    DocumentSnapshot before,
+    String text,
+    int start,
+    int end,
+  ) {
+    final scanned = DocumentSnapshot(text);
+    return DocumentSnapshot._(
+      text,
+      scanned.lineStarts,
+      scanned.contentEnds,
+      scanned.newlineLengths,
+      before._editedTo(
+        start,
+        end,
+        text.length - (before.text.length - (end - start)),
+      ),
+    );
+  }
+
+  /// The edits [_edits] keeps: enough for whoever has not seen the latest
+  /// few, not to hold on to many.
+  static const _keptEdits = 32;
+  static int _nextId = 0;
+
+  /// What sets this snapshot apart from the snapshots it was edited from.
+  final int _id = _nextId++;
+
+  /// The latest edits that made this snapshot from the ones before it,
+  /// oldest first, each with the id of the snapshot it was made to. Not the
+  /// snapshots themselves, which would keep every text before alive.
+  final List<_Edit> _edits;
+
+  List<_Edit> _editedTo(int start, int end, int length) => [
+    ..._edits.length < _keptEdits
+        ? _edits
+        : _edits.sublist(_edits.length - _keptEdits + 1),
+    (of: _id, start: start, end: end, length: length),
+  ];
+
+  /// How much of their text [old] and [next] share at the start and at the
+  /// end (not overlapping) as far as the edits from one to the other tell,
+  /// without reading the text; null when [next] was not edited from [old]
+  /// recently. Each may be less than what they really share.
+  static (int, int)? knownSharedEnds(
+    DocumentSnapshot old,
+    DocumentSnapshot next,
+  ) {
+    if (identical(old, next)) return (old.text.length, 0);
+    final edits = next._edits;
+    var i = edits.length - 1;
+    while (i >= 0 && edits[i].of != old._id) {
+      i--;
+    }
+    if (i < 0) return null;
+    var length = old.text.length;
+    var prefix = length;
+    var suffix = length;
+    for (; i < edits.length; i++) {
+      final edit = edits[i];
+      if (edit.start < prefix) prefix = edit.start;
+      if (length - edit.end < suffix) suffix = length - edit.end;
+      length += edit.length - (edit.end - edit.start);
+    }
+    return (prefix, suffix);
+  }
+
+  /// How much of their text [old] and [next] share at the start and at the
+  /// end, not overlapping: from their edits when known, else read.
+  static (int, int) sharedEnds(DocumentSnapshot old, DocumentSnapshot next) {
+    final known = knownSharedEnds(old, next);
+    if (known != null) return known;
+    final a = old.text;
+    final b = next.text;
+    final shortest = a.length < b.length ? a.length : b.length;
+    var prefix = 0;
+    while (prefix < shortest && a.codeUnitAt(prefix) == b.codeUnitAt(prefix)) {
+      prefix++;
+    }
+    var suffix = 0;
+    while (suffix < shortest - prefix &&
+        a.codeUnitAt(a.length - 1 - suffix) ==
+            b.codeUnitAt(b.length - 1 - suffix)) {
+      suffix++;
+    }
+    return (prefix, suffix);
+  }
+
+  static List<int> _frozen(Int32List list) => list.asUnmodifiableView();
+
+  /// The index of the line [offset] is in (the last starting at or before it).
+  static int _lineAt(List<int> starts, int offset) {
+    var low = 0;
+    var high = starts.length;
+    while (low < high) {
+      final middle = low + ((high - low) ~/ 2);
+      if (starts[middle] <= offset) {
+        low = middle + 1;
+      } else {
+        high = middle;
+      }
+    }
+    return low - 1;
+  }
+
+  DocumentSnapshot._(
     this.text,
     this.lineStarts,
     this.contentEnds,
-    this.newlineLengths,
-  );
+    this.newlineLengths, [
+    this._edits = const [],
+  ]);
 
   final String text;
 
@@ -68,17 +259,7 @@ class DocumentSnapshot {
     final clamped = offset < 0
         ? 0
         : (offset > text.length ? text.length : offset);
-    var low = 0;
-    var high = lineCount;
-    while (low < high) {
-      final middle = low + ((high - low) ~/ 2);
-      if (lineStarts[middle] <= clamped) {
-        low = middle + 1;
-      } else {
-        high = middle;
-      }
-    }
-    final line = low - 1;
+    final line = _lineAt(lineStarts, clamped);
     final columnOffset = clamped > contentEnds[line]
         ? contentEnds[line]
         : clamped;
@@ -102,3 +283,7 @@ class DocumentSnapshot {
     return start + position.column - 1;
   }
 }
+
+/// An edit of the snapshot with id [of]: `[start, end)` replaced by [length]
+/// code units.
+typedef _Edit = ({int of, int start, int end, int length});

@@ -59,6 +59,8 @@ bool FlutterWindow::OnCreate() {
   // lib/window/window_host.dart).
   app_windows_ = std::make_unique<AppWindows>(messenger, GetHandle());
   SetObserver(app_windows_.get(), 0);
+  // Where it was left at the last quit, as big.
+  app_windows_->PlaceMain();
 
   // Notifications, the taskbar button's count and the tray icon (see
   // lib/notifications/).
@@ -66,11 +68,19 @@ bool FlutterWindow::OnCreate() {
                                            app_windows_.get());
   app_windows_->SetAttention(attention_.get());
 
+  // The stash's shortcut (see lib/stash/), a hot key of this window's.
+  stash_ = std::make_unique<StashChannel>(messenger, GetHandle());
+
+  // The channel build's login window (see lib/channel/account/).
+  login_window_ = std::make_unique<LoginWindow>(messenger, GetHandle());
+
   // Shown with its first frame — unless the app starts in the IDE's windows
   // alone (see AppWindows::MainShownAtLaunch), which show themselves.
   flutter_controller_->engine()->SetNextFrameCallback([this]() {
     if (AppWindows::MainShownAtLaunch()) {
-      this->Show();
+      ::ShowWindow(GetHandle(), app_windows_ != nullptr
+                                    ? app_windows_->MainShowCommand(SW_SHOWNORMAL)
+                                    : SW_SHOWNORMAL);
     } else if (app_windows_ != nullptr) {
       app_windows_->HoldMainBack();
     }
@@ -88,9 +98,15 @@ void FlutterWindow::OnDestroy() {
   // The IDE's windows first: their views are this engine's, which goes with
   // the controller below.
   SetObserver(nullptr, 0);
+  // Moved or resized just before quitting, before it settled.
+  if (app_windows_ != nullptr) {
+    app_windows_->KeepMainFrame();
+  }
   if (attention_ != nullptr) {
     attention_->DetachWindows();
   }
+  stash_ = nullptr;
+  login_window_ = nullptr;
   app_windows_ = nullptr;
   ReleaseView();
 
@@ -128,6 +144,17 @@ LRESULT
 FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
                               WPARAM const wparam,
                               LPARAM const lparam) noexcept {
+  // Work the stash did in the background, to finish here.
+  if (message == StashChannel::kRunMessage) {
+    StashChannel::Run(lparam, stash_ != nullptr);
+    return 0;
+  }
+
+  if (message == WM_HOTKEY && stash_ != nullptr &&
+      stash_->HandleHotkey(wparam)) {
+    return 0;
+  }
+
   if (message == AppWindows::kCloseMessage) {
     if (app_windows_ != nullptr) {
       app_windows_->ClosePendingWindows();

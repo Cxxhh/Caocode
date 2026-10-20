@@ -5,3 +5,6 @@
 # Xcode-related
 **/dgph
 **/xcuserdata/
+
+# A machine's own Xcode settings (see Runner/Configs/AppInfo.xcconfig).
+Runner/Configs/Local.xcconfig

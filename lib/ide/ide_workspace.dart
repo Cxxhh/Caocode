@@ -1,17 +1,21 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show TextSelection;
 import 'package:path/path.dart' as p;
 
 import 'package:bao_editor/monaco/flutter/editor_document_model.dart';
 
 import 'file_service.dart';
+import 'file_views.dart';
 import 'git/git_repository.dart';
+import 'git/scm_host.dart';
 import 'git/repository_scan.dart';
 import 'ide_layout.dart';
 import 'ide_notifications.dart';
 import 'lsp/language_features.dart';
 import 'lsp/lsp_protocol.dart';
+import 'search/ide_search_view.dart' show IdeSearchReplaceBackend;
 
 /// The original side of a diff tab: text at a revision, read again when
 /// the repository changes (VS Code's `git:` documents).
@@ -46,6 +50,7 @@ class IdeDocument {
       readRevision = null,
       diff = null,
       isMedia = false,
+      view = null,
       isUntitled = false;
 
   /// A new file, not saved anywhere yet: [path] is its name alone
@@ -57,11 +62,13 @@ class IdeDocument {
       readRevision = null,
       diff = null,
       isMedia = false,
+      view = null,
       isUntitled = true;
 
   /// An image, shown in VS Code's image preview rather than the text
-  /// editor: it has no text.
-  IdeDocument.media(this.path)
+  /// editor, or a file of a [FileView] ([view], its id), shown as that:
+  /// it has no text.
+  IdeDocument.media(this.path, {this.view})
     : model = EditorDocumentModel(''),
       openError = null,
       label = null,
@@ -78,6 +85,7 @@ class IdeDocument {
       readRevision = null,
       diff = null,
       isMedia = false,
+      view = null,
       isUntitled = false;
 
   /// [path]'s text at a revision (Git's), read-only, titled with [label]
@@ -91,6 +99,7 @@ class IdeDocument {
        openError = null,
        diff = null,
        isMedia = false,
+       view = null,
        isUntitled = false;
 
   /// A diff tab: [diff]'s original against [model], [path]'s file (then
@@ -104,6 +113,7 @@ class IdeDocument {
     this.readRevision,
   }) : openError = null,
        isMedia = false,
+       view = null,
        isUntitled = false;
 
   /// [path]'s own tab of the [model] its diff tab has.
@@ -113,6 +123,7 @@ class IdeDocument {
       readRevision = null,
       diff = null,
       isMedia = false,
+      view = null,
       isUntitled = false;
 
   /// [document], new, saved to [path]: the same text and history.
@@ -123,6 +134,7 @@ class IdeDocument {
       readRevision = null,
       diff = null,
       isMedia = false,
+      view = null,
       isUntitled = false;
 
   /// [document] at [path], after its file moved: the same text, history
@@ -134,6 +146,7 @@ class IdeDocument {
       readRevision = document.readRevision,
       diff = document.diff,
       isMedia = document.isMedia,
+      view = document.view,
       isUntitled = document.isUntitled;
 
   final String path;
@@ -154,8 +167,12 @@ class IdeDocument {
   /// The original side, for a diff tab.
   final IdeDiffOriginal? diff;
 
-  /// Whether the tab is the image preview's ([IdeDocument.media]).
+  /// Whether the tab is the image preview's, or a [FileView]'s
+  /// ([IdeDocument.media]).
   final bool isMedia;
+
+  /// The [FileView] the tab shows its file in (its id), if any.
+  final String? view;
 
   /// Whether it is a new file not saved yet ([IdeDocument.untitled]).
   final bool isUntitled;
@@ -163,6 +180,11 @@ class IdeDocument {
   /// Whether its file was deleted while open: the tab says so, and saving
   /// makes the file again (VS Code's orphaned editors).
   bool deleted = false;
+
+  /// Where its carets were when its editor was last let go (a preview, an
+  /// image or a placeholder shown in its place): given back when it is
+  /// shown again, as upstream keeps an editor's view state.
+  List<TextSelection>? selections;
 
   /// Tells the tab apart from [path]'s others.
   String get key => label == null ? path : '$path\u0000$label';
@@ -191,7 +213,8 @@ class IdeDocument {
 }
 
 /// Open files belong to the IDE pane, not to any one agent conversation.
-class IdeWorkspace extends ChangeNotifier {
+class IdeWorkspace extends ChangeNotifier
+    implements IdeSearchReplaceBackend, IdeScmHost {
   IdeWorkspace(
     this.root, {
     IdeFileService? files,
@@ -221,6 +244,7 @@ class IdeWorkspace extends ChangeNotifier {
 
   /// The project's folder; a multi-folder workspace's own (empty) folder
   /// when it has [roots].
+  @override
   final String root;
 
   /// Path syntax of the project's host, with relative paths based at [root]
@@ -327,6 +351,7 @@ class IdeWorkspace extends ChangeNotifier {
   /// one folder's, its own and those found in its subfolders, when there
   /// are any (none otherwise: [git] is its one). A folder that is not a
   /// repository is left out when ones were found in it.
+  @override
   List<(String root, IdeGitRepository git)> get repositories => [
     for (final folder in isMultiRoot ? _roots : [root])
       if (isMultiRoot || (_found[folder]?.isNotEmpty ?? false))
@@ -339,8 +364,27 @@ class IdeWorkspace extends ChangeNotifier {
 
   IdeGitRepository? _activeRepository;
 
-  /// The repository Source Control, the status bar and the timeline show:
+  /// Repositories whose groups are folded in CHANGES, by root (#76).
+  @override
+  final Set<String> scmCollapsedRepositories = {};
+
+  /// Appends [lines] to the file at [path]: in its editor, saved, when it
+  /// is open; else on disk.
+  @override
+  Future<void> appendLines(String path, String lines) async {
+    final normalized = paths.normalize(path);
+    final doc = _documents.where((d) => d.path == normalized).firstOrNull;
+    if (doc == null || doc.openError != null) {
+      await ideAppendLinesToFile(files, path, lines);
+      return;
+    }
+    edit(doc.path, ideAppendLines(doc.text, lines));
+    await save(doc);
+  }
+
+  /// The repository SCm, the status bar and the timeline show:
   /// the one picked of a workspace's (its first until one is).
+  @override
   void selectRepository(IdeGitRepository repository) {
     if (identical(repository, _activeRepository)) return;
     _activeRepository = repository;
@@ -394,6 +438,8 @@ class IdeWorkspace extends ChangeNotifier {
   /// empty window, [root] then the home folder), there is no explorer
   /// tree, and Search and Quick Open cover the open files alone.
   final bool hasFolder;
+
+  @override
   final IdeFileService files;
 
   /// Language servers for this workspace's documents; null for none.
@@ -407,11 +453,17 @@ class IdeWorkspace extends ChangeNotifier {
   /// Control and the timeline; null for none. Disposed with the workspace.
   /// A multi-folder workspace's is the one picked of its [repositories], as
   /// is a folder's with repositories in its subfolders.
+  @override
   IdeGitRepository? get git =>
       isMultiRoot || (_found[root]?.isNotEmpty ?? false)
       ? _activeRepository ?? repositories.firstOrNull?.$2
       : _git;
   final IdeGitRepository? _git;
+
+  /// Tells the project's Git its files changed, after a search replaced
+  /// some ([IdeSearchReplaceBackend.refreshGit]).
+  @override
+  void refreshGit() => git?.scheduleRefresh();
 
   LanguageDocumentSync? get _sync => switch (languages) {
     final LanguageDocumentSync sync => sync,
@@ -446,6 +498,7 @@ class IdeWorkspace extends ChangeNotifier {
   int _selection = 0;
   bool _disposed = false;
 
+  @override
   List<IdeDocument> get documents => List.unmodifiable(_documents);
   IdeDocument? get active =>
       _documents.where((d) => d.key == _activeKey).firstOrNull;
@@ -480,6 +533,8 @@ class IdeWorkspace extends ChangeNotifier {
     if (_fileModel(path) case final model?) {
       // Its diff tab's: the same text and history.
       doc = IdeDocument._shared(path, model);
+    } else if (FileViews.of(path) case final view?) {
+      doc = IdeDocument.media(path, view: view.id);
     } else if (ideIsImagePath(path)) {
       doc = IdeDocument.media(path);
     } else {
@@ -533,7 +588,9 @@ class IdeWorkspace extends ChangeNotifier {
       final normal = this.paths.normalize(this.paths.absolute(path));
       if (_documents.any((d) => d.key == normal)) continue;
       final IdeDocument doc;
-      if (ideIsImagePath(normal)) {
+      if (FileViews.of(normal) case final view?) {
+        doc = IdeDocument.media(normal, view: view.id);
+      } else if (ideIsImagePath(normal)) {
         doc = IdeDocument.media(normal);
       } else if (_fileModel(normal) case final model?) {
         doc = IdeDocument._shared(normal, model);
@@ -704,6 +761,7 @@ class IdeWorkspace extends ChangeNotifier {
   /// changed their files (a discard, an undone commit, an agent's edit), as
   /// VS Code reloads an editor whose file changed on disk. Documents with
   /// unsaved changes keep them; those whose file is gone are [deleted].
+  @override
   Future<void> reload(Iterable<String> paths) async {
     final wanted = {for (final path in paths) this.paths.normalize(path)};
     var changed = false;
@@ -823,6 +881,7 @@ class IdeWorkspace extends ChangeNotifier {
     notifyListeners();
   }
 
+  @override
   void edit(String path, String text) {
     if (_disposed) return;
     final doc = _fileDocument(path);
@@ -839,6 +898,37 @@ class IdeWorkspace extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Publishes an edit typed into an open document's editor: [edits]
+  /// hears of every one, this workspace's own listeners (the whole
+  /// workbench rebuilds for them) only of those that change what they show
+  /// of it, i.e. the document going dirty or clean again.
+  void notifyDocumentEdited(IdeDocument doc) {
+    if (_disposed || !_documents.contains(doc)) return;
+    final dirty = doc.dirty;
+    if (_dirtyShown[doc] != dirty) {
+      notifyListeners();
+      _dirtyShown[doc] = dirty;
+    }
+    _edits.notifyListeners();
+  }
+
+  /// Every edit [notifyDocumentEdited] publishes, whether or not this
+  /// workspace notifies its own listeners of it.
+  Listenable get edits => _edits;
+  final _EditsNotifier _edits = _EditsNotifier();
+
+  /// Whether each document was dirty when last edited, since this
+  /// workspace last notified: an edit that leaves it so changes nothing
+  /// its listeners show.
+  final Map<IdeDocument, bool> _dirtyShown = {};
+
+  @override
+  void notifyListeners() {
+    // Whatever changed (a save, a revert), the next edit is told again.
+    _dirtyShown.clear();
+    super.notifyListeners();
+  }
+
   void applyEdits(String path, List<EditorDocumentEdit> edits) {
     if (_disposed) return;
     final doc = _fileDocument(path);
@@ -851,6 +941,8 @@ class IdeWorkspace extends ChangeNotifier {
   void _startSync(IdeDocument doc) {
     final sync = _sync;
     if (sync == null || !doc.isFile || _syncing.containsKey(doc.model)) return;
+    // Lent to [formatOutside]: the tab's text from now on.
+    if (_lent.remove(doc.path)) sync.closeDocument(doc.path);
     sync.openDocument(doc.path, doc.text, version: doc.model.version);
     _syncing[doc.model] = doc.model.changes.listen(
       (event) => sync.changeDocument(
@@ -880,6 +972,122 @@ class IdeWorkspace extends ChangeNotifier {
     if (subscription == null) return;
     unawaited(subscription.cancel());
     _sync?.closeDocument(doc.path);
+  }
+
+  /// The files [formatOutside] has open with the language servers, no tab
+  /// having them.
+  final Set<String> _lent = {};
+
+  /// How long [formatOutside] waits for the servers of a file to start.
+  static const formatStartTimeout = Duration(seconds: 20);
+
+  /// Formats [text], [path]'s as edited outside the IDE (beside the chat),
+  /// with this workspace's language servers: the file opened with them
+  /// meanwhile, unless a tab has it (with that text), and its servers
+  /// waited for. [IdeFormatOutcome.edits] null where none formats it.
+  Future<IdeFormatOutcome> formatOutside(
+    String path,
+    String text, {
+    LspRange? range,
+    required int tabSize,
+    required bool insertSpaces,
+  }) {
+    path = paths.normalize(paths.absolute(path));
+    // One of a file at a time: the servers have one text of it, lent by the
+    // one under way; the next lends its own once that is given back.
+    final previous = _formatting[path] ?? Future<void>.value();
+    final next = previous.then(
+      (_) => _formatOutside(
+        path,
+        text,
+        range: range,
+        tabSize: tabSize,
+        insertSpaces: insertSpaces,
+      ),
+    );
+    final done = next.then<void>((_) {}, onError: (Object _) {});
+    _formatting[path] = done;
+    unawaited(
+      done.whenComplete(() {
+        if (identical(_formatting[path], done)) _formatting.remove(path);
+      }),
+    );
+    return next;
+  }
+
+  /// Each file's [formatOutside] under way, the next waiting for it.
+  final Map<String, Future<void>> _formatting = {};
+
+  Future<IdeFormatOutcome> _formatOutside(
+    String path,
+    String text, {
+    LspRange? range,
+    required int tabSize,
+    required bool insertSpaces,
+  }) async {
+    final languages = this.languages;
+    final sync = _sync;
+    if (_disposed || languages == null || sync == null) {
+      return const IdeFormatOutcome(null);
+    }
+    final request = range == null
+        ? LanguageRequest.format
+        : LanguageRequest.rangeFormat;
+    bool open() => _syncing.containsKey(_fileModel(path));
+    var lent = false;
+    if (open()) {
+      // Its tab's text is what the servers have.
+      if (_fileModel(path)!.snapshot.text != text) {
+        return const IdeFormatOutcome(null);
+      }
+    } else if (!_lent.contains(path)) {
+      sync.openDocument(path, text);
+      _lent.add(path);
+      lent = true;
+    }
+    try {
+      final started = DateTime.now();
+      while (!languages.supports(path, request)) {
+        final statuses = languages.statusFor(path);
+        final waited = DateTime.now().difference(started);
+        final starting = statuses.isEmpty
+            // Its servers are matched to it later on another machine.
+            ? waited < const Duration(seconds: 1)
+            : statuses.any(
+                (status) => switch (status.state) {
+                  LanguageServerState.idle ||
+                  LanguageServerState.starting ||
+                  LanguageServerState.restarting ||
+                  LanguageServerState.installing => true,
+                  _ => false,
+                },
+              );
+        if (!starting || waited > formatStartTimeout || _disposed) {
+          final missing = statuses
+              .where((status) => status.installable)
+              .firstOrNull;
+          return IdeFormatOutcome(
+            null,
+            missing: missing?.serverId,
+            install: missing == null
+                ? null
+                : () => languages.install(missing.serverId, path: path),
+          );
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      }
+      final edits = await languages.format(
+        path,
+        range: range,
+        tabSize: tabSize,
+        insertSpaces: insertSpaces,
+      );
+      // A tab opened it meanwhile, with its own text.
+      if (lent && !_lent.contains(path)) return const IdeFormatOutcome(null);
+      return IdeFormatOutcome(edits);
+    } finally {
+      if (lent && _lent.remove(path) && !_disposed) sync.closeDocument(path);
+    }
   }
 
   /// Disposes [doc], but not the model another tab still has.
@@ -970,6 +1178,7 @@ class IdeWorkspace extends ChangeNotifier {
     return saved;
   }
 
+  @override
   Future<void> save(IdeDocument doc) {
     if (doc.isUntitled) return saveAs(doc);
     final text = doc.text;
@@ -1045,6 +1254,26 @@ class IdeWorkspace extends ChangeNotifier {
     }
     layout.dispose();
     notifications.dispose();
+    _edits.dispose();
     super.dispose();
   }
+}
+
+class _EditsNotifier extends ChangeNotifier {
+  @override
+  void notifyListeners() => super.notifyListeners();
+}
+
+/// What [IdeWorkspace.formatOutside] came to.
+@immutable
+class IdeFormatOutcome {
+  const IdeFormatOutcome(this.edits, {this.missing, this.install});
+
+  /// The edits that format the text (none where it is formatted already);
+  /// null where no language server formats it.
+  final List<LspTextEdit>? edits;
+
+  /// A server that would, not installed yet, and what installs it.
+  final String? missing;
+  final Future<void> Function()? install;
 }

@@ -17,6 +17,13 @@
 - `import.html`, `import.js`: a site's one-click import of an upstream,
   handed on to the app (`caocode://provider/import`); `upstreams.html`, how
   a site adds it. See `docs/upstream-import.md`.
+- `site.js` keeps, on any page, where a visitor came from (`?abc` after
+  any page's address, the site linking here, or direct); `head.js`,
+  `activate.html`, `activate.js`, `channels.json` and `channels/`: the
+  channels listed (lib/channel/). A channel asks to be listed with the
+  `channel` issue template.
 - `shots/`: the screenshots on the page.
 - `sounds/`: the notification sound the page plays.
+- `qr/`: the phone cards' QR codes, made by
+  `dart run tool/make_download_qr.dart`.
 - Copy marked `<mark class="todo">` is still to be written.

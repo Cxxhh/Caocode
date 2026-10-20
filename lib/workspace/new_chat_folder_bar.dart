@@ -11,7 +11,6 @@ import '../chat/widgets/hover_builder.dart';
 import '../icons/project_icon_view.dart';
 import '../kernel/kernel_types.dart';
 import '../l10n/l10n.dart';
-import '../platform/app_platform.dart';
 import '../remote/remote_location.dart';
 import '../platform/desktop_dir.dart'
     if (dart.library.io) '../platform/desktop_dir_io.dart';
@@ -232,9 +231,7 @@ class NewChatFolderBar extends StatelessWidget {
         ),
     ];
     final selected = current.path == desktop ? noFolder! : option(current);
-    final fileManager = AppPlatform.isWindows
-        ? l10n.workspaceFileExplorer
-        : l10n.workspaceFinder;
+    final fileManager = l10n.fileManager;
     return Row(
       children: [
         Flexible(

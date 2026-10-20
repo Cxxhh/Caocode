@@ -1,5 +1,6 @@
 import 'dart:ui' show PointerDeviceKind;
 
+import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -330,6 +331,217 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       await settleAnimations(tester);
       expect(readTip, findsNothing);
+    });
+
+    testWidgets('wheel over selectable tooltip scrolls its source list', (
+      tester,
+    ) async {
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ListView(
+              controller: controller,
+              children: [
+                const SizedBox(height: 100),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: HoverTooltip(
+                    content: (_) => const Text('Full path in the tooltip'),
+                    child: const SizedBox(
+                      width: 200,
+                      height: 32,
+                      child: Text('path'),
+                    ),
+                  ),
+                ),
+                for (var i = 0; i < 40; i++)
+                  SizedBox(height: 32, child: Text('$i')),
+              ],
+            ),
+          ),
+        ),
+      );
+      mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: Offset.zero);
+      addTearDown(mouse.removePointer);
+      await hover(tester, tester.getCenter(find.text('path')));
+      await tester.pump(const Duration(milliseconds: 600));
+      final tip = find.text('Full path in the tooltip');
+      expect(tip, findsOneWidget);
+      expect(
+        find.ancestor(of: tip, matching: find.byType(SelectionArea)),
+        findsOneWidget,
+      );
+      final at = tester.getCenter(tip);
+      await hover(tester, at);
+      await tester.pump(const Duration(seconds: 1));
+      expect(tip, findsOneWidget);
+
+      await tester.sendEventToBinding(
+        PointerScrollEvent(position: at, scrollDelta: const Offset(0, 120)),
+      );
+      await tester.pump();
+      expect(controller.offset, greaterThan(0));
+    });
+
+    testWidgets(
+      'trackpad pan over selectable tooltip scrolls its source list',
+      (tester) async {
+        final controller = ScrollController();
+        addTearDown(controller.dispose);
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ListView(
+                controller: controller,
+                children: [
+                  const SizedBox(height: 120),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: HoverTooltip(
+                      content: (_) => const Text('Trackpad tooltip'),
+                      child: const SizedBox(
+                        width: 200,
+                        height: 32,
+                        child: Text('anchor'),
+                      ),
+                    ),
+                  ),
+                  for (var i = 0; i < 40; i++)
+                    SizedBox(height: 32, child: Text('$i')),
+                ],
+              ),
+            ),
+          ),
+        );
+        mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+        await mouse.addPointer(location: Offset.zero);
+        addTearDown(mouse.removePointer);
+        await hover(tester, tester.getCenter(find.text('anchor')));
+        await tester.pump(const Duration(milliseconds: 600));
+        final at = tester.getCenter(find.text('Trackpad tooltip'));
+        await hover(tester, at);
+        final trackpad = TestPointer(7, PointerDeviceKind.trackpad);
+        await tester.sendEventToBinding(trackpad.panZoomStart(at));
+        for (var i = 1; i <= 3; i++) {
+          await tester.sendEventToBinding(
+            trackpad.panZoomUpdate(at, pan: Offset(0, -16.0 * i)),
+          );
+          await tester.pump(const Duration(milliseconds: 16));
+        }
+        await tester.sendEventToBinding(trackpad.panZoomEnd());
+        expect(controller.offset, greaterThan(0));
+      },
+    );
+
+    testWidgets('horizontal wheel over tooltip scrolls its source', (
+      tester,
+    ) async {
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              controller: controller,
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  const SizedBox(width: 120),
+                  HoverTooltip(
+                    content: (_) => const Text('Horizontal tooltip'),
+                    child: const SizedBox(
+                      width: 100,
+                      height: 32,
+                      child: Text('anchor'),
+                    ),
+                  ),
+                  const SizedBox(width: 1200),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: Offset.zero);
+      addTearDown(mouse.removePointer);
+      await hover(tester, tester.getCenter(find.text('anchor')));
+      await tester.pump(const Duration(milliseconds: 600));
+      final tip = find.text('Horizontal tooltip');
+      final at = tester.getCenter(tip);
+      await hover(tester, at);
+      await tester.sendEventToBinding(
+        PointerScrollEvent(position: at, scrollDelta: const Offset(80, 0)),
+      );
+      await tester.pump();
+      expect(controller.offset, greaterThan(0));
+    });
+
+    testWidgets('tooltip content scrolls before its source list', (
+      tester,
+    ) async {
+      final outer = ScrollController();
+      final inner = ScrollController();
+      addTearDown(outer.dispose);
+      addTearDown(inner.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ListView(
+              controller: outer,
+              children: [
+                const SizedBox(height: 150),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: HoverTooltip(
+                    content: (_) => SizedBox(
+                      width: 180,
+                      height: 80,
+                      child: ListView(
+                        controller: inner,
+                        children: [
+                          for (var i = 0; i < 20; i++)
+                            SizedBox(height: 25, child: Text('tip line $i')),
+                        ],
+                      ),
+                    ),
+                    child: const SizedBox(
+                      width: 180,
+                      height: 32,
+                      child: Text('anchor'),
+                    ),
+                  ),
+                ),
+                for (var i = 0; i < 40; i++)
+                  SizedBox(height: 32, child: Text('$i')),
+              ],
+            ),
+          ),
+        ),
+      );
+      mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: Offset.zero);
+      addTearDown(mouse.removePointer);
+      await hover(tester, tester.getCenter(find.text('anchor')));
+      await tester.pump(const Duration(milliseconds: 600));
+      final at = tester.getCenter(find.text('tip line 0'));
+      await hover(tester, at);
+      await tester.sendEventToBinding(
+        PointerScrollEvent(position: at, scrollDelta: const Offset(0, 50)),
+      );
+      await tester.pump();
+      expect(inner.offset, greaterThan(0));
+      expect(outer.offset, 0);
+      inner.jumpTo(inner.position.maxScrollExtent);
+      await tester.pump();
+      await tester.sendEventToBinding(
+        PointerScrollEvent(position: at, scrollDelta: const Offset(0, 50)),
+      );
+      await tester.pump();
+      expect(outer.offset, greaterThan(0));
     });
 
     testWidgets('moves along a row of items without delay, one at a time', (

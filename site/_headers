@@ -2,9 +2,11 @@
 # (https://developers.cloudflare.com/pages/configuration/headers/).
 
 # Inline style attributes only for /upstreams' sample buttons, which carry
-# their own style to be copied.
+# their own style to be copied. Cloudflare Web Analytics puts its beacon in
+# each page on the way out: its script, and where it reports. Any site may
+# show the pages in a frame, but for /import and /activate (below).
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self'; media-src 'self'; connect-src 'self' https://dl.caocode.dev; frame-ancestors 'none'; base-uri 'self'; form-action 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self'; media-src 'self'; connect-src 'self' https://dl.caocode.dev https://stats.caocode.dev https://cloudflareinsights.com; frame-ancestors *; base-uri 'self'; form-action 'none'
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
@@ -31,14 +33,33 @@
 /featured/*
   Cache-Control: public, max-age=300
 
+# The channels' editions (site.js): a change shows
+# within minutes.
+/channels.json
+  Cache-Control: public, max-age=300
+
 # Not part of the site.
 /README.md
   X-Robots-Tag: noindex
 
 # The one-click import (import.js): what it reads is the visitor's own.
+# Never in another site's frame, to be clicked through unseen: a second
+# policy, enforced with the first.
 /import
   Cache-Control: no-store
   X-Robots-Tag: noindex
+  Content-Security-Policy: frame-ancestors 'none'
 /zh/import
   Cache-Control: no-store
   X-Robots-Tag: noindex
+  Content-Security-Policy: frame-ancestors 'none'
+
+# The channel build's first start (activate.js); not in a frame either.
+/activate
+  Cache-Control: no-store
+  X-Robots-Tag: noindex
+  Content-Security-Policy: frame-ancestors 'none'
+/zh/activate
+  Cache-Control: no-store
+  X-Robots-Tag: noindex
+  Content-Security-Policy: frame-ancestors 'none'

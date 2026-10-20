@@ -61,7 +61,13 @@ enum MasonBinKind {
 /// One entry of the package's `bin`: the file to link, relative to the
 /// package directory.
 class MasonBin {
-  const MasonBin(this.kind, this.path, {this.runtime, this.runtimeArgs});
+  const MasonBin(
+    this.kind,
+    this.path, {
+    this.runtime,
+    this.runtimeArgs,
+    this.launcher,
+  });
 
   final MasonBinKind kind;
   final String path;
@@ -70,6 +76,10 @@ class MasonBin {
   /// path inside the package (a venv's python) when it starts with `./`.
   final String? runtime;
   final List<String>? runtimeArgs;
+
+  /// A wrapper of the IDE's own in place of mason's link (see
+  /// [MasonInstallPlan.of]): `jdtls`, run with java rather than Python.
+  final String? launcher;
 
   @override
   String toString() =>
@@ -219,6 +229,16 @@ class MasonInstallPlan {
         );
       }
       bins[key] = _bin(package.name, expanded, platform);
+    }
+    // Its bin is a Python script starting java: run java directly, not to
+    // need python3 (see jdtls_launcher.dart).
+    if (package.name == 'jdtls' && bins.containsKey('jdtls')) {
+      bins['jdtls'] = const MasonBin(
+        MasonBinKind.wrapped,
+        '',
+        runtime: 'java',
+        launcher: 'jdtls',
+      );
     }
     return MasonInstallPlan(
       package: package,

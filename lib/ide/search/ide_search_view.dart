@@ -26,12 +26,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 
+import '../../base/smooth_scroll.dart';
 import '../../keybindings/keybinding_service.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/codicons.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/material_file_icons.dart';
 import '../../theme/workbench_theme.dart';
+import '../file_service.dart' show IdeFileService;
 import '../ide_commands.dart' show ideWithKeybinding;
 import '../ide_dialog.dart';
 import '../ide_hover.dart';
@@ -378,17 +380,50 @@ Color _selectedForeground({required bool focused}) {
       colors['sideBar.foreground'];
 }
 
+/// What replacing needs of a project: its open documents and files, and
+/// how to write them. The IDE's [IdeWorkspace] is one; a host that offers
+/// searching alone (the chat's side panel) passes none, and the Replace
+/// inputs and buttons are not shown.
+abstract interface class IdeSearchReplaceBackend {
+  /// The project's open documents, whose unsaved text is what a replace
+  /// works on.
+  List<IdeDocument> get documents;
+
+  /// The project's files, read and written.
+  IdeFileService get files;
+
+  /// Replaces the open document at [path]'s text (in the editor).
+  void edit(String path, String text);
+
+  /// Writes [document] out.
+  Future<void> save(IdeDocument document);
+
+  /// Tells the project's Git the files changed.
+  void refreshGit();
+}
+
 class IdeSearchView extends StatefulWidget {
   const IdeSearchView({
     super.key,
     required this.session,
-    required this.workspace,
+    required this.root,
     required this.onOpen,
+    this.replaceBackend,
+    this.onEscape,
     this.onError,
+    this.titleActions = const [],
+    this.titleBorder,
+    this.background,
   });
 
   final IdeSearchSession session;
-  final IdeWorkspace workspace;
+
+  /// The folder searched.
+  final String root;
+
+  /// Where replacing writes; null where only searching is offered (the
+  /// side panel's), and the Replace inputs and buttons show not at all.
+  final IdeSearchReplaceBackend? replaceBackend;
 
   /// Opens a match: its file with [range] selected; [focusEditor] when
   /// double-clicked.
@@ -398,7 +433,23 @@ class IdeSearchView extends StatefulWidget {
     required bool focusEditor,
   })
   onOpen;
+
+  /// Escape in the search input: what the host does with it (the side
+  /// panel closes the search and brings its tree back; the IDE leaves the
+  /// workbench's own command to it, and gives none).
+  final VoidCallback? onEscape;
   final ValueChanged<Object>? onError;
+
+  /// The host's actions in the title, before the view's own (the side
+  /// panel's, back to its tree).
+  final List<Widget> titleActions;
+
+  /// The line under the title, beside an editor's tabs (see
+  /// [IdeViewTitle.border]).
+  final Color? titleBorder;
+
+  /// Behind it, the side bar's where not given.
+  final Color? background;
 
   @override
   State<IdeSearchView> createState() => IdeSearchViewState();
@@ -414,13 +465,18 @@ class IdeSearchViewState extends State<IdeSearchView>
   final FocusNode _includesFocus = FocusNode(debugLabel: 'search include');
   final FocusNode _excludesFocus = FocusNode(debugLabel: 'search exclude');
   final FocusNode _resultsFocus = FocusNode(debugLabel: 'search results');
-  final ScrollController _scroll = ScrollController();
+  final ScrollController _scroll = SmoothScrollController();
 
   /// The selection last scrolled into view.
   (String, IdeTextMatch?)? _revealed;
 
   IdeSearchSession get _session => widget.session;
-  String get _root => widget.workspace.root;
+  String get _root => widget.root;
+
+  /// Whether the Replace inputs and buttons show: only where a host offers
+  /// replacing ([IdeSearchView.replaceBackend]); a searching-alone host
+  /// (the chat's side panel) shows none of them.
+  bool get _replacing => widget.replaceBackend != null && _session.replaceShown;
 
   List<FocusNode> get _focusNodes => [
     _queryFocus,
@@ -547,7 +603,7 @@ class IdeSearchViewState extends State<IdeSearchView>
   /// The search input focused, or the replace input if [replace] and it
   /// shows (upstream `SearchWidget.focus`).
   void _focusSearchWidget({bool replace = false}) {
-    if (replace && _session.replaceShown) {
+    if (replace && _replacing) {
       _focusField(_replaceFocus, _session.replace);
     } else {
       _focusField(_queryFocus, _session.query);
@@ -558,7 +614,7 @@ class IdeSearchViewState extends State<IdeSearchView>
   /// then the results (upstream `focusNextInputBox`).
   void focusNextInputBox() {
     if (_queryFocus.hasFocus) {
-      if (_session.replaceShown) {
+      if (_replacing) {
         _focusSearchWidget(replace: true);
       } else {
         _moveFocusFromSearchOrReplace();
@@ -787,23 +843,23 @@ class IdeSearchViewState extends State<IdeSearchView>
   ) async {
     final regExp = _session.regExp;
     final searched = _session.searched;
-    if (regExp == null || searched == null) return 0;
-    final workspace = widget.workspace;
+    final backend = widget.replaceBackend;
+    if (regExp == null || searched == null || backend == null) return 0;
     var count = 0;
     for (final MapEntry(key: file, value: list) in matches.entries) {
       try {
-        final open = workspace.documents
+        final open = backend.documents
             .where((doc) => doc.path == file.path)
             .firstOrNull;
-        final text = open?.text ?? await workspace.files.read(file.path);
+        final text = open?.text ?? await backend.files.read(file.path);
         final (updated, replaced) = _applyReplace(text, list, regExp);
         if (replaced == 0) continue;
         if (open != null) {
           final wasDirty = open.dirty;
-          workspace.edit(file.path, updated);
-          if (!wasDirty) await workspace.save(open);
+          backend.edit(file.path, updated);
+          if (!wasDirty) await backend.save(open);
         } else {
-          await workspace.files.write(file.path, updated, expectedText: text);
+          await backend.files.write(file.path, updated, expectedText: text);
         }
         count += replaced;
         for (final match in list) {
@@ -814,7 +870,7 @@ class IdeSearchViewState extends State<IdeSearchView>
         widget.onError?.call(error);
       }
     }
-    workspace.git?.scheduleRefresh();
+    backend.refreshGit();
     _session.notify();
     return count;
   }
@@ -892,13 +948,15 @@ class IdeSearchViewState extends State<IdeSearchView>
     // their tooltips (searchActionsTopBar.ts, in `MenuId.ViewTitle`).
     final keys = KeybindingService.instance;
     return ColoredBox(
-      color: AppColors.sidebarSurface,
+      color: widget.background ?? AppColors.sidebarSurface,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           IdeViewTitle(
             context.l10n.searchTitle,
+            border: widget.titleBorder,
             actions: [
+              ...widget.titleActions,
               IdePaneAction(
                 icon: Codicons.refresh,
                 tooltip: keys.titleWithKeybinding(
@@ -970,13 +1028,19 @@ class IdeSearchViewState extends State<IdeSearchView>
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _ToggleReplace(
-              expanded: session.replaceShown,
-              onPressed: () {
-                session.replaceShown = !session.replaceShown;
-                session.notify();
-              },
-            ),
+            // Only where replacing is offered: the searching-alone host
+            // has nothing to toggle, its room kept so that the input lines
+            // up with the include and exclude ones as it does here.
+            if (widget.replaceBackend != null)
+              _ToggleReplace(
+                expanded: _replacing,
+                onPressed: () {
+                  session.replaceShown = !session.replaceShown;
+                  session.notify();
+                },
+              )
+            else
+              const SizedBox(width: _ToggleReplace.width),
             const SizedBox(width: 2),
             Expanded(
               child: Column(
@@ -994,6 +1058,15 @@ class IdeSearchViewState extends State<IdeSearchView>
                         : IdeInputValidation(regExpError),
                     onChanged: (_) => session.searchSoon(_root),
                     onSubmitted: (_) => session.search(_root),
+                    // Escape leaves to the host where it asked for it
+                    // (the side panel's search closes with it); the IDE
+                    // passes none, and its own command handles the key.
+                    shortcuts: widget.onEscape == null
+                        ? const {}
+                        : {
+                            const SingleActivator(LogicalKeyboardKey.escape):
+                                widget.onEscape!,
+                          },
                     toggles: [
                       IdeInputToggle(
                         icon: Codicons.caseSensitive,
@@ -1027,7 +1100,7 @@ class IdeSearchViewState extends State<IdeSearchView>
                       ),
                     ],
                   ),
-                  if (session.replaceShown) ...[
+                  if (_replacing) ...[
                     const SizedBox(height: 6),
                     Row(
                       children: [
@@ -1230,7 +1303,7 @@ class IdeSearchViewState extends State<IdeSearchView>
               expanded: !session.collapsed.contains(file.path),
               selected: selected,
               focused: focused,
-              replacing: session.replaceShown,
+              replacing: _replacing,
               replaceAllKeys: replaceAllKeys,
               dismissKeys: dismissKeys,
               onTap: () {
@@ -1252,7 +1325,7 @@ class IdeSearchViewState extends State<IdeSearchView>
           return _MatchRow(
             key: ValueKey(('match', file.path, match.line, match.start)),
             match: match,
-            replacement: session.replaceShown && regExp != null
+            replacement: _replacing && regExp != null
                 ? ideReplaceString(
                     match,
                     session.replace.text,
@@ -1340,7 +1413,7 @@ class IdeSearchViewState extends State<IdeSearchView>
         ),
       ],
       [
-        if (_session.replaceShown)
+        if (_replacing)
           IdeMenuAction(
             match == null
                 ? context.l10n.searchReplaceAll
@@ -1370,6 +1443,8 @@ class IdeSearchViewState extends State<IdeSearchView>
 class _ToggleReplace extends StatefulWidget {
   const _ToggleReplace({required this.expanded, required this.onPressed});
 
+  static const width = 16.0;
+
   final bool expanded;
   final VoidCallback onPressed;
 
@@ -1395,7 +1470,7 @@ class _ToggleReplaceState extends State<_ToggleReplace> {
           behavior: HitTestBehavior.opaque,
           onTap: widget.onPressed,
           child: Container(
-            width: 16,
+            width: _ToggleReplace.width,
             decoration: BoxDecoration(
               color: _hover ? themeColors['toolbar.hoverBackground'] : null,
               borderRadius: BorderRadius.circular(4),

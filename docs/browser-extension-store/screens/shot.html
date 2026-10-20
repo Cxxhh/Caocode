@@ -1,0 +1,241 @@
+<!doctype html>
+<!-- The Chrome Web Store's pictures of the extension, drawn here and shot
+     by render.sh: ?n=1, 2 or 3 (1280×800), ?n=marquee (1400×560) or ?n=tile
+     (440×280), and
+     &lang=en or zh. -->
+<meta charset="utf-8">
+<style>
+  :root {
+    --bg: #14130f; --panel: #1d1c18; --panel2: #24221d; --line: #34312a;
+    --text: #ece6d8; --muted: #a39b89; --faint: #6f6858;
+    --gold: #ffda7a; --yellow: #f6c344; --green: #7fbf7f; --accent: #e8a33d;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+  body {
+    background: radial-gradient(1100px 700px at 78% 30%, #2a2416 0%, var(--bg) 62%);
+    color: var(--text);
+    font: 16px/1.5 -apple-system, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .stage { position: relative; width: 1280px; height: 800px; padding: 72px 64px; display: flex; gap: 48px; }
+  .copy { width: 400px; flex: none; padding-top: 70px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; color: var(--gold); font-size: 15px; letter-spacing: .02em; margin-bottom: 28px; }
+  h1 { font-size: 44px; line-height: 1.15; font-weight: 700; letter-spacing: -.01em; margin-bottom: 18px; }
+  .lead { color: var(--muted); font-size: 18px; line-height: 1.55; margin-bottom: 30px; }
+  .points { list-style: none; padding: 0; display: grid; gap: 14px; }
+  .points li { display: flex; gap: 12px; align-items: flex-start; font-size: 15.5px; color: var(--text); }
+  .points li i { flex: none; width: 22px; height: 22px; border-radius: 6px; background: #ffda7a22; color: var(--gold); display: grid; place-items: center; font-style: normal; font-size: 13px; margin-top: 1px; }
+  .scene { position: relative; flex: 1; }
+
+  /* The browser. */
+  .browser { position: absolute; background: #f7f6f3; border-radius: 12px; overflow: hidden; box-shadow: 0 30px 80px #0009, 0 0 0 1px #0005; color: #23211c; }
+  .chrome { background: #e3e1dc; padding: 10px 12px 0; }
+  .lights { display: flex; gap: 7px; align-items: center; height: 18px; }
+  .lights b { width: 12px; height: 12px; border-radius: 50%; display: block; }
+  .tabs { display: flex; align-items: flex-end; gap: 4px; margin-top: 8px; }
+  .group { background: var(--yellow); color: #2a2205; font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 8px; margin: 0 4px 8px 2px; }
+  .tab { display: flex; align-items: center; gap: 7px; width: 150px; padding: 8px 12px; font-size: 12.5px; border-radius: 8px 8px 0 0; color: #4b4740; white-space: nowrap; overflow: hidden; }
+  .tab.active { background: #f7f6f3; color: #23211c; }
+  .tab.shared { box-shadow: inset 0 -3px 0 var(--yellow); }
+  .tab.dim { opacity: .45; }
+  .tab .fav { width: 14px; height: 14px; border-radius: 4px; flex: none; }
+  .bar { display: flex; align-items: center; gap: 10px; background: #f7f6f3; padding: 8px 14px; border-bottom: 1px solid #e2dfd8; }
+  .url { flex: 1; background: #ebe9e4; border-radius: 16px; padding: 6px 14px; font-size: 13px; color: #4b4740; }
+  .ext { width: 26px; height: 26px; border-radius: 6px; display: grid; place-items: center; }
+  .page { padding: 26px 34px; }
+  .page h2 { font-size: 26px; margin-bottom: 10px; }
+  .page p { color: #5d584e; font-size: 14.5px; margin-bottom: 8px; }
+  .nav { display: flex; gap: 22px; font-size: 13px; color: #6d675c; margin-bottom: 26px; }
+  .nav b { color: #23211c; }
+  .cta { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; background: #2c4fd8; color: white; font-weight: 600; font-size: 14px; padding: 10px 18px; border-radius: 8px; position: relative; }
+  .card { background: #fff; border: 1px solid #e5e2db; border-radius: 10px; padding: 14px 16px; margin-top: 18px; font: 13px/1.5 ui-monospace, "SF Mono", Menlo, monospace; color: #3b372f; }
+  .debugbar { background: #fdf3d6; color: #6b5310; font-size: 12px; padding: 6px 14px; border-bottom: 1px solid #efe1b5; }
+
+  /* BaoCode. */
+  .bao { position: absolute; background: var(--panel); border-radius: 14px; border: 1px solid var(--line); box-shadow: 0 30px 80px #000a; overflow: hidden; }
+  .bao .head { display: flex; align-items: center; gap: 9px; padding: 12px 16px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+  .bao .head b { color: var(--text); font-weight: 600; }
+  .chat { padding: 16px 18px; display: grid; gap: 11px; }
+  .you { justify-self: end; max-width: 86%; background: #2e2b24; border-radius: 12px; padding: 9px 13px; font-size: 13.5px; }
+  .step { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--muted); }
+  .step svg { flex: none; }
+  .step em { font-style: normal; color: var(--text); }
+  .step .ok { margin-left: auto; color: var(--green); font-size: 12px; }
+  .says { font-size: 13.5px; line-height: 1.55; color: var(--text); }
+  .says code { font: 12.5px ui-monospace, Menlo, monospace; background: #2e2b24; padding: 1px 6px; border-radius: 5px; color: var(--gold); }
+  .shot { border-radius: 8px; overflow: hidden; border: 1px solid var(--line); height: 70px; background: linear-gradient(#f7f6f3 0 18px, #fff 18px); position: relative; }
+  .shot::after { content: ""; position: absolute; left: 12px; top: 30px; width: 60%; height: 7px; border-radius: 4px; background: #d9d5cc; box-shadow: 0 14px 0 -1px #e4e1da; }
+
+  .pointer { position: absolute; width: 22px; height: 28px; }
+  .ring { position: absolute; width: 38px; height: 38px; border-radius: 50%; border: 2px solid var(--accent); box-shadow: 0 0 0 6px #e8a33d33; }
+  .callout { position: absolute; background: var(--gold); color: #241d07; font-weight: 600; font-size: 14px; padding: 8px 13px; border-radius: 10px; box-shadow: 0 10px 30px #0007; white-space: nowrap; }
+  .callout.dark { background: #2a271f; color: var(--text); border: 1px solid #4a4436; font-weight: 500; }
+  .watch { position: absolute; background: var(--panel2); border: 1px solid #5a4d2a; border-radius: 12px; padding: 14px 16px; width: 330px; box-shadow: 0 20px 60px #0009; }
+  .watch .rec { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; margin-bottom: 8px; }
+  .watch .rec b { width: 9px; height: 9px; border-radius: 50%; background: #e5534b; box-shadow: 0 0 0 4px #e5534b33; }
+  .watch .row { font-size: 12.5px; color: var(--muted); padding: 3px 0; }
+  .watch .row em { font-style: normal; color: var(--text); }
+  .watch .btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+  .btn { font-size: 12.5px; padding: 5px 12px; border-radius: 6px; border: 1px solid var(--line); color: var(--text); }
+  .btn.primary { background: var(--gold); color: #241d07; border-color: var(--gold); font-weight: 600; }
+
+  .marquee { width: 1400px; height: 560px; display: flex; align-items: center; justify-content: center; gap: 46px; }
+  .marquee h1 { font-size: 64px; margin: 0 0 12px; }
+  .marquee .lead { font-size: 24px; margin: 0; }
+</style>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="chrome" viewBox="0 0 24 24"><path fill="currentColor" d="M4.139 7.197a.195.195 0 0 0-.336-.002A9.46 9.46 0 0 0 2.5 12c0 4.462 3.076 8.206 7.224 9.226a.2.2 0 0 0 .216-.092l2.466-4.14l.198-.343c.085-.148-.044-.333-.214-.318a4.35 4.35 0 0 1-4.247-2.32l-1.97-3.406z"/><path fill="currentColor" d="m9.566 13.483l-.03-.058l-.074-.127a2.85 2.85 0 1 1 5.039.07l-.037.057l-.07.12a2.848 2.848 0 0 1-4.83-.063"/><path fill="currentColor" d="m15.675 14.329l-1.978 3.428l-2.051 3.445a.194.194 0 0 0 .161.296L12 21.5a9.5 9.5 0 0 0 9.5-9.5a9.5 9.5 0 0 0-.392-2.71a.2.2 0 0 0-.19-.14h-5.193c-.172 0-.267.205-.168.345c.5.708.793 1.572.793 2.505a4.33 4.33 0 0 1-.675 2.329M12 7.65h8.12c.15 0 .245-.158.172-.29A9.5 9.5 0 0 0 12 2.5a9.47 9.47 0 0 0-6.949 3.022a.2.2 0 0 0-.024.236L7.47 9.852l.2.345c.085.148.31.129.382-.027A4.35 4.35 0 0 1 12 7.65"/></symbol>
+  <!-- BaoCode's mark, on its 56×42 grid (tool/make_brand_assets.py). -->
+  <symbol id="mark" viewBox="0 0 56 42"><path fill="currentColor" d="M14 0h28v7H14zM7 7h7v7H7zM42 7h7v7h-7zM0 14h7v21H0zM49 14h7v21h-7zM14 21h8v7h-8zM35 21h8v7h-8zM7 35h42v7H7z"/></symbol>
+  <symbol id="arrow" viewBox="0 0 22 28"><path d="M1 1v21l6-5 4 9 4-2-4-9h8z" fill="#1b1a17" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+</svg>
+<div id="root"></div>
+<script>
+const q = new URLSearchParams(location.search);
+const n = q.get('n') || '1';
+const zh = q.get('lang') === 'zh';
+const t = (en, cn) => (zh ? cn : en);
+const chrome = (size, color) => `<svg width="${size}" height="${size}" style="color:${color}"><use href="#chrome"/></svg>`;
+const mark = (h, color) => `<svg width="${h * 4 / 3}" height="${h}" style="color:${color}"><use href="#mark"/></svg>`;
+const brand = `<div class="brand">${mark(16, 'var(--gold)')}BaoCode${t(' for Chrome', ' 浏览器扩展')}</div>`;
+const points = (items) => `<ul class="points">${items.map(([i, s]) => `<li><i>${i}</i><span>${s}</span></li>`).join('')}</ul>`;
+
+function browser({ x, y, w, h, tabs, url, page, debug = true, ext = false }) {
+  const lights = ['#ff5f57', '#febc2e', '#28c840'].map((c) => `<b style="background:${c}"></b>`).join('');
+  const fav = ['#2c4fd8', '#d9534f', '#3a9d5d', '#8a6bd1'];
+  const strip = tabs.map((tab, i) => {
+    if (tab === 'group') return `<span class="group">BaoCode</span>`;
+    const [name, cls] = tab;
+    return `<div class="tab ${cls}"><span class="fav" style="background:${fav[i % 4]}"></span>${name}</div>`;
+  }).join('');
+  return `<div class="browser" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px">
+    <div class="chrome"><div class="lights">${lights}</div><div class="tabs">${strip}</div></div>
+    <div class="bar"><span style="color:#8d877b">←&nbsp;&nbsp;→&nbsp;&nbsp;↻</span><div class="url">${url}</div>
+      <span class="ext" style="${ext ? 'background:#ffda7a;box-shadow:0 0 0 4px #ffda7a55' : 'background:#1b1a17'}">${mark(11, ext ? '#1b1a17' : '#ffda7a')}</span></div>
+    ${debug ? `<div class="debugbar">${t('“BaoCode” started debugging this browser', '“BaoCode”已开始调试此浏览器')}</div>` : ''}
+    <div class="page">${page}</div></div>`;
+}
+
+const docsPage = `
+  <div class="nav"><b>Acme</b><span>Docs</span><span>Pricing</span><span>Blog</span></div>
+  <h2>${t('Acme CLI', 'Acme CLI')}</h2>
+  <p>${t('Ship from your terminal. Install it, sign in, deploy.', '在终端里发布。安装、登录、部署。')}</p>
+  <p>${t('Works on macOS, Linux and Windows.', '支持 macOS、Linux 和 Windows。')}</p>
+  <span class="cta" id="cta">${t('Get started', '开始使用')} →</span>
+  <div class="card">$ npm install -g acme-cli<br>$ acme login<br>$ acme deploy</div>`;
+
+function step(verb, what, ok = true) {
+  return `<div class="step">${chrome(14, 'var(--muted)')}<span>${verb} <em>${what}</em></span>${ok ? `<span class="ok">✓</span>` : ''}</div>`;
+}
+
+const scenes = {
+  1: () => `
+    <div class="stage">
+      <div class="copy">${brand}
+        <h1>${t('Your agents,<br>in your own browser', '让 agent 用上<br>你自己的浏览器')}</h1>
+        <p class="lead">${t('BaoCode’s agents open pages, read them, click and type in Chrome — signed in as you are.', 'BaoCode 的 agent 在你的 Chrome 里打开网页、阅读、点击和输入，带着你的登录状态。')}</p>
+        ${points([
+          ['✦', t('Asks in plain words, done in your browser', '用一句话交代，在你的浏览器里做完')],
+          ['✦', t('Your sessions, cookies and extensions', '用你的登录、Cookie 和扩展')],
+          ['✦', t('Everything stays on your computer', '数据全部留在你的电脑上')],
+        ])}
+      </div>
+      <div class="scene">
+        ${browser({ x: 40, y: 0, w: 690, h: 520, url: 'docs.acme.dev/cli', page: docsPage,
+          tabs: ['group', [t('Acme CLI', 'Acme CLI'), 'active shared'], [t('Pricing', '价格'), 'shared'], [t('Mail', '邮件'), 'dim']] })}
+        <div class="ring" style="left:162px;top:347px"></div>
+        <svg class="pointer" style="left:186px;top:366px"><use href="#arrow"/></svg>
+        <div class="bao" style="left:330px;top:300px;width:420px">
+          <div class="head">${mark(13, 'var(--gold)')}<b>BaoCode</b><span>· ${t('Agent', 'Agent')}</span></div>
+          <div class="chat">
+            <div class="you">${t('Open the Acme docs and tell me how to install the CLI.', '打开 Acme 的文档，告诉我 CLI 怎么装。')}</div>
+            ${step(t('Opened', '打开了'), 'docs.acme.dev')}
+            ${step(t('Clicked', '点击了'), t('“Get started”', '“开始使用”'))}
+            ${step(t('Read', '读取了'), t('the page', '页面'))}
+            <div class="says">${t('Install it with <code>npm install -g acme-cli</code>, then <code>acme login</code>.', '用 <code>npm install -g acme-cli</code> 安装，再运行 <code>acme login</code> 登录。')}</div>
+          </div>
+        </div>
+      </div>
+    </div>`,
+  2: () => `
+    <div class="stage">
+      <div class="copy">${brand}
+        <h1>${t('Only the tabs<br>you share', '只用你<br>共享的标签页')}</h1>
+        <p class="lead">${t('Agents work in the yellow BaoCode tab group alone. Your other tabs stay yours.', 'agent 只在黄色的「BaoCode」标签页分组里工作，其他标签页仍然只属于你。')}</p>
+        ${points([
+          ['1', t('An agent opens its pages in the group', 'agent 打开的网页都在这个分组里')],
+          ['2', t('Share any tab with the toolbar button', '用工具栏按钮共享任意标签页')],
+          ['3', t('Drag a tab out, and it’s yours again', '把标签页拖出分组，它就回到你手里')],
+        ])}
+      </div>
+      <div class="scene">
+        ${browser({ x: 30, y: 60, w: 710, h: 560, url: 'docs.acme.dev/cli', page: docsPage, ext: true,
+          tabs: ['group', [t('Acme CLI', 'Acme CLI'), 'active shared'], [t('Pricing', '价格'), 'shared'], [t('Mail', '邮件'), 'dim'], [t('Bank', '网银'), 'dim']] })}
+        <div class="callout" style="left:40px;top:6px">↓ ${t('Agents work here only', 'agent 只在这里工作')}</div>
+        <div class="callout dark" style="left:420px;top:6px">${t('Not shared: never touched', '没共享：碰都不会碰')} ↓</div>
+        <div class="callout" style="right:-8px;top:180px">${t('Share this tab', '共享这个标签页')} ↑</div>
+      </div>
+    </div>`,
+  3: () => `
+    <div class="stage">
+      <div class="copy">${brand}
+        <h1>${t('Watch it work,<br>show it once', '看着它操作，<br>演示一遍就会')}</h1>
+        <p class="lead">${t('BaoCode’s side panel shows the page live as the agent uses it. Or let it watch you, and it learns each step.', 'BaoCode 的侧边栏实时显示 agent 正在用的网页。也可以让它看着你操作，记下你的每一步。')}</p>
+        ${points([
+          ['◉', t('Live view of the shared tab', '共享标签页的实时画面')],
+          ['✎', t('Take over any time, right there', '随时就地接手操作')],
+          ['●', t('Recorded steps, passwords never kept', '记录下的步骤，绝不记录密码')],
+        ])}
+      </div>
+      <div class="scene">
+        <div class="bao" style="left:0;top:20px;width:760px;height:560px">
+          <div class="head">${mark(13, 'var(--gold)')}<b>BaoCode</b><span style="margin-left:auto">${t('Browser', '浏览器')}</span></div>
+          <div style="display:flex;height:100%">
+            <div class="chat" style="width:330px;align-content:start;border-right:1px solid var(--line)">
+              <div class="you">${t('Reproduce the checkout bug I showed you.', '复现一下我刚才演示的结算 bug。')}</div>
+              ${step(t('Watched', '看了'), t('you · 4 steps', '你的操作 · 4 步'))}
+              ${step(t('Went to', '前往'), 'shop.acme.dev/cart')}
+              ${step(t('Clicked', '点击了'), t('“Checkout”', '“去结算”'))}
+              ${step(t('Read', '读取了'), t('the console', '控制台'))}
+              <div class="says">${t('Checkout fails with <code>TypeError: total is undefined</code> when the cart has a coupon.', '购物车带优惠券时结算报错：<code>TypeError: total is undefined</code>。')}</div>
+            </div>
+            <div style="flex:1;padding:14px;position:relative">
+              <div style="font-size:12px;color:var(--muted);margin-bottom:8px">shop.acme.dev/cart</div>
+              <div style="background:#fff;border-radius:8px;height:400px;color:#23211c;padding:20px 22px;position:relative">
+                <div style="font-weight:700;font-size:18px;margin-bottom:14px">${t('Your cart', '购物车')}</div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px solid #eee"><span>${t('Desk lamp', '台灯')}</span><span>$48.00</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px solid #eee"><span>${t('Coupon SAVE10', '优惠券 SAVE10')}</span><span>−$4.80</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;padding:12px 0"><span>${t('Total', '合计')}</span><span>—</span></div>
+                <span class="cta" style="background:#1f7a4d">${t('Checkout', '去结算')}</span>
+                <div class="ring" style="left:52px;top:196px"></div>
+                <svg class="pointer" style="left:76px;top:215px"><use href="#arrow"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="watch" style="left:410px;top:470px">
+          <div class="rec"><b></b>${t('Watching you', '正在看你操作')}</div>
+          <div class="row">${t('Clicked', '点击了')} <em>${t('“Add to cart”', '“加入购物车”')}</em></div>
+          <div class="row">${t('Typed', '填写了')} <em>SAVE10</em></div>
+          <div class="btns"><span class="btn">${t('Cancel', '取消')}</span><span class="btn primary">${t('Done', '完成')}</span></div>
+        </div>
+      </div>
+    </div>`,
+  tile: () => `
+    <div class="marquee" style="width:440px;height:280px;gap:20px;flex-direction:column">
+      ${mark(54, 'var(--gold)')}
+      <div style="text-align:center"><h1 style="font-size:30px;margin-bottom:4px">BaoCode</h1>
+      <p class="lead" style="font-size:15px">${t('Your agents, in your own browser', '让 agent 用上你自己的浏览器')}</p></div>
+    </div>`,
+  marquee: () => `
+    <div class="marquee">
+      ${mark(120, 'var(--gold)')}
+      <div><h1>${t('BaoCode for Chrome', 'BaoCode 浏览器扩展')}</h1>
+      <p class="lead">${t('Your agents, in your own browser.', '让 agent 用上你自己的浏览器。')}</p></div>
+    </div>`,
+};
+document.getElementById('root').innerHTML = scenes[n]();
+</script>
+</body>

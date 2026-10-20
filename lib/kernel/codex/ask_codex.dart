@@ -1,7 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
+
+import '../../chat/chat_models.dart' show ImageAttachment;
 
 import 'codex_process.dart';
 import 'codex_rpc.dart';
+import 'codex_transport.dart';
 
 class CodexCancelled implements Exception {
   const CodexCancelled();
@@ -14,8 +18,13 @@ Future<String> askCodex(
   String? location,
   String? model,
   Future<void>? cancel,
+  List<({String name, ImageAttachment image})> images = const [],
+  List<String> readable = const [],
+  CodexTransport? transport,
 }) async {
-  final client = CodexRpcClient(localCodexTransport(cwd: location));
+  final client = CodexRpcClient(
+    transport ?? localCodexTransport(cwd: location),
+  );
   final completed = Completer<String>();
   final messages = <String, StringBuffer>{};
   String? threadId;
@@ -89,7 +98,7 @@ Future<String> askCodex(
       'sandbox': 'read-only',
       'approvalPolicy': 'never',
       'developerInstructions':
-          '$instructions\nUse only the provided text. Do not run tools.',
+          '$instructions\n${readable.isEmpty ? 'Use only the provided text and images. Do not run tools.' : 'You may read the supplied attachments under these folders: ${readable.map(codexServerPath).join(', ')}. Use only read-only file commands. Do not modify files, access the network, or run other tools.'}',
       if (location != null) 'cwd': codexServerPath(location),
       if (model != null && model != 'default') 'model': model,
     });
@@ -98,6 +107,14 @@ Future<String> askCodex(
       'threadId': threadId,
       'input': [
         {'type': 'text', 'text': text},
+        for (final (:name, :image) in images) ...[
+          {'type': 'text', 'text': '[Picture: $name]'},
+          {
+            'type': 'image',
+            'url':
+                'data:${image.mediaType};base64,${base64Encode(image.bytes)}',
+          },
+        ],
       ],
       'approvalPolicy': 'never',
       'sandboxPolicy': {'type': 'readOnly'},

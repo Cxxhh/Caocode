@@ -8,6 +8,7 @@ import '../side_panel/file_open.dart';
 import 'hover_builder.dart';
 import 'fade_curve.dart';
 import 'markdown_view.dart';
+import 'plan_start.dart';
 
 /// A round of planning in the conversation: the plan's title over its
 /// text, the text fading out past a height; a click shows it in full beside
@@ -108,75 +109,86 @@ class PlanCard extends StatelessWidget {
   Widget _card(BuildContext context, VoidCallback? open) {
     final l10n = context.l10n;
     final text = _body(item);
+    // Put to the user: started from here, with the model picked.
+    final session = item.status == PlanStatus.awaiting
+        ? PlanStartScope.maybeOf(context)
+        : null;
     return HoverBuilder(
       cursor: open == null ? MouseCursor.defer : SystemMouseCursors.click,
-      builder: (context, hovered) => GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: open,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 140),
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          padding: const EdgeInsets.fromLTRB(14, 11, 14, 12),
-          decoration: BoxDecoration(
-            // Hovered, half a list row's hover over it: the whole of it is
-            // heavy on a card this big.
-            color: hovered
-                ? Color.alphaBlend(
-                    AppColors.hover.withValues(alpha: AppColors.hover.a * 0.5),
-                    AppColors.surface,
-                  )
-                : AppColors.surface,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.partBorder),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  // As the approvals that carry it out unasked show.
-                  Icon(
-                    Icons.checklist_rounded,
-                    size: 16,
-                    color: AppColors.caution,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      item.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        height: 1.35,
-                      ),
-                    ),
-                  ),
-                  if (item.round > 1) ...[
-                    const SizedBox(width: 8),
-                    Text(
-                      l10n.planCardRound(item.round),
-                      style: TextStyle(
-                        color: AppColors.textFaint,
-                        fontSize: 11.5,
-                      ),
-                    ),
-                  ],
-                ],
+      builder: (context, hovered) => AnimatedContainer(
+        duration: const Duration(milliseconds: 140),
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.fromLTRB(14, 11, 14, 12),
+        decoration: BoxDecoration(
+          // Hovered, half a list row's hover over it: the whole of it is
+          // heavy on a card this big.
+          color: hovered
+              ? Color.alphaBlend(
+                  AppColors.hover.withValues(alpha: AppColors.hover.a * 0.5),
+                  AppColors.surface,
+                )
+              : AppColors.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.partBorder),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: open,
+              child: _content(l10n, text),
+            ),
+            if (session != null)
+              PlanStartBar(
+                session: session,
+                path: item.path,
+                padding: const EdgeInsets.only(top: 10),
               ),
-              if (text != null) ...[
-                const SizedBox(height: 6),
-                // Its text is the card's: a click on it opens the plan.
-                IgnorePointer(child: _PlanPreview(text)),
-              ],
-            ],
-          ),
+          ],
         ),
       ),
     );
   }
+
+  /// The title, and the text under it.
+  Widget _content(AppLocalizations l10n, String? text) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          // As the approvals that carry it out unasked show.
+          Icon(Icons.checklist_rounded, size: 16, color: AppColors.caution),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              item.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                height: 1.35,
+              ),
+            ),
+          ),
+          if (item.round > 1) ...[
+            const SizedBox(width: 8),
+            Text(
+              l10n.planCardRound(item.round),
+              style: TextStyle(color: AppColors.textFaint, fontSize: 11.5),
+            ),
+          ],
+        ],
+      ),
+      if (text != null) ...[
+        const SizedBox(height: 6),
+        // Its text is the card's: a click on it opens the plan.
+        IgnorePointer(child: _PlanPreview(text)),
+      ],
+    ],
+  );
 
   /// [item]'s text under its title: without the heading the title is.
   static String? _body(PlanItem item) {

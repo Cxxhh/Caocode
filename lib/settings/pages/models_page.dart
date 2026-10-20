@@ -15,12 +15,12 @@ import '../../l10n/l10n.dart';
 import '../../models/codex/codex_api.dart' show codexClientVersion;
 import '../../models/codex/codex_service.dart';
 import '../../models/codex/codex_usage.dart';
+import '../../models/auxiliary_model_menu.dart';
 import '../../models/featured_upstreams.dart';
 import '../../models/model_icons.dart';
 import '../../models/model_provider.dart';
 import '../../models/model_providers.dart';
 import '../../models/model_runtime.dart';
-import '../../models/upstream.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/codicons.dart';
 import '../../theme/workbench_theme.dart' show themeColors;
@@ -91,6 +91,18 @@ class ModelsSettingsPage extends StatefulWidget {
   /// An upstream to open the page of, as the page shows next (or now, if
   /// it does): one just imported. Taken as it is opened.
   static final ValueNotifier<String?> reveal = ValueNotifier(null);
+
+  /// Adds an upstream named [name], to be filled in: its id.
+  static Future<String> addUpstream(
+    ModelProviders providers,
+    String name,
+  ) async {
+    final id = providers.newId(name);
+    await providers.save(
+      ModelProvider(id: id, name: name, disableNonessentialTraffic: true),
+    );
+    return id;
+  }
 
   /// The protocol's name, as the list and the detail show it.
   static String protocolName(BuildContext context, ProviderProtocol value) {
@@ -167,10 +179,9 @@ class _ModelsSettingsPageState extends State<ModelsSettingsPage> {
   }
 
   Future<void> _add() async {
-    final name = context.l10n.modelsNewProviderName;
-    final id = _providers.newId(name);
-    await _providers.save(
-      ModelProvider(id: id, name: name, disableNonessentialTraffic: true),
+    final id = await ModelsSettingsPage.addUpstream(
+      _providers,
+      context.l10n.modelsNewProviderName,
     );
     if (mounted) setState(() => _open = id);
   }
@@ -209,7 +220,12 @@ class _ModelsSettingsPageState extends State<ModelsSettingsPage> {
   String _auxiliaryName(BuildContext context, String? value) {
     final l10n = context.l10n;
     if (value == null) return l10n.modelsAuxiliaryAuto;
-    if (value == builtinProviderId) return l10n.modelsAuxiliaryBuiltin;
+    if (value == builtinProviderId) {
+      // Not there on Caocode's own core: automatic in its place.
+      return _providers.builtinAvailable
+          ? l10n.modelsAuxiliaryBuiltin
+          : l10n.modelsAuxiliaryAuto;
+    }
     return _defaultName(context, value);
   }
 
@@ -225,24 +241,54 @@ class _ModelsSettingsPageState extends State<ModelsSettingsPage> {
       trailing: SettingsDropdown(
         current: shown,
         semanticLabel: l10n.modelsChoiceLabel(l10n.modelsAuxiliary, shown),
+        entries: () => auxiliaryModelEntries(
+          l10n,
+          _providers,
+          current: current,
+          onPick: set,
+        ),
+      ),
+    );
+  }
+
+  /// The image model: what the agents make pictures with.
+  Widget _imageRow(BuildContext context) {
+    final l10n = context.l10n;
+    final current = _providers.imageModel;
+    final models = _providers.imageModels;
+    // The default first among them, where it is still there.
+    final shown = switch ((current, models.firstOrNull)) {
+      (_, null) => l10n.modelsImageNone,
+      (final String picked, (:final provider, :final model))
+          when modelRef(provider.id, model.id) == picked =>
+        '${provider.name} · ${model.displayName}',
+      _ => l10n.modelsImageFirst,
+    };
+    void set(String? model) => unawaited(_providers.setImageModel(model));
+    final providers = <ModelProvider>[];
+    for (final (:provider, model: _) in models) {
+      if (!providers.contains(provider)) providers.add(provider);
+    }
+    return SettingsRow(
+      label: l10n.modelsImage,
+      description: l10n.modelsImageDescription,
+      trailing: SettingsDropdown(
+        current: shown,
+        semanticLabel: l10n.modelsChoiceLabel(l10n.modelsImage, shown),
         entries: () => [
           IdeMenuAction(
-            l10n.modelsAuxiliaryAuto,
+            l10n.modelsImageFirst,
             checked: current == null,
+            enabled: models.isNotEmpty,
             onSelected: () => set(null),
           ),
-          const IdeMenuSeparator(),
-          IdeMenuAction(
-            l10n.modelsAuxiliaryBuiltin,
-            checked: current == builtinProviderId,
-            onSelected: () => set(builtinProviderId),
-          ),
-          for (final provider in _providers.enabled)
+          if (providers.isNotEmpty) const IdeMenuSeparator(),
+          for (final provider in providers)
             IdeMenuAction(
               provider.name,
               checked: parseModelRef(current)?.provider == provider.id,
               submenu: [
-                for (final model in provider.enabledModels)
+                for (final model in provider.imageModels)
                   IdeMenuAction(
                     model.displayName,
                     checked: current == modelRef(provider.id, model.id),
@@ -292,7 +338,7 @@ class _ModelsSettingsPageState extends State<ModelsSettingsPage> {
                         unawaited(_providers.setDefaultModel(null)),
                   ),
                   const IdeMenuSeparator(),
-                  if (!_providers.builtinHidden)
+                  if (_providers.builtinOffered)
                     IdeMenuAction(
                       l10n.modelsBuiltinDefault,
                       checked: current == 'default',
@@ -320,22 +366,26 @@ class _ModelsSettingsPageState extends State<ModelsSettingsPage> {
               ),
             ),
             _auxiliaryRow(context),
+            _imageRow(context),
           ],
         ),
         SettingsGroup(
           title: l10n.modelsProviders,
           children: [
-            _ProviderRow(
-              icon: const ProviderIcon(builtinProviderId, size: 16),
-              name: l10n.modelsBuiltinName,
-              badge: l10n.modelsBuiltinBadge,
-              detail: l10n.modelsBuiltinDescription,
-              status: _providers.builtinHidden ? _Status.off : _Status.ready,
-              enabled: !_providers.builtinHidden,
-              switchLabel: l10n.modelsEnableProvider(l10n.modelsBuiltinName),
-              onEnabled: (value) =>
-                  unawaited(_providers.setBuiltinHidden(!value)),
-            ),
+            // Claude Code as set up on this machine: the CLI's alone, not
+            // Caocode's own core's.
+            if (_providers.builtinAvailable)
+              _ProviderRow(
+                icon: const ProviderIcon(builtinProviderId, size: 16),
+                name: l10n.modelsBuiltinName,
+                badge: l10n.modelsBuiltinBadge,
+                detail: l10n.modelsBuiltinDescription,
+                status: _providers.builtinHidden ? _Status.off : _Status.ready,
+                enabled: !_providers.builtinHidden,
+                switchLabel: l10n.modelsEnableProvider(l10n.modelsBuiltinName),
+                onEnabled: (value) =>
+                    unawaited(_providers.setBuiltinHidden(!value)),
+              ),
             // The newest at a site Caocode lists first (one imported later
             // takes the place of one before); the rest in their order.
             for (final provider in [
@@ -1134,7 +1184,7 @@ class _ProviderSettingsPageState extends State<ProviderSettingsPage> {
     // Those checked, unless all are shown, or searched.
     final all = _showAll || query.isNotEmpty;
     final shown = [
-      for (final model in provider.models)
+      for (final model in provider.sortedModels)
         if ((all || model.enabled) &&
             (query.isEmpty ||
                 model.id.toLowerCase().contains(query) ||
@@ -1168,7 +1218,13 @@ class _ProviderSettingsPageState extends State<ProviderSettingsPage> {
                     IdeButton(
                       label: l10n.modelsTestModels,
                       secondary: true,
-                      onPressed: () => unawaited(_testModels(shown)),
+                      onPressed: () => unawaited(
+                        _testModels([
+                          // Not the image models': a picture costs.
+                          for (final model in shown)
+                            if (!model.kind.generatesImages) model,
+                        ]),
+                      ),
                     ),
                   if (provider.models.isNotEmpty)
                     IdeButton(
@@ -1406,6 +1462,22 @@ class _ProviderSettingsPageState extends State<ProviderSettingsPage> {
         ],
       ),
       SettingsRow(
+        label: l10n.modelsHeaders,
+        description: l10n.modelsHeadersDescription,
+        below: [
+          const SizedBox(height: 4),
+          _Field(
+            value: formatHeaders(provider.headers),
+            label: l10n.modelsHeaders,
+            placeholder: l10n.modelsHeadersPlaceholder,
+            lines: 6,
+            onCommit: (text) => unawaited(
+              _save(_providerNow.copyWith(headers: parseHeaders(text))),
+            ),
+          ),
+        ],
+      ),
+      SettingsRow(
         label: l10n.modelsDelete,
         description: l10n.modelsDeleteDescription,
         trailing: IdeButton(
@@ -1433,6 +1505,23 @@ Map<String, String> parseEnvironment(String text) => {
       if (line.substring(0, line.indexOf('=')).trim() case final key
           when RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$').hasMatch(key))
         key: line.substring(line.indexOf('=') + 1).trim(),
+};
+
+/// [headers] as the Custom Headers field shows it: `Name: Value` a line.
+String formatHeaders(Map<String, String> headers) =>
+    [for (final MapEntry(:key, :value) in headers.entries) '$key: $value']
+        .join('\n');
+
+/// The Custom Headers field's [text]: `Name: Value` a line, blank lines and
+/// `#` comments skipped, a name that may not be set ([isSettableHeader], an
+/// auth header among them) dropped.
+Map<String, String> parseHeaders(String text) => {
+  for (final line in text.split('\n'))
+    if (line.trim() case final line
+        when line.isNotEmpty && !line.startsWith('#') && line.contains(':'))
+      if (line.substring(0, line.indexOf(':')).trim() case final name
+          when isSettableHeader(name))
+        name: line.substring(line.indexOf(':') + 1).trim(),
 };
 
 /// A model in its upstream's list: whether it is offered, its names and
@@ -1497,7 +1586,13 @@ class _ModelRow extends StatelessWidget {
                       const SizedBox(width: 6),
                       ModelBadge(l10n.modelsCustom),
                     ],
-                    if (!model.images) ...[
+                    if (model.kind.generatesImages) ...[
+                      const SizedBox(width: 6),
+                      ModelBadge(
+                        l10n.modelsImageBadge,
+                        tooltip: l10n.modelsKindDescription,
+                      ),
+                    ] else if (!model.images) ...[
                       const SizedBox(width: 6),
                       ModelBadge(l10n.modelsNoImages),
                     ],
@@ -1551,7 +1646,9 @@ class _ModelRow extends StatelessWidget {
                       IdeMenuAction(l10n.modelsRemove, onSelected: onRemove),
                       IdeMenuAction(
                         l10n.modelsTestModel,
-                        enabled: test?.running != true,
+                        enabled:
+                            test?.running != true &&
+                            !model.kind.generatesImages,
                         onSelected: onTest,
                       ),
                     ],

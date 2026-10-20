@@ -21,6 +21,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:path/path.dart' as p;
 import 'package:super_sliver_list/super_sliver_list.dart';
 
+import '../../base/smooth_scroll.dart';
 import '../../chat/widgets/code_citation.dart' show MarkdownCodeBlock;
 import '../../chat/widgets/markdown_view.dart';
 import '../../platform/svg_text_transform.dart';
@@ -97,7 +98,7 @@ class IdeMarkdownPreviewState extends State<IdeMarkdownPreview> {
   Timer? _reparse;
 
   final _list = ListController();
-  final _scroll = ScrollController();
+  final _scroll = SmoothScrollController();
   final _focus = FocusNode(debugLabel: 'markdown preview');
 
   /// The images read, by path: read once while the preview shows.
@@ -242,6 +243,7 @@ class IdeMarkdownPreviewState extends State<IdeMarkdownPreview> {
   /// The last click, to tell a double click: the preview's text selects a
   /// word on one, and a double click is told here beside it.
   ({Duration time, Offset position})? _lastClick;
+  int? _imagePointer;
 
   void _pointerDown(PointerDownEvent event) {
     if (event.kind != PointerDeviceKind.mouse &&
@@ -249,6 +251,13 @@ class IdeMarkdownPreviewState extends State<IdeMarkdownPreview> {
       return;
     }
     if (event.buttons != kPrimaryButton) return;
+    // The image's listener runs first: its clicks belong to the viewer.
+    final imagePointer = _imagePointer;
+    _imagePointer = null;
+    if (imagePointer == event.pointer) {
+      _lastClick = null;
+      return;
+    }
     final last = _lastClick;
     final double =
         last != null &&
@@ -360,6 +369,7 @@ class IdeMarkdownPreviewState extends State<IdeMarkdownPreview> {
     alt: alt,
     title: title,
     read: (path) => _images.putIfAbsent(path, () => widget.readBytes(path)),
+    onPointerDown: (event) => _imagePointer = event.pointer,
   );
 
   // --- Building ---------------------------------------------------------------
@@ -402,7 +412,17 @@ class IdeMarkdownPreviewState extends State<IdeMarkdownPreview> {
   }
 
   Widget _item(BuildContext context, int index) {
-    final heading = _source.blocks[index].kind == MarkdownBlockKind.heading;
+    final block = _source.blocks[index];
+    // A comment is the writer's note: nothing shows, not even its room.
+    if (block.kind == MarkdownBlockKind.html &&
+        isHtmlComment(_source.source(block))) {
+      return _Shown(
+        index: index,
+        shown: _shown,
+        child: const SizedBox.shrink(),
+      );
+    }
+    final heading = block.kind == MarkdownBlockKind.heading;
     return _Shown(
       index: index,
       shown: _shown,
@@ -580,44 +600,110 @@ class _MarkdownImage extends StatelessWidget {
     required this.alt,
     required this.title,
     required this.read,
+    required this.onPointerDown,
   });
 
   final ({Uri? url, String? path})? target;
   final String alt;
   final String? title;
   final Future<Uint8List> Function(String path) read;
+  final ValueChanged<PointerDownEvent> onPointerDown;
 
-  @override
-  Widget build(BuildContext context) {
+  void _preview(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (dialogContext) => Material(
+        color: Colors.transparent,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => Navigator.of(dialogContext).pop(),
+              ),
+            ),
+            Positioned.fill(
+              child: Padding(
+                padding: const EdgeInsets.all(40),
+                child: LayoutBuilder(
+                  builder: (context, constraints) => InteractiveViewer(
+                    minScale: .1,
+                    maxScale: 8,
+                    boundaryMargin: const EdgeInsets.all(double.infinity),
+                    child: SizedBox.fromSize(
+                      size: constraints.biggest,
+                      child: _image(expanded: true),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                icon: const Icon(Icons.close, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _clickable(BuildContext context, Widget image) => MouseRegion(
+    cursor: SystemMouseCursors.zoomIn,
+    child: Listener(
+      onPointerDown: onPointerDown,
+      child: GestureDetector(onTap: () => _preview(context), child: image),
+    ),
+  );
+
+  Widget _image({bool expanded = false}) {
     final target = this.target;
-    final Widget image;
     if (target?.url case final url?) {
-      image = Image.network(
+      return Image.network(
         url.toString(),
+        fit: expanded ? BoxFit.contain : null,
         errorBuilder: (context, _, _) => _missing(),
+        frameBuilder: (context, child, frame, _) =>
+            expanded || frame == null ? child : _clickable(context, child),
       );
-    } else if (target?.path case final path?) {
-      image = FutureBuilder<Uint8List>(
+    }
+    if (target?.path case final path?) {
+      return FutureBuilder<Uint8List>(
         future: read(path),
         builder: (context, snapshot) {
           if (snapshot.hasError) return _missing();
           final bytes = snapshot.data;
           if (bytes == null) return const SizedBox(width: 16, height: 16);
           if (p.extension(path).toLowerCase() == '.svg') {
-            return SvgPicture(
+            final image = SvgPicture(
               SvgTextBytesLoader(bytes),
+              fit: BoxFit.contain,
               errorBuilder: (context, _, _) => _missing(),
             );
+            return expanded ? image : _clickable(context, image);
           }
           return Image.memory(
             bytes,
+            fit: expanded ? BoxFit.contain : null,
             errorBuilder: (context, _, _) => _missing(),
+            frameBuilder: (context, child, frame, _) =>
+                expanded || frame == null ? child : _clickable(context, child),
           );
         },
       );
-    } else {
-      image = _missing();
     }
+    return _missing();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final image = _image();
     final tip = title ?? (alt.isEmpty ? null : alt);
     return tip == null
         ? image

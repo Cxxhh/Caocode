@@ -73,7 +73,7 @@ class MarkdownSource {
 
   /// The heading block whose anchor is [anchor].
   int? heading(String anchor) {
-    final wanted = markdownSlug(Uri.decodeComponent(anchor));
+    final wanted = markdownSlug(_decode(anchor));
     for (final MapEntry(:key, :value) in anchors.entries) {
       if (value == anchor || value == wanted) return key;
     }

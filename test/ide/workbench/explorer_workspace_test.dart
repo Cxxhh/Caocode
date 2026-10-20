@@ -132,17 +132,20 @@ void main() {
 
     await chord(tester, LogicalKeyboardKey.keyG, control: true, shift: true);
     await tester.pumpAndSettle();
-    expect(find.text('Repositories'), findsOneWidget);
-    // Each with its branch (the status bar's the one shown).
-    expect(find.text('main'), findsNWidgets(2));
-    expect(find.text('dev'), findsOneWidget);
-    // The first's changes until another is picked.
+    // Each under its header in CHANGES (#76), with its branch (the status
+    // bar's the one shown) and its changes.
+    expect(find.text('Repositories'), findsNothing);
+    expect(find.text('main*'), findsOneWidget);
+    expect(find.text('dev*'), findsOneWidget);
+    expect(find.text('main'), findsOneWidget);
     expect(find.text('index.html'), findsWidgets);
-    expect(find.text('new.go'), findsNothing);
-
-    await tester.tap(find.text('dev'));
-    await tester.pumpAndSettle();
     expect(find.text('new.go'), findsOneWidget);
+
+    // The one clicked is the one shown.
+    await tester.tap(find.byKey(ValueKey('repo:${inRoot('api')}')).first);
+    await tester.pumpAndSettle();
+    expect(find.text('dev'), findsOneWidget);
+    expect(find.text('main'), findsNothing);
   });
 
   test('Search runs in each folder, as one search', () async {

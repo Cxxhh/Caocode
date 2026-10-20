@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:caocode/ide/file_service.dart';
 import 'package:caocode/ide/git/git_service.dart';
@@ -72,6 +74,63 @@ void main() {
       );
     });
 
+    test('the submodules of the folder\'s repository and of those, deep '
+        'below or not, checked out and within it (#68)', () async {
+      final submodules = {
+        '/w': ['/w/assets/framework', '/w/vendor/empty', '/elsewhere/x'],
+        '/w/assets/framework': ['/w/assets/framework/lib/inner'],
+        '/w/site': ['/w/site/theme'],
+      };
+      const checkedOut = {
+        '/w/site',
+        '/w/assets/framework',
+        '/w/assets/framework/lib/inner',
+        '/w/site/theme',
+      };
+      Future<List<String>> submodulesOf(String folder) async =>
+          submodules[folder] ?? const [];
+      Future<bool> isTop(String folder) async => checkedOut.contains(folder);
+      expect(
+        await scanRepositories(
+          '/w',
+          const IdeRepositoryScan(),
+          list: list,
+          isRepositoryTop: isTop,
+          submodulesOf: submodulesOf,
+          paths: p.posix,
+        ),
+        [
+          '/w/site',
+          '/w/assets/framework',
+          '/w/site/theme',
+          '/w/assets/framework/lib/inner',
+        ],
+      );
+      // Off, or with subfolders not scanned.
+      expect(
+        await scanRepositories(
+          '/w',
+          const IdeRepositoryScan(detectSubmodules: false),
+          list: list,
+          isRepositoryTop: isTop,
+          submodulesOf: submodulesOf,
+          paths: p.posix,
+        ),
+        ['/w/site'],
+      );
+      expect(
+        await scanRepositories(
+          '/w',
+          const IdeRepositoryScan(subFolders: false, submodulesLimit: 1),
+          list: list,
+          isRepositoryTop: isTop,
+          submodulesOf: submodulesOf,
+          paths: p.posix,
+        ),
+        ['/w/assets/framework', '/w/assets/framework/lib/inner'],
+      );
+    });
+
     test('scans nothing when detection is off', () async {
       expect(
         await scanRepositories(
@@ -92,6 +151,14 @@ void main() {
     expect(defaults.subFolders, isTrue);
     expect(defaults.maxDepth, 1);
     expect(defaults.ignoredFolders, ['node_modules']);
+    expect(defaults.detectSubmodules, isTrue);
+    expect(defaults.submodulesLimit, 10);
+    final submodules = IdeRepositoryScan.parse(const {
+      'git.detectSubmodules': false,
+      'git.detectSubmodulesLimit': 3,
+    });
+    expect(submodules.detectSubmodules, isFalse);
+    expect(submodules.submodulesLimit, 3);
 
     final set = IdeRepositoryScan.parse(const {
       'git.autoRepositoryDetection': 'openEditors',
@@ -137,6 +204,38 @@ void main() {
     expect(
       await isTop(const IdeGitOutput(128, '', 'fatal: not a git repository')),
       isFalse,
+    );
+  });
+
+  test('a repository\'s submodules are read from its .gitmodules, from a '
+      'folder in it too', () async {
+    final dir = await Directory.systemTemp.createTemp('caocode-submodules-');
+    addTearDown(() => dir.delete(recursive: true));
+    final root = dir.path;
+    Future<void> git(List<String> arguments) async {
+      final result = await Process.run('git', arguments, workingDirectory: root);
+      expect(result.exitCode, 0, reason: '${result.stderr}');
+    }
+
+    await git(['init', '-q']);
+    await Directory(p.join(root, 'src')).create();
+    expect(await IdeGitService(root).submodulePaths(), isEmpty);
+    await File(p.join(root, '.gitmodules')).writeAsString(
+      '[submodule "framework"]\n'
+      '\tpath = assets/framework\n'
+      '\turl = ../framework.git\n'
+      '[submodule "a b"]\n'
+      '\tpath = vendor/a b\n'
+      '\turl = ../ab.git\n',
+    );
+    final expected = [
+      p.join(root, 'assets', 'framework'),
+      p.join(root, 'vendor', 'a b'),
+    ];
+    expect(await IdeGitService(root).submodulePaths(), expected);
+    expect(
+      await IdeGitService(p.join(root, 'src')).submodulePaths(),
+      expected,
     );
   });
 }

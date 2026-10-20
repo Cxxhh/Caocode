@@ -8,6 +8,7 @@ import '../widgets/hover_builder.dart';
 import 'interaction_panel.dart';
 import 'panel_card.dart';
 import '../../ide/ide_hover.dart';
+import '../../ide/ide_switch.dart';
 
 /// Modal area, opened from the composer: the MCP servers the agent uses,
 /// whether each is up, and what to do about one that is not.
@@ -202,19 +203,11 @@ class _ServerRow extends StatelessWidget {
             message: server.status == McpServerStatus.disabled
                 ? l10n.mcpEnable
                 : l10n.mcpDisable,
-            child: Transform.scale(
-              scale: 0.7,
-              child: Switch(
-                value: server.status != McpServerStatus.disabled,
-                onChanged: server.status == McpServerStatus.pending
-                    ? null
-                    : onSetEnabled,
-                activeThumbColor: AppColors.textPrimary,
-                activeTrackColor: AppColors.accent,
-                inactiveThumbColor: AppColors.textMuted,
-                inactiveTrackColor: AppColors.partBorder,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
+            child: IdeSwitch(
+              value: server.status != McpServerStatus.disabled,
+              enabled: server.status != McpServerStatus.pending,
+              semanticLabel: server.name,
+              onChanged: onSetEnabled,
             ),
           ),
         ],

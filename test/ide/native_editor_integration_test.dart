@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bao_editor/monaco/flutter/editor_document_model.dart';
 import 'package:bao_editor/monaco/flutter/editor_surface.dart';
 import 'package:bao_editor/monaco/flutter/editor_surface_controller.dart';
+import 'package:bao_editor/monaco/flutter/wheel_glide.dart';
 import 'package:bao_editor/monaco/vs/editor/common/core/position.dart';
 import 'package:bao_editor/monaco/vs/editor/common/core/range.dart';
 import 'package:caocode/ide/file_service.dart';
@@ -439,7 +440,9 @@ void main() {
         scrollDelta: const Offset(0, -125),
       ),
     );
+    // The notch glides the view there.
     await tester.pump();
+    await tester.pump(WheelGlide.duration);
     expect(caretTop(), greaterThan(revealedTop));
     expect(_controller(tester).value.selection.extentOffset, offset);
     final undoBefore = workspace.active!.model.canUndo;

@@ -25,6 +25,7 @@ import '../theme/workbench_theme.dart' show themeColors;
 import 'ide_button.dart';
 import 'ide_hover.dart';
 import 'ide_input.dart';
+import 'ide_motion.dart';
 
 /// The dialog's icon (`Severity`, or a question).
 enum IdeDialogType { info, warning, error, question }
@@ -88,7 +89,14 @@ Future<IdeDialogResult?> showIdeInputDialog(
   barrierLabel: context.l10n.commonDismiss,
   // `.monaco-dialog-modal-block.dimmed`: the same in every theme.
   barrierColor: const Color(0x80000000),
-  transitionDuration: Duration.zero,
+  // At once, as VS Code's; grown in where the motion is lively (the
+  // stash's panel).
+  transitionDuration: IdeMotion.livelyOf(context)
+      ? IdeMotion.enterDuration
+      : Duration.zero,
+  transitionBuilder: IdeMotion.livelyOf(context)
+      ? (context, animation, _, child) => IdeMotion.enter(animation, child)
+      : null,
   pageBuilder: (context, _, _) => _IdeDialog(
     message: message,
     detail: detail,

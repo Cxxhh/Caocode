@@ -164,7 +164,7 @@ void main() {
       return answer;
     }
 
-    testWidgets('masked, remembered when checked', (tester) async {
+    testWidgets('masked, remembered unless unchecked', (tester) async {
       final answer = await open(tester);
       expect(find.text('Sign in to dev'), findsOneWidget);
       expect(find.text("me@dev's password:"), findsOneWidget);
@@ -176,11 +176,17 @@ void main() {
       );
       expect(field.obscureText, isTrue);
       await tester.enterText(find.byType(IdeInputBox), 'hunter2');
+      await tester.tap(find.text('Connect'));
+      await tester.pumpAndSettle();
+      expect(await answer, (answer: 'hunter2', remember: true));
+
+      final unchecked = await open(tester);
+      await tester.enterText(find.byType(IdeInputBox), 'hunter2');
       await tester.tap(find.textContaining('Remember on this computer'));
       await tester.pump();
       await tester.tap(find.text('Connect'));
       await tester.pumpAndSettle();
-      expect(await answer, (answer: 'hunter2', remember: true));
+      expect(await unchecked, (answer: 'hunter2', remember: false));
     });
 
     testWidgets('Enter connects, once; Escape cancels', (tester) async {
@@ -191,7 +197,7 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pumpAndSettle();
-      expect(await answer, (answer: 'pw', remember: false));
+      expect(await answer, (answer: 'pw', remember: true));
       // Closed once: the page under it is still there.
       expect(find.byKey(const Key('home')), findsOneWidget);
 

@@ -22,9 +22,20 @@ extension AppLocalizationsContext on BuildContext {
 }
 
 extension AppLocalizationsPlatform on AppLocalizations {
-  /// Reveal in Finder, or Reveal in File Explorer on Windows (VS Code's
-  /// `revealFileInOS` title is the platform's too).
+  /// The system's file manager, as the system names it: Finder, File
+  /// Explorer on Windows, File Manager on Linux. Every string naming it
+  /// takes it from here.
+  String get fileManager => AppPlatform.isWindows
+      ? workspaceFileExplorer
+      : AppPlatform.isLinux
+      ? workspaceFileManager
+      : workspaceFinder;
+
+  /// Reveal in [fileManager] (VS Code's `revealFileInOS` title is the
+  /// platform's too).
   String get revealInFileManager => AppPlatform.isWindows
       ? dataDirRevealInFileExplorer
+      : AppPlatform.isLinux
+      ? dataDirRevealInFileManager
       : explorerRevealInFinder;
 }

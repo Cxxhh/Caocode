@@ -25,7 +25,8 @@ class IdeAnimatedList extends StatefulWidget {
   }) : keys = [for (final child in children) child.key!],
        itemBuilder = ((context, index) => children[index]),
        header = null,
-       itemExtent = null;
+       itemExtent = null,
+       itemExtentOf = null;
 
   /// The rows of [keys], [itemBuilder] building the one at an index when
   /// it shows; under [header], if any, which scrolls with them.
@@ -35,6 +36,7 @@ class IdeAnimatedList extends StatefulWidget {
     required this.itemBuilder,
     this.header,
     this.itemExtent,
+    this.itemExtentOf,
     this.controller,
     this.duration = const Duration(milliseconds: 150),
   });
@@ -47,6 +49,10 @@ class IdeAnimatedList extends StatefulWidget {
 
   /// Every row's height (at rest), if they all have the same.
   final double? itemExtent;
+
+  /// With an [itemExtent], the height (at rest) of the row at an index
+  /// that has its own; null for [itemExtent].
+  final double? Function(int index)? itemExtentOf;
   final ScrollController? controller;
 
   /// How long a row takes to grow in or shrink out (the panes' 0.15s).
@@ -66,6 +72,10 @@ class _Row {
   IndexedWidgetBuilder builder;
   int index;
 
+  /// Its own height at rest (the list's `itemExtentOf` at [index]); null
+  /// for the list's `itemExtent`.
+  double? extent;
+
   /// Its height's share while it grows in or shrinks out; null at rest.
   AnimationController? animation;
   bool leaving = false;
@@ -83,7 +93,8 @@ class _IdeAnimatedListState extends State<IdeAnimatedList>
     super.initState();
     _rows = [
       for (final (index, key) in widget.keys.indexed)
-        _Row(key, widget.itemBuilder, index),
+        _Row(key, widget.itemBuilder, index)
+          ..extent = widget.itemExtentOf?.call(index),
     ];
   }
 
@@ -113,9 +124,12 @@ class _IdeAnimatedListState extends State<IdeAnimatedList>
   }
 
   void _update(List<Key> keys, IndexedWidgetBuilder builder) {
+    final extentOf = widget.itemExtentOf;
     if (_same(keys)) {
       for (final row in _rows) {
-        row.builder = builder;
+        row
+          ..builder = builder
+          ..extent = extentOf?.call(row.index);
       }
       return;
     }
@@ -151,11 +165,12 @@ class _IdeAnimatedListState extends State<IdeAnimatedList>
         leaveBefore(at + 1);
         row
           ..builder = builder
-          ..index = index;
+          ..index = index
+          ..extent = extentOf?.call(index);
         if (row.leaving) _enter(row);
         rows.add(row);
       } else {
-        final row = _Row(key, builder, index);
+        final row = _Row(key, builder, index)..extent = extentOf?.call(index);
         if (animate) _enter(row);
         rows.add(row);
       }
@@ -216,10 +231,12 @@ class _IdeAnimatedListState extends State<IdeAnimatedList>
     Widget rows(BuildContext context) => SliverVariedExtentList(
       itemExtentBuilder: (index, _) {
         if (index >= _rows.length) return null;
-        final animation = _rows[index].animation;
+        final row = _rows[index];
+        final height = row.extent ?? extent;
+        final animation = row.animation;
         return animation == null
-            ? extent
-            : extent * Curves.easeOut.transform(animation.value);
+            ? height
+            : height * Curves.easeOut.transform(animation.value);
       },
       delegate: SliverChildBuilderDelegate(
         (context, index) {

@@ -336,6 +336,9 @@ class SourceServerBinaries implements RemoteServerBinaries {
 
   static const _source = 'packages/bao_remote/bin/caocode_server.dart';
 
+  /// The packages the server is built from.
+  static const _serverPackages = ['bao_remote', 'bao_agent'];
+
   final String root;
   final String _dart;
   final Map<String, String> _environment;
@@ -411,21 +414,27 @@ class SourceServerBinaries implements RemoteServerBinaries {
     return null;
   }
 
-  /// The server's sources, hashed: its package's Dart and pubspec.
+  /// The server's sources, hashed: its package's Dart and pubspec, and
+  /// those of the core it carries (package:bao_agent).
   static String _hashSources(String root) {
-    final package = Directory(p.join(root, 'packages', 'bao_remote'));
+    final packages = Directory(p.join(root, 'packages'));
     final files = [
-      for (final entry in package.listSync(recursive: true))
-        if (entry is File &&
-            (entry.path.endsWith('.dart') ||
-                p.basename(entry.path) == 'pubspec.yaml') &&
-            !p.split(entry.path).contains('.dart_tool'))
-          entry,
+      for (final name in _serverPackages)
+        if (Directory(p.join(packages.path, name)) case final dir
+            when dir.existsSync())
+          for (final entry in dir.listSync(recursive: true))
+            if (entry is File &&
+                (entry.path.endsWith('.dart') ||
+                    p.basename(entry.path) == 'pubspec.yaml') &&
+                !p
+                    .split(p.relative(entry.path, from: packages.path))
+                    .any((part) => part == '.dart_tool' || part == 'test'))
+              entry,
     ]..sort((a, b) => a.path.compareTo(b.path));
     final bytes = BytesBuilder(copy: false);
     for (final file in files) {
       bytes
-        ..add(utf8.encode(p.relative(file.path, from: package.path)))
+        ..add(utf8.encode(p.relative(file.path, from: packages.path)))
         ..add(file.readAsBytesSync());
     }
     return '${crypto.sha256.convert(bytes.takeBytes())}'.substring(0, 12);

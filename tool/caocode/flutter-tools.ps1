@@ -4,23 +4,28 @@ function Initialize-CaocodePluginJunctions([string]$Root) {
     $metadataPath = Join-Path $Root '.flutter-plugins-dependencies'
     if (-not (Test-Path -LiteralPath $metadataPath)) { return 0 }
     $metadata = Get-Content -LiteralPath $metadataPath -Raw -Encoding UTF8 | ConvertFrom-Json
-    $links = Join-Path $Root 'windows\flutter\ephemeral\.plugin_symlinks'
-    New-Item -ItemType Directory -Path $links -Force | Out-Null
     $created = 0
-    foreach ($plugin in $metadata.plugins.windows) {
-        # Flutter links every plugin, including ones without a native build.
-        if (-not (Test-Path -LiteralPath $plugin.path)) { continue }
-        $link = Join-Path $links $plugin.name
-        if (Test-Path -LiteralPath $link) {
-            $item = Get-Item -LiteralPath $link -Force
-            if ($item.LinkType -eq 'Junction' -and
-                [IO.Path]::GetFullPath($item.Target).TrimEnd('\') -ne [IO.Path]::GetFullPath($plugin.path).TrimEnd('\')) {
-                [IO.Directory]::Delete($link)
+    # Flutter prepares links for every desktop project present, even when
+    # building Windows. Linux support adds a second set to prepare here.
+    foreach ($platform in @('windows', 'linux')) {
+        if (-not (Test-Path -LiteralPath (Join-Path $Root $platform))) { continue }
+        $links = Join-Path $Root "$platform\flutter\ephemeral\.plugin_symlinks"
+        New-Item -ItemType Directory -Path $links -Force | Out-Null
+        foreach ($plugin in $metadata.plugins.$platform) {
+            # Flutter links every plugin, including Dart-only plugins.
+            if (-not (Test-Path -LiteralPath $plugin.path)) { continue }
+            $link = Join-Path $links $plugin.name
+            if (Test-Path -LiteralPath $link) {
+                $item = Get-Item -LiteralPath $link -Force
+                if ($item.LinkType -eq 'Junction' -and
+                    [IO.Path]::GetFullPath($item.Target).TrimEnd('\') -ne [IO.Path]::GetFullPath($plugin.path).TrimEnd('\')) {
+                    [IO.Directory]::Delete($link)
+                }
             }
-        }
-        if (-not (Test-Path -LiteralPath $link)) {
-            New-Item -ItemType Junction -Path $link -Target $plugin.path | Out-Null
-            $created++
+            if (-not (Test-Path -LiteralPath $link)) {
+                New-Item -ItemType Junction -Path $link -Target $plugin.path | Out-Null
+                $created++
+            }
         }
     }
     return $created

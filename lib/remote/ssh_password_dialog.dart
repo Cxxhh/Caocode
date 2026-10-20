@@ -7,7 +7,7 @@ import 'ssh_passwords.dart';
 
 /// Asks the user what `ssh` asks while signing in to a host ([prompt], as
 /// it says it): masked, with whether to remember it where it may be
-/// ([keepable]). Null when cancelled.
+/// ([keepable]; checked at first). Null when cancelled.
 Future<SshPasswordAnswer?> showSshPasswordDialog(
   BuildContext context,
   SshPrompt prompt, {
@@ -24,6 +24,8 @@ Future<SshPasswordAnswer?> showSshPasswordDialog(
     buttons: [l10n.remoteSignInConnect],
     inputs: const [IdeDialogInput(obscure: true)],
     checkbox: keepable ? l10n.remoteSignInRemember : null,
+    // Asked once, rather than at each connection.
+    checked: keepable,
     type: prompt.retry ? IdeDialogType.warning : IdeDialogType.question,
   );
   if (result == null) return null;

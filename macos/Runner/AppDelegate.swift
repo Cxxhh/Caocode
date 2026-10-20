@@ -193,14 +193,18 @@ final class OpenRequests {
   /// opens them (the `code` command's marker, a folder to start from, `-n`,
   /// then them). A site's (caocode.dev/import): `provider/import`, an
   /// upstream to add, the link as it came after its marker, which Flutter
-  /// reads (upstream_import.dart). Nil for any other URL, or one without
-  /// absolute paths.
+  /// reads (upstream_import.dart); so too caocode.dev/activate's,
+  /// `activate`, the channel build's setup (channel_setup.dart). Nil for
+  /// any other URL, or one without absolute paths.
   static func request(from url: URL) -> [String]? {
     guard url.scheme == "caocode",
       let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
     else { return nil }
     if components.host == "provider" {
       return components.path == "/import" ? [importMarker, url.absoluteString] : nil
+    }
+    if components.host == "activate" {
+      return [importMarker, url.absoluteString]
     }
     let paths = (components.queryItems ?? [])
       .filter { $0.name == "path" }

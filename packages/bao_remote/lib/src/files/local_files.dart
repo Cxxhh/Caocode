@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:math' show min;
 import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
@@ -61,17 +62,23 @@ class LocalFiles {
   Future<List<IdeFile>> _list(String directory) async {
     final resolved = await _resolved(directory);
     final entries = await Directory(resolved).list(followLinks: false).toList();
-    final files = <IdeFile>[
-      for (final entry in entries)
-        if (entry is Directory || entry is File)
-          if (!(entry is Directory ? _hiddenDirectories : _hiddenFiles)
-              .contains(p.basename(entry.path)))
-            IdeFile(
-              entry.path,
-              p.basename(entry.path),
-              isDirectory: entry is Directory,
-            ),
-    ];
+    final files = <IdeFile>[];
+    for (final entry in entries) {
+      // A link is what it leads to, as VS Code's explorer shows it; one
+      // leading nowhere, a file.
+      final isDirectory = switch (entry) {
+        Directory() => true,
+        File() => false,
+        Link() => await FileSystemEntity.isDirectory(entry.path),
+        _ => null,
+      };
+      if (isDirectory == null) continue;
+      final name = p.basename(entry.path);
+      if ((isDirectory ? _hiddenDirectories : _hiddenFiles).contains(name)) {
+        continue;
+      }
+      files.add(IdeFile(entry.path, name, isDirectory: isDirectory));
+    }
     files.sort((a, b) {
       if (a.isDirectory != b.isDirectory) return a.isDirectory ? -1 : 1;
       return a.name.toLowerCase().compareTo(b.name.toLowerCase());
@@ -370,6 +377,61 @@ Future<Uint8List> readFileBytes(String path) async {
   return file.readAsBytes();
 }
 
+/// At most [length] (up to [maxRangeLength]) of [path]'s bytes from
+/// [offset], and the file's size. Throws [IdeFileNotFoundException] when
+/// there is no such file.
+Future<({Uint8List bytes, int size})> readFileRange(
+  String path,
+  int offset,
+  int length,
+) async {
+  final file = File(path);
+  if (!await file.exists()) throw IdeFileNotFoundException(path);
+  final open = await file.open();
+  try {
+    final size = await open.length();
+    if (offset >= size) return (bytes: Uint8List(0), size: size);
+    await open.setPosition(offset);
+    final bytes = await open.read(min(length, maxRangeLength));
+    return (bytes: bytes, size: size);
+  } finally {
+    await open.close();
+  }
+}
+
+/// The most [readFileRange] reads at once.
+const maxRangeLength = 4 << 20;
+
+/// How many bytes the files at [paths] take, those in folders too (links
+/// not followed); once over [limit], counting stops with what it is.
+Future<int> sizeOfFiles(List<String> paths, {int? limit}) async {
+  var total = 0;
+  bool over() => limit != null && total > limit;
+  Future<void> count(String path) async {
+    if (over()) return;
+    final stat = await FileStat.stat(path);
+    switch (stat.type) {
+      case FileSystemEntityType.file:
+        total += stat.size;
+      case FileSystemEntityType.directory:
+        try {
+          await for (final entry in Directory(path).list(followLinks: false)) {
+            await count(entry.path);
+            if (over()) return;
+          }
+        } on FileSystemException {
+          // Unreadable: nothing counted.
+        }
+      default:
+    }
+  }
+
+  for (final path in paths) {
+    await count(path);
+  }
+  return total;
+}
+
 /// Changes to the entries of [directory]; empty where it cannot be
 /// watched.
 Stream<void> watchDirectory(String directory) {
@@ -396,8 +458,30 @@ Future<IdeFileListing> walkProjectFiles(
 /// The files Git sees under [root], tracked or not, without those its
 /// ignore files ignore (as VS Code's Quick Open, through ripgrep, honors
 /// `.gitignore`); null outside a repository or without Git. Other Git
-/// repositories inside (worktrees, clones) are left out, as Git leaves them.
+/// repositories inside (a clone, a submodule) are listed by their own Git,
+/// as ripgrep goes into them too, unless the outer one ignores them.
 IdeFileListing? _gitProjectFiles(String root, Set<String> excluded, int limit) {
+  final paths = <String>[];
+  final truncated = _gitFiles(root, excluded, limit, paths);
+  // None: the root may be ignored itself, which Git then lists nothing of.
+  if (truncated == null || paths.isEmpty) return null;
+  paths.sort();
+  return IdeFileListing(paths, truncated: truncated);
+}
+
+/// How deep repositories inside repositories are gone into.
+const _maxNestedRepositories = 8;
+
+/// Adds the files Git sees in the repository at [root] to [paths], and
+/// those of the repositories inside it; whether [limit] cut them short, or
+/// null where Git cannot list them.
+bool? _gitFiles(
+  String root,
+  Set<String> excluded,
+  int limit,
+  List<String> paths, {
+  int depth = 0,
+}) {
   final ProcessResult result;
   try {
     result = Process.runSync(
@@ -425,30 +509,35 @@ IdeFileListing? _gitProjectFiles(String root, Set<String> excluded, int limit) {
     return null;
   }
   if (result.exitCode != 0) return null;
-  final paths = <String>[];
-  var truncated = false;
-  for (final relative in (result.stdout as String).split('\x00')) {
-    // Empty after the last NUL; a nested repository shows as `dir/`.
-    if (relative.isEmpty || relative.endsWith('/')) continue;
+  for (var relative in (result.stdout as String).split('\x00')) {
+    // Empty after the last NUL.
+    if (relative.isEmpty) continue;
+    // A repository inside, not tracked, shows as `dir/`; a submodule as
+    // its folder.
+    final nested = relative.endsWith('/');
+    if (nested) relative = relative.substring(0, relative.length - 1);
     final parts = relative.split('/');
-    if (parts.take(parts.length - 1).any(excluded.contains)) continue;
     final path = p.joinAll([root, ...parts]);
-    // Tracked files deleted from the working tree, and submodules, are not
-    // files to open.
-    if (FileSystemEntity.typeSync(path, followLinks: false) !=
-        FileSystemEntityType.file) {
+    final type = FileSystemEntity.typeSync(path, followLinks: false);
+    if (type == FileSystemEntityType.directory) {
+      if (depth < _maxNestedRepositories &&
+          !parts.any(excluded.contains) &&
+          FileSystemEntity.typeSync(p.join(path, '.git')) !=
+              FileSystemEntityType.notFound &&
+          _gitFiles(path, excluded, limit, paths, depth: depth + 1) == true) {
+        return true;
+      }
       continue;
     }
-    if (paths.length >= limit) {
-      truncated = true;
-      break;
+    if (nested || parts.take(parts.length - 1).any(excluded.contains)) {
+      continue;
     }
+    // Tracked files deleted from the working tree are not files to open.
+    if (type != FileSystemEntityType.file) continue;
+    if (paths.length >= limit) return true;
     paths.add(path);
   }
-  // None: the root may be ignored itself, which Git then lists nothing of.
-  if (paths.isEmpty) return null;
-  paths.sort();
-  return IdeFileListing(paths, truncated: truncated);
+  return false;
 }
 
 IdeFileListing _walkProjectFiles(String root, Set<String> excluded, int limit) {

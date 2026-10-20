@@ -4,7 +4,6 @@ import 'dart:ffi' show Abi;
 import 'dart:io';
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:caocode/telemetry/telemetry_io.dart';
 import 'package:caocode/telemetry/telemetry_service.dart';
@@ -29,24 +28,10 @@ class FakeSender implements TelemetrySender {
 class _RealHttp extends HttpOverrides {}
 
 void main() {
-  group('TelemetrySetting', () {
-    test('on only at all, the default', () {
-      expect(TelemetrySetting.enabled(null), isTrue);
-      expect(TelemetrySetting.enabled('all'), isTrue);
-      expect(TelemetrySetting.enabled(' all '), isTrue);
-      expect(TelemetrySetting.enabled('off'), isFalse);
-      expect(TelemetrySetting.enabled('error'), isFalse);
-      expect(TelemetrySetting.enabled('crash'), isFalse);
-      expect(TelemetrySetting.enabled(false), isFalse);
-    });
-  });
-
   group('TelemetryService', () {
     late FakeSender sender;
     late MemoryTelemetryStore store;
     late DateTime now;
-    late bool enabled;
-    late ValueNotifier<int> settings;
 
     TelemetryService serviceOf({bool Function()? inFront}) => TelemetryService(
       current: AppVersion.parse('1.2.0+12'),
@@ -54,8 +39,6 @@ void main() {
       arch: 'arm64',
       sender: sender,
       url: Uri.parse('https://example.test/v1/ping'),
-      enabled: () => enabled,
-      settingsChanges: settings,
       store: store,
       now: () => now,
       inFront: inFront,
@@ -66,8 +49,31 @@ void main() {
       sender = FakeSender();
       store = MemoryTelemetryStore();
       now = DateTime.utc(2026, 10, 7, 9);
-      enabled = true;
-      settings = ValueNotifier(0);
+    });
+
+    test('says its edition, and where its user came from once told', () async {
+      Map<String, Object?>? told;
+      final service = TelemetryService(
+        current: AppVersion.parse('1.2.0+12'),
+        os: 'macos',
+        arch: 'arm64',
+        sender: sender,
+        url: Uri.parse('https://example.test/v1/ping'),
+        store: store,
+        now: () => now,
+        newId: () => 'id-1',
+        edition: () => 'channel',
+        attribution: () => told,
+      );
+      service.markActive();
+      await pumpEventQueue();
+      expect(sender.sent.last['edition'], 'channel');
+      expect(sender.sent.last.containsKey('attribution'), isFalse);
+      told = {'source': 'channel', 'value': 'youtube'};
+      now = now.add(const Duration(days: 1));
+      service.markActive();
+      await pumpEventQueue();
+      expect(sender.sent.last['attribution'], told);
     });
 
     test('reports a day once, with as little as it needs', () async {
@@ -163,26 +169,6 @@ void main() {
       expect(sender.sent.last['days'], ['2026-10-08']);
     });
 
-    test('sends and keeps nothing while off; turned off, drops it', () async {
-      enabled = false;
-      final service = serviceOf()..start();
-      service.markActive();
-      await pumpEventQueue();
-      expect(sender.sent, isEmpty);
-      expect(store.installId, isNull);
-      expect(store.pendingDays, isEmpty);
-
-      enabled = true;
-      sender.status = null;
-      service.markActive();
-      await pumpEventQueue();
-      expect(store.pendingDays, ['2026-10-07']);
-      enabled = false;
-      settings.value++;
-      expect(store.pendingDays, isEmpty);
-      service.dispose();
-    });
-
     testWidgets('looks at start, then every interval, while in front', (
       tester,
     ) async {
@@ -214,15 +200,6 @@ void main() {
   });
 
   group('telemetry_io', () {
-    test('DO_NOT_TRACK', () {
-      expect(doNotTrack(null), isFalse);
-      expect(doNotTrack(''), isFalse);
-      expect(doNotTrack('0'), isFalse);
-      expect(doNotTrack('false'), isFalse);
-      expect(doNotTrack('1'), isTrue);
-      expect(doNotTrack('true'), isTrue);
-    });
-
     test('the processor', () {
       expect(abiArch(Abi.macosArm64), 'arm64');
       expect(abiArch(Abi.windowsX64), 'x64');

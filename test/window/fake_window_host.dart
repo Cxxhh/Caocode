@@ -88,6 +88,16 @@ class FakeWindowHost extends WindowHost {
     log.add('close $viewId');
   }
 
+  /// The windows in full screen.
+  final Set<int> fullScreen = {};
+
+  @override
+  Future<bool> leaveFullScreen(int viewId) async {
+    if (!fullScreen.remove(viewId)) return false;
+    log.add('leaveFullScreen $viewId');
+    return true;
+  }
+
   @override
   Future<void> focus(int viewId) async => log.add('focus $viewId');
 

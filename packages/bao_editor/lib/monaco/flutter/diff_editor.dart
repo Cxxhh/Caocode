@@ -25,6 +25,7 @@ import 'diff_editor_model.dart';
 import 'document_snapshot.dart';
 import 'editor_scrollbar.dart';
 import 'editor_surface.dart';
+import 'wheel_glide.dart';
 
 /// What the diff gives one of a diff editor's editors.
 class DiffEditorSide {
@@ -244,30 +245,13 @@ class _DiffEditorState extends State<DiffEditor> {
                 )
               : null,
         ),
-        DiffZoneKind.deletedCode => EditorViewZone(
-          afterLineNumber: zone.afterLineNumber,
-          heightInLines: zone.heightInLines,
-          content: CustomPaint(
-            painter: _DeletedCodePainter(
-              original: original,
-              lines: zone.deleted!,
-              diff: zone.diff,
-              styledLines: widget.originalStyledLines,
-              style: widget.style,
-              textScaler: MediaQuery.textScalerOf(context),
-              lineBackground: widget.colors.removedLine,
-              textBackground: widget.colors.removedText,
-            ),
-          ),
-          margin: CustomPaint(
-            painter: _DeletedCodeMarginPainter(
-              lines: zone.deleted!.length,
-              background: widget.colors.removedGutter,
-              sign: widget.colors.signForeground,
-              style: widget.style,
-              textScaler: MediaQuery.textScalerOf(context),
-            ),
-          ),
+        DiffZoneKind.deletedCode => _deletedCodeZone(
+          zone,
+          original,
+          colors: widget.colors,
+          style: widget.style,
+          textScaler: MediaQuery.textScalerOf(context),
+          styledLines: widget.originalStyledLines,
         ),
       };
 
@@ -442,6 +426,49 @@ class _DiffEditorState extends State<DiffEditor> {
   }
 }
 
+/// What one editor shows of its text's changes against [model]'s original,
+/// with no diff editor around it (as the inline view's modified editor):
+/// the original's deleted code in zones above the changes, its changed
+/// lines decorated; none while the diff is not known.
+({List<EditorViewZone> zones, List<EditorDecoration> decorations})
+inlineDiffParts(
+  DiffEditorModel model, {
+  required DiffEditorColors colors,
+  required TextStyle style,
+  required TextScaler textScaler,
+  Map<int, List<TextSpan>>? originalStyledLines,
+}) {
+  final original = model.originalSnapshot;
+  final mappings = model.mappings;
+  if (original == null || mappings == null) {
+    return (zones: const [], decorations: const []);
+  }
+  final zones = computeDiffZones(
+    computeDiffAlignments(mappings, original, innerHunkAlignment: false),
+    sideBySide: false,
+  ).modified;
+  return (
+    zones: [
+      for (final zone in zones)
+        if (zone.kind == DiffZoneKind.deletedCode)
+          _deletedCodeZone(
+            zone,
+            original,
+            colors: colors,
+            style: style,
+            textScaler: textScaler,
+            styledLines: originalStyledLines,
+          ),
+    ],
+    decorations: computeDiffDecorations(
+      mappings,
+      original,
+      model.modified.snapshot,
+      colors,
+    ).modified,
+  );
+}
+
 /// `.diffOverview`: the original's changes in the left lane, the
 /// modified's in the right, and the viewport over both; a press scrolls the
 /// modified editor as its scrollbar would.
@@ -476,10 +503,42 @@ class _DiffOverview extends StatefulWidget {
   State<_DiffOverview> createState() => _DiffOverviewState();
 }
 
-class _DiffOverviewState extends State<_DiffOverview> {
+class _DiffOverviewState extends State<_DiffOverview>
+    with SingleTickerProviderStateMixin {
   bool _hover = false;
   bool _dragging = false;
   double _dragOffset = 0;
+
+  /// A mouse wheel's notches gliding the editors, stopped as anything else
+  /// scrolls them.
+  WheelGlider? _wheel;
+  bool _gliding = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.scroll.addListener(_scrolled);
+  }
+
+  @override
+  void didUpdateWidget(_DiffOverview oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.scroll != widget.scroll) {
+      oldWidget.scroll.removeListener(_scrolled);
+      widget.scroll.addListener(_scrolled);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.scroll.removeListener(_scrolled);
+    _wheel?.dispose();
+    super.dispose();
+  }
+
+  void _scrolled() {
+    if (!_gliding) _wheel?.stop();
+  }
 
   ScrollbarSlider _slider(double top) => ScrollbarSlider.compute(
     trackSize: widget.viewportHeight,
@@ -522,9 +581,30 @@ class _DiffOverviewState extends State<_DiffOverview> {
   }
 
   void _signal(PointerSignalEvent event) {
-    if (event is PointerScrollEvent) {
-      _scrollTo(widget.scroll.value.dy + event.scrollDelta.dy);
+    if (event is! PointerScrollEvent) return;
+    final dy = event.scrollDelta.dy;
+    if (event.kind != PointerDeviceKind.mouse) {
+      _scrollTo(widget.scroll.value.dy + dy);
+      return;
     }
+    // Over a few frames, as the editors take a wheel's notch.
+    (_wheel ??= WheelGlider(vsync: this, move: _glide)).add(
+      Offset(0, dy),
+      at: widget.scroll.value,
+      max: Offset(0, _maxTop()),
+      frame: WheelGlide.frameOf(context),
+    );
+  }
+
+  ({bool x, bool y}) _glide(Offset by) {
+    final top = widget.scroll.value.dy + by.dy;
+    _gliding = true;
+    try {
+      _scrollTo(top);
+    } finally {
+      _gliding = false;
+    }
+    return (x: true, y: widget.scroll.value.dy == top);
   }
 
   @override
@@ -735,6 +815,41 @@ class _DiagonalFillPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _DiagonalFillPainter old) => old.color != color;
 }
+
+/// A [DiffZoneKind.deletedCode] zone: [original]'s deleted lines, with the
+/// removed signs in its margin.
+EditorViewZone _deletedCodeZone(
+  DiffZone zone,
+  DocumentSnapshot original, {
+  required DiffEditorColors colors,
+  required TextStyle style,
+  required TextScaler textScaler,
+  Map<int, List<TextSpan>>? styledLines,
+}) => EditorViewZone(
+  afterLineNumber: zone.afterLineNumber,
+  heightInLines: zone.heightInLines,
+  content: CustomPaint(
+    painter: _DeletedCodePainter(
+      original: original,
+      lines: zone.deleted!,
+      diff: zone.diff,
+      styledLines: styledLines,
+      style: style,
+      textScaler: textScaler,
+      lineBackground: colors.removedLine,
+      textBackground: colors.removedText,
+    ),
+  ),
+  margin: CustomPaint(
+    painter: _DeletedCodeMarginPainter(
+      lines: zone.deleted!.length,
+      background: colors.removedGutter,
+      sign: colors.signForeground,
+      style: style,
+      textScaler: textScaler,
+    ),
+  ),
+);
 
 /// The inline view's deleted code (`renderLines` in a `line-delete` zone):
 /// the original's [lines] with their tokens, on the removed line

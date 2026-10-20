@@ -6,22 +6,24 @@ import 'package:caocode/chat/chat_history_view.dart';
 import 'package:caocode/chat/chat_models.dart';
 import 'package:caocode/chat/chat_session.dart';
 import 'package:caocode/chat/composer/composer_draft.dart';
+import 'package:caocode/chat/composer/composer_files.dart';
 import 'package:caocode/chat/widgets/assistant_text.dart';
 import 'package:caocode/chat/widgets/chat_minimap.dart';
+import 'package:caocode/chat/widgets/hover_scrollbar.dart';
 import 'package:caocode/theme/app_theme.dart';
 
 class _Feed extends ChangeNotifier implements ChatFeed {
   _Feed(this.items);
 
   final List<ChatItem> items;
-  int reads = 0;
+  final readRows = <int>{};
 
   @override
   int get itemCount => items.length;
 
   @override
   ChatItem itemAt(int index) {
-    reads++;
+    readRows.add(index);
     return items[index];
   }
 
@@ -136,10 +138,10 @@ void main() {
     // exist, changing the scroll overlays must not resample every row.
     position.jumpTo(position.maxScrollExtent / 2);
     await tester.pumpAndSettle();
-    feed.reads = 0;
+    feed.readRows.clear();
     position.jumpTo(position.maxScrollExtent);
     await tester.pumpAndSettle();
-    expect(feed.reads, lessThan(feed.itemCount));
+    expect(feed.readRows.length, lessThan(feed.itemCount / 2));
     expect(_strip, findsOneWidget);
   });
 
@@ -178,11 +180,28 @@ void main() {
     );
   }
 
-  testWidgets('gives way in a narrow pane', (tester) async {
+  testWidgets('gives way in a very narrow pane only', (tester) async {
     await _pump(tester, _Feed(_conversation(30)), width: 600);
+    expect(_opacity(tester), 1);
+    await _pump(tester, _Feed(_conversation(30)), width: 400);
     expect(_opacity(tester), 0);
     // The scrollbar is back.
     expect(_scrollbar(tester).interactive, isTrue);
+  });
+
+  testWidgets('a table in the history keeps its bar while it shows', (
+    tester,
+  ) async {
+    await _pump(tester, _Feed(_conversation(30)));
+    expect(_opacity(tester), 1);
+    // The list's own bar gives way to it...
+    Color? thumb(Finder bar) =>
+        ScrollbarTheme.of(tester.element(bar)).thumbColor?.resolve(const {});
+    expect(thumb(find.byType(Scrollbar).first), Colors.transparent);
+    // ...a table's, under it, not.
+    final table = find.byType(HoverScrollbar).last;
+    expect(table, findsOneWidget);
+    expect(thumb(table), isNot(Colors.transparent));
   });
 
   testWidgets('not while all of the history shows', (tester) async {
@@ -219,6 +238,23 @@ void main() {
     await gesture.up();
     await tester.pumpAndSettle();
     expect(position.pixels, position.maxScrollExtent);
+  });
+
+  test('a message samples as its bubble shows it: a paste as its tag, '
+      'a long one as its first lines', () {
+    double height(String text) =>
+        ChatMinimap.sampledHeight(UserMessageItem(text: text));
+    final pasted = PastedText(
+      number: 1,
+      text: [for (var i = 0; i < 548; i++) 'UPDATE t SET a = $i;'].join('\n'),
+    );
+    expect(
+      height('${pasted.reference} 去掉注释。${codeAppendix([pasted])}'),
+      height('${pasted.reference} 去掉注释。'),
+    );
+    final three = height('one\ntwo\nthree');
+    expect(height('one\ntwo\nthree\nfour'), greaterThan(three));
+    expect(height([for (var i = 0; i < 40; i++) 'line $i'].join('\n')), three);
   });
 
   testWidgets('the wheel over it scrolls the history', (tester) async {

@@ -26,7 +26,8 @@
 		</dict>
 	</array>
 	<!-- caocode://, by which the Finder extension hands the app what its
-	     context menu is on, and a site's one-click import an upstream (see
+	     context menu is on, a site's one-click import an upstream, and
+	     the channel build's setup page what it was told (see
 	     AppDelegate.swift). -->
 	<key>CFBundleURLTypes</key>
 	<array>

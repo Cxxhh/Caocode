@@ -75,3 +75,33 @@ class BrandLogo extends StatelessWidget {
     );
   }
 }
+
+/// Caocode's own mark, without the app icon's tile
+/// (`assets/branding/logo.svg`): [size] wide, in [color] (the icons' around
+/// it when null), as a codicon is drawn.
+class CaocodeLogo extends StatelessWidget {
+  const CaocodeLogo({super.key, this.size = 16, this.color});
+
+  static const asset = 'assets/branding/logo.svg';
+
+  final double size;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = this.color ?? IconTheme.of(context).color;
+    return SizedBox.square(
+      dimension: size,
+      child: Center(
+        child: SvgPicture.asset(
+          asset,
+          // 56 by 42: as wide as the square, a little in from its sides.
+          width: size * .875,
+          colorFilter: color == null
+              ? null
+              : ColorFilter.mode(color, BlendMode.srcIn),
+        ),
+      ),
+    );
+  }
+}

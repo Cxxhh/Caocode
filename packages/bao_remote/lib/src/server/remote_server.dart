@@ -142,6 +142,22 @@ class RemoteServer {
     };
     handlers[RemoteProtocol.fsReadBytes] = (params, _) async =>
         encodeBytes(await readFileBytes(paramsOf(params)['path'] as String));
+    handlers[RemoteProtocol.fsReadRange] = (params, _) async {
+      final args = paramsOf(params);
+      final range = await readFileRange(
+        args['path'] as String,
+        args['offset'] as int,
+        args['length'] as int,
+      );
+      return {'data': encodeBytes(range.bytes), 'size': range.size};
+    };
+    handlers[RemoteProtocol.fsSize] = (params, _) async {
+      final args = paramsOf(params);
+      return sizeOfFiles(
+        (args['paths'] as List).cast<String>(),
+        limit: args['limit'] as int?,
+      );
+    };
     handlers[RemoteProtocol.fsWalk] = (params, _) async {
       final args = paramsOf(params);
       final listing = await walkProjectFiles(args['root'] as String, {
@@ -281,8 +297,24 @@ class RemoteServer {
         (await _claude.locate()).executable;
     handlers[RemoteProtocol.claudeStart] = (params, _) async {
       final args = paramsOf(params);
-      final cli = await _claude.locate();
       final cwd = args['cwd'] as String;
+      if (args['core'] == 'builtin') {
+        if (!Directory(cwd).existsSync()) {
+          throw IdeFileNotFoundException(cwd);
+        }
+        return _track(
+          await ServerClaude.startBuiltin(
+            cwd: cwd,
+            arguments: (args['arguments'] as List).cast<String>(),
+            settings: (args['settings'] as Map?)?.cast<String, Object?>(),
+            cleared: (args['cleared'] as List? ?? const []).cast<String>(),
+            environment:
+                (args['environment'] as Map?)?.cast<String, String>() ??
+                const {},
+          ),
+        );
+      }
+      final cli = await _claude.locate();
       if (!Directory(cwd).existsSync()) {
         throw IdeFileNotFoundException(cwd);
       }
@@ -332,8 +364,21 @@ class RemoteServer {
     handlers[RemoteProtocol.claudeProjects] = (_, _) async => [
       for (final project in await _sessions.projects()) project.toJson(),
     ];
-    handlers[RemoteProtocol.claudeRead] = (params, _) =>
-        ClaudeSessions.read(paramsOf(params)['path'] as String);
+    handlers[RemoteProtocol.claudeRead] = (params, _) async {
+      final args = paramsOf(params);
+      final path = args['path'] as String;
+      // Whole, as to a client before pages.
+      if (args['turns'] case final int turns) {
+        final page = await ClaudeSessions.readPage(
+          path,
+          turns: turns,
+          before: args['before'] as String?,
+          bytes: args['bytes'] as int? ?? ClaudeSessions.pageBytes,
+        );
+        return page.toJson();
+      }
+      return ClaudeSessions.read(path);
+    };
     handlers[RemoteProtocol.claudeGoal] = (params, _) =>
         _sessions.goal(paramsOf(params)['id'] as String);
     handlers[RemoteProtocol.claudeDelete] = (params, _) async {

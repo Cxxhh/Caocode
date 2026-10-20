@@ -111,7 +111,9 @@ abstract final class ChatKeys {
   /// (Enter picks a candidate, Esc drops them).
   static bool get isComposing {
     final focus = FocusManager.instance.primaryFocus;
-    if (_focusedEditable(focus)?.textEditingValue.composing.isValid ?? false) {
+    // Not an empty composition (see ChatComposerState's).
+    final composing = _focusedEditable(focus)?.textEditingValue.composing;
+    if (composing != null && composing.isValid && !composing.isCollapsed) {
       return true;
     }
     return targetsOf(focus?.context).any((target) => target.chatComposing);

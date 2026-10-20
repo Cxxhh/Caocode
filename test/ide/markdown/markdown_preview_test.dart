@@ -1,16 +1,35 @@
 import 'dart:convert';
+import 'dart:ui' as ui;
 
 import 'package:bao_editor/monaco/flutter/editor_document_model.dart';
 import 'package:caocode/ide/markdown/markdown_preview.dart';
+import 'package:caocode/theme/app_theme.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
-final _png = base64Decode(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA'
-  '60e6kgAAAABJRU5ErkJggg==',
+late Uint8List _png;
+
+Future<Uint8List> _createPng() async {
+  final recorder = ui.PictureRecorder();
+  ui.Canvas(recorder).drawColor(Colors.red, BlendMode.src);
+  final picture = recorder.endRecording();
+  final image = await picture.toImage(160, 80);
+  final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+  image.dispose();
+  picture.dispose();
+  return bytes!.buffer.asUint8List();
+}
+
+final _svg = Uint8List.fromList(
+  utf8.encode(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24">'
+    '<rect width="24" height="24" fill="red"/></svg>',
+  ),
 );
 
 const _path = '/project/docs/guide.md';
@@ -24,7 +43,7 @@ class FakeHost {
   Future<Uint8List> read(String path) async {
     reads.add(path);
     if (path.endsWith('missing.png')) throw StateError('no such file');
-    return _png;
+    return path.endsWith('.svg') ? _svg : _png;
   }
 }
 
@@ -52,6 +71,12 @@ Future<FakeHost> pumpPreview(
           onEdit: (line, column) => host.edited.add((line, column)),
         ),
       ),
+    ),
+  );
+  await tester.runAsync(
+    () => precacheImage(
+      MemoryImage(_png),
+      tester.element(find.byType(IdeMarkdownPreview)),
     ),
   );
   await tester.pumpAndSettle();
@@ -90,6 +115,23 @@ Future<void> _doubleClick(
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() async => _png = await _createPng());
+
+  testWidgets('heading rules use the sidebar divider color', (tester) async {
+    await pumpPreview(tester, EditorDocumentModel('# Title\n\n## Section'));
+    final separator = AppColors.partBorder;
+    for (final title in ['Title', 'Section']) {
+      final containers = tester.widgetList<Container>(
+        find.ancestor(of: _text(title), matching: find.byType(Container)),
+      );
+      final borders = containers
+          .map((container) => (container.decoration as BoxDecoration?)?.border)
+          .whereType<Border>();
+      expect(borders.first.bottom.color, separator);
+    }
+  });
+
   testWidgets('a double click opens the source at the text clicked', (
     tester,
   ) async {
@@ -166,6 +208,105 @@ void main() {
     expect(host.edits, 2);
   });
 
+  testWidgets('clicking an image opens a zoomable preview', (tester) async {
+    final model = EditorDocumentModel('![shot](img/shot.png)');
+    final host = await pumpPreview(tester, model);
+    final image = find.byType(Image).first;
+    await tester.tap(image);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(InteractiveViewer), findsOneWidget);
+    expect(find.byType(Image), findsNWidgets(2));
+    expect(model.text, '![shot](img/shot.png)');
+    expect(host.edited, isEmpty);
+    final viewer = find.byType(InteractiveViewer);
+    final enlarged = find.descendant(of: viewer, matching: find.byType(Image));
+    expect(tester.getSize(enlarged).width, greaterThan(160));
+    final transform = find
+        .descendant(of: viewer, matching: find.byType(Transform))
+        .first;
+    final before = tester.widget<Transform>(transform).transform.clone();
+    await tester.sendEventToBinding(
+      PointerScrollEvent(
+        position: tester.getCenter(viewer),
+        scrollDelta: const Offset(0, -200),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.widget<Transform>(transform).transform, isNot(before));
+    final zoomed = tester.widget<Transform>(transform).transform.clone();
+    await tester.drag(viewer, const Offset(60, 30));
+    await tester.pumpAndSettle();
+    expect(tester.widget<Transform>(transform).transform, isNot(zoomed));
+
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pumpAndSettle();
+    expect(find.byType(InteractiveViewer), findsNothing);
+    expect(find.byType(Image), findsOneWidget);
+    expect(host.reads, ['/project/docs/img/shot.png']);
+  });
+
+  testWidgets('an image double click does not open the source', (tester) async {
+    final model = EditorDocumentModel('![shot](shot.png)');
+    final host = await pumpPreview(tester, model);
+    final at = tester.getCenter(find.byType(Image));
+    // Both clicks reach the document before the dialog's first frame.
+    await tester.tapAt(at);
+    await tester.tapAt(at);
+    await tester.pumpAndSettle();
+    expect(host.edited, isEmpty);
+    expect(find.byType(InteractiveViewer), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byType(InteractiveViewer), findsNothing);
+  });
+
+  testWidgets('network images reuse the loaded image in the preview', (
+    tester,
+  ) async {
+    const provider = NetworkImage('https://example.test/shot.png');
+    // Seed Flutter's image cache with a deterministic response; no external I/O.
+    final codec = (await tester.runAsync(
+      () => ui.instantiateImageCodec(_png),
+    ))!;
+    final frame = (await tester.runAsync(codec.getNextFrame))!;
+    codec.dispose();
+    PaintingBinding.instance.imageCache.putIfAbsent(
+      provider,
+      () => OneFrameImageStreamCompleter(
+        Future.value(ImageInfo(image: frame.image)),
+      ),
+    );
+    addTearDown(provider.evict);
+    final host = await pumpPreview(
+      tester,
+      EditorDocumentModel('![web](${provider.url})'),
+    );
+    await tester.tap(find.byType(Image));
+    await tester.pumpAndSettle();
+    final image = tester.widget<Image>(
+      find.descendant(
+        of: find.byType(InteractiveViewer),
+        matching: find.byType(Image),
+      ),
+    );
+    expect(image.image, provider);
+    expect(host.reads, isEmpty);
+    await tester.tapAt(const Offset(10, 350));
+    await tester.pumpAndSettle();
+    expect(find.byType(InteractiveViewer), findsNothing);
+  });
+
+  testWidgets('SVG images can be opened in the preview', (tester) async {
+    final model = EditorDocumentModel('![icon](icon.svg)');
+    await pumpPreview(tester, model);
+    await tester.tap(find.byType(SvgPicture));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(InteractiveViewer), findsOneWidget);
+    expect(find.byType(SvgPicture), findsNWidgets(2));
+  });
+
   testWidgets('images are read from the project, beside the document', (
     tester,
   ) async {
@@ -182,6 +323,9 @@ void main() {
     // One that cannot be read shows its alt text.
     expect(find.text('gone'), findsOneWidget);
     expect(find.byIcon(Icons.broken_image_outlined), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.broken_image_outlined));
+    await tester.pumpAndSettle();
+    expect(find.byType(InteractiveViewer), findsNothing);
   });
 
   testWidgets('links: anchors scroll to their heading, files open', (

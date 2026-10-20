@@ -27,6 +27,7 @@ import '../l10n/l10n.dart';
 import '../theme/codicons.dart';
 import '../theme/workbench_theme.dart' show themeColors;
 import 'ide_hover.dart';
+import 'ide_motion.dart';
 
 /// A context menu's colors in the color theme (`defaultMenuStyles`).
 abstract final class IdeMenuColors {
@@ -66,11 +67,17 @@ class IdeMenuAction extends IdeMenuEntry {
     this.enabled = true,
     this.checked = false,
     this.submenu,
+    this.icon,
+    this.keepOpen = false,
+    this.checkedNow,
   });
 
   final String label;
 
-  /// Run once the menu has closed.
+  /// Before [label] (a project's icon), 16px square.
+  final Widget? icon;
+
+  /// Run once the menu has closed ([keepOpen]: at once).
   final VoidCallback? onSelected;
 
   /// Its shortcut, as the platform writes it (`⇧⌘P`).
@@ -80,6 +87,16 @@ class IdeMenuAction extends IdeMenuEntry {
   /// Shows a check mark (`menu-selection`).
   final bool checked;
   final List<IdeMenuEntry>? submenu;
+
+  /// Runs [onSelected] at once and leaves the menu open, the checks read
+  /// anew ([checkedNow]): a multi-select filter's options.
+  final bool keepOpen;
+
+  /// Whether it is checked as it shows, in place of [checked]: as a
+  /// [keepOpen] action leaves it.
+  final ValueGetter<bool>? checkedNow;
+
+  bool get isChecked => checkedNow?.call() ?? checked;
 }
 
 /// Drops leading, trailing and doubled separators, as VS Code's menus do
@@ -113,6 +130,7 @@ Future<void> showIdeMenu(
     entries: entries,
     origin: origin,
     alignRight: alignRight,
+    lively: IdeMotion.livelyOf(context),
     barrierLabel: context.l10n.menuDismissMenu,
     capturedThemes: InheritedTheme.capture(
       from: context,
@@ -230,12 +248,16 @@ class _IdeMenuRoute extends PopupRoute<VoidCallback> {
     required this.alignRight,
     required this.capturedThemes,
     required this.barrierLabel,
+    this.lively = false,
   });
 
   final List<IdeMenuEntry> entries;
   final Rect origin;
   final bool alignRight;
   final CapturedThemes capturedThemes;
+
+  /// Grown in from where it opened, faded out (see [IdeMotion]).
+  final bool lively;
 
   @override
   Color? get barrierColor => null;
@@ -248,26 +270,64 @@ class _IdeMenuRoute extends PopupRoute<VoidCallback> {
 
   // `animation: fadeIn 0.083s linear`; closing is immediate.
   @override
-  Duration get transitionDuration => const Duration(milliseconds: 83);
+  Duration get transitionDuration =>
+      lively ? IdeMotion.enterDuration : const Duration(milliseconds: 83);
 
   @override
-  Duration get reverseTransitionDuration => Duration.zero;
+  Duration get reverseTransitionDuration =>
+      lively ? IdeMotion.exitDuration : Duration.zero;
 
   @override
   Widget buildPage(
     BuildContext context,
     Animation<double> animation,
     Animation<double> secondaryAnimation,
-  ) => capturedThemes.wrap(
-    FadeTransition(
-      opacity: animation,
-      child: _MenuHost(
-        entries: entries,
-        origin: origin,
-        alignRight: alignRight,
-        onChosen: (action) => Navigator.pop(context, action),
-      ),
-    ),
+  ) {
+    final host = _MenuHost(
+      entries: entries,
+      origin: origin,
+      alignRight: alignRight,
+      onChosen: (action) => Navigator.pop(context, action),
+    );
+    return capturedThemes.wrap(
+      lively
+          ? _LivelyMenu(animation: animation, origin: origin, child: host)
+          : FadeTransition(opacity: animation, child: host),
+    );
+  }
+}
+
+/// The menus coming in grown from where they opened (the point clicked,
+/// the button's bottom), a little smaller, fading.
+class _LivelyMenu extends StatelessWidget {
+  const _LivelyMenu({
+    required this.animation,
+    required this.origin,
+    required this.child,
+  });
+
+  final Animation<double> animation;
+  final Rect origin;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final size = constraints.biggest;
+      final at = origin.bottomCenter;
+      final alignment = size.isEmpty
+          ? Alignment.topCenter
+          : Alignment(
+              (at.dx / size.width * 2 - 1).clamp(-1.0, 1.0),
+              (at.dy / size.height * 2 - 1).clamp(-1.0, 1.0),
+            );
+      return IdeMotion.enter(
+        animation,
+        child,
+        alignment: alignment,
+        from: 0.94,
+      );
+    },
   );
 }
 
@@ -333,6 +393,11 @@ class _MenuHostState extends State<_MenuHost> {
   void _choose(IdeMenuAction action) {
     if (!action.enabled) return;
     if (action.submenu != null) return;
+    if (action.keepOpen) {
+      action.onSelected?.call();
+      setState(() {});
+      return;
+    }
     widget.onChosen(action.onSelected);
   }
 
@@ -696,10 +761,14 @@ class _MenuItem extends StatelessWidget {
               children: [
                 SizedBox(
                   width: _em2,
-                  child: action.checked
+                  child: action.isChecked
                       ? Icon(Codicons.menuSelection, size: 14, color: color)
                       : null,
                 ),
+                if (action.icon case final icon?) ...[
+                  SizedBox.square(dimension: 16, child: Center(child: icon)),
+                  const SizedBox(width: 6),
+                ],
                 Expanded(
                   child: Text(
                     action.label,

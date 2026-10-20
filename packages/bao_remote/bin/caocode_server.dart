@@ -6,12 +6,27 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:bao_agent/bao_agent.dart' show runAgentCommandLine;
 import 'package:bao_remote/server.dart';
 
 /// The Caocode version the server came with (`-Dcaocode.version=…`).
 const _version = String.fromEnvironment('caocode.version');
 
 Future<void> main(List<String> arguments) async {
+  // `agent <claude's arguments>`: Caocode's own core, run here as the CLI
+  // would be (see ServerClaude.startBuiltin).
+  if (arguments.firstOrNull == ServerClaude.agentCommand) {
+    exit(
+      await runAgentCommandLine(
+        arguments.sublist(1),
+        input: stdin,
+        output: stdout,
+        errors: stderr,
+        cwd: Directory.current.path,
+        environment: Platform.environment,
+      ),
+    );
+  }
   final home = Platform.environment['HOME'] ?? Directory.current.path;
   final dataDir = arguments.length >= 2 && arguments.first == '--data'
       ? arguments[1]

@@ -323,20 +323,35 @@ class _WindowHeaderState extends State<WindowHeader> {
               if (layout != null) ...[
                 KeyedSubtree(key: _panel, child: IdeLayoutToggle.panel(layout)),
                 KeyedSubtree(key: _chat, child: IdeLayoutToggle.chat(layout)),
-                const SizedBox(width: 2),
               ],
-              // The chat's; the IDE's panel is its own, above.
-              if (widget.onToggleTerminal case final toggle? when !ide) ...[
+              // The chat's terminal and side panel where the IDE has its
+              // panel and chat, the pin after them, and the way to the other
+              // layout last: each where it was after a switch.
+              if (widget.onToggleTerminal case final toggle? when !ide)
                 KeyedSubtree(
                   key: _terminal,
-                  child: ChatTerminalToggle(
-                    shown: widget.terminalShown,
-                    onTap: toggle,
-                    size: 22,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: ChatTerminalToggle(
+                      shown: widget.terminalShown,
+                      onTap: toggle,
+                      size: 22,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 6),
-              ],
+              if (widget.onToggleSidePanel case final toggle? when !ide)
+                KeyedSubtree(
+                  key: _sidePanel,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: SidePanelToggle(
+                      shown: widget.sidePanelShown,
+                      onTap: toggle,
+                      size: 22,
+                    ),
+                  ),
+                ),
+              const SizedBox(width: 2),
               KeyedSubtree(
                 key: _pin,
                 child: PinWindowButton(
@@ -346,7 +361,7 @@ class _WindowHeaderState extends State<WindowHeader> {
               ),
               // The chat's; the IDE is the editor there.
               if (widget.project case final project? when !ide) ...[
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 KeyedSubtree(
                   key: _open,
                   child: OpenInEditorButton(
@@ -374,17 +389,6 @@ class _WindowHeaderState extends State<WindowHeader> {
                           widget.onBack ??
                           () => widget.workspace.layout = WorkspaceLayout.chat,
                     ),
-                  ),
-                ),
-              ],
-              if (widget.onToggleSidePanel case final toggle? when !ide) ...[
-                const SizedBox(width: 6),
-                KeyedSubtree(
-                  key: _sidePanel,
-                  child: SidePanelToggle(
-                    shown: widget.sidePanelShown,
-                    onTap: toggle,
-                    size: 22,
                   ),
                 ),
               ],
@@ -425,9 +429,11 @@ class _WindowHeaderState extends State<WindowHeader> {
     if (minimize == null || maximize == null || close == null) return;
     if (listEquals(_reported, [minimize, maximize, close, ...controls])) return;
     _reported = [minimize, maximize, close, ...controls];
+    // In the window's pixels, as the rectangles: the interface's zoom in.
+    final header = context.findRenderObject()! as RenderBox;
     WindowControls.setHitTestAreas(
       viewId: View.maybeOf(context)?.viewId ?? 0,
-      height: AppMetrics.headerHeight,
+      height: header.localToGlobal(Offset(0, AppMetrics.headerHeight)).dy,
       controls: controls,
       minimize: minimize,
       maximize: maximize,
@@ -437,11 +443,16 @@ class _WindowHeaderState extends State<WindowHeader> {
 
   /// Where [key]'s widget is in the window, in the app's own pixels; null
   /// while it is not laid out, or was not built at all (no project, so no
-  /// editor button).
+  /// editor button). Its size taken through the interface's zoom as its
+  /// corner is: else, zoomed in, the right of a control (the editor
+  /// button's chevron) is left to drag the window.
   Rect? _rect(GlobalKey key) {
     final box = key.currentContext?.findRenderObject() as RenderBox?;
     if (box == null || !box.attached || !box.hasSize) return null;
-    return box.localToGlobal(Offset.zero) & box.size;
+    return MatrixUtils.transformRect(
+      box.getTransformTo(null),
+      Offset.zero & box.size,
+    );
   }
 
   bool get _ide => widget.ide ?? widget.workspace.layout == WorkspaceLayout.ide;
@@ -629,6 +640,11 @@ class _WindowHeaderState extends State<WindowHeader> {
             checked: widget.sidePanelShown,
             shortcut: _shortcut(ChatCommandIds.toggleSidePanel),
             onSelected: toggle,
+          ),
+        if (run != null && widget.onToggleSidePanel != null)
+          command(
+            l10n.cmdToggleSidePanelPosition,
+            ChatCommandIds.toggleSidePanelPosition,
           ),
         HeaderMenuItem(
           l10n.menuKeepOnTop,

@@ -7,14 +7,16 @@
 <meta name="description" content="An awesome, easy-to-use desktop UI for Claude Code, with a millisecond-fast IDE built in.">
 <link rel="icon" href="icon.png">
 <link rel="stylesheet" href="style.css">
+<script src="/head.js"></script>
 <link rel="alternate" hreflang="en" href="https://caocode.dev/">
 <link rel="alternate" hreflang="zh" href="https://caocode.dev/zh/">
 </head>
 <body>
 <svg class="sprite" aria-hidden="true">
-  <!-- Lucide (ISC), https://lucide.dev; the Apple and Windows logos from Simple Icons (CC0), https://simpleicons.org -->
+  <!-- Lucide (ISC), https://lucide.dev; the Apple, Windows and Linux logos from Simple Icons (CC0), https://simpleicons.org -->
   <symbol id="ic-apple" viewBox="0 0 24 24"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04c-2.04.027-3.91 1.183-4.961 3.014c-2.117 3.675-.546 9.103 1.519 12.09c1.013 1.454 2.208 3.09 3.792 3.039c1.52-.065 2.09-.987 3.935-.987c1.831 0 2.35.987 3.96.948c1.637-.026 2.676-1.48 3.676-2.948c1.156-1.688 1.636-3.325 1.662-3.415c-.039-.013-3.182-1.221-3.22-4.857c-.026-3.04 2.48-4.494 2.597-4.559c-1.429-2.09-3.623-2.324-4.39-2.376c-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83c-1.207.052-2.662.805-3.532 1.818c-.78.896-1.454 2.338-1.273 3.714c1.338.104 2.715-.688 3.559-1.701"/></symbol>
   <symbol id="ic-windows" viewBox="0 0 24 24"><path fill="currentColor" d="M0 0h11.377v11.372H0Zm12.623 0H24v11.372H12.623ZM0 12.623h11.377V24H0Zm12.623 0H24V24H12.623"/></symbol>
+  <symbol id="ic-linux" viewBox="0 0 24 24"><path fill="currentColor" d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.132 1.884 1.071.771-.06 1.592-.536 2.257-1.306.631-.765 1.683-1.084 2.378-1.503.348-.199.629-.469.649-.853.023-.4-.2-.811-.714-1.376v-.097l-.003-.003c-.17-.2-.25-.535-.338-.926-.085-.401-.182-.786-.492-1.046h-.003c-.059-.054-.123-.067-.188-.135a.357.357 0 00-.19-.064c.431-1.278.264-2.55-.173-3.694-.533-1.41-1.465-2.638-2.175-3.483-.796-1.005-1.576-1.957-1.56-3.368.026-2.152.236-6.133-3.544-6.139zm.529 3.405h.013c.213 0 .396.062.584.198.19.135.33.332.438.533.105.259.158.459.166.724 0-.02.006-.04.006-.06v.105a.086.086 0 01-.004-.021l-.004-.024a1.807 1.807 0 01-.15.706.953.953 0 01-.213.335.71.71 0 00-.088-.042c-.104-.045-.198-.064-.284-.133a1.312 1.312 0 00-.22-.066c.05-.06.146-.133.183-.198.053-.128.082-.264.088-.402v-.02a1.21 1.21 0 00-.061-.4c-.045-.134-.101-.2-.183-.333-.084-.066-.167-.132-.267-.132h-.016c-.093 0-.176.03-.262.132a.8.8 0 00-.205.334 1.18 1.18 0 00-.09.4v.019c.002.089.008.179.02.267-.193-.067-.438-.135-.607-.202a1.635 1.635 0 01-.018-.2v-.02a1.772 1.772 0 01.15-.768c.082-.22.232-.406.43-.533a.985.985 0 01.594-.2zm-2.962.059h.036c.142 0 .27.048.399.135.146.129.264.288.344.465.09.199.14.4.153.667v.004c.007.134.006.2-.002.266v.08c-.03.007-.056.018-.083.024-.152.055-.274.135-.393.2.012-.09.013-.18.003-.267v-.015c-.012-.133-.04-.2-.082-.333a.613.613 0 00-.166-.267.248.248 0 00-.183-.064h-.021c-.071.006-.13.04-.186.132a.552.552 0 00-.12.27.944.944 0 00-.023.33v.015c.012.135.037.2.08.334.046.134.098.2.166.268.01.009.02.018.034.024-.07.057-.117.07-.176.136a.304.304 0 01-.131.068 2.62 2.62 0 01-.275-.402 1.772 1.772 0 01-.155-.667 1.759 1.759 0 01.08-.668 1.43 1.43 0 01.283-.535c.128-.133.26-.2.418-.2zm1.37 1.706c.332 0 .733.065 1.216.399.293.2.523.269 1.052.468h.003c.255.136.405.266.478.399v-.131a.571.571 0 01.016.47c-.123.31-.516.643-1.063.842v.002c-.268.135-.501.333-.775.465-.276.135-.588.292-1.012.267a1.139 1.139 0 01-.448-.067 3.566 3.566 0 01-.322-.198c-.195-.135-.363-.332-.612-.465v-.005h-.005c-.4-.246-.616-.512-.686-.71-.07-.268-.005-.47.193-.6.224-.135.38-.271.483-.336.104-.074.143-.102.176-.131h.002v-.003c.169-.202.436-.47.839-.601.139-.036.294-.065.466-.065zm2.8 2.142c.358 1.417 1.196 3.475 1.735 4.473.286.534.855 1.659 1.102 3.024.156-.005.33.018.513.064.646-1.671-.546-3.467-1.089-3.966-.22-.2-.232-.335-.123-.335.59.534 1.365 1.572 1.646 2.757.13.535.16 1.104.021 1.67.067.028.135.06.205.067 1.032.534 1.413.938 1.23 1.537v-.043c-.06-.003-.12 0-.18 0h-.016c.151-.467-.182-.825-1.065-1.224-.915-.4-1.646-.336-1.77.465-.008.043-.013.066-.018.135-.068.023-.139.053-.209.064-.43.268-.662.669-.793 1.187-.13.533-.17 1.156-.205 1.869v.003c-.02.334-.17.838-.319 1.35-1.5 1.072-3.58 1.538-5.348.334a2.645 2.645 0 00-.402-.533 1.45 1.45 0 00-.275-.333c.182 0 .338-.03.465-.067a.615.615 0 00.314-.334c.108-.267 0-.697-.345-1.163-.345-.467-.931-.995-1.788-1.521-.63-.4-.986-.87-1.15-1.396-.165-.534-.143-1.085-.015-1.645.245-1.07.873-2.11 1.274-2.763.107-.065.037.135-.408.974-.396.751-1.14 2.497-.122 3.854a8.123 8.123 0 01.647-2.876c.564-1.278 1.743-3.504 1.836-5.268.048.036.217.135.289.202.218.133.38.333.59.465.21.201.477.335.876.335.039.003.075.006.11.006.412 0 .73-.134.997-.268.29-.134.52-.334.74-.4h.005c.467-.135.835-.402 1.044-.7zm2.185 8.958c.037.6.343 1.245.882 1.377.588.134 1.434-.333 1.791-.765l.211-.01c.315-.007.577.01.847.268l.003.003c.208.199.305.53.391.876.085.4.154.78.409 1.066.486.527.645.906.636 1.14l.003-.007v.018l-.003-.012c-.015.262-.185.396-.498.595-.63.401-1.746.712-2.457 1.57-.618.737-1.37 1.14-2.036 1.191-.664.053-1.237-.2-1.574-.898l-.005-.003c-.21-.4-.12-1.025.056-1.69.176-.668.428-1.344.463-1.897.037-.714.076-1.335.195-1.814.12-.465.308-.797.641-.984l.045-.022zm-10.814.049h.01c.053 0 .105.005.157.014.376.055.706.333 1.023.752l.91 1.664.003.003c.243.533.754 1.064 1.189 1.637.434.598.77 1.131.729 1.57v.006c-.057.744-.48 1.148-1.125 1.294-.645.135-1.52.002-2.395-.464-.968-.536-2.118-.469-2.857-.602-.369-.066-.61-.2-.723-.4-.11-.2-.113-.602.123-1.23v-.004l.002-.003c.117-.334.03-.752-.027-1.118-.055-.401-.083-.71.043-.94.16-.334.396-.4.69-.533.294-.135.64-.202.915-.47h.002v-.002c.256-.268.445-.601.668-.838.19-.201.38-.336.663-.336zm7.159-9.074c-.435.201-.945.535-1.488.535-.542 0-.97-.267-1.28-.466-.154-.134-.28-.268-.373-.335-.164-.134-.144-.333-.074-.333.109.016.129.134.199.2.096.066.215.2.36.333.292.2.68.467 1.167.467.485 0 1.053-.267 1.398-.466.195-.135.445-.334.648-.467.156-.136.149-.267.279-.267.128.016.034.134-.147.332a8.097 8.097 0 01-.69.468zm-1.082-1.583V5.64c-.006-.02.013-.042.029-.05.074-.043.18-.027.26.004.063 0 .16.067.15.135-.006.049-.085.066-.135.066-.055 0-.092-.043-.141-.068-.052-.018-.146-.008-.163-.065zm-.551 0c-.02.058-.113.049-.166.066-.047.025-.086.068-.14.068-.05 0-.13-.02-.136-.068-.01-.066.088-.133.15-.133.08-.031.184-.047.259-.005.019.009.036.03.03.05v.02h.003z"/></symbol>
   <symbol id="ic-github" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5c.08-1.25-.27-2.48-1-3.5c.28-1.15.28-2.35 0-3.5c0 0-1 0-3 1.5c-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5c-.39.49-.68 1.05-.85 1.65S8.93 17.38 9 18v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></g></symbol>
   <symbol id="ic-lightbulb" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M15 14c.2-1 .7-1.7 1.5-2.5c1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5c.7.7 1.3 1.5 1.5 2.5m0 4h6m-5 4h4"/></symbol>
   <symbol id="ic-panel-left" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></g></symbol>
@@ -34,6 +36,12 @@
   <symbol id="ic-flag" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/></symbol>
   <symbol id="ic-message-square-text" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2zM7 11h10M7 15h6M7 7h8"/></symbol>
   <symbol id="ic-play" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></symbol>
+  <symbol id="ic-chrome" viewBox="0 0 24 24"><path fill="currentColor" d="M4.139 7.197a.195.195 0 0 0-.336-.002A9.46 9.46 0 0 0 2.5 12c0 4.462 3.076 8.206 7.224 9.226a.2.2 0 0 0 .216-.092l2.466-4.14l.198-.343c.085-.148-.044-.333-.214-.318a4.35 4.35 0 0 1-4.247-2.32l-1.97-3.406z"/><path fill="currentColor" d="m9.566 13.483l-.03-.058l-.074-.127a2.85 2.85 0 1 1 5.039.07l-.037.057l-.07.12a2.848 2.848 0 0 1-4.83-.063"/><path fill="currentColor" d="m15.675 14.329l-1.978 3.428l-2.051 3.445a.194.194 0 0 0 .161.296L12 21.5a9.5 9.5 0 0 0 9.5-9.5a9.5 9.5 0 0 0-.392-2.71a.2.2 0 0 0-.19-.14h-5.193c-.172 0-.267.205-.168.345c.5.708.793 1.572.793 2.505a4.33 4.33 0 0 1-.675 2.329M12 7.65h8.12c.15 0 .245-.158.172-.29A9.5 9.5 0 0 0 12 2.5a9.47 9.47 0 0 0-6.949 3.022a.2.2 0 0 0-.024.236L7.47 9.852l.2.345c.085.148.31.129.382-.027A4.35 4.35 0 0 1 12 7.65"/></symbol>
+  <symbol id="ic-android" viewBox="0 0 24 24"><path fill="currentColor" d="M18.4395 5.5586c-.675 1.1664-1.352 2.3318-2.0274 3.498-.0366-.0155-.0742-.0286-.1113-.043-1.8249-.6957-3.484-.8-4.42-.787-1.8551.0185-3.3544.4643-4.2597.8203-.084-.1494-1.7526-3.021-2.0215-3.4864a1.1451 1.1451 0 0 0-.1406-.1914c-.3312-.364-.9054-.4859-1.379-.203-.475.282-.7136.9361-.3886 1.5019 1.9466 3.3696-.0966-.2158 1.9473 3.3593.0172.031-.4946.2642-1.3926 1.0177C2.8987 12.176.452 14.772 0 18.9902h24c-.119-1.1108-.3686-2.099-.7461-3.0683-.7438-1.9118-1.8435-3.2928-2.7402-4.1836a12.1048 12.1048 0 0 0-2.1309-1.6875c.6594-1.122 1.312-2.2559 1.9649-3.3848.2077-.3615.1886-.7956-.0079-1.1191a1.1001 1.1001 0 0 0-.8515-.5332c-.5225-.0536-.9392.3128-1.0488.5449zm-.0391 8.461c.3944.5926.324 1.3306-.1563 1.6503-.4799.3197-1.188.0985-1.582-.4941-.3944-.5927-.324-1.3307.1563-1.6504.4727-.315 1.1812-.1086 1.582.4941zM7.207 13.5273c.4803.3197.5506 1.0577.1563 1.6504-.394.5926-1.1038.8138-1.584.4941-.48-.3197-.5503-1.0577-.1563-1.6504.4008-.6021 1.1087-.8106 1.584-.4941z"/></symbol>
+  <symbol id="ic-globe" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20a14.5 14.5 0 0 0 0-20M2 12h20"/></g></symbol>
+  <symbol id="ic-inbox" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11"/></g></symbol>
+  <symbol id="ic-image" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15l-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></g></symbol>
+  <symbol id="ic-smartphone" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></g></symbol>
   <symbol id="ic-square" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" rx="2"/></symbol>
 </svg>
 <canvas class="grid" aria-hidden="true"></canvas>
@@ -51,6 +59,9 @@
     <ol>
       <li><a href="#why"><svg class="ic" aria-hidden="true"><use href="#ic-lightbulb"/></svg>Why we built this</a></li>
       <li><a href="#interface"><svg class="ic" aria-hidden="true"><use href="#ic-panel-left"/></svg>The interface</a></li>
+      <li><a href="#browser"><svg class="ic" aria-hidden="true"><use href="#ic-globe"/></svg>Your Chrome<span class="pill-new small">New</span></a></li>
+      <li><a href="#stash"><svg class="ic" aria-hidden="true"><use href="#ic-inbox"/></svg>Stash</a></li>
+      <li><a href="#images"><svg class="ic" aria-hidden="true"><use href="#ic-image"/></svg>Pictures</a></li>
       <li><a href="#speed"><svg class="ic" aria-hidden="true"><use href="#ic-zap"/></svg>Speed</a></li>
       <li><a href="#themes"><svg class="ic" aria-hidden="true"><use href="#ic-palette"/></svg>Your themes</a></li>
       <li><a href="#tools"><svg class="ic" aria-hidden="true"><use href="#ic-code"/></svg>Fast IDE</a></li>
@@ -64,13 +75,17 @@
     </ol>
   </nav>
 
-  <h1>Caocode</h1>
-  <p class="subtitle">An awesome, easy-to-use desktop UI for Claude Code, with a millisecond-fast IDE built in.</p>
-  <p class="meta"><span data-version>Version 1.0.6</span><span>macOS (Apple silicon and Intel) and Windows</span><span>Free and open source</span><span data-updated>Updated 10 October 2026</span></p>
+  <h1 data-channel-title>Caocode</h1>
+  <p class="subtitle" data-channel-subtitle>An awesome, easy-to-use desktop UI for Claude Code, with a millisecond-fast IDE built in.</p>
+  <p class="meta"><span data-version>Version 1.4.0</span><span>macOS (Apple silicon and Intel), Windows and Linux</span><span>Free and open source</span><span data-updated>Updated 19 October 2026</span></p>
 
   <div class="actions">
     <a class="button primary" href="download.html"><svg class="ic logo" aria-hidden="true"><use href="#ic-apple"/></svg>Download for Mac</a>
-    <a class="button" data-file="windows" href="https://dl.caocode.dev/releases/1.0.6/Caocode-1.0.6-setup.exe"><svg class="ic logo" aria-hidden="true"><use href="#ic-windows"/></svg>Download for Windows</a>
+    <a class="button" data-file="windows" href="/dl/windows"><svg class="ic logo" aria-hidden="true"><use href="#ic-windows"/></svg>Download for Windows</a>
+    <a class="button" href="download.html#linux"><svg class="ic logo" aria-hidden="true"><use href="#ic-linux"/></svg>Download for Linux</a>
+  </div>
+  <div class="also">
+    <span class="group"><span class="label">Browser</span><a href="/dl/chrome-web-store"><svg class="ic logo" aria-hidden="true"><use href="#ic-chrome"/></svg>Chrome extension<span class="pill-new tag">New</span></a></span>
   </div>
 
   <figure>
@@ -82,15 +97,17 @@
   <h2 id="why"><svg class="ic" aria-hidden="true"><use href="#ic-lightbulb"/></svg>Why we built this</h2>
   <p>We use Claude Code every day. The terminal is a fine place to run it, but a poor place to read it: long diffs scroll out of view, earlier steps are hard to find again, and reviewing what changed means switching to another app.</p>
   <p>Caocode is the window we wanted around it. It is drawn natively, it opens instantly, and it never makes Claude wait on the interface.</p>
+  <p>Then it kept growing: its agents use your own browser, make and read pictures, and run on any model; and ideas go into Stash as they come, to hand over when they’re ready. All of it in the same native app, as light as ever.</p>
 
   <h2 id="interface"><svg class="ic" aria-hidden="true"><use href="#ic-panel-left"/></svg>The interface</h2>
   <p>The interface is the point of Caocode, so most of the work went into details you may not notice until you go back to something else:</p>
   <ul class="features">
     <li><svg class="ic" aria-hidden="true"><use href="#ic-fold-vertical"/></svg><span><strong>Steps fold away.</strong> Reads, searches and commands collapse into single lines, so the conversation reads as what Claude said and did.</span></li>
-    <li><svg class="ic" aria-hidden="true"><use href="#ic-git-compare"/></svg><span><strong>Every change can be reviewed.</strong> Keep or Undo what Claude edited, file by file. Checkpoints live in Caocode’s own data folder, never in your repository’s <code>.git</code>.</span></li>
-    <li><svg class="ic" aria-hidden="true"><use href="#ic-activity"/></svg><span><strong>You can see what it is doing.</strong> The current task and its progress stay above the input while Claude works.</span></li>
+    <li><svg class="ic" aria-hidden="true"><use href="#ic-git-compare"/></svg><span><strong>Every change can be reviewed.</strong> What Claude changed is marked right in the code, each part to keep or undo on its own, or a file or everything at once; in the side panel beside the chat, with no trip to the IDE. Checkpoints keep only the files the agents edited, in Caocode’s own data folder, never in your repository’s <code>.git</code>.</span></li>
+    <li><svg class="ic" aria-hidden="true"><use href="#ic-activity"/></svg><span><strong>You can see what it is doing.</strong> The current task, the subagents and the background tasks running stay above the input while Claude works; the time so far, the writing speed and the tokens roll by as it goes, and each turn ends with its time and cost.</span></li>
+    <li><svg class="ic" aria-hidden="true"><use href="#ic-panel-left"/></svg><span><strong>A long conversation at a glance.</strong> Beside the chat sits a minimap of the whole conversation, your messages, code, tables and changes each telling apart; a piece of liquid glass marks where you are, and a click or a drag takes you anywhere. However long a conversation, it is read from its end, the earlier turns as you scroll up, so it opens without a wait.</span></li>
     <li><svg class="ic" aria-hidden="true"><use href="#ic-flag"/></svg><span><strong>Give it a goal.</strong> Type <code>/goal</code> and what you want done, and Claude keeps working until it is met. The goal stays above the input with how long it has been worked on; open it to see why it isn’t met yet, or to change it. Set one in the middle of a task and it takes effect at once.</span></li>
-    <li><svg class="ic" aria-hidden="true"><use href="#ic-message-square-text"/></svg><span><strong>The input is a rich-text editor.</strong> Copy code from the editor and it arrives as a reference to the file and its lines; paste images or drop in files and they sit right where you put them in the sentence.</span></li>
+    <li><svg class="ic" aria-hidden="true"><use href="#ic-message-square-text"/></svg><span><strong>The input is a rich-text editor.</strong> Copy code from the editor and it arrives as a reference to the file and its lines; paste images or drop in files and they sit right where you put them in the sentence. Mention files with @, and Polish tidies your words in one click, tags and code kept as they are. Messages sent while Claude is busy queue above the input and go in turn, to take back or send ahead.</span></li>
   </ul>
   <figure>
     <div class="img" data-src="shots/composer.webp"><img decoding="async" loading="lazy" src="shots/composer.webp" width="1568" height="1089" alt="A sent message with five images and a code reference, opened again to edit"></div>
@@ -100,6 +117,43 @@
     <div class="img" data-src="shots/goal.webp"><img decoding="async" loading="lazy" src="shots/goal.webp" width="1568" height="1224" alt="A conversation working toward a goal set with /goal, its goal shown above the input"></div>
     <figcaption>A goal set with <code>/goal</code>: Claude works toward it, and above the input it shows as in progress, with the time spent so far.</figcaption>
   </figure>
+
+  <h2 id="browser"><svg class="ic" aria-hidden="true"><use href="#ic-globe"/></svg>Your Chrome, the agent’s DevTools<span class="pill-new">New</span></h2>
+  <p>Agents use the very Chrome you use every day (or Edge, Brave or Arc), with your sign-ins, cookies and extensions, not a headless browser of their own that’s signed in to nothing. And what the Caocode extension gives them is more than opening pages and clicking about: it’s every panel of Chrome’s developer tools, 28 browser tools in all, to look something up in a dashboard, test the page you just wrote, or chase a bug that only shows in production, all in your own browser.</p>
+  <div class="table caps">
+    <table>
+      <thead><tr><th>What</th><th>What the agent can do</th></tr></thead>
+      <tbody>
+        <tr><td>The basics</td><td>Open pages, go back and forward, reload, list and close tabs, run JavaScript in the page</td></tr>
+        <tr><td>Clicking and typing</td><td>Click, type, press keys and scroll, by an element or its words; several steps in one go, each waiting for the page; answer dialogs</td></tr>
+        <tr><td>Reading the page</td><td>The page’s words and the elements to act on; screenshots, with each element boxed if asked</td></tr>
+        <tr><td>Network</td><td>Every request’s headers, body and response; save them as HAR or curl; send any request again from the page, with its cookies and your changes; WebSocket messages</td></tr>
+        <tr><td>Performance</td><td>Record a load or a stretch of use: Web Vitals (LCP, CLS, INP), long animation frames and the scripts in them, the main thread’s time, a CPU profile</td></tr>
+        <tr><td>Memory</td><td>Heap and DOM use; two snapshots compared, to find the objects that leak and the detached DOM held</td></tr>
+        <tr><td>Breakpoints</td><td>Line, conditional and log breakpoints, stepping, the variables where it paused, by their source-mapped names</td></tr>
+        <tr><td>Sources</td><td>List and read the page’s scripts, mapped back to sources such as <code>src/App.tsx</code></td></tr>
+        <tr><td>Elements</td><td>CSS rules and what overrides what, the box model, event listeners; the React, Vue or Angular component and its props</td></tr>
+        <tr><td>Interception</td><td>Block requests, mock responses, rewrite requests and responses, add delay</td></tr>
+        <tr><td>Emulation</td><td>A phone, a slow or no network, a slow CPU, dark mode, another language, time zone or place, a vision deficiency</td></tr>
+        <tr><td>CSS coverage</td><td>How much of each style sheet no element ever used</td></tr>
+        <tr><td>Storage</td><td>Cookies (HttpOnly too), localStorage, sessionStorage, IndexedDB, Cache Storage, service workers</td></tr>
+        <tr><td>Console</td><td>Console messages and uncaught exceptions</td></tr>
+        <tr><td>Debugging history</td><td>Pages, requests and console errors kept with no recording to start; detailed mode adds bodies and what you did</td></tr>
+        <tr><td>Record and redo</td><td>Watch you do something once, keep the steps, and do it again in your browser</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>They touch only the tabs you share with them, those in the yellow Caocode tab group: the Caocode button in the toolbar hands over the tab you’re on, and dragging a tab out of the group takes it back. Caocode’s side panel shows the page they’re using as it happens, and you can click and type in it to take over at any moment. The extension only passes messages along, and everything stays on your computer.</p>
+  <p>Get the extension from the <a href="/dl/chrome-web-store">Chrome Web Store</a>, or <a href="download.html#browser">download the zip</a> to load it unpacked; on macOS and Windows. What it does and doesn’t do is in its <a href="/browser-privacy">privacy notes</a>.</p>
+
+  <h2 id="stash"><svg class="ic" aria-hidden="true"><use href="#ic-inbox"/></svg>Stash</h2>
+  <p>Good ideas turn up while you’re busy with something else. Give Stash a global shortcut, press it in any app, and a small panel takes whatever you have: text, screenshots, files, links, code. Each note gets its own number, like an issue.</p>
+  <p>When it’s ready, click Implement in Caocode and choose a new git worktree or the current branch, or @ the note in a chat. The chat and the note are linked, and the note’s card shows how it’s going. Jotted down too quickly? Clarify turns a one-liner into a full request, using its images and attachments.</p>
+  <p>Sign in to GitHub or GitLab (GitHub Enterprise and self-hosted GitLab too) to import issues into Stash and see the linked issues and pull requests with their latest state and checks. Replying to or closing an issue waits for your OK, with a warning first if the text looks like it holds a local path or a secret.</p>
+
+  <h2 id="images"><svg class="ic" aria-hidden="true"><use href="#ic-image"/></svg>Pictures</h2>
+  <p>Ask an agent for an icon, an illustration or a rough mock-up, and it makes it with an image model from your upstreams and saves it where you said: the Images API, chat interfaces such as OpenRouter’s and Gemini’s, and Codex’s gpt-image-2 all work.</p>
+  <p>Pictures show right in the chat too: image files it reads, browser screenshots, an MCP tool’s images, and local images in a message. Click one to see it whole, and ← → go through every picture in the conversation. Images on the web stay links, so that loading one doesn’t tell someone’s server what the agent read.</p>
 
   <h2 id="speed"><svg class="ic" aria-hidden="true"><use href="#ic-zap"/></svg>Speed</h2>
   <p>VS Code and Cursor are built on Electron. Each window is a web page, and every copy of the app carries its own Chromium browser and Node.js. That is where the seconds at launch, the gigabyte of memory and the 200 MB downloads go.</p>
@@ -118,6 +172,7 @@
 
   <h2 id="themes"><svg class="ic" aria-hidden="true"><use href="#ic-palette"/></svg>Your themes</h2>
   <p>Caocode’s colors are VS Code’s theme colors, so the themes you already use look the way you expect: the editor, the conversation and the sidebar all follow them. Change the theme whenever you like; the window previews each one as you move through the list.</p>
+  <p>And not only the ones that come with it: search Open VSX in the Extensions view, or drop in a <code>.vsix</code>, to install VS Code color themes and file icon themes. We made Bao Dark and Bao Light of our own, the defaults.</p>
   <p>This is what Caocode does with VS Code as a whole: it keeps the parts that matter most and fits them into a 16 MB download on Windows.</p>
   <figure>
     <div class="img" data-src="shots/themes-light.webp"><img decoding="async" loading="lazy" src="shots/themes-light.webp" width="1568" height="974" alt="Caocode’s main window in a light theme, with search open"></div>
@@ -128,7 +183,8 @@
   <h2 id="tools"><svg class="ic" aria-hidden="true"><use href="#ic-code"/></svg>Fast IDE</h2>
   <p>When you want to look at the code yourself, you don’t need another app. Fast IDE is built in: an editor, a terminal and Source Control with a commit graph, with your VS Code keybindings and language servers. One click takes you back to the chat.</p>
   <p>It responds in milliseconds. Files open, search results appear and keystrokes reach the screen before you notice a wait, even in large projects.</p>
-  <p>Commit messages are written by Claude Code: it reads your changes and drafts the message for you to edit and commit. You can customize how it writes them.</p>
+  <p>Commit messages are written by Claude Code: it reads your changes and drafts the message for you to edit and commit. You can customize how it writes them. Fetch, pull and push are here too; the graph can show every branch and names each commit’s branches and tags; projects of several repositories, and submodules, each stand on their own.</p>
+  <p>To watch an agent write, turn on Show agent changes as diffs: each file it changes opens as a diff as it goes.</p>
   <figure>
     <div class="img" data-src="shots/ide.webp"><img decoding="async" loading="lazy" src="shots/ide.webp" width="1568" height="1157" alt="Fast IDE: Source Control, the editor and the terminal"></div>
     <figcaption>Fast IDE: Source Control with a commit message drafted by Claude Code and the commit graph, the editor, and the terminal.</figcaption>
@@ -138,7 +194,7 @@
   <p>Your code doesn’t have to be on your machine. Open a folder on a Linux server over SSH, the way VS Code’s Remote-SSH does: the window stays on your computer, and files, search, Git, terminals, language servers and Claude Code all run on the server, right next to the code.</p>
   <p>Pick a host from your <code>~/.ssh/config</code>, or type <code>user@host</code>, then choose a folder. Remote projects sit in the sidebar with the rest, marked with their host, and a new chat can start in one from the folder menu above the input. If the server has no Claude Code, Caocode installs it there, and the models you added work there too.</p>
   <p>If the connection drops, Caocode reconnects by itself, and a conversation that was cut off carries on with your next message. If a host can’t be reached, it tells you why, with a button to try again.</p>
-  <p>The server needs Linux (x64 or arm64) and to accept your SSH key or ssh-agent. Passwords and two-factor prompts aren’t supported yet.</p>
+  <p>The server needs Linux (x64 or arm64). SSH keys, ssh-agent and passwords all work, and a password can be kept in the system keychain; a verification code asked at sign-in is asked in Caocode.</p>
 
   <h2 id="customize"><svg class="ic" aria-hidden="true"><use href="#ic-puzzle"/></svg>Skills, MCP servers and more</h2>
   <p>Everything Claude Code can be extended with is in one place: plugins, MCP servers, skills, subagents, rules, commands and hooks, for you or for a single project. Skills you have on claude.ai show up here too.</p>
@@ -149,7 +205,8 @@
 
   <h2 id="models"><svg class="ic" aria-hidden="true"><use href="#ic-sparkles"/></svg>Any model</h2>
   <p>Claude Code does the work; you choose the model. Add an upstream that speaks Anthropic’s API, OpenAI’s Chat Completions or OpenAI’s Responses, and Caocode’s local proxy translates between it and Claude Code. Its tools, skills and way of working stay the same. You can even run Claude Code on GPT-6 Astra.</p>
-  <p>API keys are kept in the system keychain, not in a settings file, and you can choose which model Claude Code uses for each part of its work.</p>
+  <p>With a ChatGPT plan, sign in with your ChatGPT account and use Codex’s models on its allowance; sign in with several, and one that runs out hands over to the next. On a supported site, one click on Import adds the upstream and your key. Test each model in one click once it’s added, and give an upstream request headers of your own.</p>
+  <p>API keys are kept in the system keychain, not in a settings file; you can choose which model Claude Code uses for each part of its work, and each chat can pick its own.</p>
   <figure>
     <div class="img" data-src="shots/models.webp"><img decoding="async" loading="lazy" src="shots/models.webp" width="1568" height="1174" alt="Adding a model upstream in Caocode’s settings, with its protocol menu open"></div>
     <figcaption>Adding an upstream: its protocol, base URL and API key, the models it offers, and which model Claude Code uses for each role.</figcaption>
@@ -165,13 +222,16 @@
   </figure>
 
   <h2 id="limits"><svg class="ic" aria-hidden="true"><use href="#ic-target"/></svg>What it doesn’t do</h2>
-  <p><strong>Caocode has no agent of its own, by design.</strong> Claude Code is the agent, and its ecosystem is unmatched: its tools, skills, plugins, MCP servers, subagents and hooks. A second agent would only split it. Caocode’s job is to give Claude Code the interface it deserves, and to make everything around it work out of the box.</p>
-  <p>So Caocode doesn’t come with a model or an account. It runs the Claude Code you already have, with your settings and your <code>CLAUDE.md</code>. Codex and other agents aren’t supported; other models work through Claude Code, as above.</p>
+  <p><strong>Caocode builds no agent ecosystem of its own, by design.</strong> Claude Code’s is unmatched: its tools, skills, plugins, MCP servers, subagents and hooks. A second one would only split it. Caocode’s job is to give Claude Code the interface it deserves, and to make everything around it work out of the box.</p>
+  <p>So Caocode doesn’t come with a model or an account. Where Claude Code is installed, it runs yours, with your settings, your sign-in and your <code>CLAUDE.md</code>. Where it isn’t, Caocode has a core of its own: it reads the same <code>CLAUDE.md</code>, skills, subagents, commands, hooks, plugins and MCP servers, and runs on the upstreams you add in Settings → Models. For a Claude subscription, pick Claude Code CLI in Settings → General → Core, and Caocode downloads it if it isn’t there.</p>
+  <p>Other agents, such as the Codex CLI, aren’t supported; their models work through Caocode, as above.</p>
 
   <h2 id="download"><svg class="ic" aria-hidden="true"><use href="#ic-download"/></svg>Download</h2>
   <ul class="features">
-    <li><svg class="ic logo" aria-hidden="true"><use href="#ic-apple"/></svg><span><strong>macOS</strong>: for <a data-file="macos-arm64" href="https://dl.caocode.dev/releases/1.0.6/Caocode-1.0.6-arm64.dmg">Apple silicon</a> or <a data-file="macos-x64" href="https://dl.caocode.dev/releases/1.0.6/Caocode-1.0.6-x64.dmg">Intel</a>, macOS 12 Monterey or later.</span></li>
-    <li><svg class="ic logo" aria-hidden="true"><use href="#ic-windows"/></svg><span><strong>Windows</strong>: <a data-file="windows" data-name href="https://dl.caocode.dev/releases/1.0.6/Caocode-1.0.6-setup.exe">Caocode 1.0.6</a>, x64, Windows 10 or later.</span></li>
+    <li><svg class="ic logo" aria-hidden="true"><use href="#ic-apple"/></svg><span><strong>macOS</strong>: for <a data-file="macos-arm64" href="/dl/macos-arm64">Apple silicon</a> or <a data-file="macos-x64" href="/dl/macos-x64">Intel</a>, macOS 12 Monterey or later.</span></li>
+    <li><svg class="ic logo" aria-hidden="true"><use href="#ic-windows"/></svg><span><strong>Windows</strong>: <a data-file="windows" data-name href="/dl/windows">Caocode 1.4.0</a>, x64, Windows 10 or later.</span></li>
+    <li><svg class="ic logo" aria-hidden="true"><use href="#ic-linux"/></svg><span><strong>Linux</strong>: a .deb for <a data-file="linux-x64" href="/dl/linux-x64">x64</a> or <a data-file="linux-arm64" href="/dl/linux-arm64">arm64</a>, Ubuntu 22.04 or later and other Debian-based distributions.</span></li>
+    <li><svg class="ic logo" aria-hidden="true"><use href="#ic-chrome"/></svg><span><strong>Browser extension</strong>: from the <a href="/dl/chrome-web-store">Chrome Web Store</a>, for Chrome, Edge, Brave, Arc and other Chromium browsers.</span></li>
   </ul>
   <p>Caocode updates itself in the background and asks before restarting. You can make updates manual, or turn them off, in Settings → Updates.</p>
 

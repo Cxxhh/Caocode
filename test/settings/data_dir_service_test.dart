@@ -37,9 +37,17 @@ void main() {
       ('checkpoints/app-1f/HEAD', 'ref: refs/heads/main'),
       ('cache/claude-sessions.json', '{}'),
       ('icons/index.json', '[]'),
+      ('pastes/0a1b2c.txt', 'a long log'),
       ('workspaces/w1/web.code-workspace', '{"folders": []}'),
       ('logs/errors.log', '--- Caocode 1.0.1 ---\n'),
       ('extensions/extensions.json', '[]'),
+      // The browser plugin's profile (see lib/browser/).
+      ('browser/profile/Default/Cookies', 'chromium'),
+      // The pictures agents made (see lib/images/).
+      ('images/2026-10-17/a-fox-120000.png', 'png'),
+      // Where the providers' keys are kept where the system has no
+      // keychain of its own (see secret_store_io.dart).
+      ('secrets/provider.abc123', 'sk-kept'),
       ('Cookies', 'chromium'),
       ('GPUCache/data_0', 'chromium'),
       ('Local Storage/leveldb/LOG', 'chromium'),
@@ -83,6 +91,14 @@ void main() {
   ]..sort();
 
   File pointer() => File(p.join(home, '.caocode', 'config-dir.json'));
+
+  /// [path]'s permission bits, as `stat` writes them on this platform
+  /// (BSD's `-f %Lp`, GNU's `-c %a`).
+  String modeOf(String path) {
+    final bsd = Process.runSync('stat', ['-f', '%Lp', path]);
+    if (bsd.exitCode == 0) return '${bsd.stdout}'.trim();
+    return '${Process.runSync('stat', ['-c', '%a', path]).stdout}'.trim();
+  }
 
   group('check', () {
     test(
@@ -155,6 +171,10 @@ void main() {
       'User/keybindings.json',
       'User/settings.json',
       'argv.json',
+      'browser',
+      'browser/profile',
+      'browser/profile/Default',
+      'browser/profile/Default/Cookies',
       'cache',
       'cache/claude-sessions.json',
       'checkpoints',
@@ -164,6 +184,9 @@ void main() {
       'extensions/extensions.json',
       'icons',
       'icons/index.json',
+      'images',
+      'images/2026-10-17',
+      'images/2026-10-17/a-fox-120000.png',
       'keymaps',
       'keymaps/vim.json',
       'language-packs',
@@ -172,6 +195,10 @@ void main() {
       'logs',
       'logs/errors.log',
       'notes.txt',
+      'pastes',
+      'pastes/0a1b2c.txt',
+      'secrets',
+      'secrets/provider.abc123',
       'servers',
       'servers/tool',
       'servers/tool-link',
@@ -193,8 +220,8 @@ void main() {
       Link(p.join(target, 'servers', 'tool-link')).targetSync(),
       p.join(target, 'servers', 'tool', 'bin', 'tool'),
     );
-    expect(progress.first, (0, 14));
-    expect(progress.last, (14, 14));
+    expect(progress.first, (0, 18));
+    expect(progress.last, (18, 18));
     // The old folder is as it was: the web view's files included.
     expect(File(p.join(current, 'Cookies')).existsSync(), isTrue);
     expect(File(p.join(current, 'state', 'state.json')).existsSync(), isTrue);
@@ -256,7 +283,7 @@ void main() {
       File(p.join(target, 'icons', 'index.json')).readAsStringSync(),
       '[{"id": "a"}]',
     );
-    expect(progress.last, (14, 14));
+    expect(progress.last, (18, 18));
     expect(jsonDecode(pointer().readAsStringSync())['dataDir'], target);
   });
 
@@ -349,6 +376,25 @@ void main() {
       resolveDataDirectory(environment: {'HOME': home}, home: home).source,
       DataDirectorySource.defaultLocation,
     );
+  });
+
+  test('the providers\' keys move with the rest, and stay readable only by '
+      'the user', () async {
+    final target = folder('target');
+    await service().migrate(target);
+
+    // The keys are the app's own files, not the web view's: moving the
+    // folder left them behind, and every provider answered "Invalid API
+    // key" until the folder was moved back.
+    expect(DataDirectory.items, contains('secrets'));
+    expect(
+      File(p.join(target, 'secrets', 'provider.abc123')).readAsStringSync(),
+      'sk-kept',
+    );
+    expect(DataDirectoryService.leftoverItems(current), contains('secrets'));
+    // Only the user may read the copy, as where they were first written.
+    expect(modeOf(p.join(target, 'secrets')), '700');
+    expect(modeOf(p.join(target, 'secrets', 'provider.abc123')), '600');
   });
 
   test('the old folder loses only the app\'s entries', () async {

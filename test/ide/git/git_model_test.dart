@@ -95,6 +95,16 @@ void main() {
       );
       final gone = parseGitStatus(_root, '## topic...origin/topic [gone]\x00');
       expect((gone.head.branch, gone.head.upstream), ('topic', 'origin/topic'));
+      // Unborn, its upstream gone (a clone of an empty repository).
+      final empty = parseGitStatus(
+        _root,
+        '## No commits yet on main...origin/main [gone]\x00',
+      ).head;
+      expect((empty.branch, empty.upstream, empty.unborn), (
+        'main',
+        'origin/main',
+        true,
+      ));
     });
 
     test('letters, colors and strike-through follow the Git extension', () {

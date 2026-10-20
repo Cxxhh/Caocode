@@ -16,6 +16,7 @@ import '../../base/cancellation.dart' show CancellationTokenSource;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../base/smooth_scroll.dart';
 import '../../ide/ide_input.dart';
 import '../../ide/ide_list.dart';
 import '../../ide/ide_menu.dart';
@@ -59,7 +60,7 @@ class DebugConsoleViewState extends State<DebugConsoleView> {
   final DisposableStore _listeners = DisposableStore();
   DebugDisposable? _sessionListener;
   DebugSession? _session;
-  final ScrollController _scroll = ScrollController();
+  final ScrollController _scroll = SmoothScrollController();
   final TextEditingController _input = TextEditingController();
   final FocusNode _inputFocus = FocusNode();
   int _history = -1;

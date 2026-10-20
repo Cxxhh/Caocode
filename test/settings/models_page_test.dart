@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:caocode/icons/brand_logos.dart';
 import 'package:caocode/icons/project_icon.dart';
 import 'package:caocode/ide/ide_hover.dart';
+import 'package:caocode/ide/ide_back_button.dart';
+import 'package:caocode/kernel/claude_code/claude_core_setting.dart';
 import 'package:caocode/kernel/claude_code/claude_haiku.dart';
 import 'package:caocode/models/codex/codex_service.dart';
 import 'package:caocode/models/codex/codex_usage.dart';
@@ -169,6 +171,28 @@ void main() {
     await tester.pump();
     // No page of its own to open, nor delete.
     expect(find.text('Connection'), findsNothing);
+  });
+
+  testWidgets('on Caocode\'s own core there is no built-in provider: '
+      'neither listed nor offered as the default', (tester) async {
+    ClaudeCore.current = () => ClaudeCore.builtin;
+    // Picked on the CLI: Claude Code's own default, and its Haiku.
+    await providers.setDefaultModel('default');
+    await providers.setAuxiliaryModel(builtinProviderId);
+    await pump(tester);
+    expect(find.text("Claude Code (this machine's setup)"), findsNothing);
+    expect(find.text('Built-in'), findsNothing);
+    // As for none: the last one picked, automatic.
+    expect(find.text('Last picked'), findsOneWidget);
+    expect(find.text('Automatic'), findsOneWidget);
+    await tester.tap(find.text('Last picked'));
+    await tester.pumpAndSettle();
+    expect(find.text('Claude Code default'), findsNothing);
+    await tester.tapAt(Offset.zero);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Automatic'));
+    await tester.pumpAndSettle();
+    expect(find.text("Claude Code Haiku (this machine's setup)"), findsNothing);
   });
 
   testWidgets('an upstream is added, set up, its models fetched and its '
@@ -400,6 +424,7 @@ void main() {
         id: 'gw',
         name: 'Gateway',
         baseUrl: 'https://gw.example.com',
+        // Listed by name: down first.
         models: [
           ProviderModel(id: 'up'),
           ProviderModel(id: 'down'),
@@ -445,9 +470,9 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump();
-    expect(asked, ['gw/up']);
+    expect(asked, ['gw/down']);
     expect(find.byType(PixelLoader), findsOneWidget);
-    replies['up']!.complete(answer);
+    replies['down']!.complete(answer);
     await tester.pump();
     expect(find.byType(PixelLoader), findsNothing);
     expect(timed, findsOneWidget);
@@ -461,10 +486,10 @@ void main() {
     // All of them; one fails, and says why.
     await tester.tap(find.text('Test All'));
     await tester.pump();
-    expect(asked, ['gw/up', 'gw/up', 'gw/down']);
+    expect(asked, ['gw/down', 'gw/down', 'gw/up']);
     expect(find.byType(PixelLoader), findsNWidgets(2));
-    replies['up']!.complete(answer);
-    replies['down']!.completeError(Exception('401 Unauthorized'));
+    replies['down']!.complete(answer);
+    replies['up']!.completeError(Exception('401 Unauthorized'));
     await tester.pump();
     expect(timed, findsOneWidget);
     expect(find.text('Failed'), findsOneWidget);
@@ -482,6 +507,52 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await tester.pump();
     expect(cancelled, isTrue);
+  });
+
+  testWidgets('Fast is not a provider-wide setting', (tester) async {
+    for (final (id, name, protocol) in [
+      ('gw', 'Gateway', ProviderProtocol.openaiResponses),
+      ('cx', 'ChatGPT', ProviderProtocol.codex),
+    ]) {
+      await providers.save(
+        ModelProvider(id: id, name: name, protocol: protocol),
+      );
+    }
+    await pump(tester);
+
+    for (final name in ['Gateway', 'ChatGPT']) {
+      await tester.tap(find.text(name).last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Advanced'));
+      await tester.pumpAndSettle();
+      expect(find.bySemanticsLabel('Fast Mode'), findsNothing);
+      await tester.tap(find.byType(IdeBackButton).last);
+      await tester.pumpAndSettle();
+    }
+  });
+
+  testWidgets('custom request headers are set, and a variable expression '
+      'kept', (tester) async {
+    await providers.save(
+      const ModelProvider(id: 'gw', name: 'Gateway', baseUrl: 'https://gw'),
+    );
+    await pump(tester);
+    await tester.tap(find.text('Gateway'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Advanced'));
+    await tester.pumpAndSettle();
+    expect(find.text('Custom Headers'), findsOneWidget);
+    await tester.ensureVisible(find.bySemanticsLabel('Custom Headers'));
+    await tester.pumpAndSettle();
+    await type(
+      tester,
+      'Custom Headers',
+      'x-session-id: {{CLAUDE_SESSION_ID}}\nAuthorization: Bearer nope',
+    );
+    // The auth header a custom one may not be: left out.
+    expect(providers.provider('gw')!.headers, {
+      'x-session-id': '{{CLAUDE_SESSION_ID}}',
+    });
   });
 
   testWidgets('deleting an upstream asks first, and takes its key', (

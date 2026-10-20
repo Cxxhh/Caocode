@@ -11,6 +11,7 @@ import 'package:caocode/customize/customization_store.dart';
 import 'package:caocode/customize/customizations.dart';
 import 'package:caocode/customize/customize_view.dart';
 import 'package:caocode/customize/mcp_probe.dart';
+import 'package:caocode/settings/pages/customize_page.dart';
 import 'package:caocode/ide/ide_code_editor.dart';
 import 'package:caocode/keybindings/keybinding_service.dart';
 import 'package:caocode/main.dart';
@@ -201,6 +202,11 @@ void main() {
     // The IDE's editor, the skill's text in it.
     final editor = _inView(find.byType(IdeCodeEditor));
     expect(editor, findsOneWidget);
+    // Its actions flush right, over the editor's right edge (#149).
+    expect(
+      tester.getTopRight(_inView(find.text('Save'))).dx,
+      moreOrLessEquals(tester.getTopRight(editor).dx, epsilon: 16),
+    );
     expect(_editorText(tester), contains('Body'));
     await tester.tap(_inView(find.byType(EditorSurface)));
     await tester.pump();
@@ -360,6 +366,14 @@ void main() {
       _inView(find.text('npm warn\nError: Cannot find module x')),
       findsOneWidget,
     );
+    // Its button flush right in the panel, not halfway (#149).
+    expect(
+      tester.getTopRight(_inView(find.text('Test connection'))).dx,
+      moreOrLessEquals(
+        tester.getTopRight(_inView(find.byType(EditorSurface))).dx,
+        epsilon: 32,
+      ),
+    );
     await tester.tap(_inView(find.text('Test connection')));
     await tester.pump();
     expect(asked, ['ok', 'broken', 'broken']);
@@ -367,4 +381,28 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     expect(_inView(find.text('Failed')), findsOneWidget);
   }, variant: _mac);
+
+  testWidgets('Settings → Customize edits a skill in place, without a title '
+      'bar', (tester) async {
+    final store = _MemoryStore();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CustomizeSettingsPage(customizations: store),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    // The same view as Customize beside the chat, its own title bar off.
+    expect(find.byType(CustomizeView), findsOneWidget);
+    expect(find.text('Close Customize'), findsNothing);
+    expect(find.text('pdf'), findsOneWidget);
+
+    await tester.tap(find.text('pdf'));
+    await tester.pumpAndSettle();
+    final editor = tester
+        .widget<EditorSurface>(find.byType(EditorSurface))
+        .controller;
+    expect(editor.document.text, contains('Body'));
+  });
 }

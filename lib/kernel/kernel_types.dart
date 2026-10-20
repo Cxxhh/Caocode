@@ -266,7 +266,13 @@ class McpServer {
 enum KernelHealthStatus { idle, starting, ready, failed }
 
 class KernelHealth {
-  const KernelHealth(this.status, {this.message, this.detail});
+  const KernelHealth(
+    this.status, {
+    this.message,
+    this.detail,
+    this.missingFolder,
+    this.noModel = false,
+  });
 
   static const idle = KernelHealth(KernelHealthStatus.idle);
   static const ready = KernelHealth(KernelHealthStatus.ready);
@@ -278,6 +284,14 @@ class KernelHealth {
 
   /// More, e.g. the last lines the process printed.
   final String? detail;
+
+  /// The project folder it was to work in, when that is what is not there:
+  /// said in the user's language rather than [message].
+  final String? missingFolder;
+
+  /// Whether what it lacks is a model to run on (Caocode's own core with
+  /// no upstream turned on): offered setting one up rather than a retry.
+  final bool noModel;
 }
 
 /// A task the kernel runs beside the conversation: a background command, a
@@ -301,7 +315,8 @@ class KernelTask {
   final CommandStatus status;
   final DateTime startedAt;
 
-  /// The tool call that started it.
+  /// The tool call that started it; a subagent's, even when continued (on a
+  /// call of its own): where its card is.
   final String? toolUseId;
   final bool background;
 
@@ -530,32 +545,6 @@ class ApprovalRequest extends InteractionRequest {
   final String? alwaysAllowLabel;
 }
 
-/// The agent proposes a plan before it edits.
-class PlanReviewRequest extends InteractionRequest {
-  const PlanReviewRequest({
-    required super.id,
-    required super.title,
-    required this.plan,
-    this.planPath,
-    this.approvals,
-    this.approveLabel = 'Yes, start building',
-  });
-
-  /// Markdown.
-  final String plan;
-
-  /// The file the agent wrote [plan] in, when known: the plan shows there,
-  /// beside the chat, rather than in the request.
-  final String? planPath;
-
-  /// The approvals it is carried out with, when the kernel picks them
-  /// (one of its permission options).
-  final KernelOption? approvals;
-
-  /// The choice to go ahead, saying how it will (e.g. with what approvals).
-  final String approveLabel;
-}
-
 sealed class InteractionAnswer {
   const InteractionAnswer();
 }
@@ -585,21 +574,6 @@ class ApprovalAnswer extends InteractionAnswer {
 
   /// With a denial: what to do instead.
   final String? message;
-}
-
-enum PlanDecision {
-  /// Go ahead, as [PlanReviewRequest.approveLabel] says.
-  approve,
-
-  /// Stay in planning, with [PlanAnswer.feedback].
-  keepPlanning,
-}
-
-class PlanAnswer extends InteractionAnswer {
-  const PlanAnswer(this.decision, {this.feedback});
-
-  final PlanDecision decision;
-  final String? feedback;
 }
 
 /// One message to send, with the settings it runs under.

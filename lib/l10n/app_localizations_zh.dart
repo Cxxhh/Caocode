@@ -165,6 +165,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cmdChatFocusList => '聚焦聊天列表';
 
   @override
+  String get cmdChatFind => '在对话中查找';
+
+  @override
   String get cmdChatCancel => '取消';
 
   @override
@@ -208,6 +211,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cmdChatAttachContext => '添加上下文…';
+
+  @override
+  String get cmdChatPasteRaw => '粘贴为纯文本';
 
   @override
   String get cmdChatSelectNextSuggestion => '选择下一个建议';
@@ -1288,6 +1294,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get quickOpenLoadingFiles => '正在加载文件…';
 
   @override
+  String get quickOpenSearchingFiles => '正在搜索文件…';
+
+  @override
   String get quickOpenNoFiles => '此项目中没有文件';
 
   @override
@@ -1375,6 +1384,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cmdToggleSidePanel => '切换侧栏';
 
   @override
+  String get cmdToggleSidePanelPosition => '切换侧栏位置';
+
+  @override
   String get cmdSidePanelChanges => '显示智能体变更';
 
   @override
@@ -1391,6 +1403,163 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sidePanelTerminal => '终端';
+
+  @override
+  String get sidePanelBrowser => '浏览器';
+
+  @override
+  String get browserNotConnected =>
+      '没有连接浏览器。在 Chrome（或 Edge、Brave、Arc）中添加 Caocode 扩展后，agent 就能使用你共享给它的标签页。';
+
+  @override
+  String get browserNoSharedTab =>
+      '还没有共享的标签页。让 agent 打开网页，或在浏览器工具栏点 Caocode 按钮共享当前标签页。';
+
+  @override
+  String get browserOtherApp => '另一个 Caocode 已连接浏览器。';
+
+  @override
+  String get browserSharedTabs => '共享的标签页';
+
+  @override
+  String get browserReload => '重新加载';
+
+  @override
+  String get browserShowInBrowser => '在浏览器中显示';
+
+  @override
+  String get browserDetached => '浏览器已停止让 Caocode 查看这个标签页。';
+
+  @override
+  String get browserReconnect => '重新连接';
+
+  @override
+  String get browserShowInPanel => '在侧边栏查看';
+
+  @override
+  String get browserWatchTitle => '正在看你在浏览器里操作';
+
+  @override
+  String get browserWatchHint =>
+      '请在浏览器的 Caocode 标签页里操作。完成后点这里的“完成”，或点浏览器工具栏上的 Caocode 按钮。';
+
+  @override
+  String browserWatchSteps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已记录 $count 步',
+      zero: '还没有记录',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get browserWatchCancel => '取消';
+
+  @override
+  String get browserWatchDone => '完成';
+
+  @override
+  String browserWatchedStep(String kind) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'click': '点击',
+      'input': '填写',
+      'key': '按下',
+      'submit': '提交',
+      'navigate': '前往',
+      'closed': '关闭了标签页',
+      'other': '操作',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String browserTraceReveal(String app) {
+    return '在$app中显示 trace 文件（拖进 DevTools 的性能面板可以细看）';
+  }
+
+  @override
+  String browserStepDone(String action) {
+    String _temp0 = intl.Intl.selectLogic(action, {
+      'tabs': '已列出标签页',
+      'open': '已打开',
+      'navigate': '已前往',
+      'back': '已后退',
+      'forward': '已前进',
+      'reload': '已重新加载',
+      'snapshot': '已读取页面',
+      'screenshot': '已截图',
+      'click': '已点击',
+      'type': '已输入',
+      'press': '已按下',
+      'scroll': '已滚动',
+      'evaluate': '已运行',
+      'close': '已关闭标签页',
+      'console': '已查看控制台',
+      'network': '已查看请求',
+      'request': '已查看请求',
+      'performance': '已分析性能',
+      'recordStart': '已开始录制性能',
+      'recordStop': '已分析性能',
+      'emulate': '已模拟',
+      'watch': '已看完你的操作',
+      'act': '已执行',
+      'inspect': '已检查元素',
+      'sources': '已查看源码',
+      'breakpoints': '已设置断点',
+      'debugger': '已调试',
+      'intercept': '已拦截请求',
+      'storage': '已查看站点数据',
+      'dialog': '已应答弹窗',
+      'coverage': '已统计覆盖率',
+      'memory': '已分析内存',
+      'history': '已查看调试记录',
+      'other': '已使用浏览器',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String browserStepRunning(String action) {
+    String _temp0 = intl.Intl.selectLogic(action, {
+      'tabs': '正在列出标签页',
+      'open': '正在打开',
+      'navigate': '正在前往',
+      'back': '正在后退',
+      'forward': '正在前进',
+      'reload': '正在重新加载',
+      'snapshot': '正在读取页面',
+      'screenshot': '正在截图',
+      'click': '正在点击',
+      'type': '正在输入',
+      'press': '正在按下',
+      'scroll': '正在滚动',
+      'evaluate': '正在运行',
+      'close': '正在关闭标签页',
+      'console': '正在查看控制台',
+      'network': '正在查看请求',
+      'request': '正在查看请求',
+      'performance': '正在分析性能',
+      'recordStart': '正在开始录制性能',
+      'recordStop': '正在分析性能',
+      'emulate': '正在模拟',
+      'watch': '正在看你操作',
+      'act': '正在执行',
+      'inspect': '正在检查元素',
+      'sources': '正在查看源码',
+      'breakpoints': '正在设置断点',
+      'debugger': '正在调试',
+      'intercept': '正在拦截请求',
+      'storage': '正在查看站点数据',
+      'dialog': '正在应答弹窗',
+      'coverage': '正在统计覆盖率',
+      'memory': '正在分析内存',
+      'history': '正在查看调试记录',
+      'other': '正在使用浏览器',
+    });
+    return '$_temp0';
+  }
 
   @override
   String get sidePanelPlan => '计划';
@@ -1420,6 +1589,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sidePanelHide => '隐藏侧栏';
 
   @override
+  String get sidePanelMoveLeft => '移到对话左侧';
+
+  @override
+  String get sidePanelMoveRight => '移到对话右侧';
+
+  @override
   String get sidePanelChanges => '变更';
 
   @override
@@ -1445,6 +1620,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sidePanelSource => '源码';
+
+  @override
+  String get sidePanelEdit => '编辑';
 
   @override
   String get sidePanelNoOriginal => '不知道智能体修改前的文件内容，显示当前内容。';
@@ -1478,6 +1656,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sidePanelNoFolder => '这个对话没有项目文件夹';
+
+  @override
+  String get sidePanelSearchFiles => '搜索项目文本';
+
+  @override
+  String get sidePanelCloseSearch => '关闭搜索';
 
   @override
   String get sidePanelShowList => '显示列表';
@@ -1620,6 +1804,14 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get sidebarDeleteAgentsTitle => '删除智能体？';
+
+  @override
+  String sidebarDeleteAgentsMessage(int count) {
+    return '$count 个智能体及其对话将被删除，内核中的记录也会一并删除。此操作无法撤销。';
+  }
+
+  @override
   String sidebarDeleteAgentMessageKernel(String title, String kernel) {
     return '“$title”及其对话将被删除，$kernel 中的记录也会一并删除。此操作无法撤销。';
   }
@@ -1629,6 +1821,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get ideChatHistory => '历史智能体';
+
+  @override
+  String get ideChatShowArchived => '显示已归档的智能体';
 
   @override
   String get ideChatNoAgents => '此项目中没有智能体';
@@ -1671,7 +1866,37 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sidebarUnarchive => '取消归档';
 
   @override
+  String sidebarPinCount(int count) {
+    return '置顶 $count 个智能体';
+  }
+
+  @override
+  String sidebarUnpinCount(int count) {
+    return '取消置顶 $count 个智能体';
+  }
+
+  @override
+  String sidebarArchiveCount(int count) {
+    return '归档 $count 个智能体';
+  }
+
+  @override
+  String sidebarUnarchiveCount(int count) {
+    return '取消归档 $count 个智能体';
+  }
+
+  @override
+  String sidebarDeleteCount(int count) {
+    return '删除 $count 个智能体…';
+  }
+
+  @override
   String get sidebarCopySessionId => '复制会话 ID';
+
+  @override
+  String sidebarOpenStash(int id) {
+    return '打开 Stash #$id';
+  }
 
   @override
   String get sidebarFork => 'Fork 对话';
@@ -1845,6 +2070,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get workspaceFileExplorer => '文件资源管理器';
 
   @override
+  String get workspaceFileManager => '文件管理器';
+
+  @override
   String get workspaceTerminalApp => '终端';
 
   @override
@@ -1920,6 +2148,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get chatOpensItsConversation => '打开其对话';
+
+  @override
+  String get chatLoadEarlier => '加载更早的消息';
 
   @override
   String get chatStop => '停止';
@@ -2012,6 +2243,33 @@ class AppLocalizationsZh extends AppLocalizations {
   String get toolUsed => '已使用';
 
   @override
+  String get toolGeneratingImage => '正在生成图片';
+
+  @override
+  String get toolGeneratedImage => '已生成图片';
+
+  @override
+  String get toolImageFailed => '图片未生成';
+
+  @override
+  String get toolImageWaiting => '生成图片';
+
+  @override
+  String get imagePickTitle => '选择用来生成的模型';
+
+  @override
+  String get imagePickGenerate => '生成';
+
+  @override
+  String get imagePickDecline => '不生成';
+
+  @override
+  String get imageSetDefault => '设为默认';
+
+  @override
+  String get imageDefaultSet => '已设为默认图片模型';
+
+  @override
   String get toolProposingGoal => '正在提议目标';
 
   @override
@@ -2088,6 +2346,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String pastedTextGone(String path) {
+    return '这段粘贴的内容已不在 $path。';
+  }
+
+  @override
   String pastedTextLines(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -2151,6 +2414,16 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String stepsBrowsed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '操作浏览器 $count 次',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String stepsUsed(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -2190,7 +2463,13 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get turnSpeedHint => '输出速度';
+  String get turnSpeedHint => '平均输出速度';
+
+  @override
+  String get turnOutputTokensHint => '本轮已输出';
+
+  @override
+  String get turnSpeedLiveHint => '输出速度（最近 2 秒采样）';
 
   @override
   String get turnDurationHint => '本轮耗时';
@@ -2215,13 +2494,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get planDrafting => '起草中';
 
   @override
-  String get planAwaiting => '待审批';
+  String get planAwaiting => '待开始';
 
   @override
   String get planApproved => '已批准';
 
   @override
   String get planSentBack => '已退回';
+
+  @override
+  String get planStart => '开始执行';
+
+  @override
+  String get planStartHint => '退出计划模式，按此计划开始执行';
+
+  @override
+  String get planStartMessage => '按计划开始执行';
 
   @override
   String turnFiles(int count) {
@@ -2260,6 +2548,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatSubagent => '子智能体';
 
   @override
+  String get chatLoadingHistory => '正在加载对话…';
+
+  @override
   String get activityCompacting => '正在压缩对话';
 
   @override
@@ -2267,7 +2558,61 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get activityMusings =>
-      '冥思苦想\n琢磨一下\n慢慢酝酿\n深思熟虑\n文火慢炖\n入味中\n修修补补\n融会贯通\n反复掂量\n连点成线\n追一个直觉\n酝酿计划\n孵化方案\n权衡利弊\n理清头绪\n赶着一群 token\n召唤上下文\n网格化样条曲线\n请教小黄鸭\n看茶叶占卜\n在餐巾纸上打草稿\n在页边涂鸦\n眯眼看 diff\n数括号\n和编译器交朋友\n与类型系统谈判\n驯服边界情况\n追踪调用栈\n翻阅文档\n探索代码库\n把鸭子排成一排\n摇一摇魔法 8 号球\n预热神经元\n折叠思绪\n调整状态\n绑定 Monad\n提升进 Monad\n求问神谕\n搅一搅锅\n打磨计划';
+      '冥思苦想\n琢磨一下\n慢慢酝酿\n深思熟虑\n文火慢炖\n修修补补\n融会贯通\n反复掂量\n连点成线\n追一个直觉\n酝酿计划\n孵化方案\n权衡利弊\n理清头绪\n赶着一群 token\n召唤上下文\n请教小黄鸭\n在餐巾纸上打草稿\n眯眼看 diff\n数括号\n和编译器交朋友\n与类型系统谈判\n驯服边界情况\n追踪调用栈\n翻阅文档\n探索代码库\n摇一摇魔法 8 号球\n绑定 Monad\n求问神谕\n打磨计划\n打个腹稿\n掐指一算\n抽丝剥茧\n顺藤摸瓜\n在脑子里跑一遍\n把思路捋直\n拆解问题';
+
+  @override
+  String activityMusingsCommand(String name) {
+    return '对着 $name 的输出点点头\n品一品 $name 的输出\n给 $name 的输出划重点\n看 $name 跑出了什么名堂\n把 $name 的结果过一遍';
+  }
+
+  @override
+  String activityMusingsCommandFailed(String name) {
+    return '和 $name 的报错大眼瞪小眼\n盯着 $name 的报错挠头\n给 $name 的报错号号脉\n琢磨 $name 为什么不高兴\n顺着 $name 的报错往回找';
+  }
+
+  @override
+  String activityMusingsRead(String name) {
+    return '把 $name 翻来覆去地看\n在 $name 里找线头\n跟 $name 混个脸熟\n在 $name 的字里行间找答案\n把 $name 记在心里';
+  }
+
+  @override
+  String activityMusingsEdit(String name) {
+    return '欣赏刚改好的 $name\n替 $name 捏把汗\n回头再瞄一眼 $name\n想想 $name 还缺点啥\n给 $name 收个尾';
+  }
+
+  @override
+  String activityMusingsSearch(String name) {
+    return '在 $name 处结果里淘金\n从 $name 处结果里挑出真身\n顺着 $name 条线索摸过去';
+  }
+
+  @override
+  String activityMusingsFolder(String name) {
+    return '在 $name 里东张西望\n给 $name 点个名\n摸清 $name 的家底';
+  }
+
+  @override
+  String activityMusingsWeb(String name) {
+    return '从 $name 抄点笔记\n消化 $name 上看来的东西';
+  }
+
+  @override
+  String activityMusingsAgent(String name) {
+    return '听 $name 汇报\n批改 $name 交上来的作业\n消化 $name 带回来的情报';
+  }
+
+  @override
+  String activityMusingsMcp(String name) {
+    return '拆 $name 寄回来的包裹\n看 $name 回了些什么';
+  }
+
+  @override
+  String get activityMusingsBrowser => '端详页面截图\n看看浏览器里发生了什么';
+
+  @override
+  String get activityMusingsImage => '端详刚画好的图\n给新图挑挑刺';
+
+  @override
+  String get activityMusingsDenied => '收到，换条路走\n另想办法';
 
   @override
   String get composerCommands => '命令';
@@ -2427,6 +2772,26 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String stripAgentsRunning(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 个子代理运行中',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String stripTasksRunning(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 个后台任务运行中',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get stripUndoAll => '全部撤销';
 
   @override
@@ -2437,6 +2802,21 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get stripUndo => '撤销';
+
+  @override
+  String get agentKeepFile => '保留当前';
+
+  @override
+  String get agentUndoFile => '撤销当前';
+
+  @override
+  String get agentPreviousChange => '上一处更改';
+
+  @override
+  String get agentNextChange => '下一处更改';
+
+  @override
+  String get agentMoreActions => '更多操作';
 
   @override
   String get stripChangeAdded => '新增';
@@ -2451,10 +2831,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get stripChangeConflict => '智能体改完后这个文件又被改过，无法自动撤销智能体的改动。请手动处理后再保留。';
 
   @override
-  String get stripChangeShared => '同一时间还有别的智能体在这个项目里工作，这处改动可能有一部分是它的。';
-
-  @override
-  String get stripChangeUntracked => '不在项目快照中（被忽略、文件过大或在项目之外）：只能保留，无法撤销。';
+  String get stripChangeUntracked => '不知道改动前的内容（智能体没有提供、文件过大或在项目之外）：只能保留，无法撤销。';
 
   @override
   String get stripChangesDiff => '智能体改动';
@@ -2545,7 +2922,15 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String healthFolderGone(String folder) {
+    return '项目文件夹不存在：$folder';
+  }
+
+  @override
   String get healthHideDetails => '隐藏详细信息';
+
+  @override
+  String get markdownDetails => '详细信息';
 
   @override
   String get healthDetails => '详细信息';
@@ -2569,38 +2954,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get interactionDenyHint => '告诉智能体改做什么';
 
   @override
-  String get interactionPlanTitle => '准备好开始了吗？';
-
-  @override
-  String get interactionStartBuilding => '是，开始构建';
-
-  @override
-  String interactionStartWith(String approvals) {
-    return '是，开始 · $approvals';
-  }
-
-  @override
-  String get interactionKeepPlanningOption => '不，继续规划';
-
-  @override
-  String get interactionWhatShouldChange => '需要改什么？';
-
-  @override
-  String get interactionSayWhatToChange => '或在下方输入框说明要改什么';
-
-  @override
-  String get interactionViewPlan => '查看计划';
-
-  @override
   String interactionStepOf(int step, int total) {
     return '$step / $total';
   }
 
   @override
   String get interactionSkip => '跳过';
-
-  @override
-  String get interactionKeepPlanning => '继续规划';
 
   @override
   String get interactionSubmit => '提交';
@@ -2738,6 +3097,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get tabCloseAll => '全部关闭';
+
+  @override
+  String get fileLinkOpen => '打开';
+
+  @override
+  String get fileLinkOpenInPanel => '在侧边栏中打开';
+
+  @override
+  String get fileLinkPreview => '预览';
+
+  @override
+  String get fileLinkOpenInBrowser => '在浏览器中打开';
 
   @override
   String get tabCopyPath => '复制路径';
@@ -2984,6 +3355,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get explorerPreparingTransfer => '正在准备文件…';
 
   @override
+  String composerCopyToHostFailed(String error) {
+    return '无法把文件复制到远程主机：$error';
+  }
+
+  @override
   String get explorerNewFile => '新建文件...';
 
   @override
@@ -2994,6 +3370,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get explorerFindInFolder => '在文件夹中查找...';
+
+  @override
+  String get explorerOpenInTerminal => '在终端中打开';
 
   @override
   String get explorerRename => '重命名...';
@@ -3071,11 +3450,37 @@ class AppLocalizationsZh extends AppLocalizations {
       'Agent 在它写的提交和 Pull Request 中添加的署名。更改对之后启动的 Agent 生效；目前仅支持 Claude Code。';
 
   @override
-  String get generalSettingsTelemetry => '发送使用数据';
+  String get generalSettingsClaudeCore => '内核';
 
   @override
-  String get generalSettingsTelemetryDescription =>
-      '每天使用 Caocode 时，发送一次随机的安装 ID、版本号以及系统和处理器类型，让我们知道有多少人在用、有多少人会回来。不包含任何关于你、你的代码或你在 Caocode 中所做之事的信息（telemetry.telemetryLevel）。';
+  String get generalSettingsClaudeCoreDescription =>
+      'Claude Code CLI：Anthropic 官方程序，沿用本机的登录和配置，用 Claude 订阅请选它。内置：Caocode 自带，只用 设置 → 模型 里添加的模型。本机装了 Claude Code 时默认用 CLI，否则用内置。改动对新开的会话生效。';
+
+  @override
+  String get generalSettingsClaudeCoreBuiltin => '内置';
+
+  @override
+  String get generalSettingsClaudeCoreCli => 'Claude Code CLI';
+
+  @override
+  String get generalSettingsQueuedMessages => '工作中发送的消息';
+
+  @override
+  String get generalSettingsQueuedMessagesDescription =>
+      'Agent 还在工作时发出的消息何时被处理。更改对之后发送的消息生效；目前仅支持 Claude Code。';
+
+  @override
+  String get generalSettingsQueuedAfterTurn => '当前任务完成后依次执行';
+
+  @override
+  String get generalSettingsQueuedDuringTurn => '插入当前任务';
+
+  @override
+  String get generalSettingsPromptSuggestions => '建议下一条提示';
+
+  @override
+  String get generalSettingsPromptSuggestionsDescription =>
+      '每轮结束后在输入框里给出灰色的下一条消息建议，按 Tab 采用。每条建议都会带着整段对话额外请求一次模型，关掉可以节省 token。从下一条消息起生效；目前仅支持 Claude Code。';
 
   @override
   String generalSettingsCommitAttributionLabel(String name) {
@@ -3498,6 +3903,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get scmUndoLastCommit => '撤消上次提交';
 
   @override
+  String get scmGraphBranches => '显示的分支';
+
+  @override
+  String get scmGraphCurrentBranch => '当前分支';
+
+  @override
+  String get scmGraphAllBranches => '所有分支';
+
+  @override
   String get scmGoToCurrent => '转到当前历史记录项';
 
   @override
@@ -3594,6 +4008,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get scmSynchronizingChanges => '正在同步更改...';
+
+  @override
+  String get scmFetch => '获取';
+
+  @override
+  String get scmFetchFromAllRemotes => '从所有远程获取';
+
+  @override
+  String get scmPull => '拉取';
+
+  @override
+  String get scmPush => '推送';
 
   @override
   String scmPullCommits(int count, String upstream) {
@@ -4067,26 +4493,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get langClickToRetry => '单击以重试';
 
   @override
-  String langNotInstalled(String id) {
-    return '$id 未安装';
-  }
-
-  @override
-  String langNeedsRuntime(String id, String runtime) {
-    return '安装 $id 需要 $runtime，但未找到';
-  }
-
-  @override
-  String langClickToInstall(String id) {
-    return '单击以安装 $id';
-  }
-
-  @override
-  String langNotOnPath(String id) {
-    return '在 PATH 中找不到 $id';
-  }
-
-  @override
   String langInstallingItem(String id) {
     return '正在安装 $id…';
   }
@@ -4157,6 +4563,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get langNoFormatter => '此文件没有格式化程序。';
+
+  @override
+  String langNoFormatterInstall(String id, String language) {
+    return '此文件没有格式化程序。安装“$id”语言服务器后即可格式化 $language 文件。';
+  }
 
   @override
   String get langNoRefactorings => '没有可用的重构操作';
@@ -4394,18 +4805,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get wbUnpinTimeline => '取消固定当前时间线';
 
   @override
-  String get wbLanguageServices => '语言服务';
-
-  @override
-  String get wbMonacoEditor => 'Monaco 编辑器';
-
-  @override
-  String get wbTextEditor => '文本编辑器';
-
-  @override
-  String get wbRetryLanguageServices => '重试语言服务';
-
-  @override
   String get wbNoProblems => '没有问题';
 
   @override
@@ -4453,6 +4852,21 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get wbLanguageMode => '语言模式';
+
+  @override
+  String get shownImage => '图片';
+
+  @override
+  String get shownReadOnly => '只读';
+
+  @override
+  String get languageModeAuto => '自动检测';
+
+  @override
+  String get languageModePlaceholder => '选择语言模式';
+
+  @override
+  String get languageModeChange => '更改语言模式';
 
   @override
   String get editorCommandPalette => '命令面板...';
@@ -4659,6 +5073,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dataDirRevealInFileExplorer => '在文件资源管理器中显示';
+
+  @override
+  String get dataDirRevealInFileManager => '在文件管理器中显示';
 
   @override
   String get dataDirChecking => '正在检查文件夹…';
@@ -5088,11 +5505,32 @@ class AppLocalizationsZh extends AppLocalizations {
   String get generalSettingsWindows => '窗口';
 
   @override
+  String get generalSettingsIde => 'Fast IDE';
+
+  @override
+  String get generalSettingsAutoOpenChanges => '以 Diff 显示智能体改动';
+
+  @override
+  String get generalSettingsAutoOpenChangesDescription =>
+      'IDE 显示时，智能体每改一个文件就在编辑器中以 Diff 形式打开（对比改动前后的内容），随改随看。';
+
+  @override
+  String get explorerExcludeSetting => '隐藏的文件和文件夹';
+
+  @override
+  String get explorerExcludeSettingDescription =>
+      '资源管理器中不显示的文件和文件夹，用逗号分隔：文件名（`node_modules`、`*.log`）匹配任意位置，路径（`build/**`、`src/generated`）匹配所在文件夹内的位置。';
+
+  @override
+  String get explorerExcludeSettingPlaceholder =>
+      '例如 .git, node_modules, *.log';
+
+  @override
   String get claudePathSetting => '路径';
 
   @override
   String get claudePathSettingDescription =>
-      '留空：自动使用本机已安装的和 Caocode 下载的 Claude Code 中版本最高的一份（一份都没有时会自动下载）。填入路径：始终使用这一份，例如你自己编译的版本。（claudeCode.path）';
+      '留空则自动用本机最新版本的 Claude Code，没有时自动下载。填入路径则固定用那一份，比如你自己编译的版本。（claudeCode.path）';
 
   @override
   String get claudePathSettingHint => '自动';
@@ -5123,7 +5561,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get generalSettingsIdeWindowsDescription =>
-      'Fast Ide 在哪里打开：独立窗口，每个文件夹一个（新建窗口 ⇧⌘N / Ctrl+Shift+N 打开一个空窗口）；或在主窗口中替换对话，一次一个文件夹。立即生效。（window.ideWindows）';
+      'Fast Ide 在哪里打开：在主窗口中替换对话，一次一个文件夹；或独立窗口，每个文件夹一个（新建窗口 ⇧⌘N / Ctrl+Shift+N 打开一个空窗口）。立即生效。（window.ideWindows）';
 
   @override
   String get generalSettingsIdeWindowsSeparate => '独立窗口';
@@ -6010,6 +6448,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get modelsEnvDescription => '每行一个 KEY=VALUE，在以上设置之后传给 Claude Code。';
 
   @override
+  String get modelsHeaders => '自定义请求头';
+
+  @override
+  String get modelsHeadersDescription =>
+      '每行一个 Name: Value，对此上游的每次请求都会带上。值里可用双花括号变量 CLAUDE_SESSION_ID（本次对话的会话）与 ANTHROPIC_MODEL（所请求的模型）；走直连 Anthropic 协议时这两个变量原样发出，可用的只有固定值。鉴权头（Authorization、x-api-key）在此忽略：Key 在下方设置。';
+
+  @override
+  String get modelsHeadersPlaceholder => 'x-session-id: my-session';
+
+  @override
   String get modelsDelete => '删除上游';
 
   @override
@@ -6128,6 +6576,38 @@ class AppLocalizationsZh extends AppLocalizations {
   String get modelsNoImages => '不支持图片';
 
   @override
+  String get modelsKind => '用途';
+
+  @override
+  String get modelsKindChat => '对话';
+
+  @override
+  String get modelsKindImage => '图片生成（Images API）';
+
+  @override
+  String get modelsKindImageChat => '图片生成（对话接口）';
+
+  @override
+  String get modelsKindDescription =>
+      '图片模型不出现在模型选择器里：agent 通过 generate_image 工具用它们生成图片。';
+
+  @override
+  String get modelsImageBadge => '图片';
+
+  @override
+  String get modelsImage => '图片生成模型';
+
+  @override
+  String get modelsImageDescription =>
+      'agent 生成图片（generate_image 工具）时用的模型，除非你让它换一个；选「每次询问」时在对话里选。图片模型在上游的模型列表里启用。';
+
+  @override
+  String get modelsImageFirst => '每次询问';
+
+  @override
+  String get modelsImageNone => '未启用图片模型';
+
+  @override
   String get modelsSave => '保存';
 
   @override
@@ -6140,7 +6620,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get modelsSwitchDetail =>
-      'Claude Code 会在新上游上重启，并用 --resume 接续当前对话。历史记录会原样发给新模型，部分上游首次处理会较慢。';
+      'Claude Code 会在新上游上重启，并用 --resume 接续当前对话。历史记录会原样发给新模型，部分上游首次处理会较慢。如果还有回复在进行，发送下一条消息时会先停止它。';
 
   @override
   String get modelsSwitchConfirm => '切换';
@@ -6517,11 +6997,36 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get appearanceSettingsReplyScroll => '回复时滚动';
+
+  @override
+  String get appearanceSettingsReplyScrollDescription =>
+      'Agent 回复时对话停在哪里：自动跟随最新输出；或者锚定开头，你的消息到顶部后就不再自动滚动，从回复开头往下读。手动滚到底部后恢复跟随。';
+
+  @override
+  String get appearanceSettingsReplyScrollFollow => '自动';
+
+  @override
+  String get appearanceSettingsReplyScrollStart => '锚定开头';
+
+  @override
+  String appearanceSettingsReplyScrollLabel(String choice) {
+    return '回复时滚动：$choice';
+  }
+
+  @override
   String get appearanceSettingsMinimap => '对话缩略图';
 
   @override
   String get appearanceSettingsMinimapDescription =>
       '在对话左侧显示整段对话的缩略图，滚动时显示当前所在位置，点击或拖动即可跳转。开启时代替右侧滚动条；窗口太窄时不显示。关闭后恢复右侧滚动条。';
+
+  @override
+  String get appearanceSettingsSidebarTimes => '侧边栏显示时间';
+
+  @override
+  String get appearanceSettingsSidebarTimesDescription =>
+      '在侧边栏每个智能体的右侧显示它最后一次活动的时间。关闭后只在鼠标悬停时显示。';
 
   @override
   String get appearanceSettingsMinimapGlass => '液态玻璃不透明度';
@@ -6582,7 +7087,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get appearanceSettingsCodeSizeDescription =>
-      'Fast IDE 编辑器及侧边栏文件、变更视图中源码的字号。对话中的代码跟随界面文字大小，终端使用终端字号。';
+      'Fast IDE 编辑器及侧边栏文件、变更视图中源码的字号。对话中的代码跟随界面大小，终端使用终端字号。';
 
   @override
   String appearanceSettingsCodeSizeLabel(String size) {
@@ -6597,15 +7102,15 @@ class AppLocalizationsZh extends AppLocalizations {
       '字体有对应字形时，把 => 、!= 等组合画成一个字形。终端不使用连字。';
 
   @override
-  String get appearanceSettingsUiScale => '界面文字大小';
+  String get appearanceSettingsUiScale => '界面大小';
 
   @override
   String get appearanceSettingsUiScaleDescription =>
-      '缩放界面文字、对话中的代码，以及终端字号为“跟随界面文字大小”时的终端文字。Fast IDE 编辑器及侧边栏文件、变更中的源码使用代码字号。';
+      '缩放整个界面（文字、图标与间距）、对话中的代码，以及终端字号为“跟随界面大小”时的终端文字。Fast IDE 编辑器及侧边栏文件、变更中的源码使用代码字号。';
 
   @override
   String appearanceSettingsUiScaleLabel(String percent) {
-    return '界面文字大小：$percent%';
+    return '界面大小：$percent%';
   }
 
   @override
@@ -6613,10 +7118,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get appearanceSettingsTerminalSizeDescription =>
-      '终端文字的字号。默认跟随界面文字大小，也可单独设定。';
+      '终端文字的字号。默认跟随界面大小，也可单独设定。';
 
   @override
-  String get appearanceSettingsTerminalSizeFollow => '跟随界面文字大小';
+  String get appearanceSettingsTerminalSizeFollow => '跟随界面大小';
 
   @override
   String get appearanceSettingsTerminalSizeCustom => '自定义';
@@ -6633,7 +7138,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get generalSettingsContextMenuFinder => '访达右键菜单';
 
   @override
-  String get generalSettingsContextMenuExplorer => '资源管理器右键菜单';
+  String get generalSettingsContextMenuExplorer => '文件资源管理器右键菜单';
 
   @override
   String get generalSettingsContextMenuDescription =>
@@ -6675,8 +7180,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cmdOpenRemoteFolder => '打开远程项目...';
 
   @override
-  String get remoteHostPlaceholder =>
-      '选择 ~/.ssh/config 中的主机，或输入 user@host[:port]';
+  String get cmdOpenRemoteFile => '打开远程文件...';
+
+  @override
+  String get remoteHostPlaceholder => '选择主机、新增一个，或直接输入 user@host[:port]';
 
   @override
   String remoteConnectTo(String host) {
@@ -6684,7 +7191,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get remoteNoHosts => '~/.ssh/config 中没有主机，请直接输入';
+  String get remoteNoHosts => '还没有主机：新增一个，或直接输入 user@host';
 
   @override
   String get remoteInvalidHost => '不是有效的主机：不能含空格，也不能以 \'-\' 开头';
@@ -6735,6 +7242,37 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String remoteListFailed(String path) {
     return '无法列出 $path';
+  }
+
+  @override
+  String get remoteFileHostPlaceholder => '选择主机，浏览它的文件';
+
+  @override
+  String remoteFilePlaceholder(String host) {
+    return '$host 上的文件：选择一个，或输入路径';
+  }
+
+  @override
+  String remoteOpenFile(String path) {
+    return '打开 $path';
+  }
+
+  @override
+  String remoteOpenFailed(String path) {
+    return '无法打开 $path';
+  }
+
+  @override
+  String get remoteRecentFiles => '最近的远程文件';
+
+  @override
+  String remoteOpenFileOn(String host) {
+    return '在 $host 上打开文件...';
+  }
+
+  @override
+  String remoteStatusActions(String host) {
+    return '点击查看主机和 $host 的操作';
   }
 
   @override
@@ -7391,6 +7929,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get extsTabLanguageServers => '语言服务器';
 
   @override
+  String get sidebarAllHosts => '全部';
+
+  @override
   String get sidebarThisMachine => '本机';
 
   @override
@@ -7450,6 +7991,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sidebarRenameHost => '重命名主机';
+
+  @override
+  String get sidebarEditHost => '编辑连接…';
 
   @override
   String get explorerNoPermission => '没有权限读取此文件夹';
@@ -7530,7 +8074,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get mobilePublicAddressDescription =>
-      '可从公网访问这台电脑的域名或 IP（需转发端口），会写入二维码；多个用逗号分隔。公网 IPv6 地址会自动加入。';
+      '可从公网访问这台电脑的域名或 IP（需转发端口），会写入二维码；多个用逗号分隔。经只收 HTTPS 的代理（如 Cloudflare Tunnel）访问时，写成 wss://域名。公网 IPv6 地址会自动加入。';
 
   @override
   String get mobileRelay => '中转';
@@ -7630,4 +8174,1583 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get mobilePairAllow => '允许';
+
+  @override
+  String get settingsSectionStash => 'Stash';
+
+  @override
+  String get settingsSectionCustomize => '自定义';
+
+  @override
+  String get settingsCustomizeKeywords => '技能 子智能体 规则 命令 记忆 钩子 插件 mcp';
+
+  @override
+  String get stashTitle => 'Stash';
+
+  @override
+  String get stashHeading => 'Stash';
+
+  @override
+  String get stashNew => '新便签';
+
+  @override
+  String get stashLinkOpen => '打开链接';
+
+  @override
+  String get stashLinkEdit => '编辑链接';
+
+  @override
+  String get stashDraft => '草稿';
+
+  @override
+  String get stashCodeChip => '代码';
+
+  @override
+  String get stashTableChip => '表格';
+
+  @override
+  String stashLines(int count) {
+    return '$count 行';
+  }
+
+  @override
+  String get stashNewButton => '新建';
+
+  @override
+  String get stashNewTooltip => '新建便签';
+
+  @override
+  String get stashPlaceholder => '随手记下…';
+
+  @override
+  String get stashHintNew => '新建';
+
+  @override
+  String get stashProjectTooltip => '关联的项目';
+
+  @override
+  String get stashNoProject => '无项目';
+
+  @override
+  String get stashFormatBold => '粗体';
+
+  @override
+  String get stashFormatItalic => '斜体';
+
+  @override
+  String get stashFormatStrike => '删除线';
+
+  @override
+  String get stashFormatUnderline => '下划线';
+
+  @override
+  String get stashFormatCode => '代码';
+
+  @override
+  String get stashFormatLink => '链接';
+
+  @override
+  String get stashFormatColor => '文字颜色与背景色';
+
+  @override
+  String get stashFormatHeading1 => '一级标题';
+
+  @override
+  String get stashFormatHeading2 => '二级标题';
+
+  @override
+  String get stashFormatHeading3 => '三级标题';
+
+  @override
+  String get stashFormatBullets => '无序列表';
+
+  @override
+  String get stashFormatNumbers => '有序列表';
+
+  @override
+  String get stashFormatTasks => '任务列表';
+
+  @override
+  String get stashFormatQuote => '引用';
+
+  @override
+  String get stashFormatCodeBlock => '代码块';
+
+  @override
+  String get stashFormatClear => '清除格式';
+
+  @override
+  String get stashPolish => '润色';
+
+  @override
+  String get stashPolishing => '润色中…';
+
+  @override
+  String get stashPolishHint => '让 AI 把选中的文字理顺，保持你的原意，不加结构';
+
+  @override
+  String get composerPolish => '润色';
+
+  @override
+  String get composerPolishing => '润色中…';
+
+  @override
+  String get composerPolishHint =>
+      '润色：用辅助模型把消息改得更清楚，保留你的意思和口吻；图片、文件、代码和链接原样不动，可撤销';
+
+  @override
+  String composerPolishFailed(String error) {
+    return '润色失败：$error';
+  }
+
+  @override
+  String get generalSettingsComposerPolish => '润色按钮';
+
+  @override
+  String get generalSettingsComposerPolishDescription =>
+      '在输入框里显示润色按钮，发送前用辅助模型把写的内容改得更清楚';
+
+  @override
+  String get generalSettingsLiveTurnStats => '运行时实时显示详细速率和时间';
+
+  @override
+  String get generalSettingsLiveTurnStatsDescription =>
+      '运行中在回复下方实时显示本轮耗时、输出速度和已输出的 token。一轮结束后的统计始终显示';
+
+  @override
+  String stashPolishFailed(String error) {
+    return '没能润色：$error';
+  }
+
+  @override
+  String get stashLinkTitle => '链接';
+
+  @override
+  String get stashRemove => '移除';
+
+  @override
+  String get stashEdit => '编辑';
+
+  @override
+  String get stashFormulaTitle => '公式（TeX）';
+
+  @override
+  String get stashTableTitle => '表格（Markdown）';
+
+  @override
+  String get stashCodeTitle => '代码块';
+
+  @override
+  String stashBigFileTitle(String name) {
+    return '“$name”超过 200 MB';
+  }
+
+  @override
+  String get stashBigFileDetail => '只链接到它所在的位置，还是仍然复制进便签？';
+
+  @override
+  String get stashBigFileLink => '只链接';
+
+  @override
+  String get stashBigFileCopy => '复制';
+
+  @override
+  String get stashSearchPlaceholder => '搜索便签（包括图片里的文字）';
+
+  @override
+  String get stashAiSearch => 'AI 搜索';
+
+  @override
+  String get stashAiSearchHint => '按意思而不只是字面去找。会调用模型，这个要花钱。';
+
+  @override
+  String stashAiResults(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'AI 找到 $count 条',
+      zero: 'AI 没找到',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get stashAiClear => '清除';
+
+  @override
+  String stashAiSearchFailed(String error) {
+    return 'AI 搜索失败：$error';
+  }
+
+  @override
+  String get stashAiNoAnswer => '模型没有给出可用的回答。';
+
+  @override
+  String get aiModelAuxiliary => '跟随辅助模型';
+
+  @override
+  String get aiModelFirst => '先选一个模型，之后的 AI 操作都用它';
+
+  @override
+  String get aiModelNone => '尚未选择';
+
+  @override
+  String aiModelTooltip(String model) {
+    return 'AI 操作使用的模型：$model';
+  }
+
+  @override
+  String get stashFilterAnyTime => '任何时间';
+
+  @override
+  String get stashFilterAnyProject => '所有项目';
+
+  @override
+  String get stashFilterAnyStatus => '所有状态';
+
+  @override
+  String get stashFilterOpen => '未完成';
+
+  @override
+  String get stashGroupPinned => '置顶';
+
+  @override
+  String get stashGroupToday => '今天';
+
+  @override
+  String get stashGroupYesterday => '昨天';
+
+  @override
+  String get stashGroupWeek => '过去 7 天';
+
+  @override
+  String get stashGroupMonth => '过去 30 天';
+
+  @override
+  String get stashGroupEarlier => '更早';
+
+  @override
+  String get stashGroupDone => '已完成';
+
+  @override
+  String get stashStatus => '状态';
+
+  @override
+  String get stashStatusCollected => '收集';
+
+  @override
+  String get stashStatusRequirement => '已成需求';
+
+  @override
+  String get stashStatusImplementing => '实施中';
+
+  @override
+  String get stashStatusDone => '已完成';
+
+  @override
+  String stashEmpty(String hotkey) {
+    return '还没有便签。\n在任何应用里按 $hotkey 随手记一条。';
+  }
+
+  @override
+  String get stashEmptyNoHotkey => '还没有便签。\n点 + 新建一条；在设置里设个快捷键，就能在任何应用里随手记。';
+
+  @override
+  String get stashNoMatch => '没有匹配的便签。';
+
+  @override
+  String get stashPin => '置顶';
+
+  @override
+  String get stashUnpin => '取消置顶';
+
+  @override
+  String get stashOpenInPanel => '在浮动面板中打开';
+
+  @override
+  String get stashLinkProject => '关联项目';
+
+  @override
+  String get stashMerge => '合并';
+
+  @override
+  String stashMergeTitle(String stashes) {
+    return '合并 $stashes？';
+  }
+
+  @override
+  String stashMergeDetail(String target) {
+    return '它们的内容会依次并入 $target，其余几条删除，编号会指向它。';
+  }
+
+  @override
+  String stashMergeSuggestion(String stashes) {
+    return '$stashes 看起来是同一件事。';
+  }
+
+  @override
+  String get stashDismiss => '忽略';
+
+  @override
+  String get stashDelete => '删除';
+
+  @override
+  String stashDeleteOne(String stash) {
+    return '删除 $stash？';
+  }
+
+  @override
+  String stashDeleteMany(int count) {
+    return '删除 $count 条便签？';
+  }
+
+  @override
+  String get stashDeleteDetail => '它们的图片和文件也会一并删除，无法撤销。';
+
+  @override
+  String stashPicked(int count) {
+    return '已选 $count 条';
+  }
+
+  @override
+  String get stashMarkDone => '标为已完成';
+
+  @override
+  String get stashReopen => '恢复未完成';
+
+  @override
+  String get stashClearPicked => '取消选择';
+
+  @override
+  String get stashClose => '关闭 Stash';
+
+  @override
+  String get stashCloseDetail => '关闭';
+
+  @override
+  String get stashMore => '更多';
+
+  @override
+  String get stashExpand => '说清楚';
+
+  @override
+  String get stashExpandHint => 'AI 把原话说清楚：结合图片和附件补全意思，不加结构；直接替换原文，可以撤销';
+
+  @override
+  String get stashClarifying => '正在说清楚…';
+
+  @override
+  String get stashCancelClarify => '停止说清楚';
+
+  @override
+  String get stashClarifyFailedShort => '没说清楚';
+
+  @override
+  String get stashClarifyChanged => '说清楚期间便签被改动了，没有替换，可以再试一次。';
+
+  @override
+  String get stashRetry => '重试';
+
+  @override
+  String stashExpandFailed(String error) {
+    return '没能说清楚：$error';
+  }
+
+  @override
+  String get stashImplement => '在 Caocode 中实施';
+
+  @override
+  String get stashImplementHow => '让 agent 怎样开发？';
+
+  @override
+  String get stashImplementHowDetail =>
+      '在新的 git worktree 里（独立分支，不动你当前的工作区），还是直接在项目当前分支上。';
+
+  @override
+  String get stashImplementWorktree => '新建 worktree';
+
+  @override
+  String get stashImplementDirect => '直接开发';
+
+  @override
+  String stashImplementStarter(String stash) {
+    return '请实现 $stash 中的需求。';
+  }
+
+  @override
+  String get stashImplementInWorktree =>
+      '先为这项工作新建一个 git worktree（新分支），在其中开发，完成后告诉我分支名。';
+
+  @override
+  String get stashImplementInPlace => '直接在当前项目、当前分支上开发。';
+
+  @override
+  String get stashImplementComplete => '全部完成后，在 Stash 里把它标为已完成。';
+
+  @override
+  String get stashThreads => '对话';
+
+  @override
+  String get stashThreadSource => '在这个对话里记下';
+
+  @override
+  String get stashThreadNoReply => '还没有回复';
+
+  @override
+  String get stashThreadGone => '已不在对话列表中';
+
+  @override
+  String get stashOpenThread => '打开';
+
+  @override
+  String stashProjectSuggestion(String project) {
+    return 'AI 觉得这条和 $project 有关。';
+  }
+
+  @override
+  String get stashLinkIt => '关联';
+
+  @override
+  String get stashSettingsDescription =>
+      '在任何应用里随手记下的便签，浮动面板呼出，之后可以变成需求交给 agent。';
+
+  @override
+  String get stashSettingsHotkey => '快捷键';
+
+  @override
+  String stashSettingsHotkeyCurrent(String hotkey) {
+    return '在任何应用里按 $hotkey 呼出面板。';
+  }
+
+  @override
+  String get stashSettingsHotkeyNone => '没有快捷键：只能从 Stash 页打开面板。';
+
+  @override
+  String get stashSettingsHotkeyTaken => '这个快捷键被其他应用占用了，请换一个。';
+
+  @override
+  String get stashSettingsHotkeyHelp => '点击后按下新的组合键；Esc 取消，Delete 清除。';
+
+  @override
+  String get stashHotkeyPress => '按下组合键…';
+
+  @override
+  String get stashHotkeyRefused => '要带修饰键，配字母、数字或常用键';
+
+  @override
+  String get stashHotkeyNone => '未设置';
+
+  @override
+  String get stashHotkeyClear => '清除';
+
+  @override
+  String stashHotkeySuggested(String hotkey) {
+    return '使用 $hotkey';
+  }
+
+  @override
+  String get stashHotkeyGlobal => '呼出 Stash 快捷窗口';
+
+  @override
+  String get stashHotkeyGlobalHint => '全局快捷键，在任何应用里都能用。';
+
+  @override
+  String get stashHotkeyTooltip => '呼出快捷窗口的快捷键，点击更改';
+
+  @override
+  String get stashSettingsDirectory => '存放位置';
+
+  @override
+  String get stashSettingsDirectoryChange => '更改…';
+
+  @override
+  String get stashSettingsDirectoryReset => '恢复默认';
+
+  @override
+  String get stashSettingsDirectoryRestart => '重启 Caocode 后生效。';
+
+  @override
+  String get stashAll => '所有';
+
+  @override
+  String get stashAllTooltip => '显示所有便签';
+
+  @override
+  String get stashHintSave => '保存';
+
+  @override
+  String get stashHintClose => '关闭';
+
+  @override
+  String get stashSaved => '已保存';
+
+  @override
+  String get stashFilter => '过滤';
+
+  @override
+  String get stashSort => '排序';
+
+  @override
+  String get stashSortManual => '自定义（拖动排序）';
+
+  @override
+  String get stashSortUpdated => '最近编辑';
+
+  @override
+  String get stashSortCreated => '最近创建';
+
+  @override
+  String get stashSortNumber => '编号';
+
+  @override
+  String get stashOpen => '打开';
+
+  @override
+  String stashCount(int count) {
+    return '$count 条便签';
+  }
+
+  @override
+  String get stashFormatMore => '更多';
+
+  @override
+  String get branchBarSwitch => '切换分支';
+
+  @override
+  String get branchBarSearch => '搜索分支';
+
+  @override
+  String get branchBarCreate => '新建分支…';
+
+  @override
+  String branchBarCreateFrom(String branch) {
+    return '从“$branch”新建分支';
+  }
+
+  @override
+  String branchBarCreateIn(String folder) {
+    return '在“$folder”中新建分支';
+  }
+
+  @override
+  String get branchBarCreateButton => '创建';
+
+  @override
+  String get branchBarDetached => '分离的 HEAD';
+
+  @override
+  String get branchBarRunning => 'Agent 运行时不能切换分支';
+
+  @override
+  String branchBarFailed(String branch) {
+    return '无法切换到“$branch”';
+  }
+
+  @override
+  String get branchBarNotRepository => '不是 Git 仓库';
+
+  @override
+  String get branchBarWorkspace => '各文件夹的分支';
+
+  @override
+  String get settingsSectionAccounts => 'Git 账号';
+
+  @override
+  String get settingsAccountsKeywords =>
+      'GitHub GitLab 登录 令牌 token issue PR 合并请求';
+
+  @override
+  String get accountsDescription =>
+      '登录 GitHub 或 GitLab 后，Stash 中链接的 issue 和 PR 会显示最新状态，可以把 issue 导入为 Stash，并在你确认后回帖。';
+
+  @override
+  String get accountsSignedIn => '已登录';
+
+  @override
+  String get accountsAdd => '添加账号';
+
+  @override
+  String get accountsKeptLocally =>
+      '令牌只保存在本机钥匙串里，只会发给对应的 GitHub 或 GitLab。未经你确认，不会发布任何内容。';
+
+  @override
+  String get accountsGitHubHosts => 'github.com，或公司的 GitHub Enterprise';
+
+  @override
+  String get accountsGitLabHosts => 'gitlab.com，或自建的 GitLab';
+
+  @override
+  String get accountsSignInBrowser => '在浏览器中登录';
+
+  @override
+  String get accountsSignInToken => '使用令牌…';
+
+  @override
+  String get accountsViaBrowser => '浏览器登录';
+
+  @override
+  String get accountsViaToken => '令牌登录';
+
+  @override
+  String get accountsSignOut => '退出登录';
+
+  @override
+  String accountsSignOutTitle(String login, String forge) {
+    return '退出 $forge 账号 $login？';
+  }
+
+  @override
+  String accountsSignOutDetail(String forge) {
+    return '会删除本机保存的令牌。要彻底撤销 Caocode 的访问权限，还需要到 $forge 的设置里撤销。';
+  }
+
+  @override
+  String accountsRevoke(String forge) {
+    return '退出并打开 $forge 设置';
+  }
+
+  @override
+  String accountsTokenTitle(String forge) {
+    return '用令牌登录 $forge';
+  }
+
+  @override
+  String get accountsSignIn => '登录';
+
+  @override
+  String get accountsHost => '地址';
+
+  @override
+  String get accountsToken => '令牌';
+
+  @override
+  String get accountsTokenGitHubScopes =>
+      '需要勾选 repo 和 read:user 的经典令牌，或对 Issues、Pull requests 有读写权限的细粒度令牌。';
+
+  @override
+  String get accountsTokenGitLabScopes => '需要勾选 api 范围的个人访问令牌。';
+
+  @override
+  String accountsTokenCreate(String host) {
+    return '在 $host 上创建令牌';
+  }
+
+  @override
+  String get accountsTokenRefused => '令牌无效，请检查是否完整、是否已过期。';
+
+  @override
+  String accountsBrowserTitle(String forge) {
+    return '登录 $forge';
+  }
+
+  @override
+  String accountsBrowserDetail(String host) {
+    return '在 $host 上输入下面的代码，授权 Caocode 访问你的账号：';
+  }
+
+  @override
+  String get accountsCopyAndOpen => '复制代码并打开浏览器';
+
+  @override
+  String get accountsOpenAgain => '已复制 · 再次打开';
+
+  @override
+  String get accountsBrowserStarting => '正在获取代码…';
+
+  @override
+  String get accountsBrowserWaiting => '等待你在浏览器中授权…';
+
+  @override
+  String get accountsRetry => '重试';
+
+  @override
+  String get forgeStateOpen => '打开';
+
+  @override
+  String get forgeStateDraft => '草稿';
+
+  @override
+  String get forgeStateClosed => '已关闭';
+
+  @override
+  String get forgeStateMerged => '已合并';
+
+  @override
+  String get forgeChecksPassed => '检查已通过';
+
+  @override
+  String get forgeChecksFailed => '检查未通过';
+
+  @override
+  String get forgeChecksRunning => '检查进行中';
+
+  @override
+  String get stashIssues => 'Issue 与 PR';
+
+  @override
+  String stashIssueClosedBanner(String tag) {
+    return '$tag 已关闭，这条 Stash 也完成了吗？';
+  }
+
+  @override
+  String stashIssueOpenBanner(String tag) {
+    return '这条 Stash 已完成，但 $tag 还开着。';
+  }
+
+  @override
+  String get stashIssueReplyClose => '回帖并关闭…';
+
+  @override
+  String stashIssueNotSignedIn(String forge) {
+    return '登录 $forge 后显示最新状态';
+  }
+
+  @override
+  String get stashIssueSignIn => '登录…';
+
+  @override
+  String get stashIssueFailed => '获取状态失败';
+
+  @override
+  String get stashIssueOpen => '在浏览器中打开';
+
+  @override
+  String get stashIssueCopy => '复制链接';
+
+  @override
+  String get stashIssueComment => '回帖…';
+
+  @override
+  String get stashIssueClose => '关闭 issue…';
+
+  @override
+  String get stashIssueUnlink => '取消关联';
+
+  @override
+  String stashWriteFixedIn(String pulls) {
+    return '已在 $pulls 中修复。';
+  }
+
+  @override
+  String stashWriteTitle(String tag) {
+    return '回帖到 $tag';
+  }
+
+  @override
+  String stashWriteCloseTitle(String tag) {
+    return '关闭 $tag';
+  }
+
+  @override
+  String get stashWriteSend => '发送';
+
+  @override
+  String get stashWriteSendClose => '发送并关闭';
+
+  @override
+  String get stashWriteCloseOnly => '关闭 issue';
+
+  @override
+  String get stashWriteSendAnyway => '仍然发送';
+
+  @override
+  String get stashWritePlaceholder => '写下回帖内容（支持 Markdown）';
+
+  @override
+  String get stashWriteAlsoClose => '同时关闭 issue';
+
+  @override
+  String get stashWriteSensitive => '内容里像是有本机路径或密钥，发出后能看到这个 issue 的人都能看到：';
+
+  @override
+  String stashWriteAs(String login, String host) {
+    return '将以 $login 的身份发到 $host。';
+  }
+
+  @override
+  String stashWriteFailed(String error) {
+    return '发送失败：$error';
+  }
+
+  @override
+  String get stashImport => '从 issue 导入…';
+
+  @override
+  String get stashImportTitle => '导入 issue';
+
+  @override
+  String get stashImportAction => '导入';
+
+  @override
+  String stashImportCount(int count) {
+    return '导入 $count 条';
+  }
+
+  @override
+  String get stashImportPaste => '粘贴 issue 或 PR 链接';
+
+  @override
+  String get stashImportAdd => '添加';
+
+  @override
+  String get stashImportNotALink => '不是 GitHub 或 GitLab 的 issue / PR 链接。';
+
+  @override
+  String stashImportSignIn(String forge) {
+    return '在 设置 → 账号 中登录 $forge 后才能列出 issue。';
+  }
+
+  @override
+  String get stashImportRepo => '仓库';
+
+  @override
+  String get stashImportAssigned => '指派给我';
+
+  @override
+  String get stashImportCreated => '我创建的';
+
+  @override
+  String get stashImportAll => '全部打开的';
+
+  @override
+  String get stashImportSearch => '搜索';
+
+  @override
+  String get stashImportLoading => '正在加载…';
+
+  @override
+  String get stashImportNoRepos =>
+      '没有项目的 Git 远程在 GitHub 或 GitLab 上，可以在上面粘贴 issue 链接。';
+
+  @override
+  String get stashImportNone => '这里没有打开的 issue。';
+
+  @override
+  String stashImportKnown(int id) {
+    return '已在 Stash #$id';
+  }
+
+  @override
+  String sidebarOpenPull(String tag) {
+    return '打开 $tag';
+  }
+
+  @override
+  String get stashGroupOthers => '其他';
+
+  @override
+  String stashFilterProjects(int count) {
+    return '$count 个项目';
+  }
+
+  @override
+  String get stashFilterJoiner => '、';
+
+  @override
+  String get stashWelcomeTitle => '认识 Stash';
+
+  @override
+  String get stashWelcomeLead => '想到就记下，准备好了交给 agent 去做，每一条进展如何一眼看清。';
+
+  @override
+  String get stashWelcomeNoteTitle => '随手记下';
+
+  @override
+  String get stashWelcomeAgentTitle => '交给 agent';
+
+  @override
+  String get stashWelcomeAgent => '点「在 Caocode 中实施」，或在对话里 @ 它；对话和便签会自动关联。';
+
+  @override
+  String get stashWelcomeTrackTitle => '看清进展';
+
+  @override
+  String get stashWelcomeTrack =>
+      '卡片上实时显示对话状态，链接的 GitHub、GitLab issue 和 PR 也会同步状态。';
+
+  @override
+  String get stashWelcomeStart => '开始使用';
+
+  @override
+  String get stashWelcomeNoteBody => '文字、截图、链接都能放进来，每一条都有自己的编号，像 issue 一样。';
+
+  @override
+  String get stashWelcomeHotkeyTitle => '设置呼出快捷键';
+
+  @override
+  String get stashWelcomeHotkeySetTitle => '快捷键已设置';
+
+  @override
+  String get stashWelcomeHotkey =>
+      '在任何 App 里按下它，就能立刻弹出 Stash 面板记一条。点下面的框，按下想用的组合键。';
+
+  @override
+  String stashWelcomeHotkeySet(String hotkey) {
+    return '在任何 App 里按 $hotkey 就能记一条，随时可以在这里或 设置 → Stash 中修改。';
+  }
+
+  @override
+  String get stashWelcomeHotkeyLater => '也可以之后在 设置 → Stash 中设置。';
+
+  @override
+  String get settingsSectionBrowser => '浏览器';
+
+  @override
+  String get settingsBrowserKeywords =>
+      '浏览器 chrome 扩展 插件 网页 标签页 edge brave arc';
+
+  @override
+  String get browserSettingsDescription =>
+      '让 agent 用你自己的浏览器，沿用你的登录状态：在你共享给它的标签页里打开网页、读取内容、点击和输入。它的每一步操作都能在侧边栏里看到。';
+
+  @override
+  String get browserSettingsUnsupported => '浏览器功能只支持 macOS、Windows 和 Linux。';
+
+  @override
+  String get browserSettingsEnabled => '允许 agent 使用浏览器';
+
+  @override
+  String get browserSettingsEnabledDescription =>
+      '关闭后 agent 不再有浏览器工具，扩展也会断开连接。';
+
+  @override
+  String get browserSettingsStatus => '状态';
+
+  @override
+  String get browserSettingsNotInstalled => '还没有浏览器连接过';
+
+  @override
+  String get browserSettingsNotInstalledDescription =>
+      '用下方任一方式安装扩展，之后打开浏览器就会自动连接。';
+
+  @override
+  String get browserSettingsNotRunning => '浏览器未连接';
+
+  @override
+  String get browserSettingsNotRunningDescription =>
+      '打开装有 Caocode 扩展的浏览器，会自动连接。';
+
+  @override
+  String get browserSettingsSandboxed => 'Snap 和 Flatpak 装的浏览器连不上';
+
+  @override
+  String get browserSettingsSandboxedDescription =>
+      '它们的沙箱不让 Caocode 的辅助程序运行。请改用浏览器官方的 .deb 或 .rpm 安装包，例如从 google.com/chrome 下载 Google Chrome。';
+
+  @override
+  String browserSettingsConnected(String browser) {
+    return '$browser 已连接';
+  }
+
+  @override
+  String browserSettingsIncompatible(String browser) {
+    return '$browser 的扩展版本不匹配';
+  }
+
+  @override
+  String browserSettingsExtensionVersion(String version) {
+    return '扩展版本 $version';
+  }
+
+  @override
+  String get browserSettingsExtensionOld =>
+      '扩展版本太旧，需要更新。商店版会自动更新，也可以在 chrome://extensions 里点「更新」；手动安装的请重新下载 zip，覆盖原来的文件夹后点刷新。';
+
+  @override
+  String get browserSettingsAppOld => '扩展比当前的 Caocode 新，请更新 Caocode。';
+
+  @override
+  String get browserSettingsInstall => '安装扩展';
+
+  @override
+  String get browserSettingsStore => 'Chrome 应用商店';
+
+  @override
+  String get browserSettingsStoreDescription =>
+      '推荐。会自动更新，Chrome、Edge、Brave、Arc 等 Chromium 内核的浏览器都能装。';
+
+  @override
+  String get browserSettingsStoreOpen => '打开商店';
+
+  @override
+  String get browserSettingsUnpacked => '手动安装（开发者模式）';
+
+  @override
+  String get browserSettingsUnpackedDescription =>
+      '下载后解压到一个固定的文件夹（之后不要删）。在 chrome://extensions 打开右上角的「开发者模式」，点「加载已解压的扩展程序」，选中这个文件夹。不会自动更新。';
+
+  @override
+  String get browserSettingsUnpackedDownload => '下载 zip';
+
+  @override
+  String get browserSettingsOpen => '浏览器设置';
+
+  @override
+  String get browserHistoryTitle => '调试记录';
+
+  @override
+  String get browserHistoryDescription =>
+      '共享给 Caocode 的标签页里打开过的页面、发出的请求、控制台的错误和警告会一直记下来，不用专门录制。你说“刚才保存时报错了”这类话时，agent 会自己翻看。记录只存在这台电脑上，不保存 Cookie 和令牌。';
+
+  @override
+  String get browserHistoryDetailed => '详细记录';
+
+  @override
+  String get browserHistoryDetailedDescription =>
+      '另外记下请求体和响应体、你的操作（点击和输入，不含密码）以及全部控制台日志，占用空间更多。';
+
+  @override
+  String browserHistorySize(String size) {
+    return '已占用 $size';
+  }
+
+  @override
+  String get browserHistoryClear => '清理';
+
+  @override
+  String get browserHistoryClearConfirm => '清理全部调试记录？';
+
+  @override
+  String get browserHistoryClearDetail => '已记下的页面、请求和控制台日志都会被删除，无法恢复。';
+
+  @override
+  String browserHistoryTooLarge(String size) {
+    return '浏览器调试记录已占用 $size';
+  }
+
+  @override
+  String get browserHistoryTooLargeDetail => '可以直接清理，也可以去 设置 → 浏览器 查看。';
+
+  @override
+  String get browserHistoryOpenSettings => '浏览器设置';
+
+  @override
+  String get browserWelcomeTitle => 'agent 现在能用你的浏览器了';
+
+  @override
+  String get browserWelcomeLead =>
+      '装上 Caocode 扩展，agent 就能在你自己的 Chrome 里打开网页、阅读、点击和输入，带着你的登录状态。';
+
+  @override
+  String get browserWelcomeSharedTitle => '只用你共享的标签页';
+
+  @override
+  String get browserWelcomeShared => '它只在黄色的「Caocode」标签页分组里工作，其他标签页仍然只属于你。';
+
+  @override
+  String get browserWelcomeWatchTitle => '看着它操作';
+
+  @override
+  String get browserWelcomeWatch => '侧边栏实时显示它正在用的网页，你随时可以接手。';
+
+  @override
+  String get browserWelcomeShowTitle => '演示一遍就会';
+
+  @override
+  String get browserWelcomeShow => '让 agent 看着，你在浏览器里自己操作一遍，它就能看到你的每一步。';
+
+  @override
+  String get browserWelcomeInstallTitle => '安装扩展';
+
+  @override
+  String get browserWelcomeInstall =>
+      'Chrome、Edge、Brave、Arc 都能用。装好后会自动连接，这里会变成绿色。';
+
+  @override
+  String get browserWelcomeTurnedOff => '浏览器功能已在 设置 → 浏览器 中关闭。';
+
+  @override
+  String browserWelcomeConnected(String browser) {
+    return '$browser 已连接';
+  }
+
+  @override
+  String get browserWelcomeTry => '试试对 agent 说：「打开 caocode.dev 看看下载页」。';
+
+  @override
+  String get browserWelcomeUnpacked => '开发者模式 zip';
+
+  @override
+  String get browserWelcomeDone => '知道了';
+
+  @override
+  String get cmdBrowserWelcome => '连接浏览器...';
+
+  @override
+  String get cmdStashWelcome => '认识 Stash...';
+
+  @override
+  String get cmdModelWelcome => '设置模型...';
+
+  @override
+  String get modelWelcomeTitle => '选一个模型开始';
+
+  @override
+  String get modelWelcomeLead =>
+      'Caocode 用你选的模型来运行 agent。添加一个上游（提供 API Key 的服务），它的模型就能直接用了。';
+
+  @override
+  String get modelWelcomeAnyTitle => '任意上游';
+
+  @override
+  String get modelWelcomeAny =>
+      '支持 Anthropic API、OpenAI Chat Completions 和 Responses，以及兼容它们的服务，比如 OpenRouter、DeepSeek。';
+
+  @override
+  String get modelWelcomeKeysTitle => 'Key 只在你手里';
+
+  @override
+  String get modelWelcomeKeys => 'Key 存在系统钥匙串里，请求从这台电脑直接发往上游。';
+
+  @override
+  String get modelWelcomeSwitchTitle => '随时切换';
+
+  @override
+  String get modelWelcomeSwitch => '之后随时可以再添加上游，每个对话都能在输入框下方选模型。';
+
+  @override
+  String get modelWelcomeStepTitle => '添加第一个上游';
+
+  @override
+  String get modelWelcomeStep => '填上地址和 Key，再勾选要用的模型。部分服务也能在 设置 → 模型 里一键导入。';
+
+  @override
+  String get modelWelcomeReadyTitle => '准备好了';
+
+  @override
+  String modelWelcomeReady(String model) {
+    return '新对话会使用 $model，随时可以在输入框下方换成别的。';
+  }
+
+  @override
+  String get modelWelcomeLater => '也可以之后在 设置 → 模型 中添加。';
+
+  @override
+  String get modelWelcomeSkip => '稍后';
+
+  @override
+  String get modelWelcomeStart => '开始对话';
+
+  @override
+  String get healthNoModel => '选一个模型就能开始：添加一个上游，它的模型就能直接用了。';
+
+  @override
+  String get modelSetUp => '设置模型';
+
+  @override
+  String get remoteAddServer => '新增 SSH 服务器…';
+
+  @override
+  String get remoteEditServer => '编辑';
+
+  @override
+  String get settingsSectionSsh => 'SSH 服务器';
+
+  @override
+  String get settingsSshKeywords =>
+      'ssh 远程 服务器 主机 跳板机 私钥 密码 内核 remote server host';
+
+  @override
+  String get sshSettingsDescription => '远程项目连接的服务器：地址、登录方式、跳板机，以及每台用的内核。';
+
+  @override
+  String get sshSettingsServers => '服务器';
+
+  @override
+  String get sshSettingsServersDescription => '在应用里添加的，以及侧栏里用过的主机。';
+
+  @override
+  String get sshSettingsNone => '还没有服务器';
+
+  @override
+  String get sshSettingsAdd => '添加服务器…';
+
+  @override
+  String get sshSettingsEdit => '编辑…';
+
+  @override
+  String get sshSettingsConnect => '连接';
+
+  @override
+  String get sshSettingsDisconnect => '断开';
+
+  @override
+  String sshSettingsDisconnectTitle(String host) {
+    return '断开 $host？';
+  }
+
+  @override
+  String get sshSettingsDisconnectDetail => '这台主机上正在运行的对话和终端会结束。';
+
+  @override
+  String sshSettingsCore(String core) {
+    return '内核：$core';
+  }
+
+  @override
+  String sshSettingsVia(String host) {
+    return '经 $host';
+  }
+
+  @override
+  String get sshSettingsTyped => '按输入的地址';
+
+  @override
+  String get sshSettingsConfigHosts => '~/.ssh/config 里的主机';
+
+  @override
+  String get sshSettingsConfigHostsDescription => '在这个文件里修改；内核按“自动”。';
+
+  @override
+  String get sshSettingsOpenConfig => '打开文件';
+
+  @override
+  String get sshServerAddTitle => '新增 SSH 服务器';
+
+  @override
+  String get sshServerAddSubtitle => '保存后会出现在远程列表里，点一下就能连接。';
+
+  @override
+  String sshServerEditTitle(String name) {
+    return '编辑 $name';
+  }
+
+  @override
+  String get sshServerHost => '主机';
+
+  @override
+  String get sshServerHostPlaceholder => '域名或 IP，粘贴 user@host:port 会自动拆开';
+
+  @override
+  String get sshServerPort => '端口';
+
+  @override
+  String get sshServerUser => '用户名';
+
+  @override
+  String get sshServerName => '名称（可选）';
+
+  @override
+  String get sshServerNamePlaceholder => '如“生产环境”';
+
+  @override
+  String get sshServerAuth => '登录方式';
+
+  @override
+  String get sshServerAuthPassword => '密码';
+
+  @override
+  String get sshServerAuthKey => '私钥';
+
+  @override
+  String get sshServerAuthAuto => '自动';
+
+  @override
+  String get sshServerAuthAutoHint =>
+      '和终端里的 ssh 一样：用 ssh-agent、~/.ssh 里的密钥和 ~/.ssh/config 的设置；服务器要密码时会再问。';
+
+  @override
+  String get sshServerPasswordHint => '保存在系统钥匙串中。留空则连接时再问。';
+
+  @override
+  String get sshServerPasswordKept => '已保存，不修改请留空';
+
+  @override
+  String get sshServerKeyPlaceholder => '私钥文件路径，如 ~/.ssh/id_ed25519';
+
+  @override
+  String get sshServerKeyBrowse => '浏览…';
+
+  @override
+  String get sshServerKeysFound => '~/.ssh 中的密钥';
+
+  @override
+  String get sshServerKeyHint => '如果私钥有口令，连接时会问。';
+
+  @override
+  String get sshServerCore => '内核';
+
+  @override
+  String get sshServerCoreAuto => '自动';
+
+  @override
+  String get sshServerCoreAutoHint => '服务器上装了 Claude Code CLI 就用它，没装就用内置内核。';
+
+  @override
+  String get sshServerCoreBuiltinHint => 'Caocode 自带的内核，使用“设置 → 模型”里的上游。';
+
+  @override
+  String get sshServerCoreCliHint => '服务器上的 Claude Code CLI，没装会自动装上。';
+
+  @override
+  String get sshServerJump => '跳板机（可选）';
+
+  @override
+  String get sshServerNoJump => '不使用，直接连接';
+
+  @override
+  String get sshServerSaveConnect => '保存并连接';
+
+  @override
+  String get sshServerSave => '保存';
+
+  @override
+  String get sshServerHostRequired => '请填写服务器的域名或 IP';
+
+  @override
+  String get sshServerHostInvalid => '不能含空格，也不能以 - 开头';
+
+  @override
+  String get sshServerPortInvalid => '端口应为 1 到 65535';
+
+  @override
+  String get sshServerKeyRequired => '请选择私钥文件';
+
+  @override
+  String get sshServerKeyMissing => '找不到这个文件';
+
+  @override
+  String get remoteForgetHostKey => '移除旧指纹并重新连接';
+
+  @override
+  String remoteForgetHostKeyTitle(String host) {
+    return '移除 $host 的旧指纹？';
+  }
+
+  @override
+  String get remoteForgetHostKeyDetail =>
+      '只有在确认服务器重装过或更换过密钥时才这样做，否则可能有人在中间截获连接。移除后，下次连接会接受服务器现在的指纹。';
+
+  @override
+  String get remoteForgetHostKeyButton => '移除并连接';
+
+  @override
+  String get remoteFailNoSsh => '本机没有 ssh：请安装 OpenSSH 客户端。';
+
+  @override
+  String get remoteFailAuth => '服务器拒绝登录：请检查用户名、密码或密钥。';
+
+  @override
+  String get remoteFailCancelled => '已取消登录。';
+
+  @override
+  String get remoteFailHostKey =>
+      '服务器的指纹未知，而你的 ssh 配置要求不自动接受新指纹（StrictHostKeyChecking）。';
+
+  @override
+  String get remoteFailHostKeyChanged =>
+      '服务器的指纹和上次连接时不同：可能是服务器重装过，也可能有人在中间截获连接。';
+
+  @override
+  String get remoteFailUnreachable => '连不上服务器：请检查地址、端口和网络。';
+
+  @override
+  String get channelSetupTitle => '欢迎使用 Caocode';
+
+  @override
+  String get channelSetupLead => '打开官网完成首次设置，大约 10 秒。';
+
+  @override
+  String get channelSetupStepTitle => '在浏览器中完成设置';
+
+  @override
+  String get channelSetupStep =>
+      'Caocode 会在浏览器里打开 caocode.dev，网页显示完成后，这里会自动继续。';
+
+  @override
+  String get channelSetupWaitingTitle => '正在等待浏览器完成…';
+
+  @override
+  String get channelSetupWaiting => '网页显示完成后，这里会自动继续。不小心关掉了网页，可以重新打开。';
+
+  @override
+  String get channelSetupOffline => '连不上 caocode.dev，需要联网才能完成设置。';
+
+  @override
+  String get channelSetupRetry => '重试';
+
+  @override
+  String get channelSetupDoneTitle => '设置完成';
+
+  @override
+  String get channelSetupOpen => '在浏览器中完成设置';
+
+  @override
+  String get channelSetupOpenAgain => '重新打开网页';
+
+  @override
+  String get channelSetupNoResponse => '浏览器没反应？';
+
+  @override
+  String get channelSetupPasteLead => '网页上如果有一段链接，复制后粘贴到这里：';
+
+  @override
+  String get channelSetupPasteConfirm => '确定';
+
+  @override
+  String get channelSetupLinkInvalid => '这不是网页上的链接，请复制网页上显示的完整链接。';
+
+  @override
+  String get channelSetupLinkOther => '这个链接属于另一个 Caocode（别的电脑或重装前的），请用这里打开的网页。';
+
+  @override
+  String get channelSetupTrouble => '遇到问题？';
+
+  @override
+  String get channelSetupOnceTitle => '只需一次';
+
+  @override
+  String get channelSetupOnce => '完成后不会再出现，更新后也不会。';
+
+  @override
+  String get channelSetupPrivateTitle => '不涉及个人信息';
+
+  @override
+  String get channelSetupPrivate => '网页只告诉 Caocode 你是从哪里知道它的，比如某个视频或网站。';
+
+  @override
+  String get channelSetupFindingTitle => '正在读取渠道信息…';
+
+  @override
+  String get channelSetupFinding => '马上就好。';
+
+  @override
+  String get channelSetupSiteOfflineTitle => '连不上 caocode.dev';
+
+  @override
+  String get channelSetupSiteOffline => '需要联网读取渠道信息，请检查网络后重试。';
+
+  @override
+  String get channelSetupUnavailableTitle => '这个渠道暂时用不了';
+
+  @override
+  String get channelSetupUnavailable =>
+      '这份安装包对应的渠道还没有开通账号服务。如果你是从别的渠道下载的，去浏览器确认一下来源；否则请联系提供安装包的一方，或到 caocode.dev 下载普通版。';
+
+  @override
+  String get channelSetupConfirmAgain => '去浏览器确认';
+
+  @override
+  String channelWelcomeTitle(String channel) {
+    return '欢迎使用 $channel';
+  }
+
+  @override
+  String channelWelcomeText(String channel) {
+    return '登录你的 $channel 账号，就可以开始使用了。';
+  }
+
+  @override
+  String get channelWelcomeSignIn => '登录';
+
+  @override
+  String get channelWelcomeSigningIn => '请在弹出的窗口中登录…';
+
+  @override
+  String get channelWelcomePreparing => '正在准备…';
+
+  @override
+  String channelWelcomeFailed(String error) {
+    return '没能完成登录：$error';
+  }
+
+  @override
+  String get channelAccountTitle => '账号管理';
+
+  @override
+  String get channelAccountBalance => '余额';
+
+  @override
+  String get channelAccountRefresh => '刷新账户';
+
+  @override
+  String get channelAccountSignOut => '退出登录';
+
+  @override
+  String get channelAccountSignOutTitle => '退出登录？';
+
+  @override
+  String channelAccountSignOutDetail(String channel) {
+    return '退出后，需要重新登录 $channel 才能继续使用 Caocode。';
+  }
+
+  @override
+  String get channelAccountOpenSite => '打开网站';
+
+  @override
+  String get channelAccountDefaultModel => '新对话默认模型';
+
+  @override
+  String get channelAccountNoModels => '正在使用的 Key 没有可用的模型。';
+
+  @override
+  String get channelAccountKeys => '我的 API Key';
+
+  @override
+  String get channelAccountCreateKey => '创建 Key';
+
+  @override
+  String get channelAccountKeyName => '名称';
+
+  @override
+  String get channelAccountKeyGroup => '分组';
+
+  @override
+  String get channelAccountUseKey => '使用此 Key';
+
+  @override
+  String get channelAccountInUse => '使用中';
+
+  @override
+  String get channelAccountNoKeys => '还没有 API Key。';
+
+  @override
+  String get channelAccountSignedOut => '还没有登录。';
+
+  @override
+  String get channelAccountUnavailable => '这个渠道暂时用不了，请联系提供安装包的一方。';
+
+  @override
+  String channelAccountFailed(String error) {
+    return '出错了：$error';
+  }
+
+  @override
+  String channelAccountBlocked(String site, String request) {
+    return '$site 拒绝了这台电脑的连接（$request），可能是当前网络或代理的 IP 被它的防火墙拦截了。换个网络，或让 $site 不走代理后再试。';
+  }
+
+  @override
+  String get settingsSectionAbout => '关于';
+
+  @override
+  String get aboutTagline => '好看又好用的 Claude Code 桌面应用，内置毫秒级响应的 IDE。';
+
+  @override
+  String aboutVersion(String version, int build) {
+    return '版本 $version（$build）';
+  }
+
+  @override
+  String aboutRepository(String repository) {
+    return '$repository · 免费开源，GPL-3.0 许可证';
+  }
+
+  @override
+  String get aboutWebsite => '官网';
+
+  @override
+  String get aboutChangelog => '更新日志';
+
+  @override
+  String get aboutChangelogDetail => '每个版本改了什么';
+
+  @override
+  String get aboutFeedback => '反馈问题';
+
+  @override
+  String get aboutFeedbackDetail => '在 GitHub 上提 issue，或者看看别人提过的';
+
+  @override
+  String get aboutOpen => '打开';
 }

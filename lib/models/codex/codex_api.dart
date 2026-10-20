@@ -12,6 +12,10 @@ import '../upstream.dart';
 /// ([CodexEndpoints.models]), a model newer than it left out.
 const codexClientVersion = '0.159.0';
 
+/// The image model the Codex CLI makes pictures with (its `image_gen`):
+/// not in the backend's list, offered beside it.
+const codexImageModel = 'gpt-image-2';
+
 /// The Codex CLI's version [provider] speaks as.
 String codexVersionOf(ModelProvider provider) =>
     provider.clientVersion ?? codexClientVersion;
@@ -54,6 +58,10 @@ class CodexEndpoints {
     '$backend/codex/models?client_version=${Uri.encodeQueryComponent(version)}',
   );
   Uri get usage => Uri.parse('$backend/wham/usage');
+
+  /// The Images API's, as the Codex CLI's image generation asks it.
+  Uri get imageGenerations => Uri.parse('$backend/codex/images/generations');
+  Uri get imageEdits => Uri.parse('$backend/codex/images/edits');
   String get redirectUri => 'http://localhost:$callbackPort/auth/callback';
 }
 

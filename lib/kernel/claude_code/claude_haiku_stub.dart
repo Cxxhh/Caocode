@@ -1,3 +1,4 @@
+import '../../chat/chat_models.dart' show ImageAttachment;
 import 'claude_haiku.dart';
 
 /// The web runs no Claude Code.
@@ -7,6 +8,8 @@ Future<String> askClaudeHaiku(
   Future<void>? cancel,
   String? model,
   Map<String, String>? env,
+  List<({String name, ImageAttachment image})> images = const [],
+  ClaudeHaikuTools? tools,
 }) async => throw const ClaudeHaikuException(
   'This needs Claude Code, which the web cannot run.',
 );

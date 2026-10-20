@@ -52,13 +52,6 @@ abstract final class InteractionCodec {
               TextPreview(:final text) => {'t': 'text', 'text': text},
             },
         },
-        PlanReviewRequest() => {
-          't': 'plan',
-          'id': request.id,
-          'title': request.title,
-          'plan': request.plan,
-          'approve': request.approveLabel,
-        },
       };
 
   /// The phone's answer; null when it does not say one.
@@ -78,15 +71,6 @@ abstract final class InteractionCodec {
         ),
         null => null,
       },
-    {'t': 'plan', 'decision': final String decision} => switch (PlanDecision
-        .values
-        .asNameMap()[decision]) {
-      final decision? => PlanAnswer(
-        decision,
-        feedback: json['feedback'] as String?,
-      ),
-      null => null,
-    },
     _ => null,
   };
 }

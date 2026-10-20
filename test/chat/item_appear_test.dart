@@ -3,6 +3,7 @@
 // drop below it and fold.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:caocode/chat/chat_feed.dart';
 import 'package:caocode/chat/chat_history_view.dart';
@@ -10,7 +11,9 @@ import 'package:caocode/chat/chat_models.dart';
 import 'package:caocode/chat/chat_session.dart';
 import 'package:caocode/chat/composer/composer_draft.dart';
 import 'package:caocode/chat/widgets/activity_row.dart';
+import 'package:caocode/chat/widgets/rolling_text.dart';
 import 'package:caocode/chat/widgets/thinking_section.dart';
+import 'package:caocode/chat/widgets/turn_footer.dart';
 import 'package:caocode/theme/app_theme.dart';
 
 /// A turn under way: its items, then the status row while it streams.
@@ -18,6 +21,8 @@ class _LiveFeed extends ChangeNotifier implements ChatFeed {
   final List<ChatItem> items = [const UserMessageItem(text: 'A question')];
   bool statusVisible = true;
   bool streaming = true;
+  TurnOutput? output;
+  DateTime? startedAt;
 
   void add(ChatItem item, {required bool statusVisible}) {
     items.add(item);
@@ -35,6 +40,8 @@ class _LiveFeed extends ChangeNotifier implements ChatFeed {
           'Planning next move',
           whimsical: true,
           visible: statusVisible,
+          output: output,
+          startedAt: startedAt,
         );
 
   @override
@@ -156,6 +163,69 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
   });
 
+  testWidgets('the turn under way\'s speed, time and tokens show last of '
+      'all, under the status row, shown or not, as items come', (tester) async {
+    final feed = await _pump(tester);
+    feed
+      ..startedAt = DateTime.now().subtract(const Duration(seconds: 5))
+      ..output = const TurnOutput(tokens: 1234, tokensPerSecond: 83.4)
+      ..notifyListeners();
+    await tester.pump();
+    // The tokens written, last.
+    final tokens = _rolling('1.23k tokens');
+    expect(tokens, findsOneWidget);
+    // The speed to two decimals.
+    final speed = _rolling('83.40 tok/s');
+    expect(speed, findsOneWidget);
+    final time = _rolling('5s');
+    expect(time, findsOneWidget);
+    // The time first, the tokens last.
+    expect(tester.getRect(time).right, lessThan(tester.getRect(speed).left));
+    expect(tester.getRect(speed).right, lessThan(tester.getRect(tokens).left));
+    // From the line's start: no copy button's place before it.
+    final footer = find.byType(TurnFooter);
+    expect(
+      tester
+          .getRect(
+            find
+                .descendant(of: footer, matching: find.byType(SvgPicture))
+                .first,
+          )
+          .left,
+      tester.getRect(footer).left,
+    );
+    // Under the status row.
+    expect(
+      tester.getRect(tokens).top,
+      greaterThan(tester.getRect(find.byType(ActivityRow)).bottom),
+    );
+
+    feed.add(_thought, statusVisible: false);
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 400));
+    // Under the thought, the row folded away.
+    expect(tokens, findsOneWidget);
+    expect(
+      tester.getRect(find.byType(TurnFooter)).top,
+      greaterThanOrEqualTo(tester.getRect(find.byType(ThinkingSection)).bottom),
+    );
+
+    // No speed before there is one to say.
+    feed
+      ..output = const TurnOutput(tokens: 1300)
+      ..notifyListeners();
+    await tester.pump();
+    expect(_rolling('tok/s', containing: true), findsNothing);
+    expect(_rolling('1.30k tokens'), findsOneWidget);
+
+    // Done, the footer in its place.
+    feed
+      ..streaming = false
+      ..notifyListeners();
+    await tester.pump();
+    expect(find.byType(RollingText), findsNothing);
+  });
+
   testWidgets('where motion is turned down, all is at once', (tester) async {
     final feed = await _pump(tester, still: true);
     feed.add(_thought, statusVisible: false);
@@ -173,3 +243,11 @@ void main() {
     expect(tester.getSize(find.byType(ActivityRow)).height, 0);
   });
 }
+
+/// The live footer's [text], rolling (all of it, or [containing] it).
+Finder _rolling(String text, {bool containing = false}) =>
+    find.byWidgetPredicate(
+      (widget) =>
+          widget is RollingText &&
+          (containing ? widget.text.contains(text) : widget.text == text),
+    );

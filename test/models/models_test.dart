@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:caocode/kernel/claude_code/claude_code_transport.dart';
+import 'package:caocode/kernel/claude_code/claude_core_setting.dart';
 import 'package:caocode/kernel/claude_code/claude_environment.dart';
 import 'package:caocode/icons/project_icon.dart';
 import 'package:caocode/models/launch_environment.dart';
@@ -12,7 +13,7 @@ import 'package:caocode/models/secret_store.dart';
 import 'package:caocode/models/secret_store_io.dart';
 import 'package:caocode/models/upstream.dart';
 import 'package:caocode/settings/pages/models_page.dart'
-    show formatEnvironment, parseEnvironment;
+    show formatEnvironment, formatHeaders, parseEnvironment, parseHeaders;
 import 'package:flutter_test/flutter_test.dart';
 
 const _gateway = ModelProvider(
@@ -71,6 +72,80 @@ void main() {
           'icon': {'type': 'brand', 'name': 'nobody'},
         })!.icon,
         isNull,
+      );
+    });
+
+    test('a legacy provider Fast setting is ignored', () {
+      final provider = ModelProvider.fromJson({'id': 'p', 'fastMode': true})!;
+      expect(provider.toJson(), isNot(contains('fastMode')));
+    });
+
+    test('custom headers survive settings round trips, names that may not '
+        'be set left out', () {
+      const provider = ModelProvider(id: 'p', name: 'P');
+      expect(provider.headers, isEmpty);
+      expect(provider.toJson(), isNot(contains('headers')));
+
+      final set = provider.copyWith(
+        headers: {'x-session-id': '{{CLAUDE_SESSION_ID}}', 'X-Tenant': 'acme'},
+      );
+      expect(set.toJson()['headers'], {
+        'x-session-id': '{{CLAUDE_SESSION_ID}}',
+        'X-Tenant': 'acme',
+      });
+      expect(ModelProvider.fromJson(set.toJson())!.headers, set.headers);
+      // A name that is not a token, or none, is dropped.
+      expect(
+        ModelProvider.fromJson({
+          'id': 'p',
+          'headers': {'x-y': '1', 'bad name': '2', '': '3', 'x-z': 4},
+        })!.headers,
+        {'x-y': '1', 'x-z': '4'},
+      );
+    });
+
+    test('a custom header may not be an auth one, and a variable is '
+        'replaced by a whitelisted name only', () {
+      expect(
+        sanitizeHeaders({
+          'x-session-id': 's',
+          'Authorization': 'Bearer nope',
+          'x-api-key': 'nope',
+          'User-Agent': 'nope',
+          'Host': 'nope',
+        }),
+        {'x-session-id': 's'},
+      );
+      // The Codex CLI's own, set by the app for each account and
+      // conversation: kept from a Codex upstream only.
+      const codexOwn = {
+        'chatgpt-account-id': 'other',
+        'Originator': 'nope',
+        'session-id': 'nope',
+        'x-tenant': 't',
+      };
+      expect(sanitizeHeaders(codexOwn, ProviderProtocol.codex), {
+        'x-tenant': 't',
+      });
+      expect(sanitizeHeaders(codexOwn, ProviderProtocol.anthropic), codexOwn);
+      expect(
+        substituteVariables(
+          '{{CLAUDE_SESSION_ID}}/{{ANTHROPIC_MODEL}}/{{UNKNOWN}}/{{}}',
+          const {},
+          session: 's-1',
+          model: 'gpt-5',
+        ),
+        's-1/gpt-5/{{UNKNOWN}}/{{}}',
+      );
+      // No session or model: the variable stands as written.
+      expect(
+        substituteVariables('{{CLAUDE_SESSION_ID}}', const {}, model: 'm'),
+        '{{CLAUDE_SESSION_ID}}',
+      );
+      // A request's own value answers too.
+      expect(
+        substituteVariables('{{REQUEST_ID}}', const {'REQUEST_ID': 'r-9'}),
+        'r-9',
       );
     });
 
@@ -210,6 +285,33 @@ void main() {
       // Its provider gone, it is automatic again.
       await providers.remove('gw');
       expect(providers.auxiliaryModel, isNull);
+    });
+
+    test('Caocode\'s own core has no Claude Code of the machine\'s: its '
+        'models and Haiku, picked on the CLI, stand for none', () async {
+      final providers = ModelProviders.memory(providers: [_gateway]);
+      await providers.setDefaultModel('opus');
+      await providers.setAuxiliaryModel(builtinProviderId);
+      await providers.setActionsModel(builtinProviderId);
+      expect(providers.builtinOffered, isTrue);
+      expect(providers.defaultModel, 'opus');
+      expect(providers.auxiliary(null), (model: null, exact: true));
+
+      ClaudeCore.current = () => ClaudeCore.builtin;
+      expect(providers.builtinAvailable, isFalse);
+      expect(providers.builtinOffered, isFalse);
+      expect(providers.defaultModel, isNull);
+      // Automatic: the model given, by its provider's Haiku tier.
+      expect(providers.auxiliary('@gw/gpt-5'), (
+        model: '@gw/gpt-5',
+        exact: false,
+      ));
+      expect(providers.actions, (model: null, exact: false));
+      expect(providers.firstModel, '@gw/gpt-5');
+      await providers.setDefaultModel('@gw/gpt-5');
+      expect(providers.defaultModel, '@gw/gpt-5');
+
+      expect(ModelProviders.memory().firstModel, isNull);
     });
 
     test('a provider without models offered is not in the picker', () {
@@ -390,6 +492,72 @@ void main() {
       },
     );
 
+    test('the custom headers of each protocol, a variable standing for '
+        'its value', () {
+      const provider = ModelProvider(
+        id: 'p',
+        name: 'P',
+        headers: {
+          'x-session-id': '{{CLAUDE_SESSION_ID}}',
+          'x-tenant': 'acme',
+          'authorization': 'Bearer nope',
+        },
+      );
+      expect(customUpstreamHeaders(provider, session: 's-1', model: 'gpt-5'), {
+        'x-session-id': 's-1',
+        'x-tenant': 'acme',
+      });
+      // Without a session, the variable stands as written.
+      expect(customUpstreamHeaders(provider, model: 'gpt-5'), {
+        'x-session-id': '{{CLAUDE_SESSION_ID}}',
+        'x-tenant': 'acme',
+      });
+      // A provider without headers: none.
+      expect(customUpstreamHeaders(at('https://x.example')), isEmpty);
+    });
+
+    test('OpenCode is told the conversation, the same id every request, '
+        'unless the user names it', () {
+      final zen = at(
+        'https://opencode.ai/zen/go/v1',
+        ProviderProtocol.openaiChat,
+      );
+      final first = customUpstreamHeaders(zen, session: 's-1');
+      expect(first.keys, [openCodeSessionHeader]);
+      expect(
+        first[openCodeSessionHeader],
+        matches(RegExp(r'^ses_[0-9a-f]{32}$')),
+      );
+      expect(customUpstreamHeaders(zen, session: 's-1'), first);
+      expect(
+        customUpstreamHeaders(zen, session: 's-2')[openCodeSessionHeader],
+        isNot(first[openCodeSessionHeader]),
+      );
+      // No session (a model list): one of its own all the same.
+      expect(
+        customUpstreamHeaders(zen)[openCodeSessionHeader],
+        matches(RegExp(r'^ses_[0-9a-f]{32}$')),
+      );
+      // The user's own, in any case, is kept and not doubled.
+      expect(
+        customUpstreamHeaders(
+          zen.copyWith(
+            headers: {'X-OpenCode-Session': '{{CLAUDE_SESSION_ID}}'},
+          ),
+          session: 's-1',
+        ),
+        {'X-OpenCode-Session': 's-1'},
+      );
+      // Another upstream: none.
+      expect(
+        customUpstreamHeaders(
+          at('https://opencode.example', ProviderProtocol.openaiChat),
+          session: 's-1',
+        ),
+        isEmpty,
+      );
+    });
+
     test('model lists of each kind are read, with their windows', () {
       final openai = parseModelList({
         'object': 'list',
@@ -530,8 +698,9 @@ void main() {
       );
       expect(env['ANTHROPIC_API_KEY'], 'sk-ant');
       expect(env['ANTHROPIC_AUTH_TOKEN'], '');
-      expect(env.containsKey('CLAUDE_CODE_SUBAGENT_MODEL'), isFalse);
-      expect(env.containsKey('CLAUDE_CODE_SUBAGENT_MODEL_FORCE'), isFalse);
+      // None set: not one the user's own settings name either.
+      expect(env['CLAUDE_CODE_SUBAGENT_MODEL'], '');
+      expect(env['CLAUDE_CODE_SUBAGENT_MODEL_FORCE'], '');
     });
 
     test('an OpenAI upstream goes through the proxy, never through the '
@@ -550,9 +719,47 @@ void main() {
       expect(env.values, isNot(contains('sk-never-given')));
       expect(env['NO_PROXY'], 'corp.example,127.0.0.1,localhost');
       expect(env['ANTHROPIC_DEFAULT_HAIKU_MODEL'], 'mini');
+      // A proxied provider carries its own headers itself, not through
+      // Claude Code's variable.
+      expect(env['ANTHROPIC_CUSTOM_HEADERS'], '');
       expect(
         () => launchEnvironment(provider: _gateway, model: 'm'),
         throwsStateError,
+      );
+    });
+
+    test('a directly-spoken upstream carries its own headers in Claude '
+        'Code\'s variable, auth headers left out', () {
+      final env = launchEnvironment(
+        provider: const ModelProvider(
+          id: 'a',
+          name: 'A',
+          baseUrl: 'https://gateway.example/anthropic',
+          headers: {
+            'x-session-id': '{{CLAUDE_SESSION_ID}}',
+            'x-tenant': 'acme',
+            'authorization': 'Bearer nope',
+          },
+        ),
+        model: 'claude-sonnet-4-5',
+        key: 'sk',
+      );
+      expect(
+        env['ANTHROPIC_CUSTOM_HEADERS'],
+        'x-session-id: {{CLAUDE_SESSION_ID}}\nx-tenant: acme',
+      );
+      // No headers of its own: the variable is the cleared one.
+      expect(
+        launchEnvironment(
+          provider: const ModelProvider(
+            id: 'a',
+            name: 'A',
+            baseUrl: 'https://x.example',
+          ),
+          model: 'm',
+          key: 'k',
+        )['ANTHROPIC_CUSTOM_HEADERS'],
+        '',
       );
     });
 
@@ -561,11 +768,23 @@ void main() {
       expect(requestedModel(_gateway, thinking, effort: 'high'), 'o3(high)');
       expect(requestedModel(_gateway, thinking, effort: 'none'), 'o3(none)');
       expect(requestedModel(_gateway, thinking), 'o3');
+      expect(requestedModel(_gateway, thinking, fast: true), 'o3');
+      const responses = ModelProvider(
+        id: 'rsp',
+        name: 'Responses',
+        protocol: ProviderProtocol.openaiResponses,
+      );
+      expect(
+        requestedModel(responses, thinking, effort: 'high', fast: true),
+        'o3(high;fast)',
+      );
+      expect(requestedModel(responses, thinking, fast: true), 'o3(;fast)');
       expect(
         requestedModel(
           const ModelProvider(id: 'a', name: 'A'),
           thinking,
           effort: 'high',
+          fast: true,
         ),
         'o3',
       );
@@ -679,12 +898,30 @@ void main() {
       );
       expect(formatEnvironment({'A': '1', 'B': '2'}), 'A=1\nB=2');
     });
+
+    test('custom headers are a line a header', () {
+      expect(
+        parseHeaders(
+          'x-session-id: {{CLAUDE_SESSION_ID}}\n# a comment\n\nnot a header\n'
+          'X-Tenant : acme\nAuthorization: Bearer nope',
+        ),
+        {'x-session-id': '{{CLAUDE_SESSION_ID}}', 'X-Tenant': 'acme'},
+      );
+      expect(
+        formatHeaders({'x-session-id': '{{CLAUDE_SESSION_ID}}', 'X': 'y'}),
+        'x-session-id: {{CLAUDE_SESSION_ID}}\nX: y',
+      );
+      expect(parseHeaders(''), isEmpty);
+    });
   });
 
   group('listUpstreamModels', () {
     late HttpServer server;
     final asked = <String>[];
     var key = 'k';
+    // The relay under /anthropic refuses the key; the host's /v1/models,
+    // another service, lists nothing.
+    var relayUnder = false;
 
     setUp(() async {
       // Real sockets, on this machine: not the test binding's 400s.
@@ -692,11 +929,23 @@ void main() {
       ClaudeEnvironment.use(const {});
       asked.clear();
       key = 'k';
+      relayUnder = false;
       server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
       server.listen((request) async {
         asked.add(request.uri.path);
         final response = request.response;
-        if (request.uri.path != '/v1/models') {
+        if (relayUnder) {
+          if (request.uri.path == '/anthropic/v1/models') {
+            response.statusCode = 401;
+            response.write(
+              jsonEncode({
+                'error': {'message': 'bad key'},
+              }),
+            );
+          } else {
+            response.write(jsonEncode({'data': <Object>[]}));
+          }
+        } else if (request.uri.path != '/v1/models') {
           response.statusCode = 404;
         } else if (request.headers.value('authorization') != 'Bearer $key') {
           response.statusCode = 401;
@@ -753,6 +1002,22 @@ void main() {
     test('a base URL that lists is asked alone', () async {
       await listUpstreamModels(at(''), 'k');
       expect(asked, ['/v1/models']);
+    });
+
+    test('a key the base URL refuses is not hidden by another list that '
+        'is empty', () async {
+      relayUnder = true;
+      await expectLater(
+        listUpstreamModels(at('/anthropic'), 'k'),
+        throwsA(
+          isA<UpstreamException>().having(
+            (error) => error.message,
+            'message',
+            contains('bad key'),
+          ),
+        ),
+      );
+      expect(asked, ['/anthropic/v1/models', '/v1/models']);
     });
   });
 }

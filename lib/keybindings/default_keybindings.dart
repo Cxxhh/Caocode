@@ -48,6 +48,18 @@ const resetFeatureTipsCommandId = 'caocode.tips.reset';
 /// conversations, any time.
 const starOnGitHubCommandId = 'caocode.starOnGitHub';
 
+/// Connect Your Browser…: what the agents do with the user's browser, and
+/// its extension to get (showBrowserWelcome), as after the update.
+const browserWelcomeCommandId = 'caocode.browser.welcome';
+
+/// Meet Stash…: what Stash is, and the shortcut that notes a stash down
+/// (showStashWelcome), as the first time its page shows.
+const stashWelcomeCommandId = 'caocode.stash.welcome';
+
+/// Set Up a Model…: what an upstream is, and adding one (showModelWelcome),
+/// as when a session first has no model to run on.
+const modelWelcomeCommandId = 'caocode.models.welcome';
+
 /// A command a keybinding may run, as the Keyboard Shortcuts page lists it.
 @immutable
 class CommandInfo {
@@ -151,6 +163,17 @@ final Map<String, CommandInfo> commandCatalog = {
     const CommandInfo(
       starOnGitHubCommandId,
       'Star Caocode on GitHub',
+      category: 'Help',
+    ),
+    const CommandInfo(
+      browserWelcomeCommandId,
+      'Connect Your Browser...',
+      category: 'Help',
+    ),
+    const CommandInfo(stashWelcomeCommandId, 'Meet Stash...', category: 'Help'),
+    const CommandInfo(
+      modelWelcomeCommandId,
+      'Set Up a Model...',
       category: 'Help',
     ),
     const CommandInfo(

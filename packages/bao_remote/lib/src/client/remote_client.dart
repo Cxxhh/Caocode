@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import '../claude/claude_history_page.dart';
 import '../claude/claude_release.dart';
 import '../claude/claude_sessions.dart';
 import '../claude/claude_unavailable.dart';
@@ -426,6 +427,29 @@ class RemoteClient {
     await _call<String>(RemoteProtocol.fsReadBytes, {'path': path}),
   );
 
+  /// At most [length] of [path]'s bytes from [offset] (fewer at its end),
+  /// and its size; given up once [cancel] completes.
+  Future<({Uint8List bytes, int size})> readRange(
+    String path,
+    int offset,
+    int length, {
+    Future<void>? cancel,
+  }) async {
+    final result = _map(
+      await _call<Object?>(RemoteProtocol.fsReadRange, {
+        'path': path,
+        'offset': offset,
+        'length': length,
+      }, cancel),
+    );
+    return (bytes: decodeBytes(result['data']), size: result['size'] as int);
+  }
+
+  /// How many bytes the files at [paths] take, folders' too; counted only
+  /// until over [limit].
+  Future<int> sizeOf(List<String> paths, {int? limit}) =>
+      _call<int>(RemoteProtocol.fsSize, {'paths': paths, 'limit': limit});
+
   Future<IdeFileListing> walk(
     String root, {
     Set<String> excluded = ideIndexExcludedDirectories,
@@ -591,14 +615,16 @@ class RemoteClient {
   /// Starts Claude Code there with [arguments] in [cwd]: [settings] (flag
   /// settings with a key) written to a file only the user reads and given
   /// as `--settings`, the variables named in [cleared] set empty, then
-  /// [environment] over its own. Throws ClaudeUnavailable when it is not
-  /// installed there.
+  /// [environment] over its own. [core] `builtin` runs Caocode's own core
+  /// there instead (a server of before runs the CLI). Throws
+  /// ClaudeUnavailable when the CLI is to run and is not installed there.
   Future<RemoteProcess> startClaude({
     required String cwd,
     required List<String> arguments,
     Map<String, Object?>? settings,
     List<String> cleared = const [],
     Map<String, String> environment = const {},
+    String? core,
   }) async => _process(
     _map(
       await peer.request(RemoteProtocol.claudeStart, {
@@ -607,6 +633,7 @@ class RemoteClient {
         'settings': ?settings,
         'cleared': cleared,
         'environment': environment,
+        'core': ?core,
       }),
     ),
   );
@@ -673,6 +700,28 @@ class RemoteClient {
       _map(entry),
   ];
 
+  /// Some of the session's conversation (see [ClaudeSessions.readPage]);
+  /// all of it from a server before pages.
+  Future<ClaudeHistoryPage> claudeHistoryPage(
+    String path, {
+    required int turns,
+    String? before,
+    int? bytes,
+  }) async {
+    final read = await _call<Object?>(RemoteProtocol.claudeRead, {
+      'path': path,
+      'turns': turns,
+      'before': ?before,
+      'bytes': ?bytes,
+    });
+    if (read is List) {
+      // Asked for the turns before some: it sent them all already.
+      if (before != null) return const ClaudeHistoryPage([]);
+      return ClaudeHistoryPage.whole([for (final entry in read) _map(entry)]);
+    }
+    return ClaudeHistoryPage.fromJson(_map(read));
+  }
+
   /// What the session [id] kept of its goal (see [ClaudeSessions.goal]).
   Future<List<Map<String, Object?>>> claudeGoal(String id) async => [
     for (final entry in await _call<List>(RemoteProtocol.claudeGoal, {
@@ -703,7 +752,7 @@ class RemoteClient {
   // --- Review ----------------------------------------------------------------
 
   /// The review store of the project at [root] there; null where there is
-  /// none (no Git there, or no such folder).
+  /// none (no such folder).
   Future<ReviewStore?> openReview(String root) async {
     final opened = await peer.request(RemoteProtocol.reviewOpen, {
       'root': root,

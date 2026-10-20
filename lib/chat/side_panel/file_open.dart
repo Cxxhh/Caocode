@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/gestures.dart';
@@ -6,8 +7,13 @@ import 'package:flutter/widgets.dart';
 import 'package:path/path.dart' as p;
 
 import '../../ide/file_service.dart';
+import '../../ide/file_views.dart';
+import '../../workspace/window_controls.dart';
 import '../chat_models.dart';
 import 'file_link.dart';
+import 'file_link_menu.dart';
+import '../widgets/image_thumbnails.dart' show showImagePreview;
+import 'shown_files.dart';
 
 /// A file to show: at [range], or as its changes ([diff]) against
 /// [original], its text before (the agent's edit, or Git's HEAD or index).
@@ -21,10 +27,25 @@ class FileOpenRequest {
     this.original,
     this.modified,
     this.plan = false,
+    this.local = false,
+    this.readOnly = false,
+    this.preview = false,
+    this.agentChange = false,
   });
 
-  /// Absolute, on the project's host.
+  /// Absolute, on the project's host (on this machine when [local]).
   final String path;
+
+  /// On this machine whatever the project's host: something shown as a
+  /// file (see [FileOpenScope.showText]).
+  final bool local;
+
+  /// Shown, not to edit: text sent already, a picture.
+  final bool readOnly;
+
+  /// In the tab that shows what was looked at last, which the next look
+  /// takes over, as VS Code's preview editor: kept once it is pinned.
+  final bool preview;
 
   /// The agent's plan, written in plan mode: shown on a page of its own
   /// where there is one (the side panel's), else as any file.
@@ -33,6 +54,11 @@ class FileOpenRequest {
 
   /// Its changes rather than its text, where they are known.
   final bool diff;
+
+  /// The agent's change pending in the file, shown in its text (each part
+  /// to keep or undo) rather than as its changes: scrolled to, the part at
+  /// [range] (else the first), the lines not marked.
+  final bool agentChange;
 
   /// The change [diff] shows, when the session lists it.
   final FileChange? change;
@@ -56,12 +82,18 @@ class FileOpenRequest {
     original: original ?? this.original,
     modified: modified,
     plan: plan,
+    local: local,
+    readOnly: readOnly,
+    preview: preview,
+    agentChange: agentChange,
   );
 
   @override
   String toString() =>
       'FileOpenRequest($path${range == null ? '' : ', $range'}'
-      '${diff ? ', diff' : ''}${plan ? ', plan' : ''})';
+      '${diff ? ', diff' : ''}${plan ? ', plan' : ''}'
+      '${local ? ', local' : ''}${readOnly ? ', read-only' : ''}'
+      '${preview ? ', preview' : ''}${agentChange ? ', agent change' : ''})';
 }
 
 /// Where a chat's files open (the agent window's side panel, the IDE's
@@ -70,11 +102,34 @@ class FileLinkTarget {
   const FileLinkTarget({
     required this.open,
     this.exists,
+    this.readBytes,
+    this.sizeOf,
     this.paths,
     this.roots,
+    this.inPanel = false,
+    this.openInIde,
+    this.showBrowserTab,
   });
 
   final ValueChanged<FileOpenRequest> open;
+
+  /// Shows a tab of the user's browser (its id, as the agents' tools have
+  /// it) beside the conversation: on the side panel's browser page.
+  final ValueChanged<int>? showBrowserTab;
+
+  /// Whether [open] shows them in the side panel (the agent window's).
+  final bool inPanel;
+
+  /// Opens one in the IDE of the project, where [open] does not.
+  final ValueChanged<FileOpenRequest>? openInIde;
+
+  /// Reads the file at an absolute path (on the project's host): an image
+  /// the chat names, to show; none, and images open as other files.
+  final Future<Uint8List> Function(String path)? readBytes;
+
+  /// How many bytes the file at an absolute path takes (on the project's
+  /// host): an image too big to show small is not read for it.
+  final Future<int> Function(String path)? sizeOf;
 
   /// A multi-folder workspace's folders as they are now: its files are
   /// theirs (see [FileOpenScope.roots]).
@@ -179,10 +234,35 @@ class FileOpenScope extends InheritedWidget {
     this.paths,
     this.roots = const [],
     this.seen = const [],
+    this.local = true,
+    this.readBytes,
+    this.sizeOf,
+    this.inPanel = false,
+    this.onOpenInIde,
+    this.onShowBrowserTab,
     required super.child,
   });
 
+  /// See [FileLinkTarget.showBrowserTab].
+  final ValueChanged<int>? onShowBrowserTab;
+
+  /// See [FileLinkTarget.inPanel].
+  final bool inPanel;
+
+  /// See [FileLinkTarget.openInIde].
+  final ValueChanged<FileOpenRequest>? onOpenInIde;
+
+  /// See [FileLinkTarget.readBytes].
+  final Future<Uint8List> Function(String path)? readBytes;
+
+  /// See [FileLinkTarget.sizeOf].
+  final Future<int> Function(String path)? sizeOf;
+
   final String root;
+
+  /// Whether the files are this machine's (not a remote project's): their
+  /// menu then shows them in the file manager, and opens them in apps.
+  final bool local;
   final ValueChanged<FileOpenRequest> onOpen;
   final FileExistence existence;
   final p.Context? paths;
@@ -200,6 +280,10 @@ class FileOpenScope extends InheritedWidget {
 
   static FileOpenScope? maybeOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<FileOpenScope>();
+
+  /// The scope over [context], for what a click does (not depended on).
+  static FileOpenScope? find(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<FileOpenScope>();
 
   /// [path] (absolute, or relative to [root]) in [root]; null outside it.
   /// In a workspace, the first of its folders' found to have it; until
@@ -278,21 +362,167 @@ class FileOpenScope extends InheritedWidget {
   }
 
   /// What a click on a markdown link to [href] does: opens the file it goes
-  /// to, when that is in [root]; null for any other.
-  GestureRecognizer? linkRecognizer(String? href) {
+  /// to, when that is in [root]; null for any other. A right click has its
+  /// menu (see [FileLinkMenu]). An image shows enlarged, over [context]'s
+  /// window, and a web page here opens in the browser (see [activate]).
+  GestureRecognizer? linkRecognizer(String? href, {BuildContext? context}) {
     final link = FileLink.parseHref(href);
-    if (link == null || resolve(link.path) == null) return null;
-    return TapGestureRecognizer()..onTap = () => openLink(link);
+    if (link == null) return null;
+    final path = resolve(link.path);
+    if (path == null) return null;
+    return FileLinkRecognizer(
+      menuFor(path, () => openLink(link), context: context),
+    )..onTap = () => activate(link, path, context);
   }
 
   /// What a click on inline [code] does: opens the file it names, once
   /// that is known to exist in [root]; null until then, and for any other.
-  GestureRecognizer? codeRecognizer(String code) {
+  GestureRecognizer? codeRecognizer(String code, {BuildContext? context}) {
     final link = FileLink.parseText(code);
     if (link == null) return null;
     final path = resolve(link.path);
     if (path == null || existence.known(path) != true) return null;
-    return TapGestureRecognizer()..onTap = () => openLink(link);
+    return FileLinkRecognizer(
+      menuFor(path, () => openLink(link), context: context),
+    )..onTap = () => activate(link, path, context);
+  }
+
+  /// A click on [link], to the file at [path]: one opened outside the app
+  /// opens there ([openerOf], a web page here in the browser); an image
+  /// shows enlarged over [context]'s window ([preview]); anything else
+  /// opens (see [openLink]).
+  void activate(FileLink link, String path, BuildContext? context) {
+    if (context != null && link.range == null && showsImage(path)) {
+      unawaited(preview(context, path, orElse: () => openLink(link)));
+    } else if (link.range == null ? openerOf(path) : null case final opener?) {
+      unawaited(opener.open(path));
+    } else {
+      openLink(link);
+    }
+  }
+
+  /// Whether a click on the image at [path] shows it enlarged: one the
+  /// window draws, which can be read.
+  bool showsImage(String path) =>
+      readBytes != null &&
+      _imageTypes.containsKey(
+        (paths ?? p.context).extension(path).toLowerCase(),
+      );
+
+  /// What a click on [path] opens it with outside the app (see
+  /// [FileViews.openerOf]): only a file on this machine; null to open it in
+  /// the app.
+  FileOpener? openerOf(String path) => local ? FileViews.openerOf(path) : null;
+
+  static const _imageTypes = {
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.bmp': 'image/bmp',
+  };
+
+  /// Shows the file at [path] on this machine (whatever the project's
+  /// host), read-only, in the tab of what was looked at last: where the
+  /// chat's files open (the side panel, the IDE).
+  void showLocal(String path, {FileLineRange? range}) => onOpen(
+    FileOpenRequest(
+      path,
+      range: range,
+      local: true,
+      readOnly: true,
+      preview: true,
+    ),
+  );
+
+  /// Shows [text] as a file named [name] (see [ShownFiles.text]), as
+  /// [showLocal] does; false where it cannot be one.
+  bool showText(String text, {required String name}) {
+    final path = ShownFiles.text(text, name: name);
+    if (path == null) return false;
+    showLocal(path);
+    return true;
+  }
+
+  /// The image at [path], read; null when it cannot be, or (where its
+  /// size can be known) takes more than [maxBytes].
+  Future<ImageAttachment?> image(String path, {int? maxBytes}) async {
+    final read = readBytes;
+    if (read == null) return null;
+    try {
+      if ((maxBytes, sizeOf) case (final most?, final sizeOf?)
+          when await sizeOf(path) > most) {
+        return null;
+      }
+      return ImageAttachment(
+        bytes: await read(path),
+        mediaType:
+            _imageTypes[(paths ?? p.context).extension(path).toLowerCase()] ??
+            'image/png',
+        name: (paths ?? p.context).basename(path),
+      );
+    } on Object {
+      return null;
+    }
+  }
+
+  /// Shows the image at [path] enlarged over [context]'s window, with the
+  /// file's menu; [orElse] where it cannot be read.
+  Future<void> preview(
+    BuildContext context,
+    String path, {
+    VoidCallback? orElse,
+  }) async {
+    final image = await this.image(path);
+    if (!context.mounted) return;
+    if (image == null) return orElse?.call();
+    showImagePreview(
+      context,
+      image,
+      menu: menuFor(
+        path,
+        orElse ?? () => onOpen(FileOpenRequest(path)),
+        context: context,
+        previewing: true,
+      ),
+    );
+  }
+
+  /// The right click's menu of the file at [path] (absolute), [open]
+  /// opening it (in the side panel, or the IDE: see [inPanel]); in the
+  /// IDE too ([onOpenInIde]). An image also shows enlarged over
+  /// [context]'s window (unless it is [previewing]), and copies.
+  FileLinkMenu menuFor(
+    String path,
+    VoidCallback open, {
+    BuildContext? context,
+    bool previewing = false,
+  }) {
+    final image = context != null && showsImage(path);
+    return FileLinkMenu(
+      path: path,
+      root: root,
+      paths: paths,
+      local: local,
+      onOpen: open,
+      inPanel: inPanel,
+      onOpenInIde: switch (onOpenInIde) {
+        final inIde? => () => inIde(FileOpenRequest(path)),
+        null => null,
+      },
+      onPreview: image && !previewing
+          ? () => unawaited(preview(context, path))
+          : null,
+      onCopyImage: image
+          ? () => unawaited(() async {
+              if (await this.image(path) case final image?) {
+                await WindowControls.writePasteboardImage(image);
+              }
+            }())
+          : null,
+      opener: openerOf(path),
+    );
   }
 
   @override
@@ -301,6 +531,10 @@ class FileOpenScope extends InheritedWidget {
       onOpen != oldWidget.onOpen ||
       existence != oldWidget.existence ||
       paths != oldWidget.paths ||
+      local != oldWidget.local ||
+      readBytes != oldWidget.readBytes ||
+      inPanel != oldWidget.inPanel ||
+      onOpenInIde != oldWidget.onOpenInIde ||
       !listEquals(roots, oldWidget.roots) ||
       !listEquals(seen, oldWidget.seen);
 }

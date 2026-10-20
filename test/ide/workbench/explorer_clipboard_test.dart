@@ -274,6 +274,74 @@ void main() {
     await tester.pumpAndSettle();
   }, variant: windows);
 
+  testWidgets('a remote project\'s big copies stay the app\'s: nothing is '
+      'downloaded, and they paste on the host', (tester) async {
+    final held = clipboard(tester);
+    final host = _RangeHostFiles({
+      for (final MapEntry(:key, :value) in files.entries) inRoot(key): value,
+    }, size: IdeExplorerState.clipboardDownloadLimit + 1);
+    await _pumpTree(tester, files, local: false, host: host);
+    await tester.tap(row('README.md'));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await chord(tester, LogicalKeyboardKey.keyC, control: true);
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    });
+    expect(host.ranges, 0);
+    expect(held, isEmpty);
+
+    await tester.tap(row('lib'));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await chord(tester, LogicalKeyboardKey.keyV, control: true);
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    });
+    await tester.pumpAndSettle();
+    expect(host.contents[inRoot('lib/README.md')], 'r');
+  }, variant: windows);
+
+  testWidgets('a remote project\'s copy downloads a stretch at a time, and '
+      'its notification gives it up', (tester) async {
+    final held = clipboard(tester);
+    final notifications = IdeNotifications();
+    addTearDown(notifications.dispose);
+    final host = _RangeHostFiles({
+      for (final MapEntry(:key, :value) in files.entries) inRoot(key): value,
+    }, size: 3);
+    final gate = host.gate = Completer<void>();
+    final errors = <Object>[];
+    await _pumpTree(
+      tester,
+      files,
+      local: false,
+      host: host,
+      notifications: notifications,
+      onError: errors.add,
+    );
+    await tester.tap(row('README.md'));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await chord(tester, LogicalKeyboardKey.keyC, control: true);
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+    });
+    final shown = notifications.notifications.single;
+    expect(shown.primary.single.label, 'Cancel');
+    shown.primary.single.run();
+    // Given up while the stretch is on its way: it is not written.
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+    await tester.runAsync(() async {
+      gate.complete();
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    });
+    await tester.pump();
+    expect(host.ranges, 1);
+    expect(held, isEmpty);
+    expect(errors, isEmpty);
+    expect(notifications.notifications, isEmpty);
+  }, variant: windows);
+
   test('copyLocalTo copies a folder with its contents, without links to '
       'folders', () async {
     final local = await Directory.systemTemp.createTemp('explorer_upload');
@@ -356,4 +424,31 @@ class _HostFiles extends TreeFiles implements IdeHostFiles {
   @override
   Stream<Object> searchText(String root, IdeTextQuery query) =>
       throw UnimplementedError();
+}
+
+/// A remote host's files read a stretch at a time, each [size] bytes big
+/// for what they take.
+class _RangeHostFiles extends _HostFiles implements IdeRangeFiles {
+  _RangeHostFiles(super.contents, {required this.size});
+
+  final int size;
+  int ranges = 0;
+
+  @override
+  Future<({Uint8List bytes, int size})> readRange(
+    String path,
+    int offset,
+    int length, {
+    Future<void>? cancel,
+  }) async {
+    ranges++;
+    await gate?.future;
+    final all = await readBytes(path);
+    final end = (offset + length).clamp(0, all.length);
+    return (bytes: all.sublist(offset.clamp(0, end), end), size: all.length);
+  }
+
+  @override
+  Future<int> sizeOf(List<String> paths, {int? limit}) async =>
+      paths.length * size;
 }

@@ -14,6 +14,13 @@ void main() {
     expect(source.heading('nope'), isNull);
   });
 
+  test('an anchor with a lone % is looked up as it is, not thrown on', () {
+    final source = MarkdownSource('# 100% done\n\n# Rate %d');
+    expect(source.heading('100%'), isNull);
+    expect(source.heading('100% done'), 0);
+    expect(source.heading('Rate %d'), 1);
+  });
+
   test('link definitions apply to the whole document', () {
     final source = MarkdownSource('See [docs][d].\n\n[d]: https://dart.dev');
     final html = source.parse(source.blocks.first).single;

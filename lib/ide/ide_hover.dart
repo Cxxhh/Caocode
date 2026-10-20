@@ -26,6 +26,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../base/tooltip_scroll.dart';
 import '../theme/workbench_theme.dart' show themeColors;
 
 /// The workbench hover's colors, in the color theme.
@@ -194,13 +195,18 @@ class _IdeHoverState extends State<IdeHover> {
       hoverDelay: ideHoverDelay,
       triggerMode: TooltipTriggerMode.manual,
       enableTapToDismiss: !widget.interactive,
+      ignorePointer: !widget.interactive,
       animationStyle: const AnimationStyle(
         duration: Duration(milliseconds: 100),
         reverseDuration: Duration.zero,
       ),
       positionDelegate: widget.followMouse ? _placeAtMouse : _place,
-      tooltipBuilder: (context, animation) =>
-          FadeTransition(opacity: animation, child: _box()),
+      tooltipBuilder: (context, animation) => FadeTransition(
+        opacity: animation,
+        child: widget.interactive
+            ? TooltipScroll(anchorContext: context, child: _box())
+            : _box(),
+      ),
       child: widget.followMouse
           ? MouseRegion(
               onHover: (event) => _mouse = event.localPosition,

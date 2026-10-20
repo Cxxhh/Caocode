@@ -30,9 +30,11 @@ import 'window_host.dart';
 import 'window_settings.dart';
 
 /// The kinds of window: the chat's, the app's main one (there is one);
-/// the IDE's, one per folder (or none: its welcome); and an agent's, its
-/// conversation alone (Explorer's Open with Caocode, a new one each time).
-enum AppWindowKind { chat, ide, agent }
+/// the IDE's, one per folder (or none: its welcome); an agent's, its
+/// conversation alone (Explorer's Open with Caocode, a new one each time);
+/// and the stash's panel (see lib/stash/), none of the app's windows to the
+/// system: not listed, never in front of the others as they are.
+enum AppWindowKind { chat, ide, agent, stash }
 
 /// What a window's workbench does for [AppWindows]: it is the one to open
 /// files in it, show an agent there, and answer for what it has unsaved.
@@ -83,6 +85,7 @@ class AppWindow {
   bool get isChat => kind == AppWindowKind.chat;
   bool get isIde => kind == AppWindowKind.ide;
   bool get isAgent => kind == AppWindowKind.agent;
+  bool get isStash => kind == AppWindowKind.stash;
 
   /// The agent an agent's window shows (another picked in its sidebar
   /// takes its place: see [AppWindows.showInWindow]).
@@ -143,6 +146,7 @@ class AppWindow {
   String label(AppLocalizations l10n) => switch ((kind, _folder)) {
     (AppWindowKind.chat, _) => l10n.windowChatTitle,
     (AppWindowKind.agent, _) => thread!.localizedTitle(l10n),
+    (AppWindowKind.stash, _) => 'Stash',
     (_, final folder?) => _folderName(folder),
     (_, null) => l10n.windowWelcomeTitle,
   };
@@ -208,6 +212,7 @@ class AppWindows extends ChangeNotifier implements WindowHostEvents {
     this._updateSetting,
     Future<bool> Function(String path)? isDirectory,
     Future<String?> Function(String path)? takeFile,
+    Future<bool> Function(String path)? exists,
     bool Function()? hasTray,
     Future<AppExitResponse> Function()? quit,
     Future<void> Function()? nextFrame,
@@ -216,6 +221,7 @@ class AppWindows extends ChangeNotifier implements WindowHostEvents {
        _mainWindow = mainWindow ?? (() => MainWindow.fallback),
        _isDirectory = isDirectory ?? _folderThere,
        _takeFile = takeFile ?? local.takeFile,
+       _exists = exists ?? local.exists,
        _hasTray = hasTray ?? (() => false),
        _quitOverride = quit,
        _nextFrame = nextFrame ?? (() => WidgetsBinding.instance.endOfFrame),
@@ -255,6 +261,7 @@ class AppWindows extends ChangeNotifier implements WindowHostEvents {
 
   final Future<bool> Function(String path) _isDirectory;
   final Future<String?> Function(String path) _takeFile;
+  final Future<bool> Function(String path) _exists;
   final bool Function() _hasTray;
   final Future<AppExitResponse> Function()? _quitOverride;
 
@@ -758,7 +765,8 @@ class AppWindows extends ChangeNotifier implements WindowHostEvents {
       return;
     }
     final folders = <CodeTarget>[], files = <CodeTarget>[];
-    for (final target in args.paths) {
+    for (final path in args.paths) {
+      final target = await _located(path);
       (await _isDirectory(target.path) ? folders : files).add(target);
     }
     if (folders.isEmpty && files.isEmpty) {
@@ -782,6 +790,16 @@ class AppWindows extends ChangeNotifier implements WindowHostEvents {
       newWindow: args.newWindow && folders.isEmpty,
       reuse: args.reuseWindow,
     );
+  }
+
+  /// [target], or the file it names at a line: `a.vue:58:11` given without
+  /// `-g` (as tools that start an editor they do not know give it) is
+  /// a.vue at line 58, column 11, unless there is a file of that name.
+  Future<CodeTarget> _located(CodeTarget target) async {
+    final at = target.atLine;
+    if (at == null || RemoteLocation.isRemote(target.path)) return target;
+    if (await _exists(target.path) || !await _exists(at.path)) return target;
+    return at;
   }
 
   /// What the system asks to open: a request of the `code` command (on
@@ -1042,6 +1060,9 @@ class AppWindows extends ChangeNotifier implements WindowHostEvents {
   }
 
   Future<void> _remove(AppWindow window) async {
+    // Out of full screen first, still drawn (see WindowHost.leaveFullScreen);
+    // then back to the window it covered.
+    final wasFullScreen = await host.leaveFullScreen(window.viewId);
     _ide.remove(window);
     _agents.remove(window);
     _mru.remove(window);
@@ -1055,6 +1076,7 @@ class AppWindows extends ChangeNotifier implements WindowHostEvents {
     _save();
     if (_mru.firstWhereOrNull((w) => w.shown) case final front?) {
       WindowControls.activeViewId = front.viewId;
+      if (wasFullScreen) unawaited(host.focus(front.viewId));
     }
     await _quitIfNoneShows();
   }
@@ -1065,6 +1087,7 @@ class AppWindows extends ChangeNotifier implements WindowHostEvents {
       ..remove(chat)
       ..add(chat);
     _changed();
+    await host.leaveFullScreen(chat.viewId);
     await host.hide(chat.viewId);
     _save();
     final front = active;
@@ -1164,6 +1187,10 @@ class AppWindows extends ChangeNotifier implements WindowHostEvents {
 
   @override
   void windowCloseRequested(int viewId) {
+    if (_stash?.viewId == viewId) {
+      stashCloseRequested?.call();
+      return;
+    }
     if (windowOf(viewId) case final window?) {
       unawaited(requestClose(window));
     }
@@ -1171,12 +1198,37 @@ class AppWindows extends ChangeNotifier implements WindowHostEvents {
 
   @override
   void windowFocused(int viewId) {
+    if (defaultTargetPlatform == TargetPlatform.windows) _reattachTextInput();
     final window = windowOf(viewId);
     if (window == null) return;
     final wasShown = window.shown;
     _toFront(window);
     if (!wasShown) _syncWorkspace();
     _save();
+  }
+
+  /// Back in front on Windows (Alt+Tab), the text field that had the
+  /// keyboard has its input connection anew: the old one no longer gets
+  /// what is typed until the field is clicked.
+  void _reattachTextInput() {
+    final node = primaryFocus;
+    if (node?.context?.findAncestorWidgetOfExactType<EditableText>() == null) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Moved on meanwhile (a click elsewhere): left as it is.
+      if (!identical(primaryFocus, node) || node == null) return;
+      node.unfocus(disposition: UnfocusDisposition.previouslyFocusedChild);
+      // After the focus moved (it does in a microtask): asked back at once,
+      // it would not have moved at all.
+      unawaited(
+        Future<void>(() {
+          if (node.context != null && !node.hasPrimaryFocus) {
+            node.requestFocus();
+          }
+        }),
+      );
+    });
   }
 
   @override
@@ -1257,6 +1309,9 @@ class AppWindows extends ChangeNotifier implements WindowHostEvents {
     if (!await _confirmUnsaved(windows)) return _decline(false);
     final front = recentIde;
     final ideInFront = front != null && identical(active, front);
+    for (final window in windows) {
+      await host.leaveFullScreen(window.viewId);
+    }
     if (ideInFront || !chat.shown) _focus(chat);
     // Their views' widgets go first, then the views; then the main window
     // takes the IDE.
@@ -1282,7 +1337,7 @@ class AppWindows extends ChangeNotifier implements WindowHostEvents {
     _declined = separate;
     _updateSetting?.call(
       WindowSettings.ideWindowsKey,
-      _separate ? null : IdeWindows.mainWindow.name,
+      _separate ? IdeWindows.separate.name : null,
     );
   }
 
@@ -1323,6 +1378,54 @@ class AppWindows extends ChangeNotifier implements WindowHostEvents {
     _agentsChanged();
     _changed();
     if (old != null) workspace.closeWindowAgent(old);
+  }
+
+  // --- The stash's panel ------------------------------------------------------
+
+  /// The stash's panel, once made ([startStash]).
+  AppWindow? get stash => _stash;
+  AppWindow? _stash;
+
+  /// Whether it shows.
+  bool get stashShown => _stashShown;
+  bool _stashShown = false;
+
+  /// The panel's own close (Alt+F4 on Windows): its owner hides it, what
+  /// it has written kept first.
+  VoidCallback? stashCloseRequested;
+
+  /// Makes the stash's panel, hidden, for it to show at once when asked
+  /// (see [showStash]); null where the system has none.
+  Future<AppWindow?> startStash() async {
+    if (!_started) return null;
+    if (_stash case final stash?) return stash;
+    final viewId = await host.createStash();
+    if (viewId == null) return null;
+    if (await host.waitForView(viewId) == null) return null;
+    final window = _stash = AppWindow._(AppWindowKind.stash, viewId, null);
+    window._shown = false;
+    notifyListeners();
+    return window;
+  }
+
+  /// Shows the stash's panel, the keyboard's (the app in front stays so).
+  Future<void> showStash() async {
+    final stash = _stash ?? await startStash();
+    if (stash == null) return;
+    _stashShown = stash._shown = true;
+    WindowControls.activeViewId = stash.viewId;
+    await host.showStash();
+  }
+
+  /// Hides the stash's panel.
+  Future<void> hideStash() async {
+    final stash = _stash;
+    if (stash == null || !_stashShown) return;
+    _stashShown = stash._shown = false;
+    if (_mru.firstWhereOrNull((w) => w.shown) case final front?) {
+      WindowControls.activeViewId = front.viewId;
+    }
+    await host.hideStash();
   }
 
   // --- Titles and menus --------------------------------------------------------

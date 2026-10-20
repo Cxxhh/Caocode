@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import '../../theme/app_theme.dart';
+import '../chat_find.dart';
 import '../chat_models.dart';
 import '../composer/composer_embeds.dart';
 import '../user_message_style.dart';
@@ -43,6 +44,9 @@ class UserMessageBubble extends StatefulWidget {
 
   /// Its corners; what answers it is inset this much at either side.
   static const radius = 8.0;
+
+  /// Lines a long message shows of itself until opened.
+  static const collapsedLines = _collapsedLines;
 
   /// The bubble in [item] (an item of the history, laid out): where it is
   /// on screen and its outline, for [UserMessageEditMorph] to open from.
@@ -136,6 +140,10 @@ TextSpan _messageSpan(
           ),
           {ComposerPastedTextEmbed.type: final data} =>
             ComposerPastedTextChip.span(data, _messageStyle),
+          {ComposerStashEmbed.type: final data} => ComposerStashChip.span(
+            data,
+            _messageStyle,
+          ),
           final Map<dynamic, dynamic> data => ComposerTokenChip.span(
             data[ComposerTokenEmbed.type],
             _messageStyle,
@@ -160,8 +168,8 @@ class _UserMessageBubbleState extends State<UserMessageBubble> {
     super.dispose();
   }
 
-  /// The press went to an image (which opens its preview instead). It
-  /// hears the press first, being deeper (see [ImagePressScope]).
+  /// The press went to an image or a tag (which opens it whole instead).
+  /// It hears the press first, being deeper (see [PreviewPressScope]).
   bool _pressOnImage = false;
 
   void _handleDown(PointerDownEvent event) {
@@ -219,7 +227,7 @@ class _UserMessageBubbleState extends State<UserMessageBubble> {
       onPointerDown: _handleDown,
       onPointerUp: _handleUp,
       onPointerCancel: (_) => _pressedAt = null,
-      child: ImagePressScope(
+      child: PreviewPressScope(
         onPress: () => _pressOnImage = true,
         child: Container(
           // Constraints either way: a Container without them leaves out their
@@ -246,7 +254,11 @@ class _UserMessageBubbleState extends State<UserMessageBubble> {
             child: _Collapsed(
               shrinkWrap: fitted,
               collapsedHeight: _lineHeight * _collapsedLines,
-              collapseAbove: _lineHeight * (_collapsedLines + 1),
+              // All of it while it holds the find's match at hand, which
+              // may be in the lines it hides.
+              collapseAbove: ChatFindRow.holdsCurrent(context)
+                  ? double.infinity
+                  : _lineHeight * (_collapsedLines + 1),
               content: InlineCodeText(
                 _messageSpan(widget.text, vocabulary, widget.images),
               ),

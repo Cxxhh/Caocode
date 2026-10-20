@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
-/// What a suggestion puts in: a file or folder, a /command, or another
-/// conversation (see [Suggestion.session]).
-enum SuggestionKind { file, folder, command, session }
+/// What a suggestion puts in: a file or folder, a /command, another
+/// conversation (see [Suggestion.session]), or a stash
+/// ([Suggestion.stash]).
+enum SuggestionKind { file, folder, command, session, stash }
 
 class Suggestion {
   const Suggestion({
@@ -28,6 +29,19 @@ class Suggestion {
        group = project,
        path = null;
 
+  /// The stash numbered [number], titled [title], listed under [heading].
+  Suggestion.stash({
+    required int number,
+    required String title,
+    required String heading,
+    this.detail = '',
+  }) : kind = SuggestionKind.stash,
+       label = '#$number $title',
+       icon = null,
+       group = heading,
+       id = '$number',
+       path = null;
+
   final SuggestionKind kind;
 
   /// Text shown and matched, e.g. `chat_screen.dart` or `plan`.
@@ -51,7 +65,7 @@ class Suggestion {
   String get value => switch (kind) {
     SuggestionKind.file || SuggestionKind.folder =>
       path ?? (detail.isEmpty ? label : '$detail/$label'),
-    SuggestionKind.session => id,
+    SuggestionKind.session || SuggestionKind.stash => id,
     _ => label,
   };
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../ide/ide_hover.dart';
-import '../../kernel/agent_kernel.dart';
 import '../../kernel/kernel_types.dart';
 import '../../keybindings/chat_keybindings.dart';
 import '../../l10n/l10n.dart';
@@ -10,14 +9,12 @@ import '../../theme/app_theme.dart';
 import '../../theme/workbench_theme.dart' show themeColors;
 import '../chat_keys.dart';
 import '../chat_models.dart';
-import '../composer/kernel_option_text.dart';
 import '../widgets/code_citation.dart';
 import '../widgets/hover_builder.dart';
-import '../widgets/markdown_view.dart';
 import 'panel_card.dart';
 
 /// The feedback area for what an agent waits on the user for: questions,
-/// leave to use a tool, a plan to approve. Each is a series of steps of
+/// or leave to use a tool. Each is a series of steps of
 /// options, driven alike: 1-9 pick, ↑/↓ move, Space toggles, Enter goes on,
 /// Esc dismisses (keybindings but the digits: see [ChatCommandIds]). An
 /// option may take words of the user's own.
@@ -26,19 +23,10 @@ class InteractionPanel extends StatefulWidget {
     super.key,
     required this.request,
     required this.onAnswer,
-    this.kernel,
-    this.onOpenPlan,
   });
 
   final InteractionRequest request;
   final ValueChanged<InteractionAnswer> onAnswer;
-
-  /// The id of the kernel asking: what it names, in the display language.
-  final String? kernel;
-
-  /// Shows a plan to approve that is in a file ([PlanReviewRequest.planPath])
-  /// beside the chat.
-  final VoidCallback? onOpenPlan;
 
   @override
   State<InteractionPanel> createState() => _InteractionPanelState();
@@ -104,12 +92,7 @@ class _InteractionPanelState extends State<InteractionPanel>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _steps = _stepsFor(
-      widget.request,
-      context.l10n,
-      widget.kernel,
-      widget.onOpenPlan,
-    );
+    _steps = _stepsFor(widget.request, context.l10n);
   }
 
   @override
@@ -127,8 +110,6 @@ class _InteractionPanelState extends State<InteractionPanel>
   static List<_Step> _stepsFor(
     InteractionRequest request,
     AppLocalizations l10n,
-    String? kernel,
-    VoidCallback? onOpenPlan,
   ) => switch (request) {
     QuestionRequest(:final questions) => [
       for (final question in questions)
@@ -162,45 +143,6 @@ class _InteractionPanelState extends State<InteractionPanel>
         ],
       ),
     ],
-    PlanReviewRequest(
-      :final plan,
-      :final planPath,
-      :final approvals,
-      :final approveLabel,
-    ) =>
-      [
-        _Step(
-          prompt: '',
-          // The plan in a file shows beside the chat; what should change
-          // is said in the composer.
-          detail: planPath == null
-              ? _PlanPreview(plan)
-              : _PlanFile(path: planPath, onOpen: onOpenPlan),
-          rows: [
-            _Row(switch ((kernel, approvals)) {
-              (final kernel?, final approvals?) => l10n.interactionStartWith(
-                localizedKernelOption(
-                  l10n,
-                  kernel,
-                  KernelChoiceKind.permission,
-                  approvals,
-                ).label,
-              ),
-              (_, null) => l10n.interactionStartBuilding,
-              _ => approveLabel,
-            }),
-            planPath == null
-                ? _Row(
-                    l10n.interactionKeepPlanningOption,
-                    textHint: l10n.interactionWhatShouldChange,
-                  )
-                : _Row(
-                    l10n.interactionKeepPlanningOption,
-                    description: l10n.interactionSayWhatToChange,
-                  ),
-          ],
-        ),
-      ],
   };
 
   InteractionAnswer _answer({required bool dismissed}) {
@@ -231,12 +173,6 @@ class _InteractionPanelState extends State<InteractionPanel>
           pick == 1 && alwaysAllowLabel != null
               ? ApprovalDecision.allowAlways
               : ApprovalDecision.allowOnce,
-        );
-      case PlanReviewRequest():
-        final pick = dismissed ? 1 : _picks.first.firstOrNull ?? 1;
-        return PlanAnswer(
-          pick == 0 ? PlanDecision.approve : PlanDecision.keepPlanning,
-          feedback: _texts.first.text.trim(),
         );
     }
   }
@@ -363,7 +299,6 @@ class _InteractionPanelState extends State<InteractionPanel>
       Icons.shield_outlined,
       themeColors['list.warningForeground'],
     ),
-    PlanReviewRequest() => (Icons.checklist_rounded, AppColors.accent),
   };
 
   /// The context keys where the options' keys apply: they have the focus.
@@ -414,7 +349,6 @@ class _InteractionPanelState extends State<InteractionPanel>
     final dismiss = switch (widget.request) {
       QuestionRequest() => context.l10n.interactionSkip,
       ApprovalRequest() => context.l10n.interactionDeny,
-      PlanReviewRequest() => context.l10n.interactionKeepPlanning,
     };
     final submit = _isLast
         ? context.l10n.interactionSubmit
@@ -463,11 +397,7 @@ class _InteractionPanelState extends State<InteractionPanel>
                 children: [
                   Flexible(
                     child: Text(
-                      switch (widget.request) {
-                        PlanReviewRequest() =>
-                          context.l10n.interactionPlanTitle,
-                        final request => request.title,
-                      },
+                      widget.request.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -991,78 +921,24 @@ class _ApprovalPreview extends StatelessWidget {
   }
 }
 
-class _PlanPreview extends StatelessWidget {
-  const _PlanPreview(this.plan);
-
-  final String plan;
-
-  @override
-  Widget build(BuildContext context) {
-    return _Box(
-      maxHeight: 200,
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-      color: AppColors.background,
-      child: MarkdownView(plan),
-    );
-  }
-}
-
-/// A plan kept in a file: its name, and the way to it beside the chat.
-class _PlanFile extends StatelessWidget {
-  const _PlanFile({required this.path, this.onOpen});
-
-  final String path;
-  final VoidCallback? onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(Icons.description_outlined, size: 14, color: AppColors.textMuted),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            path.split(RegExp(r'[/\\]')).last,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppFonts.uiCodeStyle(12)
-                .copyWith(color: AppColors.textMuted),
-          ),
-        ),
-        if (onOpen case final onOpen?) ...[
-          const SizedBox(width: 8),
-          PanelButton(label: context.l10n.interactionViewPlan, onTap: onOpen),
-        ],
-      ],
-    );
-  }
-}
-
 class _Box extends StatelessWidget {
-  const _Box({
-    required this.child,
-    this.maxHeight = 160,
-    this.padding = const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-    this.color,
-  });
+  const _Box({required this.child});
 
   final Widget child;
-  final double maxHeight;
-  final EdgeInsets padding;
-
-  /// [AppColors.code] when null.
-  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: BoxConstraints(maxHeight: maxHeight),
+      constraints: const BoxConstraints(maxHeight: 160),
       decoration: BoxDecoration(
-        color: color ?? AppColors.code,
+        color: AppColors.code,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.partBorder),
       ),
-      child: SingleChildScrollView(padding: padding, child: child),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        child: child,
+      ),
     );
   }
 }

@@ -132,5 +132,123 @@ void main() {
         isTrue,
       );
     });
+
+    test('edited scans the lines an edit touches, as a whole scan would', () {
+      void same(DocumentSnapshot edited, String text) {
+        final whole = DocumentSnapshot(text);
+        expect(edited.text, text);
+        expect(edited.lineStarts, whole.lineStarts, reason: text);
+        expect(edited.contentEnds, whole.contentEnds, reason: text);
+        expect(edited.newlineLengths, whole.newlineLengths, reason: text);
+      }
+
+      // CR and LF joined into a CRLF, and a CRLF split, at either end.
+      for (final (text, start, end, inserted) in [
+        ('a\r', 2, 2, '\n'),
+        ('a\rb', 2, 2, '\nc'),
+        ('a\n', 1, 1, '\r'),
+        ('a\r\nb', 2, 2, 'x'),
+        ('a\r\nb', 1, 2, ''),
+        ('a\r\n\nb', 1, 2, ''),
+        ('a\rX\nb', 2, 3, ''),
+        ('a\r\r\n', 2, 3, ''),
+        ('', 0, 0, '\r\n'),
+        ('abc', 0, 3, ''),
+        ('a\nb\nc', 0, 5, 'x\ry'),
+      ]) {
+        same(
+          DocumentSnapshot.edited(DocumentSnapshot(text), start, end, inserted),
+          text.replaceRange(start, end, inserted),
+        );
+      }
+      final random = Random(7);
+      const units = ['a', 'b', '\r', '\n', '\r\n', '😀'];
+      String some(int max) => [
+        for (var i = random.nextInt(max); i > 0; i--)
+          units[random.nextInt(units.length)],
+      ].join();
+      var text = some(40);
+      var snapshot = DocumentSnapshot(text);
+      for (var i = 0; i < 3000; i++) {
+        final start = random.nextInt(text.length + 1);
+        final end = start + random.nextInt(min(6, text.length - start) + 1);
+        final inserted = some(5);
+        snapshot = DocumentSnapshot.edited(snapshot, start, end, inserted);
+        text = text.replaceRange(start, end, inserted);
+        same(snapshot, text);
+        if (text.length > 200) {
+          text = text.substring(0, 50);
+          snapshot = DocumentSnapshot(text);
+        }
+      }
+    });
+
+    test('knows what edited snapshots share without reading them', () {
+      (int, int) read(String a, String b) {
+        final shortest = min(a.length, b.length);
+        var prefix = 0;
+        while (prefix < shortest && a[prefix] == b[prefix]) {
+          prefix++;
+        }
+        var suffix = 0;
+        while (suffix < shortest - prefix &&
+            a[a.length - 1 - suffix] == b[b.length - 1 - suffix]) {
+          suffix++;
+        }
+        return (prefix, suffix);
+      }
+
+      final random = Random(3);
+      final first = DocumentSnapshot('abc\ndef\nghi\n' * 5);
+      final snapshots = [first];
+      for (var i = 0; i < 40; i++) {
+        final last = snapshots.last;
+        final length = last.text.length;
+        final start = random.nextInt(length + 1);
+        final end = start + random.nextInt(min(4, length - start) + 1);
+        snapshots.add(
+          i.isEven
+              ? DocumentSnapshot.edited(last, start, end, 'x\n' * (i % 3))
+              : DocumentSnapshot.replaced(
+                  last,
+                  last.text.replaceRange(start, end, 'y'),
+                  start,
+                  end,
+                ),
+        );
+      }
+      for (var i = 0; i < snapshots.length; i++) {
+        for (var j = i; j < snapshots.length; j++) {
+          final old = snapshots[i];
+          final next = snapshots[j];
+          final known = DocumentSnapshot.knownSharedEnds(old, next);
+          if (j - i > 32) {
+            expect(known, isNull);
+            continue;
+          }
+          final (prefix, suffix) = known!;
+          final (realPrefix, realSuffix) = read(old.text, next.text);
+          expect(prefix, lessThanOrEqualTo(realPrefix));
+          expect(prefix + suffix, lessThanOrEqualTo(old.text.length));
+          expect(prefix + suffix, lessThanOrEqualTo(next.text.length));
+          expect(
+            old.text.substring(old.text.length - suffix),
+            next.text.substring(next.text.length - suffix),
+          );
+          if (j == i + 1) {
+            expect(DocumentSnapshot.sharedEnds(old, next), known);
+          }
+        }
+      }
+      // Not edited from it: read.
+      final other = DocumentSnapshot(first.text.replaceRange(3, 4, 'Z'));
+      expect(DocumentSnapshot.knownSharedEnds(first, other), isNull);
+      expect(DocumentSnapshot.sharedEnds(first, other), (
+        3,
+        first.text.length - 4,
+      ));
+      // Nor backwards.
+      expect(DocumentSnapshot.knownSharedEnds(snapshots[1], first), isNull);
+    });
   });
 }

@@ -13,6 +13,7 @@ import 'package:bao_editor/textmate/textmate_worker.dart';
 import 'package:caocode/chat/user_message_style.dart';
 import 'package:caocode/customize/customize_view.dart';
 import 'package:caocode/ide/lsp/packs/language_packs.dart';
+import 'package:caocode/kernel/claude_code/claude_core_setting.dart';
 import 'package:caocode/kernel/kernel_registry.dart';
 import 'package:caocode/models/featured_upstreams.dart';
 import 'package:caocode/kernel/mock/mock_kernels.dart';
@@ -34,6 +35,9 @@ import 'semantics_tree.dart';
 /// the context menu are stand-ins, never installed: none looks at the
 /// machine's own. No MCP server is started to see whether it answers, and
 /// the upstreams Settings → Models lists are not got from caocode.dev.
+/// Sessions are the CLI's, with Claude Code as set up on the machine to
+/// pick, which the kernel's tests were written for: those of Caocode's
+/// own core say so.
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   checkDesktopSemantics();
   KernelRegistry.use(MockKernels.all);
@@ -42,6 +46,7 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   final defaultTheme = await _defaultColorTheme();
   setUp(() {
     rootBundle.clear();
+    ClaudeCore.current = () => ClaudeCore.cli;
     UserMessageStyle.current.value = UserMessageStyle.sticky;
     ShellCommand.debugInstaller = _NoShellCommand();
     ContextMenu.debugInstaller = _NoContextMenu();

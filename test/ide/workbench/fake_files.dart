@@ -14,6 +14,7 @@ import 'package:caocode/ide/lsp/language_features.dart';
 import 'package:caocode/ide/search/text_search.dart';
 import 'package:caocode/ide/terminal/pty.dart';
 import 'package:caocode/ide/terminal/terminal_instance.dart';
+import 'package:caocode/ide/terminal/terminal_tasks.dart';
 import 'package:caocode/settings/user_settings.dart';
 import 'package:caocode/workspace/workspace.dart';
 import 'package:path/path.dart' as p;
@@ -193,6 +194,7 @@ Future<IdeWorkspace> pumpWorkbench(
   Project? project,
   IdeExtensions? extensions,
   DebugService? debugService,
+  TerminalTasks? terminalTasks,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -239,6 +241,7 @@ Future<IdeWorkspace> pumpWorkbench(
         settings: settings,
         viewState: viewState,
         onViewState: onViewState,
+        terminalTasks: terminalTasks,
         // Never a real shell under test.
         terminalBackend: TerminalBackend(
           launch: fakeTerminalLaunch,

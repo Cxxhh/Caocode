@@ -7,17 +7,30 @@ import 'package:flutter/widgets.dart';
 /// over it there (the side panel's rail, over the top right pane): the chat
 /// itself, its title bar and its scrollbar, still reach the edge.
 class ChatColumnInset extends InheritedWidget {
-  const ChatColumnInset({super.key, required this.right, required super.child});
+  const ChatColumnInset({
+    super.key,
+    this.right = 0,
+    this.left = 0,
+    required super.child,
+  });
 
   final double right;
 
-  /// The inset where [context] is; none outside any.
+  /// As [right], at the left: what floats there with the side panel at the
+  /// conversations' left.
+  final double left;
+
+  /// The inset at the right where [context] is; none outside any.
   static double of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<ChatColumnInset>()?.right ?? 0;
 
+  /// The inset at the left where [context] is; none outside any.
+  static double leftOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ChatColumnInset>()?.left ?? 0;
+
   @override
   bool updateShouldNotify(ChatColumnInset oldWidget) =>
-      oldWidget.right != right;
+      oldWidget.right != right || oldWidget.left != left;
 }
 
 /// [child] no wider than [maxWidth], in the middle of the width it has (as
@@ -35,6 +48,7 @@ class ChatColumn extends SingleChildRenderObjectWidget {
     super.key,
     required this.maxWidth,
     this.right = 0,
+    this.left = 0,
     this.room = 0,
     this.roomFrom = 0,
     super.child,
@@ -42,12 +56,16 @@ class ChatColumn extends SingleChildRenderObjectWidget {
 
   final double maxWidth;
   final double right;
+
+  /// As [right], at the left: its left no nearer than that to the edge.
+  final double left;
   final double room;
   final double roomFrom;
 
   @override
   RenderChatColumn createRenderObject(BuildContext context) =>
       RenderChatColumn(maxWidth, right)
+        ..left = left
         ..room = room
         ..roomFrom = roomFrom;
 
@@ -56,6 +74,7 @@ class ChatColumn extends SingleChildRenderObjectWidget {
     renderObject
       ..maxWidth = maxWidth
       ..right = right
+      ..left = left
       ..room = room
       ..roomFrom = roomFrom;
   }
@@ -96,11 +115,20 @@ class RenderChatColumn extends RenderShiftedBox {
     markNeedsLayout();
   }
 
+  double get left => _left;
+  double _left = 0;
+  set left(double value) {
+    if (value == _left) return;
+    _left = value;
+    markNeedsLayout();
+  }
+
   /// The column's left and width in [width].
   static ({double left, double width}) place(
     double width, {
     required double maxWidth,
     double right = 0,
+    double left = 0,
     double room = 0,
     double roomFrom = 0,
   }) {
@@ -108,10 +136,12 @@ class RenderChatColumn extends RenderShiftedBox {
       0.0,
       math.min(roomy(width, maxWidth, room: room, roomFrom: roomFrom), width),
     );
-    final left = (width - centered) / 2;
+    // In the middle, unless that comes within [left] of the left edge.
+    final start = math.max((width - centered) / 2, math.min(left, width));
+    final end = math.max(start, (width + centered) / 2);
     return (
-      left: left,
-      width: math.max(0.0, math.min(centered, width - right - left)),
+      left: start,
+      width: math.max(0.0, math.min(end - start, width - right - start)),
     );
   }
 
@@ -133,6 +163,7 @@ class RenderChatColumn extends RenderShiftedBox {
     width,
     maxWidth: _maxWidth,
     right: _right,
+    left: _left,
     room: _room,
     roomFrom: _roomFrom,
   );

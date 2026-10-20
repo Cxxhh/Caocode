@@ -1,4 +1,5 @@
-import 'package:bao_remote/client.dart' show SshConnectException;
+import 'package:bao_remote/client.dart'
+    show SshConnectException, SshFailure, SshLauncher;
 import 'package:flutter/material.dart';
 
 import '../chat/panels/health_banner.dart';
@@ -13,12 +14,18 @@ import 'remote_location.dart';
 import 'ssh_host.dart';
 
 /// `SSH: <host>` at the status bar's left edge, as VS Code's remote
-/// indicator: the connection's state, and a click to reconnect once it is
-/// lost (or failed).
+/// indicator: the connection's state, and a click for the remote menu
+/// (the hosts to switch to, and the current host's actions).
 class SshStatusIndicator implements IdeRemoteIndicator {
-  SshStatusIndicator(this.host);
+  SshStatusIndicator(this.host, {this.onChoose});
 
   final SshHost host;
+
+  /// Opens the remote menu (see the workbench's host picker: the hosts to
+  /// switch to, and this host's actions), from where the entry is (a menu
+  /// anchored on it). The entry shows the state alone, and cannot be
+  /// clicked, without it.
+  final void Function(Rect rect)? onChoose;
 
   @override
   void addListener(VoidCallback listener) => host.addListener(listener);
@@ -30,7 +37,10 @@ class SshStatusIndicator implements IdeRemoteIndicator {
   IdeStatusBarItem item(BuildContext context) {
     final l10n = context.l10n;
     final name = host.host;
-    void reconnect() => host.reconnect().ignore();
+    final onChoose = this.onChoose;
+    String tooltip(String base) => onChoose == null
+        ? base
+        : [base, l10n.remoteStatusActions(name)].join('\n');
     if (host.installingClaude case final installing?
         when host.state == SshHostState.connected) {
       return IdeStatusBarItem(
@@ -39,39 +49,46 @@ class SshStatusIndicator implements IdeRemoteIndicator {
           ((installing.fraction ?? 0) * 100).round(),
         ),
         icon: Codicons.sync,
-        tooltip: claudeInstallText(l10n, name, installing),
+        tooltip: tooltip(claudeInstallText(l10n, name, installing)),
+        onTapRect: onChoose,
       );
     }
     return switch (host.state) {
       SshHostState.connected => IdeStatusBarItem(
         l10n.remoteStatus(name),
         icon: Codicons.remote,
-        tooltip: l10n.remoteStatusTooltip(name),
+        tooltip: tooltip(l10n.remoteStatusTooltip(name)),
+        onTapRect: onChoose,
       ),
       SshHostState.connecting => IdeStatusBarItem(
         l10n.remoteStatusConnecting(name),
         icon: Codicons.sync,
-        tooltip: host.progress ?? l10n.remoteStatusConnecting(name),
+        tooltip: tooltip(host.progress ?? l10n.remoteStatusConnecting(name)),
+        onTapRect: onChoose,
       ),
       SshHostState.reconnecting => IdeStatusBarItem(
         l10n.remoteStatusReconnecting(name),
         icon: Codicons.sync,
-        tooltip: l10n.remoteStatusTooltipLost(name),
-        onTap: reconnect,
+        tooltip: tooltip(l10n.remoteStatusTooltipLost(name)),
+        onTapRect: onChoose,
       ),
       SshHostState.failed || SshHostState.idle => IdeStatusBarItem(
         l10n.remoteStatusFailed(name),
         icon: Codicons.debugDisconnect,
-        tooltip: [
-          l10n.remoteStatusTooltipLost(name),
-          if (host.error case final error?) '$error',
-        ].join('\n'),
-        onTap: reconnect,
+        tooltip: tooltip(
+          [
+            l10n.remoteStatusTooltipLost(name),
+            if (host.error case final error?) '$error',
+          ].join('\n'),
+        ),
+        onTapRect: onChoose,
         color: themeColors['errorForeground'],
       ),
     };
   }
 
+  /// By its host alone: [onChoose] is made anew each build (a closure), and
+  /// the entry it shows does not depend on it.
   @override
   bool operator ==(Object other) =>
       other is SshStatusIndicator && identical(other.host, host);
@@ -214,7 +231,7 @@ class SshHostBanner extends StatelessWidget {
       listenable: host,
       builder: (context, _) {
         if (host.state != SshHostState.failed) return const SizedBox.shrink();
-        final (message, detail) = sshErrorText(host.error);
+        final (message, detail) = sshErrorText(host.error, context.l10n);
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: HealthBanner(
@@ -235,10 +252,27 @@ class SshHostBanner extends StatelessWidget {
   }
 }
 
-/// What connecting failed with, for the user: its message, and what `ssh`
-/// or the server said.
-(String?, String?) sshErrorText(Object? error) => switch (error) {
-  SshConnectException(:final message, :final detail) => (message, detail),
-  null => (null, null),
-  _ => ('$error', null),
-};
+/// What connecting failed with, for the user: its message (in their
+/// language where it is one of the usual ones), and what `ssh` or the
+/// server said.
+(String?, String?) sshErrorText(Object? error, AppLocalizations l10n) =>
+    switch (error) {
+      SshConnectException(:final failure, :final message, :final detail) => (
+        switch (failure) {
+          SshFailure.noSsh => l10n.remoteFailNoSsh,
+          SshFailure.authentication
+              when message == SshLauncher.cancelledMessage =>
+            l10n.remoteFailCancelled,
+          // Its own says what to do on an ssh too old to ask.
+          SshFailure.authentication when !message.contains('OpenSSH 8.4') =>
+            l10n.remoteFailAuth,
+          SshFailure.hostKey => l10n.remoteFailHostKey,
+          SshFailure.hostKeyChanged => l10n.remoteFailHostKeyChanged,
+          SshFailure.unreachable => l10n.remoteFailUnreachable,
+          _ => message,
+        },
+        detail,
+      ),
+      null => (null, null),
+      _ => ('$error', null),
+    };

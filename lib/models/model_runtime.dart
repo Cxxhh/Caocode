@@ -3,6 +3,7 @@
 // starts with. None of it on the web.
 
 import 'codex/codex_service.dart';
+import 'image_api.dart';
 import 'model_provider.dart';
 import 'model_runtime_stub.dart'
     if (dart.library.io) 'model_runtime_io.dart'
@@ -23,6 +24,16 @@ Future<Map<String, String>> providerLaunchEnvironment(
   ModelProvider provider,
   String model,
 ) => platform.providerLaunchEnvironment(provider, model);
+
+/// [request]'s pictures, made by [model] (an image model) of [provider]:
+/// the bytes of each (fetched where it answered with a link). Throws
+/// [UpstreamException].
+Future<List<GeneratedImage>> generateImages(
+  ModelProvider provider,
+  ProviderModel model,
+  ImageRequest request, {
+  String? session,
+}) => platform.generateImages(provider, model, request, session: session);
 
 /// The ChatGPT (Codex) providers' accounts: signing in, their quota.
 CodexService get codexService => platform.codexService;

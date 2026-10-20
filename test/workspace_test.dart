@@ -14,6 +14,8 @@ import 'package:caocode/kernel/agent_kernel.dart';
 import 'package:caocode/kernel/claude_code/claude_code_kernel.dart';
 import 'package:caocode/kernel/claude_code/mock_claude_code_transport.dart';
 import 'package:caocode/main.dart';
+import 'package:caocode/models/model_provider.dart';
+import 'package:caocode/models/model_providers.dart';
 import 'package:caocode/sidebar/sidebar.dart';
 import 'package:caocode/kernel/claude_code/claude_code_transport.dart';
 import 'package:caocode/workspace/agent_title.dart';
@@ -24,6 +26,16 @@ import 'package:caocode/workspace/workspace.dart';
 
 /// Sessions as Claude Code keeps them: one recorded, in one project, and
 /// any [started] since (e.g. in a terminal).
+class _CountingPreferenceStore extends MemoryPreferenceStore {
+  int writes = 0;
+
+  @override
+  Future<void> write(Map<String, Object?> preferences) async {
+    writes++;
+    await super.write(preferences);
+  }
+}
+
 class FakeCatalog implements SessionCatalog {
   static final List<SessionRecord> started = [];
 
@@ -459,6 +471,165 @@ void main() {
     });
     first.stop();
     await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets('Fast stays with its conversation, not the next agent', (
+    tester,
+  ) async {
+    final previous = ModelProviders.current;
+    ModelProviders.current = ModelProviders.memory(
+      providers: const [
+        ModelProvider(
+          id: 'cx',
+          name: 'Codex',
+          protocol: ProviderProtocol.codex,
+          models: [ProviderModel(id: 'gpt-5')],
+        ),
+      ],
+    );
+    addTearDown(() => ModelProviders.current = previous);
+    await ModelProviders.current.setDefaultModel('@cx/gpt-5');
+    late final KernelDescriptor local;
+    local = KernelDescriptor(
+      id: 'claude-code',
+      label: 'Claude Code',
+      icon: Icons.auto_awesome_rounded,
+      description: '',
+      catalog: FakeCatalog(),
+      create: (context) => ClaudeCodeKernel(
+        local,
+        context,
+        start: MockClaudeCodeTransport.start,
+        readHistory: _readHistory,
+        providerEnvironment: (_, _) async => const {},
+      ),
+    );
+    final store = MemoryPreferenceStore({
+      'agents': {
+        FakeCatalog.kept.id: {'model': '@cx/gpt-5'},
+      },
+    });
+    final workspace = await pumpLoaded(
+      tester,
+      preferences: store,
+      kernel: local,
+    );
+    final kept = workspace.threads.firstWhere(
+      (thread) => thread.record?.id == FakeCatalog.kept.id,
+    );
+    final session = kept.session;
+    final fast = session.modelSettings('@cx/gpt-5').last;
+    expect(fast.kind, KernelChoiceKind.fast);
+    expect(fast.selected, isNull);
+    fast.onSelected(fast.options.single);
+    await tester.pump();
+    final choices =
+        (store.preferences['agents'] as Map)[FakeCatalog.kept.id] as Map;
+    expect(choices['fast'], 'fast');
+    expect(
+      choices[modelSettingKey(KernelChoiceKind.fast, '@cx/gpt-5')],
+      'fast',
+    );
+    expect(
+      (store.preferences['settings'] as Map?)?.containsKey('fast'),
+      isNot(true),
+    );
+
+    workspace.create();
+    await tester.pump();
+    final fresh = workspace.selected.session;
+    expect(fresh.models?.selected.id, '@cx/gpt-5');
+    expect(fresh.selected(KernelChoiceKind.fast), 'standard');
+    expect(fresh.modelSettings('@cx/gpt-5').last.selected, isNull);
+    expect(kept.session.selected(KernelChoiceKind.fast), 'fast');
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    final reopened = await pumpLoaded(
+      tester,
+      preferences: store,
+      kernel: local,
+    );
+    final restored = reopened.threads.firstWhere(
+      (thread) => thread.record?.id == FakeCatalog.kept.id,
+    );
+    expect(restored.session.selected(KernelChoiceKind.fast), 'fast');
+    expect(
+      restored.session.modelSettings('@cx/gpt-5').last.selected?.id,
+      'fast',
+    );
+    expect(
+      reopened.selected.session.selected(KernelChoiceKind.fast),
+      'standard',
+    );
+  });
+
+  testWidgets('batch pinning preserves the supplied order', (tester) async {
+    addTearDown(FakeCatalog.started.clear);
+    FakeCatalog.started.add(
+      SessionRecord(
+        id: 'other',
+        title: 'Another',
+        updatedAt: DateTime(2026, 9, 26),
+        cwd: '/tmp/other',
+      ),
+    );
+    final store = MemoryPreferenceStore();
+    final workspace = await pumpLoaded(tester, preferences: store);
+    AgentThread thread(String id) =>
+        workspace.threads.firstWhere((thread) => thread.record?.id == id);
+
+    workspace.setPinnedAll([
+      thread('other'),
+      thread(FakeCatalog.kept.id),
+    ], true);
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    expect((store.preferences['sidebar'] as Map)['pinned'], [
+      'other',
+      FakeCatalog.kept.id,
+    ]);
+  });
+
+  testWidgets('batch archive and delete save and notify once', (tester) async {
+    addTearDown(FakeCatalog.started.clear);
+    FakeCatalog.started.addAll([
+      SessionRecord(
+        id: 'archive-a',
+        title: 'Archive A',
+        updatedAt: DateTime(2026, 9, 28),
+        cwd: '/tmp/project',
+      ),
+      SessionRecord(
+        id: 'archive-b',
+        title: 'Archive B',
+        updatedAt: DateTime(2026, 9, 27),
+        cwd: '/tmp/project',
+      ),
+    ]);
+    final store = _CountingPreferenceStore();
+    final workspace = await pumpLoaded(tester, preferences: store);
+    final selected = workspace.threads.where(
+      (thread) =>
+          thread.record?.id == 'archive-a' || thread.record?.id == 'archive-b',
+    );
+    var notifications = 0;
+    workspace.addListener(() => notifications++);
+    final beforeArchive = store.writes;
+    workspace.setArchivedAll(selected, true);
+    expect(notifications, 1);
+    expect(store.writes, beforeArchive + 1);
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+
+    final toDelete = workspace.threads.where(
+      (thread) =>
+          thread.record?.id == 'archive-a' || thread.record?.id == 'archive-b',
+    );
+    notifications = 0;
+    final beforeDelete = store.writes;
+    workspace.deleteAll(toDelete);
+    expect(notifications, 1);
+    expect(store.writes, beforeDelete + 1);
+    // The remaining chat may subsequently sync new state, which must be saved.
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
   });
 
   testWidgets('what the sidebar shows is kept between runs', (tester) async {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' show Random;
 import 'dart:ui' as ui;
 
@@ -9,6 +10,7 @@ import 'package:caocode/chat/chat_screen.dart';
 import 'package:caocode/chat/chat_session.dart';
 import 'package:caocode/chat/composer/composer.dart';
 import 'package:caocode/chat/composer/composer_picker.dart';
+import 'package:caocode/chat/composer/session_model_picker.dart';
 import 'package:caocode/chat/panels/activity_strip.dart';
 import 'package:caocode/chat/panels/interaction_panel.dart';
 import 'package:caocode/chat/panels/context_usage_panel.dart';
@@ -21,11 +23,13 @@ import 'package:caocode/chat/widgets/thinking_spark.dart';
 import 'package:caocode/chat/widgets/command_step.dart';
 import 'package:caocode/chat/widgets/pixel_loader.dart';
 import 'package:caocode/ide/ide_hover.dart';
+import 'package:caocode/ide/ide_switch.dart';
 import 'package:caocode/chat/chat_models.dart';
 import 'package:caocode/chat/composer/composer_images.dart';
 import 'package:caocode/kernel/agent_kernel.dart';
 import 'package:caocode/kernel/kernel_types.dart';
 import 'package:caocode/kernel/mock/mock_kernels.dart';
+import 'package:caocode/l10n/l10n.dart';
 import 'package:caocode/main.dart';
 import 'package:caocode/sidebar/sidebar.dart';
 import 'package:caocode/theme/app_theme.dart';
@@ -35,6 +39,7 @@ import 'package:caocode/chat/agent_view.dart';
 import 'package:caocode/chat/widgets/plan_card.dart';
 import 'package:caocode/chat/widgets/user_message_bubble.dart';
 import 'package:caocode/kernel/claude_code/claude_code_kernel.dart';
+import 'package:caocode/kernel/claude_code/claude_code_translator.dart';
 
 import 'kernel_test.dart' show FakeCli;
 
@@ -193,6 +198,65 @@ void main() {
     expect(find.textContaining('and lint', findRichText: true), findsOneWidget);
   });
 
+  testWidgets('an earlier conversation says it is loading until it is read', (
+    tester,
+  ) async {
+    final read = Completer<List<Map<String, Object?>>>();
+    late final KernelDescriptor descriptor;
+    descriptor = KernelDescriptor(
+      id: 'claude-code',
+      label: 'Claude Code',
+      icon: Icons.auto_awesome_rounded,
+      description: '',
+      create: (context) => ClaudeCodeKernel(
+        descriptor,
+        context,
+        start: (_) async => FakeCli(),
+        readHistory: (_) => read.future,
+      ),
+    );
+    final session = ChatSession(
+      kernel: descriptor,
+      kernels: [descriptor],
+      kernelContext: KernelContext(
+        cwd: '/p',
+        resume: SessionRecord(
+          id: 's',
+          title: 't',
+          updatedAt: DateTime(2026),
+          cwd: '/p',
+        ),
+      ),
+      historyCount: 0,
+    );
+    addTearDown(session.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildAppTheme(),
+        localizationsDelegates: const [FlutterQuillLocalizations.delegate],
+        home: ChatScreen(session: session),
+      ),
+    );
+    // Not at once: read soon, it would only flash.
+    await tester.pump();
+    expect(find.text('Loading conversation…'), findsNothing);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Loading conversation…'), findsOneWidget);
+
+    read.complete([
+      {
+        'type': 'user',
+        'uuid': 'u1',
+        'parentUuid': null,
+        'message': {'role': 'user', 'content': 'hello again'},
+      },
+    ]);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Loading conversation…'), findsNothing);
+    expect(find.textContaining('hello again'), findsWidgets);
+  });
+
   testWidgets('a new agent picks its kernel until it starts', (tester) async {
     tester.view.physicalSize = const Size(1400, 900);
     tester.view.devicePixelRatio = 1;
@@ -300,9 +364,8 @@ void main() {
     expect(find.byType(ActivityStrip), findsNothing);
   });
 
-  testWidgets('Claude Code in Plan mode asks to start with its plan', (
-    tester,
-  ) async {
+  testWidgets('Claude Code in Plan mode puts its plan to the user, who '
+      'starts it from its card', (tester) async {
     final session = await pumpSession(tester, MockKernels.claudeCode);
     final modes = session.modes!;
     modes.onSelected(modes.options.firstWhere((mode) => mode.label == 'Plan'));
@@ -315,22 +378,29 @@ void main() {
     expect(picker('Accept edits'), findsOneWidget);
 
     session.send(const ComposerMessage(text: '把输入框改成随内容增高'));
-    await runWhile(tester, () => session.pendingInteraction == null);
-    expect(find.text('Ready to code?'), findsOneWidget);
+    await runWhile(tester, () => session.isStreaming);
+    // Nothing waits on the user: the turn is over, and the plan's card
+    // offers to start it, with the model it is carried out with.
+    expect(find.byType(InteractionPanel), findsNothing);
+    final card = find.byType(PlanCard);
+    expect(tester.widget<PlanCard>(card).item.status, PlanStatus.awaiting);
+    final start = find.descendant(of: card, matching: find.text('Start'));
+    expect(start, findsOneWidget);
     expect(
-      find.descendant(
-        of: find.byType(InteractionPanel),
-        matching: find.textContaining('计划：'),
-      ),
+      find.descendant(of: card, matching: find.byType(SessionModelPicker)),
       findsOneWidget,
     );
+    expect(picker('Plan'), findsOneWidget);
 
-    await tester.tap(find.text('Yes, start · Accept edits'));
+    await tester.tap(start);
     await tester.pump();
     // The plan is carried out: back in Agent, with the approvals picked.
     expect(picker('Agent'), findsOneWidget);
     expect(picker('Accept edits'), findsOneWidget);
+    expect(find.text('Carry out the plan'), findsOneWidget);
     await runWhile(tester, () => session.isStreaming);
+    expect(tester.widget<PlanCard>(card).item.status, PlanStatus.approved);
+    expect(start, findsNothing);
     expect(find.text('3 files changed'), findsOneWidget);
     expect(find.textContaining('Running ·'), findsOneWidget);
 
@@ -428,6 +498,7 @@ void main() {
     await tester.tap(card);
     expect(opened, hasLength(3));
 
+    // Put to the user: answered at once, nothing waits on them.
     cli
       ..push(
         assistant(null, 'e1', {
@@ -445,43 +516,12 @@ void main() {
         },
       });
     await tester.pump();
-    final panel = find.byType(InteractionPanel);
-    expect(panel, findsOneWidget);
-    expect(opened, hasLength(4));
-    expect(tester.widget<PlanCard>(card).item.status, PlanStatus.awaiting);
-    // Its name and the way to it, not the plan itself.
-    expect(
-      find.descendant(of: panel, matching: find.text('tall-input.md')),
-      findsOneWidget,
-    );
-    expect(
-      find.descendant(of: panel, matching: find.textContaining('Grow')),
-      findsNothing,
-    );
-    expect(
-      find.text('Or say what should change in the message box'),
-      findsOneWidget,
-    );
-    await tester.tap(
-      find.descendant(of: panel, matching: find.text('View plan')),
-    );
-    expect(opened, hasLength(5));
-
-    // A message now sends the plan back, with what should change.
-    session.send(const ComposerMessage(text: 'Keep it to five lines'));
-    await tester.pump();
-    expect(cli.responses.last['behavior'], 'deny');
-    expect(cli.responses.last['message'], contains('Keep it to five lines'));
     expect(find.byType(InteractionPanel), findsNothing);
-    expect(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget is UserMessageBubble &&
-            widget.text == 'Keep it to five lines',
-      ),
-      findsNothing,
-    );
-    // Sent back, the card folds to a line saying so.
+    expect(cli.responses.last, {
+      'behavior': 'deny',
+      'message': ClaudeTranslator.planPresented,
+    });
+    final start = find.descendant(of: card, matching: find.text('Start'));
     cli.push({
       'type': 'user',
       'parent_tool_use_id': null,
@@ -491,12 +531,32 @@ void main() {
           {
             'type': 'tool_result',
             'tool_use_id': 'e1',
-            'content': cli.responses.last['message'],
+            'content': ClaudeTranslator.planPresented,
             'is_error': true,
           },
         ],
       },
     });
+    await tester.pump();
+    expect(tester.widget<PlanCard>(card).item.status, PlanStatus.awaiting);
+    expect(session.awaitingPlan?.path, plan);
+    // Not started while the turn that put it goes on.
+    expect(session.canStartPlan, isFalse);
+    expect(start, findsOneWidget);
+    cli.push({'type': 'result', 'subtype': 'success', 'is_error': false});
+    await tester.pump();
+    expect(session.canStartPlan, isTrue);
+
+    // A message now sends the plan back, with what should change: the
+    // agent is not told to start it.
+    session.send(const ComposerMessage(text: 'Keep it to five lines'));
+    await tester.pump();
+    expect(start, findsNothing);
+    expect((cli.users.last['message'] as Map)['content'], [
+      {'type': 'text', 'text': 'Keep it to five lines'},
+    ]);
+    // Sent back once the CLI takes it, the card folds to a line saying so.
+    cli.push(cli.users.last);
     await tester.pump();
     expect(
       find.textContaining(
@@ -539,6 +599,42 @@ void main() {
     await tester.pump();
     final editor = tester.widget<QuillEditor>(find.byType(QuillEditor));
     expect(editor.controller.document.toPlainText().trim(), 'Run the tests');
+    await tester.pump(const Duration(seconds: 5));
+  });
+
+  testWidgets('Tab takes the suggested prompt past an empty composition an '
+      'input method left', (tester) async {
+    // #143: a macOS input method, its letters deleted or committed, may
+    // leave an empty composition until its next; the composer took it for
+    // one under way and Tab went in as a tab.
+    final (:session, :cli) = await pumpScripted(tester);
+    cli
+      ..push({'type': 'result', 'subtype': 'success', 'is_error': false})
+      ..push({'type': 'prompt_suggestion', 'suggestion': 'Run the tests'});
+    await tester.pump();
+    await tester.pump();
+    expect(session.promptSuggestion, 'Run the tests');
+    tester.testTextInput.updateEditingValue(
+      const TextEditingValue(
+        text: '\n',
+        selection: TextSelection.collapsed(offset: 0),
+        composing: TextRange.collapsed(0),
+      ),
+    );
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+    final editor = tester.widget<QuillEditor>(find.byType(QuillEditor));
+    expect(editor.controller.document.toPlainText(), 'Run the tests\n');
+    // The input method's next state ends it (Quill, disposed with it still
+    // there, sets its state as it goes).
+    tester.testTextInput.updateEditingValue(
+      const TextEditingValue(
+        text: 'Run the tests\n',
+        selection: TextSelection.collapsed(offset: 13),
+      ),
+    );
     await tester.pump(const Duration(seconds: 5));
   });
 
@@ -622,11 +718,12 @@ void main() {
     await tester.pump();
     expect(find.text('2 of 3 connected'), findsOneWidget);
 
-    // Turning one off.
-    await tester.tap(find.byType(Switch).first);
+    // Turning one off, with the app's own switch.
+    await tester.tap(find.byType(IdeSwitch).first);
     await tester.pump(const Duration(milliseconds: 50));
     await tester.pump();
     expect(find.text('Disabled'), findsOneWidget);
+    expect(find.byType(Switch), findsNothing);
     expect(session.mcpServers!.first.status, McpServerStatus.disabled);
   });
 
@@ -811,6 +908,59 @@ void main() {
     final second = shownStatus(tester).replaceAll('.', '');
     expect(ActivityRow.musings, contains(second));
     expect(second, isNot(first));
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('a status row with a cue muses mostly on the step just done', (
+    tester,
+  ) async {
+    Future<void> show(MusingCue? cue, {bool visible = true}) =>
+        tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ActivityRow(
+                label: 'Planning next move',
+                whimsical: true,
+                visible: visible,
+                cue: cue,
+                random: Random(3),
+              ),
+            ),
+          ),
+        );
+    // Without the dots counting up behind it.
+    String said(WidgetTester tester) =>
+        shownStatus(tester).replaceFirst(RegExp(r'\.+$'), '');
+    const cue = MusingCue(MusingTopic.read, 'main.dart');
+    final cued = ActivityRow.cuedMusingsFor(cue, englishLocalizations);
+    await show(cue);
+    final phrases = <String>[];
+    for (var i = 0; i < 8; i++) {
+      await pumpUntil(tester, () => caret.evaluate().isNotEmpty);
+      await pumpUntil(tester, () => caret.evaluate().isEmpty);
+      phrases.add(said(tester));
+    }
+    expect(
+      phrases.every((m) => cued.contains(m) || ActivityRow.musings.contains(m)),
+      isTrue,
+    );
+    expect(phrases.where(cued.contains).length, greaterThanOrEqualTo(4));
+    expect(phrases.where(ActivityRow.musings.contains), isNotEmpty);
+
+    // The step gone by, a phrase on it gives way at once.
+    while (!cued.contains(said(tester))) {
+      await pumpUntil(tester, () => caret.evaluate().isNotEmpty);
+      await pumpUntil(tester, () => caret.evaluate().isEmpty);
+    }
+    final onIt = said(tester);
+    // Folding away, it does not.
+    await show(null, visible: false);
+    await tester.pump();
+    expect(said(tester), onIt);
+    await show(null);
+    await tester.pump(const Duration(milliseconds: 400));
+    await pumpUntil(tester, () => caret.evaluate().isEmpty);
+    expect(ActivityRow.musings, contains(said(tester)));
     await tester.pumpWidget(const SizedBox());
   });
 
@@ -1368,6 +1518,152 @@ void main() {
     expect(subagentStatusRow(), findsNothing);
     expect(_inBackground, findsNothing);
     expect(session.itemCount, greaterThan(0));
+  });
+
+  // #94: a subagent's own subagent, or one the kernel named no tool call
+  // for, had its row there and none to open.
+  for (final nested in [true, false]) {
+    testWidgets(
+      nested
+          ? 'the row of a subagent a subagent started opens it, within that '
+                'one\'s'
+          : 'the row of a subagent whose tool call the kernel did not name '
+                'opens it all the same',
+      (tester) async {
+        final (:session, :cli) = await pumpScripted(tester);
+        if (nested) {
+          cli.push(
+            assistant(null, 'toolu_a', {
+              'name': 'Agent',
+              'input': {
+                'description': 'Look around',
+                'subagent_type': 'Explore',
+                'prompt': 'Look around.',
+              },
+            }),
+          );
+        }
+        cli
+          ..push(
+            assistant(nested ? 'toolu_a' : null, 'toolu_b', {
+              'name': 'Agent',
+              'input': {
+                'description': 'Analyze the app',
+                'subagent_type': 'Plan',
+                'prompt': 'Analyze /app.',
+                'run_in_background': true,
+              },
+            }),
+          )
+          ..push({
+            'type': 'system',
+            'subtype': 'task_started',
+            'task_id': 'a1',
+            if (nested) 'tool_use_id': 'toolu_b',
+            'description': 'Analyze the app',
+            'task_type': 'local_agent',
+            'is_backgrounded': true,
+          });
+        await tester.pump(const Duration(milliseconds: 100));
+        final row = find.descendant(
+          of: find.byType(ActivityStrip),
+          matching: find.text('Analyze the app'),
+        );
+        expect(row, findsOneWidget);
+
+        await tester.tap(row);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+        // Its own conversation: what it was asked.
+        expect(find.text('Analyze /app.').hitTestable(), findsOneWidget);
+      },
+    );
+  }
+
+  // Stash #58: one continued (SendMessage) runs again as a task of that
+  // call, and had a row with nothing to open.
+  testWidgets('a subagent continued goes on in its card, and its row opens '
+      'it', (tester) async {
+    final (:session, :cli) = await pumpScripted(tester);
+    cli
+      ..push(
+        assistant(null, 'toolu_a', {
+          'name': 'Agent',
+          'input': {
+            'description': 'Analyze the app',
+            'subagent_type': 'Plan',
+            'prompt': 'Analyze /app.',
+          },
+        }),
+      )
+      ..push(
+        result(null, 'toolu_a', 'An Elysia server.', {
+          'status': 'completed',
+          'agentId': 'a1',
+          'prompt': 'Analyze /app.',
+        }),
+      )
+      ..push(
+        assistant(null, 'toolu_s', {
+          'name': 'SendMessage',
+          'input': {'to': 'a1', 'message': 'Now its tests.'},
+        }),
+      )
+      ..push({
+        'type': 'system',
+        'subtype': 'task_started',
+        'task_id': 'a1',
+        'tool_use_id': 'toolu_s',
+        'description': 'Analyze the app',
+        'task_type': 'local_agent',
+        'is_backgrounded': true,
+      })
+      ..push({
+        'type': 'system',
+        'subtype': 'task_progress',
+        'task_id': 'a1',
+        'tool_use_id': 'toolu_s',
+        'description': 'Reading test/app_test.ts',
+        'usage': {'total_tokens': 100, 'tool_uses': 1},
+      });
+    await tester.pump(const Duration(milliseconds: 100));
+    final strip = find.byType(ActivityStrip);
+    expect(
+      find.descendant(
+        of: strip,
+        matching: find.text('· Reading test/app_test.ts'),
+      ),
+      findsOneWidget,
+    );
+    // At work again: its card says so.
+    expect(_inBackground, findsOneWidget);
+
+    await tester.tap(
+      find.descendant(of: strip, matching: find.text('Analyze the app')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Analyze /app.').hitTestable(), findsOneWidget);
+    expect(subagentStatusRow(), findsOneWidget);
+
+    cli.push({
+      'type': 'user',
+      'uuid': 'n1',
+      'message': {
+        'role': 'user',
+        'content':
+            '<task-notification>\n<task-id>a1</task-id>\n'
+            '<tool-use-id>toolu_s</tool-use-id>\n<status>completed</status>\n'
+            '<result>Its tests pass.</result>\n'
+            '</task-notification>',
+      },
+    });
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(
+      find.text('Its tests pass.', findRichText: true).hitTestable(),
+      findsOne,
+    );
+    expect(subagentStatusRow(), findsNothing);
   });
 }
 

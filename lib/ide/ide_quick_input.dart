@@ -18,8 +18,9 @@
 //
 // Deviations: hiding has no reason; no `matchOnDetail`,
 // `matchOnLabelMode`, `$(icon)` labels (an item has its [icon]; its
-// description and detail draw theirs), buttons, multiple selection or
-// `ignoreFocusOut` (a click outside always hides it); a
+// description and detail draw theirs), separators' or the input's buttons
+// (an item's [IdeQuickPickItem.buttons] hide the pick as they run), multiple
+// selection or `ignoreFocusOut` (a click outside always hides it); a
 // pick's items for a value are a function of it, where upstream sets them
 // as it changes; accepting always hides the pick or the input box, but
 // accepting in the background keeps a pick; a page moves by the rows that
@@ -40,6 +41,7 @@ import '../theme/icon_registry.dart';
 import '../theme/workbench_theme.dart'
     show ThemeTypeSelector, getThemeTypeSelector, themeColors;
 import 'ide_fuzzy.dart';
+import 'ide_hover.dart' show IdeActionButton;
 import 'ide_input.dart';
 
 /// Where [IdeQuickInputState.focus] moves the active item (upstream
@@ -75,6 +77,7 @@ class IdeQuickPickItem extends IdeQuickPickEntry {
     this.group,
     this.onAccept,
     this.onAcceptInBackground,
+    this.buttons = const [],
   });
 
   final String label;
@@ -112,6 +115,23 @@ class IdeQuickPickItem extends IdeQuickPickEntry {
   /// the focus stays here (upstream `accept(true)` of a pick that
   /// `canAcceptInBackground`); null where it cannot be.
   final VoidCallback? onAcceptInBackground;
+
+  /// At the right of its row while it is hovered or active (upstream
+  /// `buttons`, `onDidTriggerItemButton`): each hides the pick and runs.
+  final List<IdeQuickPickItemButton> buttons;
+}
+
+/// A button of an [IdeQuickPickItem] (upstream `IQuickInputButton`).
+class IdeQuickPickItemButton {
+  const IdeQuickPickItemButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
 }
 
 /// A separator before the next item of an [IdeQuickPick] (upstream
@@ -876,6 +896,10 @@ class IdeQuickInputState extends State<IdeQuickInput> {
                                   message: !_selectable(row),
                                   selected: index == _selected,
                                   onTap: () => _accept(index),
+                                  onButton: (button) {
+                                    widget.onClose();
+                                    button.onPressed();
+                                  },
                                 );
                               },
                             ),
@@ -904,6 +928,7 @@ class _QuickPickRow extends StatefulWidget {
     required this.message,
     required this.selected,
     required this.onTap,
+    required this.onButton,
   });
 
   final IdeQuickPickItem item;
@@ -918,6 +943,7 @@ class _QuickPickRow extends StatefulWidget {
   final bool message;
   final bool selected;
   final VoidCallback onTap;
+  final ValueChanged<IdeQuickPickItemButton> onButton;
 
   @override
   State<_QuickPickRow> createState() => _QuickPickRowState();
@@ -1029,6 +1055,18 @@ class _QuickPickRowState extends State<_QuickPickRow> {
             padding: const EdgeInsets.only(left: 8),
             child: IdeKeycap(keybinding),
           ),
+        if (item.buttons.isNotEmpty && (_hover || focused))
+          for (final button in item.buttons)
+            Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: IdeActionButton(
+                icon: button.icon,
+                tooltip: button.tooltip,
+                size: 20,
+                color: color,
+                onPressed: () => widget.onButton(button),
+              ),
+            ),
       ],
     );
     // A detail is a second line under the whole first one, icon and all

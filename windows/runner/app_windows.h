@@ -93,6 +93,13 @@ class IdeWindow : public ViewWindow {
 //                                 app next starts
 //   quit                          the app goes, Flutter having agreed (see
 //                                 kQuitMessage)
+//   createStash {engineId}        the stash's panel (lib/stash/), hidden:
+//                                 its view's id
+//   showStash                     shows it where it was left (kept across
+//                                 launches), centered on the monitor the
+//                                 pointer is on the first time
+//   hideStash                     hides it, the window that was in front
+//                                 having the keyboard back
 //
 // and tells Flutter `closeRequested viewId`, `focused viewId`,
 // `frameChanged {viewId, …}`, `newWindow` (the tray's New Window) and
@@ -142,6 +149,9 @@ class AppWindows : public WindowObserver {
   // The app's window in front, the main one if none is.
   HWND FrontWindow() const;
 
+  // The stash's panel's window, null before it is made.
+  static HWND StashHandle();
+
   // Shows |view_id|'s window in front.
   void Focus(int64_t view_id);
 
@@ -160,6 +170,18 @@ class AppWindows : public WindowObserver {
   // after all if Flutter has not started its windows in a while.
   void HoldMainBack();
 
+  // The main window, not shown yet, where it was left at the last quit and
+  // as big, if that is on a monitor still (kept as it moves, KeepMainFrame).
+  void PlaceMain();
+
+  // How the main window shows: |show|, or maximized the first time if it
+  // was left so (see PlaceMain).
+  int MainShowCommand(int show);
+
+  // Where the main window is, and how big, for the next launch (see
+  // PlaceMain).
+  void KeepMainFrame();
+
   // WindowObserver:
   void WindowActivated(int64_t view_id) override;
   void WindowFrameChanged(int64_t view_id) override;
@@ -175,6 +197,12 @@ class AppWindows : public WindowObserver {
   void Close(int64_t view_id);
   void Hide(int64_t view_id);
 
+  // The stash's panel: a window kept over every other, with no taskbar
+  // button and no place in Alt+Tab, made once and hidden between uses.
+  std::optional<int64_t> CreateStash(const flutter::EncodableMap& arguments);
+  void ShowStash();
+  void HideStash();
+
   // Where |window| is: its normal place and size, whether maximized, and the
   // monitor it is on.
   flutter::EncodableValue FrameOf(HWND window) const;
@@ -188,9 +216,16 @@ class AppWindows : public WindowObserver {
 
   flutter::BinaryMessenger* messenger_;
   HWND main_;
+  bool maximize_main_on_show_ = false;
   bool started_ = false;
   Attention* attention_ = nullptr;
   std::map<int64_t, std::unique_ptr<IdeWindow>> windows_;
+  std::unique_ptr<IdeWindow> stash_;
+  // The window in front as the panel showed, which has the keyboard back
+  // as it hides.
+  HWND before_stash_ = nullptr;
+  // Whether the panel has a place of its own yet (kept, or given once).
+  bool stash_placed_ = false;
   struct PendingClose {
     int64_t view_id;
     std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result;

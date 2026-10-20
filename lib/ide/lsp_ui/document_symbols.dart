@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../base/smooth_scroll.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/codicons.dart';
 import '../../theme/app_theme.dart';
@@ -224,6 +225,13 @@ class IdeOutlineView extends StatefulWidget {
 
 class _IdeOutlineViewState extends State<IdeOutlineView> {
   final Set<String> _collapsed = {};
+  final _scroll = SmoothScrollController();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
 
   static String _keyOf(List<String> path) => path.join('\u0000');
 
@@ -313,7 +321,7 @@ class _IdeOutlineViewState extends State<IdeOutlineView> {
                 }
 
                 add(model.symbols, 0, const []);
-                return ListView(children: rows);
+                return ListView(controller: _scroll, children: rows);
               },
             ),
           ),

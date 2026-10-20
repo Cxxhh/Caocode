@@ -6,17 +6,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 
+import '../../browser/browser_bridge.dart';
+import '../../browser/browser_mirror.dart';
 import '../../ide/file_service.dart';
 import '../../ide/git/git_model.dart';
 import '../../ide/git/commit_message.dart';
 import '../../ide/git/git_repository.dart';
-import '../../ide/git/ide_scm_view.dart' show IdeGitGraph;
+import '../../ide/git/ide_scm_view.dart' show IdeScmView;
+import '../../ide/git/scm_host.dart';
 import '../../ide/ide_button.dart';
 import '../../ide/ide_dialog.dart';
 import '../../ide/ide_explorer.dart';
+import '../../ide/ide_agent_edits.dart' show IdeAgentEdit;
+import '../../ide/ide_code_editor.dart' show IdeTextFormatter;
 import '../../ide/ide_hover.dart';
+import '../../ide/file_views.dart';
+import '../../ide/search/ide_search_view.dart';
+import '../../ide/search/text_search.dart' show IdeTextSearch, ideSearchText;
 import '../../ide/ide_list.dart';
 import '../../ide/ide_menu.dart';
+import '../../ide/ide_notifications.dart';
 import '../../ide/ide_modern_ui.dart';
 import '../../ide/ide_panes.dart';
 import '../../ide/ide_tab_bar.dart'
@@ -26,6 +35,7 @@ import '../../ide/tab_strip_scroll.dart';
 import '../../ide/terminal/links/terminal_links.dart' show TerminalLink;
 import '../../ide/terminal/terminal_instance.dart';
 import '../../ide/terminal/terminal_service.dart';
+import '../../ide/terminal/terminal_tabs.dart';
 import '../../ide/terminal/terminal_view.dart';
 import '../../kernel/kernel_types.dart' show KernelTask;
 import '../../workspace/window_controls.dart';
@@ -40,6 +50,7 @@ import '../../theme/material_file_icons.dart';
 import '../../theme/workbench_theme.dart' show themeColors;
 import '../chat_session.dart';
 import '../widgets/code_citation.dart' show CodeColorizer;
+import '../widgets/plan_start.dart';
 import '../chat_column.dart';
 import '../composer/composer_files.dart';
 import '../composer/file_drag.dart';
@@ -47,15 +58,20 @@ import 'file_link.dart';
 import 'file_open.dart';
 import 'file_preview.dart';
 import 'git_changes.dart';
-import 'git_commit_box.dart';
 import 'side_panel_controller.dart';
 import 'terminal_preview.dart';
 
-/// [child] (the conversations) and, at its right while [panel] shows, the
-/// side panel [builder] builds: beside it, its left edge dragged to make
-/// it wider or narrower (a double click gives back its width), narrower
+/// [child] (the conversations) and, at its right (its left, as [panel] is
+/// [AgentSidePanel.atLeft]) while [panel] shows, the side panel [builder]
+/// builds: beside it, its edge toward them dragged to make it wider or
+/// narrower (a double click gives back its width), narrower
 /// where the conversations would have less than [minChat]; over it, where
 /// they would beside it at its least.
+
+/// This machine's files, for what is shown as a file (one service: the
+/// preview reads its file anew when it changes).
+final IdeFileService _localFiles = IdeFileService(p.current);
+
 class AgentSidePanelArea extends StatefulWidget {
   const AgentSidePanelArea({
     super.key,
@@ -70,9 +86,10 @@ class AgentSidePanelArea extends StatefulWidget {
   final AgentSidePanel panel;
   final WidgetBuilder builder;
 
-  /// While the panel is hidden, over the conversations' top right, clear of
-  /// their scrollbar: their column keeps clear of it ([railInset]), not
-  /// their title bar nor their scrollbar, which reach the edge.
+  /// While the panel is hidden, over the conversations' top right (left,
+  /// the panel at their left), clear of their scrollbar: their column keeps
+  /// clear of it ([railInset]), not their title bar nor their scrollbar,
+  /// which reach the edge.
   final Widget? rail;
 
   /// How far down [rail] is: under the conversation's title bar, where it
@@ -90,6 +107,10 @@ class AgentSidePanelArea extends StatefulWidget {
   /// The strip at its left edge that takes the drag.
   static const sashWidth = 5.0;
 
+  /// How long the room is short before it goes over the conversations:
+  /// longer than the window's sidebar takes to give way.
+  static const overlayDelay = Duration(milliseconds: 260);
+
   /// How far in from the right [rail] is: clear of the history's
   /// scrollbar.
   static const railRight = 16.0;
@@ -106,6 +127,35 @@ class _AgentSidePanelAreaState extends State<AgentSidePanelArea> {
   bool _dragging = false;
   ({double x, double width})? _dragStart;
 
+  /// Whether it is over the conversations: once the room was short for
+  /// longer than [overlayDelay]. Short a while only (the window's sidebar
+  /// giving way to it, which takes its animation; a window opening), it
+  /// stays beside them, narrower, not covering the window for a moment.
+  bool _overlay = false;
+
+  /// Runs while the room is short: over them once it ends.
+  Timer? _short;
+
+  void _roomShort(bool short) {
+    if (!short) {
+      _short?.cancel();
+      _short = null;
+      _overlay = false;
+      return;
+    }
+    if (_overlay || _short != null) return;
+    _short = Timer(AgentSidePanelArea.overlayDelay, () {
+      _short = null;
+      if (mounted) setState(() => _overlay = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _short?.cancel();
+    super.dispose();
+  }
+
   AgentSidePanel get _panel => widget.panel;
 
   @override
@@ -118,15 +168,23 @@ class _AgentSidePanelAreaState extends State<AgentSidePanelArea> {
         // Over the conversations only where it cannot be beside them at
         // its least; else beside them, narrower than it would be where
         // they need the room.
-        final overlay =
-            room - AgentSidePanel.minWidth < AgentSidePanelArea.minChat;
+        _roomShort(
+          shown && room - AgentSidePanel.minWidth < AgentSidePanelArea.minChat,
+        );
+        final overlay = _overlay;
+        final atLeft = _panel.atLeft;
+        final beside = shown && !overlay;
+        final rail = !shown && widget.rail != null;
         final width = overlay
             ? math.min(_panel.width, math.max(0.0, room - 48))
-            : math.min(
-                _panel.width,
-                room -
-                    AgentSidePanelArea.minChat -
-                    AgentSidePanelArea.sashWidth,
+            : math.max(
+                0.0,
+                math.min(
+                  _panel.width,
+                  room -
+                      AgentSidePanelArea.minChat -
+                      AgentSidePanelArea.sashWidth,
+                ),
               );
         // Each child keyed: the conversations and the panel are never
         // built anew as the rail, the scrim or the drag's cursor come and
@@ -137,23 +195,23 @@ class _AgentSidePanelAreaState extends State<AgentSidePanelArea> {
           children: [
             Positioned(
               key: const ValueKey('chat'),
-              left: 0,
               top: 0,
               bottom: 0,
               // Up to the sash's line; the rest of the sash is over it, so
               // nothing shows between the two.
-              right: shown && !overlay ? width + 1 : 0,
+              left: beside && atLeft ? width + 1 : 0,
+              right: beside && !atLeft ? width + 1 : 0,
               child: ChatColumnInset(
-                right: !shown && widget.rail != null
-                    ? AgentSidePanelArea.railInset
-                    : 0,
+                right: rail && !atLeft ? AgentSidePanelArea.railInset : 0,
+                left: rail && atLeft ? AgentSidePanelArea.railInset : 0,
                 child: widget.child,
               ),
             ),
-            if (!shown && widget.rail != null)
+            if (rail)
               Positioned(
                 key: const ValueKey('rail'),
-                right: AgentSidePanelArea.railRight,
+                left: atLeft ? AgentSidePanelArea.railRight : null,
+                right: atLeft ? null : AgentSidePanelArea.railRight,
                 top: widget.railTop,
                 child: widget.rail!,
               ),
@@ -170,7 +228,8 @@ class _AgentSidePanelAreaState extends State<AgentSidePanelArea> {
                 key: const ValueKey('panel'),
                 top: 0,
                 bottom: 0,
-                right: 0,
+                left: atLeft ? 0 : null,
+                right: atLeft ? null : 0,
                 width: width + AgentSidePanelArea.sashWidth,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
@@ -185,25 +244,22 @@ class _AgentSidePanelAreaState extends State<AgentSidePanelArea> {
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
+                    // The sash on the side of the conversations.
+                    textDirection: atLeft
+                        ? TextDirection.rtl
+                        : TextDirection.ltr,
                     children: [
-                      _sash(),
+                      _sash(atLeft: atLeft),
                       Expanded(
-                        // A click anywhere in it puts the focus there (on
-                        // what takes it, else on the panel), for its keys.
-                        child: Listener(
-                          onPointerDown: (_) {
-                            if (!_panel.focusNode.hasFocus) {
-                              _panel.focusNode.requestFocus();
-                            }
-                          },
-                          child: Focus(
-                            focusNode: _panel.focusNode,
-                            // The editor's background, all of it: the
-                            // conversation's side, not the window's.
-                            child: ColoredBox(
-                              color: AppColors.code,
-                              child: widget.builder(context),
-                            ),
+                        // Never laid out narrower than its least: squeezed
+                        // a while (the sidebar giving way), what has no
+                        // room is cut off, as the sidebar's own is.
+                        child: ClipRect(
+                          child: OverflowBox(
+                            alignment: Alignment.centerLeft,
+                            minWidth: math.max(width, AgentSidePanel.minWidth),
+                            maxWidth: math.max(width, AgentSidePanel.minWidth),
+                            child: _content(context),
                           ),
                         ),
                       ),
@@ -231,7 +287,30 @@ class _AgentSidePanelAreaState extends State<AgentSidePanelArea> {
     ),
   );
 
-  Widget _sash() => MouseRegion(
+  /// What it shows, beside its sash.
+  Widget _content(BuildContext context) =>
+      // A click anywhere in it puts the focus there (on what takes it, else
+      // on the panel), for its keys.
+      Listener(
+        onPointerDown: (_) {
+          if (!_panel.focusNode.hasFocus) {
+            _panel.focusNode.requestFocus();
+          }
+        },
+        child: Focus(
+          focusNode: _panel.focusNode,
+          // The editor's background, all of it: the conversation's side,
+          // not the window's.
+          child: ColoredBox(
+            color: AppColors.code,
+            child: widget.builder(context),
+          ),
+        ),
+      );
+
+  /// The strip on the panel's edge beside the conversations: its left,
+  /// or its right [atLeft].
+  Widget _sash({required bool atLeft}) => MouseRegion(
     cursor: SystemMouseCursors.resizeColumn,
     child: GestureDetector(
       key: const ValueKey('side-panel-sash'),
@@ -247,8 +326,9 @@ class _AgentSidePanelAreaState extends State<AgentSidePanelArea> {
         final room =
             (context.size?.width ?? double.infinity) -
             AgentSidePanelArea.minChat;
+        final moved = details.globalPosition.dx - start.x;
         _panel.width = math.min(
-          start.width - (details.globalPosition.dx - start.x),
+          atLeft ? start.width + moved : start.width - moved,
           math.max(AgentSidePanel.minWidth, room),
         );
       },
@@ -260,7 +340,8 @@ class _AgentSidePanelAreaState extends State<AgentSidePanelArea> {
       },
       child: Container(
         width: AgentSidePanelArea.sashWidth,
-        alignment: Alignment.centerRight,
+        // Its line against the panel.
+        alignment: atLeft ? Alignment.centerLeft : Alignment.centerRight,
         // At rest the line between the two; dragged, as thick as the IDE's
         // sashes, in their `sash.hoverBorder`.
         child: AnimatedContainer(
@@ -296,12 +377,15 @@ class AgentSidePanelView extends StatelessWidget {
     this.paths,
     this.colorize,
     this.onOpenInIde,
+    this.formatter,
     this.watchDirectory,
+    this.searchEngine = ideSearchText,
     this.git,
     this.terminals,
     this.terminalSkipShell = const [],
     this.onOpenTerminalLink,
     this.commitMessage,
+    required this.notifications,
     this.workspaceName,
     this.roots = const [],
     this.repositories = const [],
@@ -332,6 +416,10 @@ class AgentSidePanelView extends StatelessWidget {
   final ValueChanged<String>? onRemoveFolder;
 
   bool get _isWorkspace => workspaceName != null;
+
+  /// The line under a list's title, as high as the tabs beside it: running
+  /// on under theirs.
+  static Color get _titleBorder => IdeTabStrip.border ?? AppColors.partBorder;
 
   /// The repository whose changes show: the one picked of [repositories]
   /// (their first until one is), else [git].
@@ -367,9 +455,16 @@ class AgentSidePanelView extends StatelessWidget {
   /// Opens a file shown in the IDE instead.
   final ValueChanged<FileOpenRequest>? onOpenInIde;
 
+  /// Formats a file edited here with the project's language servers.
+  final IdeTextFormatter? formatter;
+
   /// Changes to a folder's entries, for the files page's tree to follow;
   /// the explorer's own watch when null.
   final Stream<void> Function(String directory)? watchDirectory;
+
+  /// The files page's text search: the same engine the IDE searches with
+  /// (Git's file list, off the UI isolate), so its feel and speed match.
+  final IdeTextSearch searchEngine;
 
   /// The project's repository, whose changes the changes page lists; none
   /// where Git is not at hand.
@@ -378,6 +473,9 @@ class AgentSidePanelView extends StatelessWidget {
   /// Writes commit messages on the changes page (its sparkle); none
   /// offered when null.
   final IdeCommitMessageModel? commitMessage;
+
+  /// Where the changes page tells of what failed (the window's).
+  final IdeNotifications notifications;
 
   /// The project's terminals on the terminal page; none where terminals
   /// cannot run.
@@ -392,7 +490,15 @@ class AgentSidePanelView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: Listenable.merge([panel, session, ..._gits, ?terminals]),
+    listenable: Listenable.merge([
+      panel,
+      session,
+      // A file's change kept or undone, part by part.
+      ?session.changeReview,
+      ..._gits,
+      ?terminals,
+      BrowserBridge.instance,
+    ]),
     builder: (context, _) {
       final tabs = panel.tabsOf(session);
       return Column(
@@ -409,6 +515,9 @@ class AgentSidePanelView extends StatelessWidget {
               SidePanelSection.files => _filesPage(context, tabs),
               SidePanelSection.changes => _changesPage(context, tabs),
               SidePanelSection.terminal => _terminalPage(context, tabs),
+              SidePanelSection.browser => const BrowserMirror(
+                key: ValueKey(('page', SidePanelSection.browser)),
+              ),
               SidePanelSection.plan => _planPage(context, tabs.plan!),
             },
           ),
@@ -435,32 +544,73 @@ class AgentSidePanelView extends StatelessWidget {
             paths: _paths,
           );
     final local = files is! IdeHostFiles;
+    // Whether this project's files page shows the text search in place of
+    // the tree (the header's magnifier).
+    final searching = root != null && panel.searchShown(root);
     return _Page(
       key: const ValueKey(('page', SidePanelSection.files)),
       panel: panel,
       list: explorer == null
           ? _EmptySection(l10n.sidePanelNoFolder)
+          : searching
+          // The IDE's Search view, under its own title: the way back to the
+          // tree first among its actions.
+          ? IdeSearchView(
+              session: panel.searchOf(explorer.root, searchEngine),
+              root: explorer.root,
+              titleBorder: _titleBorder,
+              background: AppColors.code,
+              titleActions: [
+                IdePaneAction(
+                  icon: Codicons.close,
+                  tooltip: l10n.sidePanelCloseSearch,
+                  onPressed: () => panel.setSearchShown(explorer.root, false),
+                ),
+              ],
+              // Escape closes the search, the tree back.
+              onEscape: () => panel.setSearchShown(explorer.root, false),
+              // Searching alone: a replace would write into a project this
+              // panel only looks at.
+              onOpen: (path, range, {required focusEditor}) async => panel.open(
+                session,
+                FileOpenRequest(
+                  path,
+                  range: FileLineRange(
+                    range.start.line + 1,
+                    range.end.line + 1,
+                  ),
+                ),
+              ),
+              onError: (error) => _showFileError(context, error),
+            )
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _ListHeader(
-                  title: switch (workspaceName) {
+                IdeViewTitle(
+                  switch (workspaceName) {
                     final name? => l10n.ideWorkspaceTitle(name),
                     null => _paths.basename(explorer.root),
                   },
+                  border: _titleBorder,
                   actions: [
+                    IdePaneAction(
+                      icon: Codicons.search,
+                      tooltip: l10n.sidePanelSearchFiles,
+                      onPressed: () =>
+                          panel.setSearchShown(explorer.root, true),
+                    ),
                     if (onAddFolder case final add? when _isWorkspace)
-                      IdeActionButton(
+                      IdePaneAction(
                         icon: Codicons.rootFolder,
                         tooltip: l10n.ideAddFolderToWorkspace,
                         onPressed: add,
                       ),
-                    IdeActionButton(
+                    IdePaneAction(
                       icon: Codicons.refresh,
                       tooltip: l10n.cmdRefreshExplorer,
                       onPressed: () => unawaited(explorer.refresh()),
                     ),
-                    IdeActionButton(
+                    IdePaneAction(
                       icon: Codicons.collapseAll,
                       tooltip: l10n.cmdCollapseExplorerFolders,
                       onPressed: explorer.collapseAll,
@@ -495,148 +645,62 @@ class AgentSidePanelView extends StatelessWidget {
     );
   }
 
-  /// The project's Git changes (see [GitChangeList]), as a tree or a
-  /// list as the IDE's Source Control view shows them, under the commit
-  /// box, and the changes opened from it or from the conversation.
+  /// The project's Git changes in the IDE's Source Control view (one
+  /// view for both: its commit box, its changes as a tree or a list, its
+  /// graph; a workspace's repositories each under its header), and the
+  /// changes opened from it or from the conversation.
   Widget _changesPage(BuildContext context, SidePanelTabs tabs) {
     final l10n = context.l10n;
     final git = _git;
-    final state = git?.state;
     final active = tabs.activeDiff;
     final local = files is! IdeHostFiles;
     final total = _gits.fold(0, (sum, git) => sum + (git.state?.count ?? 0));
-    // No change anywhere: the list keeps the commit box, whose button then
-    // publishes or syncs, as the Source Control view does; this says so
-    // where a change would show.
+    // No change anywhere: the view keeps its commit box, whose button then
+    // publishes or syncs; the body says so where a change would show.
     final none =
         _gits.isNotEmpty &&
         _gits.every((git) => git.state != null) &&
         total == 0;
-    final Widget list;
-    if (git == null || (git.loaded && state == null)) {
-      list = _NoRepository(
-        // A workspace's folders are each their own.
-        onInitialize: git == null || session.root == null || _isWorkspace
-            ? null
-            : () => unawaited(git.initialize()),
-      );
-    } else if (state == null) {
-      list = const SizedBox.shrink();
-    } else {
-      final scm = panel.scmOf(git);
-      list = Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (repositories.length > 1)
-            _RepositoryList(
-              repositories: repositories,
-              selected: git,
-              onSelect: (folder) {
-                if (session.root case final root?) {
-                  panel.selectRepository(root, folder);
-                }
-              },
-            ),
-          // As the Source Control view's input, over the list.
-          GitCommitBox(
-            key: ObjectKey(git),
-            git: git,
-            state: state,
-            scm: scm,
-            commitMessage: commitMessage,
-          ),
-          // The IDE's Source Control panes: the changes, and the history.
-          Expanded(
-            child: StatefulBuilder(
-              builder: (context, setState) => IdePaneContainer(
-                expanded: scm.expandedPanes,
-                onToggle: (id) => setState(() {
-                  if (!scm.expandedPanes.remove(id)) {
-                    scm.expandedPanes.add(id);
+    final terminals = this.terminals;
+    final list = git == null
+        ? const _NoRepository()
+        : IdeScmView(
+            key: ValueKey(('scm', session.root)),
+            host: _SidePanelScmHost(this),
+            session: panel.scmOf(git),
+            sessionOf: panel.scmOf,
+            notifications: notifications,
+            // The page names it already.
+            showTitle: false,
+            background: AppColors.code,
+            onOpen: (path, {focusEditor = false}) async =>
+                panel.open(session, FileOpenRequest(path)),
+            // Its diff; its HEAD side is the diff's left.
+            onOpenChange:
+                (resource, {head = false, focusEditor = false}) async {
+                  final of = _gitOf(resource.path);
+                  if (of?.state case final state?) {
+                    panel.open(session, gitChangeRequest(of!, state, resource));
                   }
-                }),
-                panes: [
-                  IdePane(
-                    id: 'changes',
-                    title: l10n.sidePanelChanges,
-                    badge: IdeTitleBadge(state.count),
-                    weight: 3,
-                    actions: [
-                      IdeActionButton(
-                        key: const ValueKey('side-panel-view-as'),
-                        icon: panel.changesAsTree
-                            ? Codicons.listFlat
-                            : Codicons.listTree,
-                        tooltip: panel.changesAsTree
-                            ? l10n.scmViewAsList
-                            : l10n.scmViewAsTree,
-                        onPressed: () =>
-                            panel.changesAsTree = !panel.changesAsTree,
-                      ),
-                      IdeActionButton(
-                        icon: Codicons.refresh,
-                        tooltip: l10n.commonRefresh,
-                        onPressed: () => unawaited(git.refresh(force: true)),
-                      ),
-                    ],
-                    body: state.count == 0
-                        ? (none
-                              ? const SizedBox.shrink()
-                              : _EmptySection(l10n.sidePanelNoChanges))
-                        : GitChangeList(
-                            git: git,
-                            state: state,
-                            tree: panel.changesAsTree,
-                            selected: active?.path,
-                            local: local,
-                            trash: local && WindowControls.canMoveToTrash
-                                ? WindowControls.moveToTrash
-                                : null,
-                            onOpen: (resource) => panel.open(
-                              session,
-                              gitChangeRequest(git, state, resource),
-                            ),
-                            onOpenFile: (path) =>
-                                panel.open(session, FileOpenRequest(path)),
-                            onRevealInFiles: _revealInFiles,
-                            onAddToChat: session.draft.insertFiles,
-                            onSaveAs: canSaveFileCopy
-                                ? (path) => _saveAs(context, path)
-                                : null,
-                          ),
-                  ),
-                  IdePane(
-                    id: 'graph',
-                    title: l10n.scmGraph,
-                    weight: 2,
-                    actions: [
-                      IdeActionButton(
-                        icon: Codicons.target,
-                        tooltip: l10n.scmGoToCurrent,
-                        onPressed: () => scm.graph.goToCurrent(git),
-                      ),
-                      IdeActionButton(
-                        icon: Codicons.refresh,
-                        tooltip: l10n.commonRefresh,
-                        onPressed: () => unawaited(git.refresh(force: true)),
-                      ),
-                    ],
-                    body: IdeGitGraph(
-                      background: AppColors.code,
-                      git: git,
-                      controller: scm.graph,
-                      root: state.root,
-                      onOpen: (path) =>
-                          panel.open(session, FileOpenRequest(path)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      );
-    }
+                },
+            onRevealInExplorer: _revealInFiles,
+            revealInExplorerLabel: l10n.sidePanelRevealInFiles,
+            onOpenInTerminal: terminals == null
+                ? null
+                : (folder) {
+                    final shell = terminals.create(cwd: folder);
+                    panel.openTerminal(session, shell);
+                    WidgetsBinding.instance.addPostFrameCallback(
+                      (_) => shell.focus(),
+                    );
+                  },
+            onTreeViewChanged: (tree) => panel.changesAsTree = tree,
+            onAddToChat: session.draft.insertFiles,
+            trash: local && WindowControls.canMoveToTrash
+                ? WindowControls.moveToTrash
+                : null,
+            commitMessage: commitMessage,
+          );
     return _Page(
       key: const ValueKey(('page', SidePanelSection.changes)),
       panel: panel,
@@ -648,6 +712,22 @@ class AgentSidePanelView extends StatelessWidget {
           ? const _NoChanges()
           : _EmptySection(l10n.sidePanelSelectChange),
     );
+  }
+
+  /// The repository [path] is in: the one of [_gits] whose folder holds it
+  /// the closest.
+  IdeGitRepository? _gitOf(String path) {
+    IdeGitRepository? found;
+    var length = -1;
+    for (final git in _gits) {
+      final root = git.service.root;
+      if ((root == path || _paths.isWithin(root, path)) &&
+          root.length > length) {
+        found = git;
+        length = root.length;
+      }
+    }
+    return found ?? _git;
   }
 
   /// Tells of a file operation that failed.
@@ -768,14 +848,21 @@ class AgentSidePanelView extends StatelessWidget {
     return _Page(
       key: const ValueKey(('page', SidePanelSection.terminal)),
       panel: panel,
-      list: _TerminalList(
-        shells: terminals == null ? null : shells,
-        tasks: tasks,
-        selected: current?.id,
-        onOpen: (id) => panel.openTerminal(session, id),
-        onNew: terminals == null ? null : newTerminal,
-        onKill: kill,
-        onStop: stop,
+      // The IDE's terminal tabs, grouped: each opening in a tab here.
+      list: ColoredBox(
+        key: const ValueKey('side-panel-terminals'),
+        color: AppColors.code,
+        child: TerminalTabs(
+          terminals: terminals,
+          onNew: terminals == null ? null : newTerminal,
+          tasks: tasks,
+          grouped: true,
+          selected: current?.id,
+          onOpen: (id) => panel.openTerminal(session, id),
+          onKill: kill,
+          onStopTask: stop,
+          border: false,
+        ),
       ),
       tabs: open.isEmpty
           ? null
@@ -801,7 +888,7 @@ class AgentSidePanelView extends StatelessWidget {
                       ),
                       final task as KernelTask => _Tab(
                         active: id == current?.id,
-                        icon: _TaskIcon(task, size: _Tab.iconSize),
+                        icon: TerminalTaskIcon(task, size: _Tab.iconSize),
                         label: task.description,
                         tooltip: task.description,
                         onTap: () => panel.openTerminal(session, id),
@@ -870,7 +957,7 @@ class AgentSidePanelView extends StatelessWidget {
           ),
         ],
       ),
-      Expanded(child: _preview(context, plan)),
+      Expanded(child: _filePreview(context, plan, plan: true)),
     ],
   );
 
@@ -1002,7 +1089,9 @@ class AgentSidePanelView extends StatelessWidget {
                 tooltip: tab.path,
                 status: tab.diff ? statuses[tab.path] : null,
                 dirty: tab.dirty,
+                preview: tab.preview,
                 onTap: () => panel.activate(session, tab),
+                onDoubleTap: tab.preview ? () => panel.pin(tab) : null,
                 onClose: () => unawaited(_close(context, [tab])),
                 menu: () => _fileTabMenu(context, list, tab),
               ),
@@ -1093,17 +1182,44 @@ class AgentSidePanelView extends StatelessWidget {
     ]);
   }
 
-  Widget _preview(BuildContext context, SidePanelTab tab) => FilePreview(
+  Widget _preview(BuildContext context, SidePanelTab tab) {
+    // A file of its own kind (a stash): as that, not its text.
+    if (tab.diff ? null : FileViews.of(tab.path) case final view?) {
+      return KeyedSubtree(
+        key: ValueKey((session, tab.path, view.id)),
+        child: view.build(context, tab.path),
+      );
+    }
+    return _filePreview(context, tab);
+  }
+
+  /// [tab]'s file; as [plan], its bar not naming its language and, put to
+  /// the user, starting it as its card does.
+  Widget _filePreview(
+    BuildContext context,
+    SidePanelTab tab, {
+    bool plan = false,
+  }) => FilePreview(
     key: ValueKey((session, tab.path, tab.diff)),
     request: tab.request,
     reveal: tab.reveal,
     edit: tab.edit,
     onEdit: (edit) => panel.keepEdit(tab, edit),
+    agentEdit: tab.diff || tab.request.local || tab.request.readOnly
+        ? null
+        : IdeAgentEdit.inSession(session, tab.path),
+    // In the tab of what was looked at last: one done, the next in its place.
+    onOpenAgentChange: (path) => panel.open(
+      session,
+      FileOpenRequest(path, agentChange: true, preview: true),
+    ),
     highlights: panel.highlights,
-    files: files,
-    root: _rootOf(tab.path),
-    readBytes: readBytes,
-    paths: paths,
+    formatter: tab.request.local ? null : formatter,
+    // Shown as a file, on this machine (see FileOpenScope.showLocal).
+    files: tab.request.local ? _localFiles : files,
+    root: tab.request.local ? null : _rootOf(tab.path),
+    readBytes: tab.request.local ? readFileBytes : readBytes,
+    paths: tab.request.local ? null : paths,
     colorize: colorize,
     onOpenFile: (request) {
       final root = _rootOf(request.path);
@@ -1113,8 +1229,16 @@ class AgentSidePanelView extends StatelessWidget {
         panel.open(session, FileOpenRequest(path, range: request.range));
       }
     },
+    language: !plan,
     actions: [
-      if (onOpenInIde case final open?)
+      if (plan)
+        PlanStartBar(
+          session: session,
+          path: tab.path,
+          maxPickerWidth: 180,
+          padding: const EdgeInsets.only(left: 6),
+        )
+      else if (onOpenInIde case final open?)
         IdeActionButton(
           icon: Codicons.goToFile,
           tooltip: context.l10n.sidePanelOpenInIde,
@@ -1160,6 +1284,7 @@ extension SidePanelSectionUi on SidePanelSection {
     SidePanelSection.files => Codicons.files,
     SidePanelSection.changes => Codicons.sourceControl,
     SidePanelSection.terminal => Codicons.terminal,
+    SidePanelSection.browser => Codicons.globe,
     SidePanelSection.plan => Codicons.checklist,
   };
 
@@ -1168,13 +1293,14 @@ extension SidePanelSectionUi on SidePanelSection {
     SidePanelSection.files => ChatCommandIds.sidePanelFiles,
     SidePanelSection.changes => ChatCommandIds.sidePanelChanges,
     SidePanelSection.terminal => ChatCommandIds.sidePanelTerminal,
-    SidePanelSection.plan => null,
+    SidePanelSection.browser || SidePanelSection.plan => null,
   };
 
   String label(BuildContext context) => switch (this) {
     SidePanelSection.files => context.l10n.sidePanelFiles,
     SidePanelSection.changes => context.l10n.sidePanelChanges,
     SidePanelSection.terminal => context.l10n.sidePanelTerminal,
+    SidePanelSection.browser => context.l10n.sidePanelBrowser,
     SidePanelSection.plan => context.l10n.sidePanelPlan,
   };
 }
@@ -1209,7 +1335,9 @@ class SidePanelRail extends StatelessWidget {
               .where((task) => task.status == CommandStatus.running)
               .length ??
           0,
-    SidePanelSection.files || SidePanelSection.plan => 0,
+    SidePanelSection.files ||
+    SidePanelSection.browser ||
+    SidePanelSection.plan => 0,
   };
 
   static const _button = 26.0;
@@ -1288,9 +1416,11 @@ class _SectionBar extends StatelessWidget {
   /// The list's toggle and the close button, at the right.
   static const _actionsWidth = 2 * 22.0 + 2 + 6;
 
-  /// The pages there: the plan's once there is one.
+  /// The pages there: the browser's once one of the user's has connected,
+  /// the plan's once there is one.
   List<SidePanelSection> get _sections => [
     ...alwaysShownSections,
+    if (BrowserBridge.instance.used) SidePanelSection.browser,
     if (tabs.plan != null) SidePanelSection.plan,
   ];
 
@@ -1366,13 +1496,30 @@ class _SectionBar extends StatelessWidget {
                   selected: shown == section,
                   compact: compact,
                   count: switch (section) {
-                    SidePanelSection.files || SidePanelSection.plan => 0,
+                    SidePanelSection.files ||
+                    SidePanelSection.browser ||
+                    SidePanelSection.plan => 0,
                     SidePanelSection.changes => changes,
                     SidePanelSection.terminal => running,
                   },
                   onTap: () => panel.showSection(session, section),
                 ),
               const Spacer(),
+              // To the conversations' other side.
+              Center(
+                child: IdeActionButton(
+                  key: const ValueKey('side-panel-move'),
+                  icon: Codicons.arrowSwap,
+                  tooltip: KeybindingService.instance.titleWithKeybinding(
+                    panel.atLeft
+                        ? l10n.sidePanelMoveRight
+                        : l10n.sidePanelMoveLeft,
+                    ChatCommandIds.toggleSidePanelPosition,
+                  ),
+                  onPressed: () => panel.atLeft = !panel.atLeft,
+                ),
+              ),
+              const SizedBox(width: 2),
               // The plan's page has no list to show or hide.
               if (shown != SidePanelSection.plan) ...[
                 Center(
@@ -1577,52 +1724,6 @@ class _PageState extends State<_Page> {
   }
 }
 
-/// A list's title, as a side bar pane's: [title], what [count] says, and
-/// [actions] at the end; as high as the tabs beside it, its line under it
-/// running on under theirs.
-class _ListHeader extends StatelessWidget {
-  const _ListHeader({required this.title, this.actions = const []});
-
-  final String title;
-  final List<Widget> actions;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    height: IdeTabStrip.height,
-    padding: const EdgeInsets.only(left: 12, right: 6),
-    decoration: BoxDecoration(
-      border: Border(
-        bottom: BorderSide(color: IdeTabStrip.border ?? AppColors.partBorder),
-      ),
-    ),
-    child: Row(
-      children: [
-        Expanded(
-          child: Row(
-            children: [
-              Flexible(
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.2,
-                    color: IdeViewTitle.foreground,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        for (final action in actions)
-          Padding(padding: const EdgeInsets.only(left: 2), child: action),
-      ],
-    ),
-  );
-}
-
 /// A page's tabs, the IDE editor's ([IdeTabStrip]): scrolled to keep the one in front
 /// in sight.
 class _TabStrip extends StatefulWidget {
@@ -1720,11 +1821,18 @@ class _Tab extends StatelessWidget {
     this.tooltip,
     this.status,
     this.dirty = false,
+    this.preview = false,
     this.onClose,
     this.menu,
+    this.onDoubleTap,
   });
 
   final bool active;
+
+  /// The tab of what was looked at last: its label in italics, as VS
+  /// Code's preview editor's; a double click ([onDoubleTap]) keeps it.
+  final bool preview;
+  final VoidCallback? onDoubleTap;
   final Widget icon;
   final String label;
   final String? description;
@@ -1747,11 +1855,12 @@ class _Tab extends StatelessWidget {
       icon: icon,
       label: label,
       description: description,
-      labelStyle: status == null
+      labelStyle: status == null && !preview
           ? null
           : TextStyle(
-              color: status.color,
-              decoration: status.strikeThrough
+              color: status?.color,
+              fontStyle: preview ? FontStyle.italic : null,
+              decoration: status?.strikeThrough ?? false
                   ? TextDecoration.lineThrough
                   : null,
             ),
@@ -1769,6 +1878,7 @@ class _Tab extends StatelessWidget {
       tooltip: tooltip,
       minWidth: 64,
       onSelect: onTap,
+      onDoubleTap: onDoubleTap,
       mark: dirty
           ? (color) => Icon(Codicons.circleFilled, size: 10, color: color)
           : null,
@@ -1821,91 +1931,6 @@ class _EmptyWorkspace extends StatelessWidget {
   }
 }
 
-/// A workspace's repositories over its changes, as the IDE's Source Control
-/// Repositories: each with its branch and how many changes; the one picked
-/// is the one whose changes show.
-class _RepositoryList extends StatelessWidget {
-  const _RepositoryList({
-    required this.repositories,
-    required this.selected,
-    required this.onSelect,
-  });
-
-  final List<(String root, IdeGitRepository git)> repositories;
-  final IdeGitRepository? selected;
-  final ValueChanged<String> onSelect;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(vertical: 4),
-    decoration: BoxDecoration(
-      border: Border(
-        bottom: BorderSide(color: IdeTabStrip.border ?? AppColors.partBorder),
-      ),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (final (root, git) in repositories)
-          IdeListRow(
-            key: ValueKey(('repository', root)),
-            selected: identical(git, selected),
-            focused: true,
-            tooltip: root,
-            onTap: () => onSelect(root),
-            builder: (context, hovered) => Padding(
-              padding: const EdgeInsets.only(left: 12, right: 8),
-              child: Row(
-                children: [
-                  Icon(
-                    Codicons.repo,
-                    size: 14,
-                    color: themeColors['icon.foreground'],
-                  ),
-                  const SizedBox(width: 6),
-                  // The name and branch take what they need, the count
-                  // stays against the right edge.
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            p.basename(root),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 12.5),
-                          ),
-                        ),
-                        if (git.state?.head.branch case final branch?) ...[
-                          const SizedBox(width: 6),
-                          Flexible(
-                            child: Text(
-                              branch,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                color: AppColors.textMuted,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  if (git.state?.count case final count? when count > 0) ...[
-                    const SizedBox(width: 6),
-                    IdeTitleBadge(count),
-                  ],
-                ],
-              ),
-            ),
-          ),
-      ],
-    ),
-  );
-}
-
 class _EmptySection extends StatelessWidget {
   const _EmptySection(this.text);
   final String text;
@@ -1923,41 +1948,19 @@ class _EmptySection extends StatelessWidget {
   );
 }
 
-/// The changes page outside a Git repository: what the IDE's Source
-/// Control says, and its Initialize Repository.
+/// The changes page where Git is not at hand: what the IDE's Source Control
+/// says outside a repository.
 class _NoRepository extends StatelessWidget {
-  const _NoRepository({this.onInitialize});
-
-  final VoidCallback? onInitialize;
+  const _NoRepository();
 
   @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            l10n.scmNoRepository,
-            style: TextStyle(
-              fontSize: 12,
-              height: 1.5,
-              color: AppColors.textMuted,
-            ),
-          ),
-          if (onInitialize case final initialize?) ...[
-            const SizedBox(height: 12),
-            IdeButton(
-              label: l10n.scmInitializeRepository,
-              expand: true,
-              onPressed: initialize,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+    child: Text(
+      context.l10n.scmNoRepository,
+      style: TextStyle(fontSize: 12, height: 1.5, color: AppColors.textMuted),
+    ),
+  );
 }
 
 /// The changes page while Git sees no change.
@@ -1992,245 +1995,6 @@ class _NoChanges extends StatelessWidget {
   }
 }
 
-/// A background command's state: running, done or failed.
-class _TaskIcon extends StatelessWidget {
-  const _TaskIcon(this.task, {this.size = 16});
-
-  final KernelTask task;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) => switch (task.status) {
-    CommandStatus.running => Icon(
-      Codicons.terminal,
-      size: size,
-      color: themeColors['icon.foreground'],
-    ),
-    CommandStatus.succeeded => Icon(
-      Codicons.pass,
-      size: size,
-      color: AppColors.added,
-    ),
-    CommandStatus.failed => Icon(
-      Codicons.error,
-      size: size,
-      color: themeColors['errorForeground'],
-    ),
-  };
-}
-
-/// The terminal page's list: the project's terminals (where they can
-/// run), then the agent's background commands, each in a group that
-/// folds; each opens in a tab.
-class _TerminalList extends StatefulWidget {
-  const _TerminalList({
-    required this.shells,
-    required this.tasks,
-    required this.selected,
-    required this.onOpen,
-    this.onNew,
-    this.onKill,
-    this.onStop,
-  });
-
-  /// Null where terminals cannot run.
-  final List<TerminalInstance>? shells;
-  final List<KernelTask> tasks;
-
-  /// The one in front: a terminal, or a command's id.
-  final Object? selected;
-
-  /// Opens a terminal, or a command's output (by its id).
-  final ValueChanged<Object> onOpen;
-  final VoidCallback? onNew;
-  final ValueChanged<TerminalInstance>? onKill;
-  final ValueChanged<KernelTask>? onStop;
-
-  @override
-  State<_TerminalList> createState() => _TerminalListState();
-}
-
-class _TerminalListState extends State<_TerminalList> {
-  final Set<String> _collapsed = {};
-
-  Widget _group(
-    String id,
-    IconData icon,
-    String label,
-    int count, {
-    List<Widget> actions = const [],
-    List<IdeMenuEntry> menu = const [],
-  }) {
-    final collapsed = _collapsed.contains(id);
-    return IdeListRow(
-      key: ValueKey(id),
-      onContextMenu: menu.isEmpty ? null : (position) => _menu(position, menu),
-      onTap: () => setState(() {
-        if (!_collapsed.remove(id)) _collapsed.add(id);
-      }),
-      builder: (context, hovered) => Padding(
-        padding: const EdgeInsets.only(left: 4, right: 8),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 22,
-              child: Icon(
-                collapsed ? Codicons.chevronRight : Codicons.chevronDown,
-                size: 16,
-                color: IdeListColors.foreground,
-              ),
-            ),
-            Icon(icon, size: 16, color: themeColors['icon.foreground']),
-            const SizedBox(width: 6),
-            Expanded(
-              child: IdeResourceLabel(name: label, actions: actions),
-            ),
-            if (count > 0) ...[const SizedBox(width: 4), IdeCountBadge(count)],
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _menu(Offset position, List<IdeMenuEntry> entries) =>
-      unawaited(showIdeMenu(context, position: position, entries: entries));
-
-  Widget _note(String text) => Padding(
-    padding: const EdgeInsets.fromLTRB(26, 4, 8, 4),
-    child: Text(
-      text,
-      style: TextStyle(fontSize: 12, color: IdeListColors.description),
-    ),
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final shells = widget.shells;
-    final tasks = widget.tasks;
-    return ColoredBox(
-      key: const ValueKey('side-panel-terminals'),
-      color: AppColors.code,
-      child: ListenableBuilder(
-        listenable: Listenable.merge([...?shells]),
-        builder: (context, _) => ListView(
-          padding: const EdgeInsets.only(top: 4, bottom: 12),
-          children: [
-            if (shells != null) ...[
-              _group(
-                'terminals',
-                Codicons.terminal,
-                l10n.sidePanelTerminals,
-                shells.length,
-                menu: [
-                  if (widget.onNew case final onNew?)
-                    IdeMenuAction(l10n.termNewTerminal, onSelected: onNew),
-                ],
-                actions: [
-                  if (widget.onNew case final onNew?)
-                    IdeActionButton(
-                      key: const ValueKey('side-panel-new-terminal'),
-                      icon: Codicons.add,
-                      size: 20,
-                      tooltip: l10n.termNewTerminal,
-                      onPressed: onNew,
-                    ),
-                ],
-              ),
-              if (!_collapsed.contains('terminals'))
-                for (final shell in shells)
-                  IdeListRow(
-                    key: ValueKey(('shell', shell)),
-                    selected: identical(shell, widget.selected),
-                    tooltip: shell.title,
-                    onTap: () => widget.onOpen(shell),
-                    onContextMenu: (position) => _menu(position, [
-                      IdeMenuAction(
-                        l10n.termNewTerminal,
-                        enabled: widget.onNew != null,
-                        onSelected: widget.onNew,
-                      ),
-                      if (widget.onKill case final kill?)
-                        IdeMenuAction(
-                          l10n.termKillTerminal,
-                          onSelected: () => kill(shell),
-                        ),
-                    ]),
-                    builder: (context, hovered) => Padding(
-                      padding: const EdgeInsets.only(left: 26, right: 8),
-                      child: Row(
-                        children: [
-                          Icon(
-                            shell.exited ? Codicons.warning : Codicons.terminal,
-                            size: 16,
-                            color: themeColors['icon.foreground'],
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: IdeResourceLabel(
-                              name: shell.title,
-                              actions: [
-                                if (hovered && widget.onKill != null)
-                                  IdeActionButton(
-                                    icon: Codicons.trash,
-                                    size: 20,
-                                    tooltip: l10n.termKillTerminal,
-                                    onPressed: () => widget.onKill!(shell),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-            ],
-            _group(
-              'background-tasks',
-              Codicons.serverProcess,
-              l10n.sidePanelBackgroundTasks,
-              tasks.length,
-            ),
-            if (!_collapsed.contains('background-tasks'))
-              if (tasks.isEmpty)
-                _note(l10n.sidePanelNoTerminals)
-              else
-                for (final task in tasks)
-                  IdeListRow(
-                    key: ValueKey(('task', task.id)),
-                    selected: task.id == widget.selected,
-                    tooltip: task.description,
-                    onTap: () => widget.onOpen(task.id),
-                    onContextMenu: (position) => _menu(position, [
-                      if ((widget.onStop, task.status) case (
-                        final stop?,
-                        CommandStatus.running,
-                      ))
-                        IdeMenuAction(
-                          l10n.chatStop,
-                          onSelected: () => stop(task),
-                        ),
-                    ]),
-                    builder: (context, hovered) => Padding(
-                      padding: const EdgeInsets.only(left: 26, right: 8),
-                      child: Row(
-                        children: [
-                          _TaskIcon(task),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: IdeResourceLabel(name: task.description),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// The title bar's button for the side panel: the layout icon, which
 /// shows whether it is open; its hover Toggle Side Panel's title.
 class SidePanelToggle extends StatelessWidget {
@@ -2253,4 +2017,50 @@ class SidePanelToggle extends StatelessWidget {
     size: size,
     onTap: onTap,
   );
+}
+
+/// The side panel's project as Source Control works on it: its
+/// repositories (a workspace's folders', or those found in the project's
+/// subfolders), the one picked, which are folded; files on its host.
+class _SidePanelScmHost implements IdeScmHost {
+  _SidePanelScmHost(this.view);
+
+  final AgentSidePanelView view;
+
+  @override
+  String get root => view.session.root ?? '';
+
+  @override
+  IdeFileService get files => view.files;
+
+  @override
+  List<(String root, IdeGitRepository git)> get repositories =>
+      view.repositories;
+
+  @override
+  IdeGitRepository? get git => view._git;
+
+  @override
+  void selectRepository(IdeGitRepository git) {
+    final root = view.session.root;
+    if (root == null) return;
+    for (final (folder, of) in view.repositories) {
+      if (identical(of, git)) {
+        view.panel.selectRepository(root, folder);
+        return;
+      }
+    }
+  }
+
+  @override
+  Set<String> get scmCollapsedRepositories => view.panel.scmCollapsedOf(root);
+
+  /// Nothing to read again: a file shown here reads itself anew as it
+  /// changes.
+  @override
+  Future<void> reload(Iterable<String> paths) async {}
+
+  @override
+  Future<void> appendLines(String path, String lines) =>
+      ideAppendLinesToFile(files, path, lines);
 }

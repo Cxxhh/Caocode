@@ -1,0 +1,275 @@
+# Builds the phone app, Android (APK) and iOS (IPA), and puts it on
+# dl.baocode.dev, where baocode.dev/download links to it (/dl/android,
+# /dl/ios). docs/release.md, 10.
+#
+#   git tag mobile-v0.1.0 && git push origin mobile-v0.1.0
+#                           build and publish 0.1.0 (the version of the
+#                           phone app's pubspec.yaml, on its main branch)
+#   git tag mobile-test-foo && git push origin mobile-test-foo
+#                           build, and put both at dl.baocode.dev/test/…,
+#                           to send to testers
+#
+# The phone app is checked out from baocode-dev/mobile beside this one
+# (its pubspec.yaml takes bao_link and bao_editor from ../monad).
+name: Mobile
+
+on:
+  push:
+    tags: ['mobile-*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ startsWith(github.ref, 'refs/tags/mobile-v') && 'mobile-release' || format('mobile-build-{0}', github.run_id) }}
+  cancel-in-progress: false
+
+env:
+  FLUTTER_VERSION: 3.47.5
+
+jobs:
+  check:
+    if: github.repository == 'baocode-dev/baocode'
+    name: Check the version
+    runs-on: ubuntu-latest
+    # The deploy key that reads baocode-dev/mobile is the release
+    # environment's, for mobile-* tags.
+    environment: release
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      marketing: ${{ steps.version.outputs.marketing }}
+      commit: ${{ steps.version.outputs.commit }}
+      publish: ${{ steps.version.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: baocode-dev/mobile
+          ssh-key: ${{ secrets.MOBILE_DEPLOY_KEY }}
+          path: mobile
+      - id: version
+        name: Read the phone app's version, and match the tag against it
+        working-directory: mobile
+        run: |
+          version=$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml)
+          marketing=${version%%+*}
+          echo "pubspec.yaml: $version"
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+\+[0-9]+$ ]]; then
+            echo "::error::$version is not x.y.z+build"
+            exit 1
+          fi
+          publish=false
+          if [[ "$GITHUB_REF_NAME" == mobile-v* ]]; then
+            if [ "$GITHUB_REF_NAME" != "mobile-v$marketing" ]; then
+              echo "::error::Tag $GITHUB_REF_NAME, but the phone app is $version: the tag has to be mobile-v$marketing"
+              exit 1
+            fi
+            publish=true
+          fi
+          {
+            echo "version=$version"
+            echo "marketing=$marketing"
+            # Both builds take this commit, not whatever main is by then.
+            echo "commit=$(git rev-parse HEAD)"
+            echo "publish=$publish"
+          } >> "$GITHUB_OUTPUT"
+
+  android:
+    name: Build for Android
+    needs: check
+    runs-on: ubuntu-latest
+    environment: release
+    env:
+      MARKETING: ${{ needs.check.outputs.marketing }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: monad
+      - uses: actions/checkout@v4
+        with:
+          repository: baocode-dev/mobile
+          ref: ${{ needs.check.outputs.commit }}
+          ssh-key: ${{ secrets.MOBILE_DEPLOY_KEY }}
+          path: mobile
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - name: Put the release key in a file
+        env:
+          ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+        run: |
+          echo "$ANDROID_KEYSTORE" | base64 --decode > "$RUNNER_TEMP/release.jks"
+          echo "BAOCODE_ANDROID_KEYSTORE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+      - name: Build the APK
+        working-directory: mobile
+        env:
+          # One key for every APK published, so that each installs over the
+          # last (android/app/build.gradle.kts).
+          BAOCODE_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          flutter build apk --release
+          mkdir -p ../out
+          cp build/app/outputs/flutter-apk/app-release.apk "../out/BaoCode-$MARKETING-android.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          if-no-files-found: error
+          path: out/BaoCode-*-android.apk
+      - name: Forget the key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.jks"
+
+  ios:
+    name: Build for iOS
+    needs: check
+    runs-on: macos-15
+    environment: release
+    env:
+      MARKETING: ${{ needs.check.outputs.marketing }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: monad
+      - uses: actions/checkout@v4
+        with:
+          repository: baocode-dev/mobile
+          ref: ${{ needs.check.outputs.commit }}
+          ssh-key: ${{ secrets.MOBILE_DEPLOY_KEY }}
+          path: mobile
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - name: Build the IPA
+        working-directory: mobile
+        run: |
+          # Not signed: it is signed as it is installed, with the user's own
+          # Apple ID (AltStore, Sideloadly), as baocode.dev/download says.
+          flutter build ios --release --no-codesign
+          mkdir -p "$RUNNER_TEMP/ipa/Payload" ../out
+          cp -R build/ios/iphoneos/Runner.app "$RUNNER_TEMP/ipa/Payload/"
+          (cd "$RUNNER_TEMP/ipa" && zip -qry "$GITHUB_WORKSPACE/out/BaoCode-$MARKETING-ios.ipa" Payload)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios
+          if-no-files-found: error
+          path: out/BaoCode-*-ios.ipa
+
+  share:
+    name: Put it at dl.baocode.dev/test/ for testers
+    needs: [check, android, ios]
+    if: needs.check.outputs.publish != 'true'
+    runs-on: ubuntu-latest
+    environment: release
+    env:
+      MARKETING: ${{ needs.check.outputs.marketing }}
+      R2_BUCKET: ${{ vars.R2_BUCKET }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      AWS_ENDPOINT_URL: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Upload
+        run: |
+          # R2 knows an .apk's type but not an .ipa's. A file it is given no
+          # type for is sniffed by the browser, which finds the zip inside
+          # the IPA and saves it as .zip: it has to be renamed back before
+          # Sideloadly will take it.
+          content_type() {
+            case ${1##*.} in
+              apk) echo application/vnd.android.package-archive ;;
+              *)   echo application/octet-stream ;;
+            esac
+          }
+          name=$(printf '%s' "${GITHUB_REF_NAME#mobile-test-}" | tr -c 'A-Za-z0-9.-' '-' | sed 's/-*$//')
+          dir="test/mobile-$MARKETING-$name-$GITHUB_RUN_NUMBER"
+          {
+            echo "## For testers: the phone app $MARKETING, \`$GITHUB_REF_NAME\`"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+          for file in dist/BaoCode-*; do
+            name=$(basename "$file")
+            aws s3 cp "$file" "s3://$R2_BUCKET/$dir/$name" --cache-control 'public, max-age=86400' \
+              --content-type "$(content_type "$name")"
+            url="https://dl.baocode.dev/$dir/$name"
+            served=$(curl -fsSI "$url" | tr -d '\r' | awk 'tolower($1) == "content-length:" { print $2 }')
+            [ "$served" = "$(stat -c %s "$file")" ] || { echo "::error::$url is not served as uploaded"; exit 1; }
+            echo "- [$name]($url)" >> "$GITHUB_STEP_SUMMARY"
+          done
+          cat "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    name: Publish to dl.baocode.dev
+    needs: [check, android, ios]
+    if: needs.check.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    environment: release
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+      MARKETING: ${{ needs.check.outputs.marketing }}
+      R2_BUCKET: ${{ vars.R2_BUCKET }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      AWS_ENDPOINT_URL: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Upload the builds
+        run: |
+          # As in the share job: the type R2 has to be told, or a browser
+          # sniffing the IPA saves it as .zip.
+          content_type() {
+            case ${1##*.} in
+              apk) echo application/vnd.android.package-archive ;;
+              *)   echo application/octet-stream ;;
+            esac
+          }
+          for file in dist/BaoCode-*; do
+            aws s3 cp "$file" "s3://$R2_BUCKET/releases/mobile/$MARKETING/$(basename "$file")" \
+              --cache-control 'public, max-age=31536000, immutable' \
+              --content-type "$(content_type "$file")"
+          done
+      - name: Write the manifest, and check the downloads are served
+        run: |
+          # A 0.x version is a beta: the download page says so.
+          beta=false
+          [[ "$MARKETING" == 0.* ]] && beta=true
+          entry() {
+            local file=$1 sha size
+            sha=$(sha256sum "$file" | cut -d' ' -f1)
+            size=$(stat -c %s "$file")
+            jq -n --arg url "https://dl.baocode.dev/releases/mobile/$MARKETING/$(basename "$file")?sha256=${sha:0:16}" \
+              --arg sha "$sha" --argjson size "$size" '{url: $url, size: $size, sha256: $sha}'
+          }
+          jq -n --arg version "$VERSION" --arg date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --argjson beta "$beta" \
+            --argjson android "$(entry dist/BaoCode-$MARKETING-android.apk)" \
+            --argjson ios "$(entry dist/BaoCode-$MARKETING-ios.ipa)" \
+            '{version: $version, pubDate: $date, beta: $beta, downloads: {android: $android, ios: $ios}}' > latest.json
+          cat latest.json
+          jq -r '.downloads[] | "\(.url) \(.size)"' latest.json | while read -r url expected; do
+            served=$(curl -fsSI "$url" | tr -d '\r' | awk 'tolower($1) == "content-length:" { print $2 }')
+            echo "$url: $served bytes (expected $expected)"
+            [ "$served" = "$expected" ] || { echo "::error::$url is not served as uploaded"; exit 1; }
+          done
+      - name: Upload latest.json, last
+        run: |
+          aws s3 cp latest.json "s3://$R2_BUCKET/releases/mobile/latest.json" \
+            --cache-control 'public, max-age=300' --content-type application/json
+          curl -fsS "https://dl.baocode.dev/releases/mobile/latest.json?$GITHUB_RUN_ID" | jq .

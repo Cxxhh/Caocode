@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:bao_remote/local.dart';
@@ -12,6 +13,9 @@ export 'package:bao_remote/local.dart'
 class LocalIdeFileService extends LocalFiles implements IdeFileService {
   LocalIdeFileService(super.root);
 }
+
+/// How many bytes the file at [path] takes.
+Future<int> fileByteSize(String path) => File(path).length();
 
 Future<void> uploadTo(
   IdeFileService files,
@@ -55,7 +59,15 @@ Future<void> downloadFrom(
   IdeHostFiles files,
   List<({String from, String to, bool directory})> items, {
   TransferProgress? onProgress,
+  FileProgress? onFile,
+  Future<void>? cancel,
 }) async {
+  var cancelled = false;
+  unawaited(cancel?.then((_) => cancelled = true));
+  void check() {
+    if (cancelled) throw const TransferCancelledException();
+  }
+
   final folders = <String>[];
   final copies = <({String from, String to})>[];
   Future<void> walk(String from, String to, {required bool directory}) async {
@@ -74,6 +86,7 @@ Future<void> downloadFrom(
   }
 
   for (final (:from, :to, :directory) in items) {
+    check();
     await walk(from, to, directory: directory);
   }
   for (final folder in folders) {
@@ -81,10 +94,59 @@ Future<void> downloadFrom(
   }
   onProgress?.call(0, copies.length);
   for (final (i, (:from, :to)) in copies.indexed) {
-    final file = File(to);
-    await file.parent.create(recursive: true);
-    await file.writeAsBytes(await files.readBytes(from));
+    check();
+    await _download(files, from, to, onFile: onFile, cancel: cancel);
     onProgress?.call(i + 1, copies.length);
+  }
+}
+
+/// How much of a file one request reads: small enough that the agent's
+/// messages on the same connection are not held up long behind it.
+const _rangeLength = 512 * 1024;
+
+/// Writes [from], a file of [files]' host, to [to] here: a stretch at a
+/// time where it can be, nothing left of it when given up or failed.
+Future<void> _download(
+  IdeHostFiles files,
+  String from,
+  String to, {
+  FileProgress? onFile,
+  Future<void>? cancel,
+}) async {
+  final file = File(to);
+  await file.parent.create(recursive: true);
+  if (files is! IdeRangeFiles) {
+    await file.writeAsBytes(await files.readBytes(from));
+    return;
+  }
+  final ranges = files as IdeRangeFiles;
+  var cancelled = false;
+  unawaited(cancel?.then((_) => cancelled = true));
+  final sink = file.openWrite();
+  var done = false;
+  try {
+    var offset = 0;
+    while (true) {
+      if (cancelled) throw const TransferCancelledException();
+      final (:bytes, :size) = await ranges.readRange(
+        from,
+        offset,
+        _rangeLength,
+        cancel: cancel,
+      );
+      if (cancelled) throw const TransferCancelledException();
+      sink.add(bytes);
+      offset += bytes.length;
+      onFile?.call(offset, size);
+      if (bytes.isEmpty || offset >= size) break;
+    }
+    done = true;
+  } on Object {
+    if (cancelled) throw const TransferCancelledException();
+    rethrow;
+  } finally {
+    await sink.close();
+    if (!done) await file.delete().catchError((Object _) => file);
   }
 }
 
@@ -125,7 +187,7 @@ Future<void> saveCopyTo(
   if (text != null) {
     await file.writeAsString(text);
   } else if (files is IdeHostFiles) {
-    await file.writeAsBytes(await files.readBytes(from));
+    await _download(files, from, to);
   } else if (!p.equals(from, to)) {
     await File(from).copy(to);
   }

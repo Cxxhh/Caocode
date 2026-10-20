@@ -176,9 +176,16 @@ class MonacoSyntaxService {
     final a = old.text;
     final b = next.text;
     final shortest = a.length < b.length ? a.length : b.length;
+    // From the edits between them when known, else read.
+    final known = DocumentSnapshot.knownSharedEnds(old, next);
     var prefix = 0;
-    while (prefix < shortest && a.codeUnitAt(prefix) == b.codeUnitAt(prefix)) {
-      prefix++;
+    if (known != null) {
+      prefix = known.$1;
+    } else {
+      while (prefix < shortest &&
+          a.codeUnitAt(prefix) == b.codeUnitAt(prefix)) {
+        prefix++;
+      }
     }
     // A line is shared when its content and newline end within the common
     // prefix, or it is the final line of both texts and they are equal.
@@ -209,11 +216,14 @@ class MonacoSyntaxService {
       prefixLines++;
     }
     var suffix = 0;
-    final maxSuffix = shortest;
-    while (suffix < maxSuffix &&
-        a.codeUnitAt(a.length - suffix - 1) ==
-            b.codeUnitAt(b.length - suffix - 1)) {
-      suffix++;
+    if (known != null) {
+      suffix = known.$2;
+    } else {
+      while (suffix < shortest &&
+          a.codeUnitAt(a.length - suffix - 1) ==
+              b.codeUnitAt(b.length - suffix - 1)) {
+        suffix++;
+      }
     }
     var suffixLines = 0;
     while (suffixLines < old.lineCount - prefixLines &&

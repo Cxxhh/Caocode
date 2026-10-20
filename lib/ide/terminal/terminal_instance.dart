@@ -190,6 +190,7 @@ class TerminalInstance extends ChangeNotifier {
   TerminalInstance({
     required this.id,
     required this.root,
+    this.cwd,
     this.backend = const TerminalBackend(),
     this._columns = 80,
     this._rows = 24,
@@ -361,8 +362,13 @@ class TerminalInstance extends ChangeNotifier {
   /// Its number, from 1 up, as VS Code's `instanceId`.
   final int id;
 
-  /// The folder it starts in, unless [config] says another.
+  /// The folder it starts in, unless [cwd] or [config] says another.
   final String root;
+
+  /// Where it starts, over [root] and under the [config]'s `cwd` (Open in
+  /// Terminal; the file manager's context menu): the folder itself, or the
+  /// folder holding the file that was clicked.
+  final String? cwd;
 
   /// What an extension asked of it; null for the user's.
   TerminalLaunchConfig? get config => _config;
@@ -409,7 +415,7 @@ class TerminalInstance extends ChangeNotifier {
   late final TerminalLinkDetection links = TerminalLinkDetection(
     xterm,
     resolver: TerminalFileLinkResolver(stat: backend.linkStat),
-    initialCwd: root,
+    initialCwd: cwd ?? root,
     workspaceFolders: [root],
     cwdForLine: (line) =>
         _shellIntegration?.commandDetection?.getCwdForLine(line),
@@ -666,7 +672,7 @@ class TerminalInstance extends ChangeNotifier {
         final mutator = environmentMutator;
         // An empty cwd (a debug adapter's `runInTerminal` may send one) is
         // none, as upstream's `getCwd` reads it.
-        final cwd = config?.cwd;
+        final cwd = config?.cwd ?? this.cwd;
         final launch = await backend.launch(
           cwd == null || cwd.isEmpty ? root : cwd,
           columns: _columns,

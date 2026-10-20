@@ -12,6 +12,7 @@ import '../ide/git/repository_scan.dart';
 import '../ide/lsp/language_features.dart';
 import '../ide/terminal/terminal_instance.dart';
 import '../kernel/claude_code/claude_install_progress.dart';
+import '../platform/data_dir.dart';
 import 'project_host.dart';
 import 'remote_binaries.dart';
 import 'remote_location.dart';
@@ -81,6 +82,8 @@ class SshHost extends ChangeNotifier implements ProjectHost {
         list: files(root).list,
         isRepositoryTop: (folder) =>
             remoteGitService(this, folder).isRepositoryTop(),
+        submodulesOf: (folder) =>
+            remoteGitService(this, folder).submodulePaths(),
         paths: paths,
       );
 
@@ -196,6 +199,7 @@ class SshHost extends ChangeNotifier implements ProjectHost {
         SshConnectException(:final failure) => switch (failure) {
           SshFailure.authentication ||
           SshFailure.hostKey ||
+          SshFailure.hostKeyChanged ||
           SshFailure.unsupported ||
           SshFailure.noSsh => true,
           _ => false,
@@ -262,9 +266,15 @@ class SshHost extends ChangeNotifier implements ProjectHost {
 
 /// The hosts of the open remote projects, one connection each.
 class SshHosts extends ChangeNotifier {
-  SshHosts({SshConnector? connect, SshPasswords? passwords})
-    : _connectOverride = connect,
-      passwords = passwords ?? SshPasswords();
+  SshHosts({
+    SshConnector? connect,
+    SshPasswords? passwords,
+    this.configFile,
+    this.configIncludes,
+  }) : _connectOverride = connect,
+       passwords = passwords ?? SshPasswords() {
+    this.passwords.savedIdOf = _savedPasswordId;
+  }
 
   /// The app's; replaced under test.
   static SshHosts instance = SshHosts();
@@ -275,6 +285,104 @@ class SshHosts extends ChangeNotifier {
   final SshPasswords passwords;
   final Map<String, SshHost> _hosts = {};
   Future<SshLauncher>? _launcher;
+
+  /// The servers the user saved in the app (its form), by host: reached
+  /// through the app's ssh config ([configFile]) rather than as typed.
+  Map<String, SshServer> Function() savedServers = () => const {};
+
+  /// Where the ssh config of [savedServers] is written; the data folder's
+  /// when not given.
+  final String? configFile;
+  String get _configFile =>
+      configFile ?? p.join(DataDirectory.current.stateDir, 'ssh_config');
+
+  /// The configs that ssh config includes after the servers: the user's
+  /// `~/.ssh/config` and the system's when not given.
+  final List<String>? configIncludes;
+
+  /// The keychain's name for the password [prompt] asks, where it is that
+  /// of a saved server signed in with one: the host connected to, or the
+  /// one it jumps through, by the `user@host` the prompt names (the host
+  /// connected to when it names none: `Password:`).
+  String? _savedPasswordId(SshPrompt prompt) {
+    final servers = savedServers();
+    final text = prompt.text.toLowerCase();
+    if (!text.contains('password')) return null;
+    final chain = <String>[];
+    for (
+      String? at = prompt.target.text;
+      at != null && servers.containsKey(at) && !chain.contains(at);
+      at = servers[at]!.jump
+    ) {
+      chain.add(at);
+    }
+    for (final host in chain) {
+      final server = servers[host]!;
+      if (server.auth != SshAuth.password) continue;
+      final name = '@${server.hostName.toLowerCase()}';
+      if (text.contains("$name's") || text.contains('$name)')) {
+        return SshPasswords.serverId(host);
+      }
+    }
+    final first = chain.isEmpty ? null : servers[chain.first];
+    return first?.auth == SshAuth.password && !text.contains('@')
+        ? SshPasswords.serverId(chain.first)
+        : null;
+  }
+
+  /// [target] as `ssh` reaches it: a saved server by the app's ssh config
+  /// (written now, all of them, for one to jump through another), else as
+  /// typed.
+  Future<SshTarget> _resolve(SshTarget target, String ssh) async {
+    final servers = savedServers();
+    if (!servers.containsKey(target.text)) return target;
+    final file = File(_configFile);
+    final home =
+        Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+    await file.parent.create(recursive: true);
+    await file.writeAsString(
+      sshServersConfig(
+        servers,
+        ssh: ssh,
+        configFile: file.path,
+        windows: Platform.isWindows,
+        includes:
+            configIncludes ??
+            [
+              if (home != null) p.join(home, '.ssh', 'config'),
+              if (Platform.isWindows)
+                p.join(
+                  Platform.environment['ProgramData'] ?? r'C:\ProgramData',
+                  'ssh',
+                  'ssh_config',
+                )
+              else
+                '/etc/ssh/ssh_config',
+            ],
+      ),
+    );
+    return SshTarget.configured(
+      target.text,
+      destination: sshServerAlias(target.text),
+      configFile: file.path,
+    );
+  }
+
+  /// Forgets the host key known for [host] (see
+  /// [SshLauncher.forgetHostKey]), for the next connection to learn the
+  /// one it has now.
+  Future<void> forgetHostKey(String host) async {
+    final SshLauncher launcher;
+    try {
+      launcher = await (_launcher ??= _makeLauncher());
+    } on Object {
+      _launcher = null;
+      rethrow;
+    }
+    await launcher.forgetHostKey(
+      await _resolve(SshTarget.parse(host), launcher.ssh),
+    );
+  }
 
   /// The host named [host] (connected when first asked for).
   SshHost operator [](String host) => _hosts.putIfAbsent(host, () {
@@ -299,7 +407,10 @@ class SshHosts extends ChangeNotifier {
     final launcher = _launcher ??= _makeLauncher();
     return launcher
         .then(
-          (launcher) => launcher.connect(target, onProgress: onProgress),
+          (launcher) async => launcher.connect(
+            await _resolve(target, launcher.ssh),
+            onProgress: onProgress,
+          ),
           onError: (Object error, StackTrace stack) {
             // Looked for again next time: it may be there by then.
             _launcher = null;
@@ -322,7 +433,14 @@ class SshHosts extends ChangeNotifier {
   }
 
   Future<SshLauncher> _makeLauncher() async {
-    final ssh = findSsh(Platform.environment);
+    final ssh = await chooseSsh(
+      Platform.environment,
+      bundled: p.join(
+        p.dirname(Platform.resolvedExecutable),
+        'openssh',
+        'ssh.exe',
+      ),
+    );
     if (ssh == null) {
       throw const SshConnectException(
         SshFailure.noSsh,

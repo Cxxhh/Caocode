@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../base/smooth_scroll.dart';
 import '../../ide/ide_list.dart';
 import '../../theme/codicons.dart';
 
@@ -213,7 +214,8 @@ class DebugTreeView<T> extends StatelessWidget {
     builder: (context, _) {
       final rows = controller.rows(roots);
       if (rows.isEmpty && empty != null) return empty!;
-      return ListView.builder(
+      return SmoothScrolling(builder: (context, scroll) => ListView.builder(
+        controller: scroll,
         padding: EdgeInsets.zero,
         itemCount: rows.length,
         itemExtent: IdeListColors.rowHeight,
@@ -251,7 +253,7 @@ class DebugTreeView<T> extends StatelessWidget {
             ),
           );
         },
-      );
+      ));
     },
   );
 }

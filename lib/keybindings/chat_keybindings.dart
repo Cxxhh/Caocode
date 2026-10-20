@@ -67,6 +67,10 @@ abstract final class ChatCommandIds {
   /// The side panel at the right of the conversations: the focused
   /// agent's changes and the files opened from its conversation.
   static const toggleSidePanel = 'caocode.chat.toggleSidePanel';
+
+  /// The side panel to the conversations' other side: their left, or
+  /// back to their right.
+  static const toggleSidePanelPosition = 'caocode.chat.toggleSidePanelPosition';
   static const sidePanelChanges = 'caocode.chat.sidePanel.changes';
   static const sidePanelFiles = 'caocode.chat.sidePanel.files';
   static const sidePanelTerminal = 'caocode.chat.sidePanel.terminal';
@@ -88,6 +92,9 @@ abstract final class ChatCommandIds {
   static const renameAgent = 'caocode.chat.renameAgent';
   static const closeSubagent = 'caocode.chat.closeSubagent';
 
+  /// Find in the conversation shown (see ChatFind).
+  static const find = 'caocode.chat.find';
+
   // Its input's (see ChatComposer).
   static const submit = 'workbench.action.chat.submit';
   static const cancelEdit = 'workbench.edit.chat.cancel';
@@ -98,6 +105,7 @@ abstract final class ChatCommandIds {
   static const nextMode = 'caocode.chat.nextMode';
   static const openModelPicker = 'workbench.action.chat.openModelPicker';
   static const attachContext = 'workbench.action.chat.attachContext';
+  static const pasteRaw = 'caocode.chat.pasteRaw';
   static const selectNextSuggestion = 'caocode.chat.selectNextSuggestion';
   static const selectPrevSuggestion = 'caocode.chat.selectPrevSuggestion';
   static const acceptSelectedSuggestion =
@@ -187,6 +195,7 @@ final List<CommandInfo> chatExtraCommands = [
     (ChatCommandIds.searchAgents, 'Search Agents'),
     (ChatCommandIds.openIde, 'Open in Fast Ide'),
     (ChatCommandIds.toggleSidePanel, 'Toggle Side Panel'),
+    (ChatCommandIds.toggleSidePanelPosition, 'Toggle Side Panel Position'),
     (ChatCommandIds.sidePanelChanges, 'Show Agent Changes'),
     (ChatCommandIds.sidePanelFiles, 'Show Agent Files'),
     (ChatCommandIds.sidePanelTerminal, 'Show Agent Terminals'),
@@ -200,6 +209,7 @@ final List<CommandInfo> chatExtraCommands = [
     (ChatCommandIds.toggleContextPanel, 'Toggle Context Panel'),
     (ChatCommandIds.renameAgent, 'Rename Agent'),
     (ChatCommandIds.closeSubagent, 'Back from Subagent'),
+    (ChatCommandIds.find, 'Find in Chat'),
     (ChatCommandIds.submit, 'Send'),
     (ChatCommandIds.cancelEdit, 'Cancel Edit'),
     (ChatCommandIds.showPreviousPrompt, 'Show Previous Prompt'),
@@ -209,6 +219,7 @@ final List<CommandInfo> chatExtraCommands = [
     (ChatCommandIds.nextMode, 'Switch to Next Mode'),
     (ChatCommandIds.openModelPicker, 'Open Model Picker'),
     (ChatCommandIds.attachContext, 'Add Context…'),
+    (ChatCommandIds.pasteRaw, 'Paste as Plain Text'),
     (ChatCommandIds.selectNextSuggestion, 'Select Next Suggestion'),
     (ChatCommandIds.selectPrevSuggestion, 'Select Previous Suggestion'),
     (ChatCommandIds.acceptSelectedSuggestion, 'Accept Selected Suggestion'),
@@ -448,6 +459,13 @@ final List<KeybindingEntry> chatExtraKeybindings = [
     command: ChatCommandIds.skipTool,
     when: _tool,
   ),
+  // As the editor's Find, over the conversation shown.
+  const KeybindingEntry(
+    key: 'ctrl+f',
+    mac: 'cmd+f',
+    command: ChatCommandIds.find,
+    when: ChatContextKeys.inChat,
+  ),
   const KeybindingEntry(
     key: 'escape',
     command: ChatCommandIds.closeSubagent,
@@ -513,6 +531,15 @@ final List<KeybindingEntry> chatExtraKeybindings = [
     key: 'ctrl+/',
     mac: 'cmd+/',
     command: ChatCommandIds.attachContext,
+    when: _input,
+  ),
+  // Paste the clipboard as plain text, past the long-paste tag (⇧⌘V/⇧Ctrl+V,
+  // as a terminal's Paste on Windows); the plain ⌘V/Ctrl+V keeps its tags.
+  const KeybindingEntry(
+    win: 'ctrl+shift+v',
+    mac: 'shift+cmd+v',
+    linux: 'ctrl+shift+v',
+    command: ChatCommandIds.pasteRaw,
     when: _input,
   ),
   // The @ and / menu's, after the input's: where both hold, they win.

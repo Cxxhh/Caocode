@@ -192,6 +192,16 @@ List<JsoncEdit> modifyJsonc(
   return change.result();
 }
 
+/// `format`: the edits that lay [text] out as VS Code's JSON formatter
+/// does, the lines from [start] to [end] (the whole text by default). None
+/// past where it stops being JSON.
+List<JsoncEdit> formatJsonc(
+  String text, {
+  int start = 0,
+  int? end,
+  JsoncFormatting options = const JsoncFormatting(),
+}) => _format(text, start, end ?? text.length, options);
+
 /// [text] with [edits] made; they must not overlap.
 String applyJsoncEdits(String text, List<JsoncEdit> edits) {
   // Stable: edits at one offset are made in the order given.

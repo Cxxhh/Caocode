@@ -9,6 +9,7 @@ import '../../claude/claude_environment.dart';
 import '../lsp_server_definition.dart';
 import 'archive.dart';
 import 'install_io.dart';
+import 'jdtls_launcher.dart';
 import 'mason_install_plan.dart';
 import 'mason_platform.dart';
 import 'mason_registry.dart';
@@ -138,6 +139,7 @@ class MasonServerProvider implements LspServerProvider {
       final relative = manifest?.bin[command];
       if (relative == null) continue;
       final path = p.join(packageDirectory(package), relative);
+      if (package == 'jdtls') await _updateLauncher(path);
       if (await _isExecutable(path)) return LspServerFound(path);
     }
     final package =
@@ -312,10 +314,15 @@ class MasonServerProvider implements LspServerProvider {
             'private': true,
           }),
         );
+        final (npm, npmArguments) = await npmCommand(
+          tools['npm']!,
+          tools['node']!,
+        );
         await _command(
           'npm install',
-          tools['npm']!,
+          npm,
           [
+            ...npmArguments,
             'install',
             '--prefix',
             directory,
@@ -467,9 +474,32 @@ class MasonServerProvider implements LspServerProvider {
     return bins;
   }
 
+  /// jdtls installed before it ran with java directly: its wrapper ran
+  /// mason's Python script. Written over with today's.
+  Future<void> _updateLauncher(String path) async {
+    final launcher = jdtlsLauncher(windows: platform.isWindows);
+    final file = File(path);
+    try {
+      if (!await file.exists() || await file.readAsString() == launcher) {
+        return;
+      }
+      await file.writeAsString(launcher);
+      await makeExecutable(
+        [path],
+        runner: _runner,
+        windows: platform.isWindows,
+      );
+    } on FileSystemException {
+      // Left as it was.
+    }
+  }
+
   /// A script that runs [bin] with its runtime, finding the package folder
   /// from its own location so the install can move.
   String _wrapper(MasonBin bin) {
+    if (bin.launcher == 'jdtls') {
+      return jdtlsLauncher(windows: platform.isWindows);
+    }
     final runtime = bin.runtime!;
     final args = bin.runtimeArgs ?? const [];
     if (platform.isWindows) {
@@ -501,16 +531,36 @@ class MasonServerProvider implements LspServerProvider {
     ].join('\n');
   }
 
+  /// How to run [npm]: on Windows its `npm-cli.js` with [node] when it is
+  /// beside `npm.cmd`, as that is all `npm.cmd` does, and `cmd.exe` drops
+  /// the quotes of a command line where both npm's path (`C:\Program
+  /// Files\nodejs`) and an argument (a user name with a space) have them.
+  Future<(String, List<String>)> npmCommand(String npm, String node) async {
+    if (platform.isWindows) {
+      final script = p.join(
+        p.dirname(npm),
+        'node_modules',
+        'npm',
+        'bin',
+        'npm-cli.js',
+      );
+      if (await File(script).exists()) return (node, [script]);
+    }
+    return (npm, const <String>[]);
+  }
+
   /// [command] on [environment]'s PATH (with `PATHEXT` on Windows).
+  ///
+  /// On Windows a bare name only matches with a `PATHEXT` extension, as in
+  /// `cmd.exe`: Node installs (nvm-windows among them) put a Bash script
+  /// `npm` beside `npm.cmd`, and Windows cannot start that script.
   Future<String?> which(String command, Map<String, String> environment) async {
     final path = environment['PATH'] ?? environment['Path'] ?? '';
-    final extensions = platform.isWindows
-        ? [
-            '',
-            ...(environment['PATHEXT'] ?? '.COM;.EXE;.BAT;.CMD')
-                .split(';')
-                .where((extension) => extension.isNotEmpty),
-          ]
+    final extensions = platform.isWindows && p.extension(command).isEmpty
+        ? (environment['PATHEXT'] ?? '.COM;.EXE;.BAT;.CMD')
+              .split(';')
+              .where((extension) => extension.isNotEmpty)
+              .toList()
         : const [''];
     for (final directory in path.split(platform.isWindows ? ';' : ':')) {
       if (directory.isEmpty) continue;

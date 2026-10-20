@@ -7,7 +7,9 @@ import '../../theme/workbench_theme.dart' show themeColors;
 import '../chat_models.dart';
 import '../floating/hover_tooltip.dart';
 import '../side_panel/file_link.dart';
+import '../side_panel/file_link_menu.dart';
 import '../side_panel/file_open.dart';
+import 'content_image.dart';
 import 'hover_builder.dart';
 import 'step_header.dart';
 
@@ -27,6 +29,8 @@ class ToolCallRow extends StatelessWidget {
     this.label,
     this.status = ToolStatus.succeeded,
     this.output,
+    this.images = const [],
+    this.imageFiles = const [],
     this.expanded = false,
     this.onToggle,
     this.onSetGoal,
@@ -40,6 +44,17 @@ class ToolCallRow extends StatelessWidget {
   final String? label;
   final ToolStatus status;
   final String? output;
+
+  /// The pictures it returned (an image file read, a screenshot), shown
+  /// under what it said as they are.
+  final List<ImageAttachment> images;
+
+  /// Where the CLI saved them (see [ToolCallItem.imageFiles]).
+  final List<String> imageFiles;
+
+  List<ChatImage> get _images => status == ToolStatus.failed
+      ? const []
+      : chatImagesOf(images, imageFilesOf(kind, path, imageFiles));
   final bool expanded;
   final VoidCallback? onToggle;
 
@@ -53,7 +68,7 @@ class ToolCallRow extends StatelessWidget {
     _ => null,
   };
 
-  bool get _opens => results.isNotEmpty || _shown != null;
+  bool get _opens => results.isNotEmpty || _shown != null || images.isNotEmpty;
 
   /// The file read or written, where the chat's files open (see
   /// [FileOpenScope]) and it is in the project.
@@ -94,6 +109,10 @@ class ToolCallRow extends StatelessWidget {
         ToolKind.goal => Icon(Icons.flag_outlined, size: 15, color: _amber),
         _ => null,
       },
+      trailingGap: 0,
+      trailing: images.isEmpty || status == ToolStatus.failed
+          ? null
+          : StepThumbnails(images: _images, shown: !expanded),
       action: switch ((kind, _shown, onSetGoal)) {
         (ToolKind.goal, final condition?, final set?) when !_running =>
           _SetGoalButton(onTap: () => set(condition)),
@@ -104,11 +123,21 @@ class ToolCallRow extends StatelessWidget {
     if (kind == ToolKind.read && path != null) {
       header = HoverTooltip(content: _pathTooltip, child: header);
     }
+    if (file != null) {
+      header = FileLinkMenuRegion(
+        menu: files!.menuFor(
+          file.path,
+          () => files.onOpen(file),
+          context: context,
+        ),
+        child: header,
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         header,
-        if (expanded && _opens)
+        if (expanded && (results.isNotEmpty || _shown != null))
           StepBody(
             child: results.isNotEmpty && files != null
                 ? _Results(results: results, files: files)
@@ -117,6 +146,7 @@ class ToolCallRow extends StatelessWidget {
                     style: stepMono,
                   ),
           ),
+        if (expanded && images.isNotEmpty) ToolImages(images: _images),
       ],
     );
   }
@@ -221,7 +251,13 @@ String toolVerb(
           ? s.toolQuestionSkipped
           : s.toolAsked,
     ToolKind.goal => running ? s.toolProposingGoal : s.toolProposedGoal,
-    ToolKind.other => running ? s.toolUsing : s.toolUsed,
+    ToolKind.image =>
+      running
+          ? s.toolGeneratingImage
+          : status == ToolStatus.succeeded
+          ? s.toolGeneratedImage
+          : s.toolImageFailed,
+    ToolKind.browser || ToolKind.other => running ? s.toolUsing : s.toolUsed,
   };
 }
 

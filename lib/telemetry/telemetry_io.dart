@@ -12,11 +12,9 @@ import 'telemetry_service.dart';
 const telemetryUrlVariable = 'CAOCODE_TELEMETRY_URL';
 
 /// What the app reports with where it runs; null where it reports nothing:
-/// a debug build (unless [telemetryUrlVariable] is set), or `DO_NOT_TRACK`
-/// set in the environment.
+/// a debug build (unless [telemetryUrlVariable] is set).
 PlatformTelemetry? platformTelemetry() {
   final environment = Platform.environment;
-  if (doNotTrack(environment[doNotTrackVariable])) return null;
   final override = environment[telemetryUrlVariable]?.trim() ?? '';
   if (!kReleaseMode && override.isEmpty) return null;
   final url = Uri.tryParse(
@@ -32,16 +30,6 @@ PlatformTelemetry? platformTelemetry() {
     sender: IoTelemetrySender(userAgent: 'Caocode/$currentAppVersion ($os)'),
   );
 }
-
-/// The convention (consoledonottrack.com): any value but empty, `0` or
-/// `false` asks for no telemetry.
-const doNotTrackVariable = 'DO_NOT_TRACK';
-
-@visibleForTesting
-bool doNotTrack(String? value) => switch (value?.trim().toLowerCase()) {
-  null || '' || '0' || 'false' => false,
-  _ => true,
-};
 
 /// `arm64`, `x64`, …: [abi]'s processor (`macos_arm64` → `arm64`).
 String abiArch(Abi abi) => '$abi'.split('_').last;

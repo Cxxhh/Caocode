@@ -8,17 +8,24 @@ import 'package:flutter/services.dart' show ServicesBinding, rootBundle;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:path/path.dart' as p;
+import 'package:bao_editor/textmate/textmate_syntax.dart';
 
 import 'package:bao_editor/monaco/flutter/language_assets.dart';
 
+import 'browser/browser_bridge.dart';
+import 'browser/browser_tools.dart' show BrowserHistory;
+import 'chat/composer/composer_files.dart' show ComposerFile, pastedAsPicture;
 import 'chat/chat_width.dart';
+import 'chat/reply_scroll.dart';
 import 'chat/user_message_style.dart';
 import 'chat/widgets/chat_minimap.dart';
 import 'chat/widgets/pixel_loader.dart';
+import 'chat/widgets/turn_footer.dart' show LiveTurnStatsSetting;
 import 'customize/customization_store.dart';
 import 'extensions/theme_extensions.dart';
 import 'ide/git/git_repository.dart';
 import 'ide/git/repository_scan.dart';
+import 'ide/language_mode.dart';
 import 'ide/lsp/language_features.dart';
 import 'ide/lsp/lsp_process.dart';
 import 'ide/lsp/packs/language_packs.dart';
@@ -32,7 +39,14 @@ import 'icons/site_icons.dart';
 import 'kernel/codex/codex_path_setting.dart';
 import 'kernel/codex/codex_config_setting.dart';
 import 'kernel/codex/codex_process.dart';
+import 'kernel/claude_code/claude_code_kernel.dart';
+import 'kernel/claude_code/turn_stats_stub.dart'
+    if (dart.library.io) 'kernel/claude_code/turn_stats_io.dart'
+    show turnStatsIn;
 import 'kernel/commit_attribution.dart';
+import 'kernel/prompt_suggestions.dart';
+import 'chat/composer/composer_polish.dart' show ComposerPolishSetting;
+import 'kernel/queued_messages.dart';
 import 'keybindings/keybindings_sync.dart';
 import 'link/link_host.dart';
 import 'keybindings/keymap.dart';
@@ -42,6 +56,7 @@ import 'models/featured_upstreams.dart';
 import 'models/model_icons.dart';
 import 'models/model_providers.dart';
 import 'models/model_runtime.dart';
+import 'models/model_welcome.dart';
 import 'network/network_proxy.dart';
 import 'notifications/attention_host.dart';
 import 'notifications/attention_settings.dart';
@@ -55,16 +70,34 @@ import 'remote/remote_claude.dart';
 import 'remote/ssh_host.dart';
 import 'search/codex_conversation_search.dart';
 import 'search/conversation_search.dart';
+import 'channel/account/account_send.dart';
+import 'channel/account/channel_account.dart';
+import 'channel/channel_gate.dart';
+import 'channel/channel_setup.dart';
+import 'channel/channel_setup_platform.dart';
 import 'settings/app_locale.dart';
 import 'settings/app_settings.dart';
 import 'settings/data_dir_startup.dart';
 import 'settings/user_settings.dart';
+import 'sidebar/sidebar_times.dart';
 import 'telemetry/telemetry_platform.dart';
+import 'stash/stash_editor.dart' show StashEditor;
+import 'forge/forge_accounts.dart';
+import 'forge/forge_io_stub.dart'
+    if (dart.library.io) 'forge/forge_io.dart'
+    show IoForgeHttp;
+import 'stash/stash_controller.dart';
+import 'stash/stash_forge.dart';
+import 'stash/stash_disk.dart';
+import 'stash/stash_panel_view.dart';
+import 'stash/stash_settings.dart';
+import 'stash/stash_store.dart';
 import 'telemetry/telemetry_service.dart';
 import 'telemetry/telemetry_store.dart';
 import 'theme/app_theme.dart';
 import 'theme/code_font.dart';
 import 'theme/pixel_snapped_text_scaler.dart';
+import 'theme/ui_zoom.dart';
 import 'theme/workbench_theme.dart';
 import 'update/update_controller.dart';
 import 'update/update_platform.dart';
@@ -124,6 +157,7 @@ Future<void> _startApplication(
   final files = kIsWeb ? null : SettingsFiles.instance;
   startup.stage = '加载用户设置';
   await files?.load();
+  if (files != null) keepLanguageModes(files.storage);
   files?.watch();
   if (files != null) {
     // Settings → Network: the proxy every request and Claude Code go
@@ -142,8 +176,37 @@ Future<void> _startApplication(
         CodexPathSetting.parse(files.settings[CodexPathSetting.settingKey]);
     CodexConfigSetting.current = () =>
         CodexConfigSetting.parse(files.settings[CodexConfigSetting.settingKey]);
+    // Read as each message is sent.
+    QueuedMessages.current = () =>
+        QueuedMessages.parse(files.settings[QueuedMessages.settingKey]);
+    // Read as each agent starts, and as each message is sent.
+    PromptSuggestions.current = () =>
+        PromptSuggestions.enabled(files.settings[PromptSuggestions.settingKey]);
+    // The composer's Polish button, shown or not as it changes.
+    ComposerPolishSetting.current = () => ComposerPolishSetting.enabled(
+      files.settings[ComposerPolishSetting.settingKey],
+    );
+    ComposerPolishSetting.changes = files.settings;
+    // The turn under way's line of figures, shown or not as it changes.
+    LiveTurnStatsSetting.current = () => LiveTurnStatsSetting.enabled(
+      files.settings[LiveTurnStatsSetting.settingKey],
+    );
+    LiveTurnStatsSetting.changes = files.settings;
     // Settings → Models: the upstreams, kept in settings.json.
     ModelProviders.current = ModelProviders.settings(files.settings);
+    // Claude Code's own models as it last listed them: in the picker
+    // before a session on them starts.
+    ClaudeCodeKernel.modelCache = files.storage;
+    // Whether the welcome to setting a model up has shown by itself.
+    ModelWelcome.storage = files.storage;
+    // The channel build's first start: set up before anything else shows.
+    await _beginChannelSetup(files);
+    _openChannelGate(files);
+    // What each turn took and spent, for its footer when the session is
+    // opened again: in the data folder, a file per session.
+    ClaudeCodeKernel.turnStats = turnStatsIn(
+      p.join(DataDirectory.current.path, 'turn-stats'),
+    );
     // The upstreams' sites' icons, for those that show no other: in the
     // cache, fetched as soon as one is added.
     SiteIcons.current = SiteIcons(
@@ -167,11 +230,31 @@ Future<void> _startApplication(
       files.settings,
       () => files.settings[UserMessageStyle.settingKey],
     );
+    // Settings → Appearance: where a conversation stays as a reply comes.
+    ReplyScroll.keep(
+      files.settings,
+      () => files.settings[ReplyScroll.settingKey],
+    );
     // Settings → Appearance: whether the conversation has a minimap, how
     // opaque its glass is and how much it stretches.
     ChatMinimap.follow(files.settings, (key) => files.settings[key]);
     // Settings → Appearance: what an agent and a subagent show running.
     PixelLoaderRole.follow(files.settings, (key) => files.settings[key]);
+    // Settings → Appearance: whether the sidebar's agents show their times.
+    SidebarTimes.follow(
+      files.settings,
+      () => files.settings[SidebarTimes.settingKey],
+    );
+    // Settings → Browser: whether the agents may use the user's browsers.
+    BrowserBridge.instance.follow(
+      files.settings,
+      () => files.settings[BrowserBridge.settingKey],
+    );
+    // Settings → Browser: whether the history keeps bodies and steps too.
+    BrowserHistory.instance.follow(
+      files.settings,
+      () => files.settings[BrowserHistory.detailedKey],
+    );
     // Settings → Appearance: the code's font, size and ligatures, and the
     // window's text size.
     CodeFont.follow(files.settings, (key) => files.settings[key]);
@@ -195,11 +278,14 @@ Future<void> _startApplication(
     l10n: () =>
         lookupAppLocalizations(locale.locale ?? AppLocale.systemLocale()),
   )..load();
+  // Claude Code's skills, agents, commands, rules, servers, hooks and
+  // plugins: the Customize view beside the chat, and Settings → Customize.
+  final CustomizationStore? customizations = null;
   // The phones paired with this computer (Settings → Mobile): listening
   // for them, if they are allowed to connect.
   final link = kIsWeb
       ? null
-      : LinkHost(workspace: workspace, customizations: CustomizationStore());
+      : LinkHost(workspace: workspace, customizations: customizations);
   unawaited(link?.load());
   // The first frame is in the kept theme, restored from storage as VS Code
   // does before the workbench shows; its file is read after. The setting
@@ -233,6 +319,43 @@ Future<void> _startApplication(
   );
   await windows.start();
   startup.stage = '恢复启动布局';
+  // The stash (docs/stash.md): its shortcut works from any app, its panel
+  // made hidden a moment after the windows, to show at once.
+  if (files != null) {
+    final store = StashStore.current = StashStore(
+      StashDisk.files(StashSettings.parse(files.settings.values).directory),
+    );
+    // Its pictures, copied out of it, go into a message as pictures.
+    pastedAsPicture = (path) =>
+        p.isWithin(store.root, path) && ComposerFile(path).maybeImage;
+    // Its code blocks in the editor's colors, by TextMate (started as the
+    // first is shown).
+    TextMateSyntax? stashSyntax;
+    StashEditor.colorize = (language, code) => (stashSyntax ??= TextMateSyntax(
+      themes: WorkbenchThemeService.instance,
+    )).colorize(language, code);
+    final stash = StashController.current = StashController(
+      store: store,
+      workspace: workspace,
+      windows: windows,
+      settings: () => files.settings.values,
+      updateSetting: files.settings.update,
+      settingsChanges: files.settings,
+      cacheDir: DataDirectory.current.cacheDir,
+      storage: files.storage,
+      // Codex owns its skills; starting Caocode must not edit Claude's setup.
+      installSkill: false,
+      // The user's GitHub and GitLab accounts: their tokens in the
+      // keychain, the rest in the global storage.
+      accounts: ForgeAccounts.current = ForgeAccounts(
+        http: IoForgeHttp(),
+        read: () => files.storage.get<List<Object?>>(forgeAccountsKey),
+        write: (json) => files.storage.set(forgeAccountsKey, json),
+      ),
+    );
+    StashForge.current = stash.forge;
+    unawaited(stash.start());
+  }
   // What shows at launch (settings.json's `workbench.mainWindow`): with
   // windows of the IDE's own, the chat's and those to open again; with
   // the IDE in the main window, its layout. Started for something (Open
@@ -369,14 +492,76 @@ UpdateController? _startUpdates(SettingsFiles files) {
   );
 }
 
-/// The app's usage data (lib/telemetry/): once a UTC day it is in front,
-/// as settings.json's `telemetry.telemetryLevel` allows. None in a debug
-/// build, or with `DO_NOT_TRACK` set.
+/// The channel build's first start (lib/channel/): to set up while it is
+/// pending, for the windows to show. The install's id made now, to give
+/// the page, and kept before the telemetry would make its own.
+Future<void> _beginChannelSetup(SettingsFiles files) async {
+  if (kIsWeb) return;
+  final store = GlobalChannelSetupStore(files.storage);
+  if (!ChannelSetup.begin(store)) return;
+  var id = GlobalTelemetryStore(files.storage).installId;
+  if (id == null) {
+    id = TelemetryService.randomInstallId();
+    await files.storage
+        .set(GlobalTelemetryStore.installIdKey, id)
+        .catchError(
+          (Object error) => debugPrint('install id not kept: $error'),
+        );
+  }
+  ChannelSetup.current = _channelSetup(store, id);
+}
+
+ChannelSetup _channelSetup(
+  ChannelSetupStore store,
+  String installId, {
+  String? again,
+}) => ChannelSetup(
+  store: store,
+  installId: installId,
+  again: again,
+  lookUp: lookUpChannel,
+  open: (url) => openExternal('$url'),
+);
+
+/// The channel build's way in (lib/channel/): set up, then signed in to
+/// its channel's account site, whose key is its only upstream.
+void _openChannelGate(SettingsFiles files) {
+  if (kIsWeb || !ChannelSetup.channelBuild) return;
+  final accounts = GlobalChannelAccountStore(files.storage);
+  final setupStore =
+      ChannelSetup.current?.store ?? GlobalChannelSetupStore(files.storage);
+  ChannelGate.current = ChannelGate(
+    setup: ChannelSetup.current,
+    setupStore: setupStore,
+    accountStore: accounts,
+    fetch: channelEntry,
+    // Its link opened, the setup asking takes it (workbench.dart).
+    makeSetupAgain: () => ChannelSetup.current = _channelSetup(
+      setupStore,
+      GlobalTelemetryStore(files.storage).installId ??
+          TelemetryService.randomInstallId(),
+      again: TelemetryService.randomInstallId(),
+    ),
+    makeAccount: (channel) => ChannelAccount(
+      site: channel.info.account!,
+      channelName: channel.info.name,
+      store: accounts,
+      send: sendToAccountSite,
+      listModels: listUpstreamModels,
+    ),
+  );
+}
+
+/// The app's usage data (lib/telemetry/): once a UTC day it is in front.
+/// None in a debug build.
 void _startTelemetry(SettingsFiles files) {
   const enabled = bool.fromEnvironment('CAOCODE_ENABLE_UPSTREAM_SERVICES');
   if (!enabled) return;
   final platform = platformTelemetry();
   if (platform == null) return;
+  // The setup's, read back as it was set.
+  final channel =
+      ChannelSetup.current?.store ?? GlobalChannelSetupStore(files.storage);
   bool inFront() => switch (WidgetsBinding.instance.lifecycleState) {
     null || AppLifecycleState.resumed => true,
     _ => false,
@@ -387,11 +572,12 @@ void _startTelemetry(SettingsFiles files) {
     arch: platform.arch,
     sender: platform.sender,
     url: platform.url,
-    enabled: () =>
-        TelemetrySetting.enabled(files.settings[TelemetrySetting.settingKey]),
-    settingsChanges: files.settings,
     store: GlobalTelemetryStore(files.storage),
-    inFront: inFront,
+    inFront: () =>
+        inFront() &&
+        TelemetrySetting.enabled(files.settings[TelemetrySetting.settingKey]),
+    edition: () => ChannelSetup.editionOf(channel),
+    attribution: () => channel.attribution?.toJson(),
   )..start();
   // Back in front: a new day, if it is one. For the app's whole run.
   AppLifecycleListener(onResume: telemetry.markActive);
@@ -582,6 +768,7 @@ class _CaocodeAppState extends State<CaocodeApp> {
                         _windows.chat,
                         ..._windows.ideWindows,
                         ..._windows.agentWindows,
+                        ?_windows.stash,
                       ])
                         if (_windows.host.viewOf(window.viewId)
                             case final view?)
@@ -608,20 +795,28 @@ class _CaocodeAppState extends State<CaocodeApp> {
     builder: (context, child) => ValueListenableBuilder<int>(
       valueListenable: CodeFont.uiScale,
       builder: (context, percent, scaled) {
-        final media = MediaQuery.of(context);
+        // The whole window is zoomed, not its text alone: its fixed heights,
+        // icons and gaps grow with the text they hold.
+        final zoom = percent / 100;
+        final media = UiZoom.zoomed(MediaQuery.of(context), zoom);
+        // The traffic lights, level with the title bar as it grows.
+        WindowControls.setTitleBarDrop(
+          AppMetrics.titleBarHeight * (zoom - 1) / 2,
+          viewId: window.viewId,
+        );
         // Windows blurs glyphs drawn at a fractional pixel size.
         TextScaler snapped(TextScaler scaler) => AppPlatform.isWindows
             ? PixelSnappedTextScaler(scaler, media.devicePixelRatio)
             : scaler;
+        final system = media.textScaler;
         return SystemTextScale(
-          scaler: snapped(media.textScaler),
+          // Code at its own size: the zoom taken back off.
+          scaler: snapped(
+            zoom == 1 ? system : TextScaler.linear(system.scale(1) / zoom),
+          ),
           child: MediaQuery(
-            data: media.copyWith(
-              textScaler: snapped(
-                TextScaler.linear(media.textScaler.scale(1) * percent / 100),
-              ),
-            ),
-            child: scaled!,
+            data: media.copyWith(textScaler: snapped(system)),
+            child: UiZoom(scale: zoom, child: scaled),
           ),
         );
       },
@@ -636,19 +831,27 @@ class _CaocodeAppState extends State<CaocodeApp> {
       GlobalWidgetsLocalizations.delegate,
       FlutterQuillLocalizations.delegate,
     ],
-    home: Workbench(
-      key: ValueKey((window.viewId, window.generation)),
-      workspace: _workspace,
-      windows: _windows,
-      window: window,
-      languagesFor: widget.languagesFor,
-      themeExtensions: widget.themeExtensions,
-      gitFor: widget.gitFor,
-      repositoriesIn: widget.repositoriesIn,
-      terminalBackend: widget.terminalBackend,
-      settings: _settings,
-      conversations: widget.conversations ?? const NoConversationSearch(),
-      customizations: widget.customizations,
-    ),
+    home: window.isStash
+        ? Material(
+            type: MaterialType.transparency,
+            child: StashPanelView(
+              controller: StashController.current!,
+              viewId: window.viewId,
+            ),
+          )
+        : Workbench(
+            key: ValueKey((window.viewId, window.generation)),
+            workspace: _workspace,
+            windows: _windows,
+            window: window,
+            languagesFor: widget.languagesFor,
+            themeExtensions: widget.themeExtensions,
+            gitFor: widget.gitFor,
+            repositoriesIn: widget.repositoriesIn,
+            terminalBackend: widget.terminalBackend,
+            settings: _settings,
+            conversations: widget.conversations ?? const NoConversationSearch(),
+            customizations: widget.customizations,
+          ),
   );
 }

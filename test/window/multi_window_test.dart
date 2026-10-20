@@ -45,7 +45,8 @@ Future<(AppWindows, FakeWindowHost, Workspace)> _pumpApp(
     host: host,
     workspace: workspace,
     l10n: () => englishLocalizations,
-    settings: settings,
+    settings:
+        settings ?? () => const WindowSettings(ideWindows: IdeWindows.separate),
     isDirectory: (path) async => true,
     nextFrame: () => tester.binding.endOfFrame,
   );
@@ -267,7 +268,7 @@ void main() {
 
   _testWindows('window.ideWindows switched: the IDE moves into the main '
       'window, and back to a window of its own', (tester) async {
-    var settings = const WindowSettings();
+    var settings = const WindowSettings(ideWindows: IdeWindows.separate);
     final (windows, host, _) = await _pumpApp(tester, settings: () => settings);
     final window = await _open(tester, windows, '~/code/caocode');
 
@@ -283,7 +284,7 @@ void main() {
     expect(_inView(0, find.byType(IdeWorkbench)), findsOneWidget);
     expect(windows.chat.delegate!.ideSpace!.root, '~/code/caocode');
 
-    settings = const WindowSettings();
+    settings = const WindowSettings(ideWindows: IdeWindows.separate);
     windows.settingsChanged();
     for (var i = 0; i < 6; i++) {
       await tester.pump();

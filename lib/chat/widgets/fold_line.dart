@@ -6,6 +6,7 @@ import '../../theme/workbench_theme.dart' show themeColors;
 import '../chat_models.dart';
 import '../step_folds.dart';
 import 'agent_step.dart';
+import 'content_image.dart';
 import 'step_header.dart';
 
 /// A run of quick steps, folded: "Read 3 files, ran 2 commands", the
@@ -17,11 +18,15 @@ class StepsFoldLine extends StatelessWidget {
     required this.tally,
     required this.expanded,
     required this.onToggle,
+    this.images = const [],
   });
 
   final StepTally tally;
   final bool expanded;
   final VoidCallback onToggle;
+
+  /// The steps' pictures (see [foldImages]), small after the line.
+  final List<ChatImage> images;
 
   /// What the steps did, each phrase with its count in it.
   static List<(String, int)> _actions(StepTally tally, AppLocalizations l10n) {
@@ -35,6 +40,7 @@ class StepsFoldLine extends StatelessWidget {
               StepAction.list => l10n.stepsListed(count),
               StepAction.fetch => l10n.stepsFetched(count),
               StepAction.run => l10n.stepsRan(count),
+              StepAction.browse => l10n.stepsBrowsed(count),
               StepAction.use => l10n.stepsUsed(count),
             },
             count,
@@ -80,6 +86,8 @@ class StepsFoldLine extends StatelessWidget {
         verb: text(tally, l10n: l10n),
         expanded: expanded,
         onToggle: onToggle,
+        trailingGap: 0,
+        trailing: _thumbnails(context, images, expanded: expanded),
         spans: [
           for (final (i, (phrase, n)) in actions.indexed) ...[
             if (i > 0) TextSpan(text: l10n.stepsSeparator),
@@ -118,12 +126,16 @@ class WorkFoldLine extends StatelessWidget {
     required this.edits,
     required this.expanded,
     required this.onToggle,
+    this.images = const [],
   });
 
   final Duration worked;
   final TurnEdits edits;
   final bool expanded;
   final VoidCallback onToggle;
+
+  /// The turn's pictures (see [foldImages]), small after the line.
+  final List<ChatImage> images;
 
   /// The line as text, e.g. for copying; in [l10n]'s language (English
   /// when null).
@@ -157,6 +169,8 @@ class WorkFoldLine extends StatelessWidget {
       verb: text(worked, edits, l10n: l10n),
       expanded: expanded,
       onToggle: onToggle,
+      trailingGap: 0,
+      trailing: _thumbnails(context, images, expanded: expanded),
       spans: [
         TextSpan(
           text: l10n.turnWorked(AgentStep.formatDuration(worked, l10n: l10n)),
@@ -188,6 +202,29 @@ class WorkFoldLine extends StatelessWidget {
     );
   }
 }
+
+/// A fold's [images] small after its line while it is closed, a click on
+/// one showing them all whole; none without any.
+Widget? _thumbnails(
+  BuildContext context,
+  List<ChatImage> images, {
+  required bool expanded,
+}) => images.isEmpty
+    ? null
+    : StepThumbnails(
+        images: images,
+        shown: !expanded,
+        max: 4,
+        onOpen: (index) => showChatImages(context, images, index),
+      );
+
+/// The pictures among [items] (a screenshot, an image file read), in
+/// order: what their fold shows, small, so they are not hidden in it.
+List<ChatImage> foldImages(Iterable<ChatItem> items) => [
+  for (final item in items)
+    // Pictures made show whole, out of the fold (see [standsOutOfWork]).
+    if (item is ToolCallItem && !standsOutOfWork(item)) ...toolImages(item),
+];
 
 /// The files a turn edited, and the lines added and removed in them.
 typedef TurnEdits = ({int files, int added, int removed});

@@ -9,6 +9,7 @@ import 'package:bao_remote/client.dart';
 import 'package:bao_remote/local.dart'
     show ClaudeEnvironment, CliLocator, ManagedClaude;
 import 'package:caocode/kernel/claude_code/claude_code_transport.dart';
+import 'package:caocode/kernel/claude_code/claude_core_setting.dart';
 import 'package:caocode/l10n/l10n.dart';
 import 'package:caocode/remote/remote_binaries.dart';
 import 'package:caocode/remote/remote_claude.dart';
@@ -38,6 +39,9 @@ void main() {
   final previous = SshHosts.instance;
 
   setUp(() async {
+    // The CLI's install: the CLI asked for.
+    ClaudeCore.current = () => ClaudeCore.cli;
+    addTearDown(() => ClaudeCore.current = () => ClaudeCore.fallback);
     // flutter_test answers every HttpClient request with a 400.
     HttpOverrides.global = null;
     dataDir = Directory.systemTemp.createTempSync('caocode-install-data-');

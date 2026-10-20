@@ -54,10 +54,34 @@ class SshPasswords {
     return 'ssh:${prompt.target.text}:${'$hash'.substring(0, 16)}';
   }
 
+  /// The keychain's name for the password of [host], a server saved in the
+  /// app (its form's).
+  static String serverId(String host) => 'ssh-server:$host:password';
+
+  /// The keychain's name for [prompt]'s answer where it is not [idOf]'s:
+  /// a saved server's password ([serverId]; see SshHosts). Null for none.
+  String? Function(SshPrompt prompt)? savedIdOf;
+
+  /// Keeps [answer] as [id]'s (the form's password, [serverId]), or forgets
+  /// it for null: in this run and in the keychain.
+  Future<void> keep(String id, String? answer) async {
+    if (answer == null) {
+      _answers.remove(id);
+      await secrets.delete(id);
+    } else {
+      _answers[id] = answer;
+      await secrets.write(id, answer);
+    }
+  }
+
+  /// Whether a password is kept as [id]'s.
+  Future<bool> has(String id) async =>
+      _answers.containsKey(id) || await _kept(id) != null;
+
   Future<String?> answer(SshPrompt prompt) async {
     final keeps = keepable(prompt);
     final host = prompt.target.text;
-    final id = idOf(prompt);
+    final id = (keeps ? savedIdOf?.call(prompt) : null) ?? idOf(prompt);
     if (keeps) {
       if (prompt.retry) {
         await _forget(host, id);

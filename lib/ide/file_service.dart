@@ -67,6 +67,32 @@ abstract interface class IdeHostFiles implements IdeFileService {
   Stream<Object> searchText(String root, IdeTextQuery query);
 }
 
+/// A host's files read a stretch at a time: a big one downloads without
+/// holding up the rest of the connection (the agent's output, its pings),
+/// and can be given up partway.
+abstract interface class IdeRangeFiles {
+  /// At most [length] of [path]'s bytes from [offset] (fewer at its end),
+  /// and its size; given up once [cancel] completes.
+  Future<({Uint8List bytes, int size})> readRange(
+    String path,
+    int offset,
+    int length, {
+    Future<void>? cancel,
+  });
+
+  /// How many bytes the files and folders at [paths] take; counted only
+  /// until over [limit].
+  Future<int> sizeOf(List<String> paths, {int? limit});
+}
+
+/// A download given up (see [downloadFrom]'s `cancel`).
+class TransferCancelledException implements Exception {
+  const TransferCancelledException();
+
+  @override
+  String toString() => 'The transfer was cancelled';
+}
+
 /// [error] as a message in [l10n]'s language: the file service's own
 /// exceptions translated, others as they describe themselves.
 String localizedFileError(
@@ -87,6 +113,18 @@ String localizedFileError(
 /// there is no such file.
 Future<Uint8List> readFileBytes(String path) => platform.readFileBytes(path);
 
+/// How many bytes [path] takes, a file of this machine's.
+Future<int> fileByteSize(String path) => platform.fileByteSize(path);
+
+/// How many bytes [path] takes through [files], as [readBytesThrough]
+/// reads it; null where that cannot be told.
+Future<int>? byteSizeThrough(IdeFileService files, String path) =>
+    switch (files) {
+      platform.LocalIdeFileService() => fileByteSize(path),
+      final IdeRangeFiles files => files.sizeOf([path]),
+      _ => null,
+    };
+
 /// Copies [from], a file or folder of this machine's (pasted from the
 /// system's clipboard), to [to] through [files]: onto a remote project's
 /// host, which is Linux or macOS. Links to folders are left out.
@@ -96,6 +134,9 @@ Future<void> copyLocalTo(IdeFileService files, String from, String to) =>
 /// How far a copy between this machine and a remote host is: [done] of
 /// [total] files.
 typedef TransferProgress = void Function(int done, int total);
+
+/// How far the file being downloaded is: [read] of its [size] bytes.
+typedef FileProgress = void Function(int read, int size);
 
 /// Copies each of [items] (this machine's files and folders) to its place
 /// on a remote project's host through [files], the folders first, then
@@ -108,12 +149,23 @@ Future<void> uploadTo(
 }) => platform.uploadTo(files, items, onProgress: onProgress);
 
 /// Copies each of [items] (files and folders of a remote host, [files]')
-/// to its place on this machine, as [uploadTo] the other way.
+/// to its place on this machine, as [uploadTo] the other way: a file a
+/// stretch at a time where [files] reads so ([IdeRangeFiles]), how far
+/// told to [onFile]. Once [cancel] completes it stops, with a
+/// [TransferCancelledException], the file it was on left out.
 Future<void> downloadFrom(
   IdeHostFiles files,
   List<({String from, String to, bool directory})> items, {
   TransferProgress? onProgress,
-}) => platform.downloadFrom(files, items, onProgress: onProgress);
+  FileProgress? onFile,
+  Future<void>? cancel,
+}) => platform.downloadFrom(
+  files,
+  items,
+  onProgress: onProgress,
+  onFile: onFile,
+  cancel: cancel,
+);
 
 /// A new folder of this machine's to download a remote host's files into,
 /// for other apps to take (pasted in Finder, dragged out); those of days

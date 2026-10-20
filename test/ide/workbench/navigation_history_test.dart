@@ -154,10 +154,18 @@ void main() {
     await tester.pumpAndSettle();
     expect(workspace.active!.path, inRoot('a.dart'));
     final editor = tester.getCenter(find.byType(IdeEditor));
-    await tester.tapAt(editor, buttons: kBackMouseButton);
+    await tester.tapAt(
+      editor,
+      buttons: kBackMouseButton,
+      kind: PointerDeviceKind.mouse,
+    );
     await tester.pumpAndSettle();
     expect(workspace.active!.path, inRoot('c.dart'));
-    await tester.tapAt(editor, buttons: kForwardMouseButton);
+    await tester.tapAt(
+      editor,
+      buttons: kForwardMouseButton,
+      kind: PointerDeviceKind.mouse,
+    );
     await tester.pumpAndSettle();
     expect(workspace.active!.path, inRoot('a.dart'));
   });

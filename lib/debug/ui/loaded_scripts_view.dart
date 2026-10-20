@@ -10,6 +10,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../base/smooth_scroll.dart';
 import '../../ide/ide_list.dart';
 import '../base/event.dart';
 import '../common/debug_source.dart';
@@ -34,6 +35,7 @@ class _LoadedScriptsViewState extends State<LoadedScriptsView> {
   DebugSession? _session;
   final Map<String, Source> _sources = {};
   String? _selected;
+  final _scroll = SmoothScrollController();
 
   @override
   void initState() {
@@ -46,6 +48,7 @@ class _LoadedScriptsViewState extends State<LoadedScriptsView> {
   void dispose() {
     _sessionListener?.dispose();
     _listeners.dispose();
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -86,6 +89,7 @@ class _LoadedScriptsViewState extends State<LoadedScriptsView> {
     final sources = _sources.values.toList()..sort((a, b) => a.uri.path.compareTo(b.uri.path));
     if (sources.isEmpty) return DebugEmptyMessage(s.noLoadedScripts);
     return ListView.builder(
+      controller: _scroll,
       padding: EdgeInsets.zero,
       itemCount: sources.length,
       itemExtent: IdeListColors.rowHeight,

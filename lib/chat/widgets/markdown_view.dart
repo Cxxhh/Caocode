@@ -1,17 +1,24 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:markdown/markdown.dart' as md;
+import 'package:path/path.dart' as p;
 
+import '../../ide/ide_hover.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/material_file_icons.dart';
-import '../../theme/workbench_theme.dart' show themeColors;
+import '../../theme/workbench_theme.dart' show WorkbenchThemeScope, themeColors;
 import '../../workspace/editor_launcher.dart';
 import '../side_panel/file_link.dart';
+import '../side_panel/file_link_menu.dart';
+import '../composer/composer_embeds.dart' show FileImageChip;
 import '../side_panel/file_open.dart';
 import 'code_citation.dart';
+import 'content_image.dart';
 import 'hover_scrollbar.dart';
 import 'inline_code.dart';
+import 'markdown_cjk.dart';
 import 'markdown_math.dart';
+import 'markdown_tags.dart';
 import 'mermaid_code_block.dart';
 
 /// GitHub-flavored markdown as plain widgets (so a surrounding
@@ -38,13 +45,17 @@ class MarkdownView extends StatefulWidget {
     CodeCitationFenceSyntax(),
     MathBlockSyntax(),
   ];
-  static List<md.InlineSyntax> get inlineSyntaxes => [InlineMathSyntax()];
+  static List<md.InlineSyntax> get inlineSyntaxes => [
+    InlineMathSyntax(),
+    CjkEmphasisSyntax(),
+  ];
 
   /// A document parsing as it does; one keeps the link definitions it
-  /// read (see the IDE's markdown preview).
-  static md.Document document() => md.Document(
+  /// read (see the IDE's markdown preview). The chat's has [tags] too: a
+  /// block between tags as a section that folds ([TagBlockSyntax]).
+  static md.Document document({bool tags = false}) => md.Document(
     extensionSet: md.ExtensionSet.gitHubFlavored,
-    blockSyntaxes: blockSyntaxes,
+    blockSyntaxes: [...blockSyntaxes, if (tags) const TagBlockSyntax()],
     inlineSyntaxes: inlineSyntaxes,
     encodeHtml: false,
   );
@@ -62,7 +73,7 @@ class MarkdownView extends StatefulWidget {
       _parsed[data] = nodes;
       return nodes;
     }
-    final nodes = document().parse(data);
+    final nodes = document(tags: true).parse(data);
     if (data.length > _maxCachedCharacters) return nodes;
     _parsed[data] = nodes;
     _cachedCharacters += data.length;
@@ -80,6 +91,8 @@ class MarkdownView extends StatefulWidget {
 }
 
 class _MarkdownViewState extends State<MarkdownView> {
+  Widget? _built;
+  Object? _builtFrom;
   late List<md.Node> _nodes;
 
   @override
@@ -97,7 +110,28 @@ class _MarkdownViewState extends State<MarkdownView> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _built = null;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final from = (
+      widget.data,
+      widget.style,
+      themeColors,
+      WorkbenchThemeScope.restyles,
+    );
+    if (_built case final built? when from == _builtFrom) return built;
+    _builtFrom = from;
+    return _built = _build(context);
+  }
+
+  Widget _build(BuildContext context) {
+    final MarkdownView(:data, :style) = widget;
+    final baseStyle = MarkdownView.baseStyle;
+    final nodes = _nodes;
     // In a chat whose files open (see FileOpenScope): links to them, and
     // inline code naming one once it is known to be there.
     final files = FileOpenScope.maybeOf(context);
@@ -115,11 +149,43 @@ class _MarkdownViewState extends State<MarkdownView> {
           : FileIcon(path, size: _fileIconSize);
     }
 
+    // The message's image files, for a click on one to go through them.
+    late final gallery = [
+      for (final src in _imageSources(nodes)) ?markdownImagePath(src, files),
+    ];
     final options = MarkdownOptions(
-      link: (href) => _linkRecognizer(href) ?? files.linkRecognizer(href),
-      code: files.codeRecognizer,
+      link: (href) =>
+          _linkRecognizer(href) ?? files.linkRecognizer(href, context: context),
+      code: (code) => files.codeRecognizer(code, context: context),
       linkIcon: (href) => icon(FileLink.parseHref(href)),
       codeIcon: (code) => icon(FileLink.parseText(code)),
+      // An image as an attached one's tag.
+      fileTag: (href, label) {
+        final link = FileLink.parseHref(href);
+        final path = link == null || link.range != null
+            ? null
+            : files.resolve(link.path);
+        if (path == null || !files.showsImage(path)) return null;
+        return FileImageChip.span(
+          path: path,
+          label: label.trim().isEmpty
+              ? (files.paths ?? p.context).basename(path)
+              : label.trim(),
+          files: files,
+          textStyle: style ?? baseStyle,
+        );
+      },
+      // An image file as it is; the others of the message a click away.
+      image: (src, alt, title, {width, height}) {
+        final path = markdownImagePath(src, files);
+        if (path == null) return _imageLink(src, alt);
+        return MarkdownImage(
+          path: path,
+          alt: alt,
+          files: files,
+          gallery: gallery,
+        );
+      },
     );
     Widget blocks(BuildContext context) => MarkdownBlocks(
       nodes: _nodes,
@@ -137,6 +203,39 @@ class _MarkdownViewState extends State<MarkdownView> {
   }
 }
 
+/// The `src` of each image in [nodes], in the order they come.
+List<String> _imageSources(List<md.Node> nodes) {
+  final sources = <String>[];
+  void visit(md.Node node) {
+    if (node is! md.Element) return;
+    if (node.tag == 'img') sources.add(_unescape(node.attributes['src'] ?? ''));
+    node.children?.forEach(visit);
+  }
+
+  nodes.forEach(visit);
+  return sources;
+}
+
+/// An image the chat does not show (one on the web: its address could
+/// tell a server what the agent read): its alt text, a link to it.
+Widget _imageLink(String src, String alt) {
+  final label = '[${alt.isEmpty ? 'image' : alt}]';
+  final recognizer = _linkRecognizer(src);
+  if (recognizer is! TapGestureRecognizer) {
+    return Text(label, style: TextStyle(color: AppColors.textMuted));
+  }
+  return MouseRegion(
+    cursor: SystemMouseCursors.click,
+    child: GestureDetector(
+      onTap: recognizer.onTap,
+      child: IdeHover(
+        message: src,
+        child: Text(label, style: TextStyle(color: AppColors.accent)),
+      ),
+    ),
+  );
+}
+
 /// How [MarkdownBlocks] draws and what its links, images and task boxes
 /// do: as the chat's by default.
 @immutable
@@ -150,6 +249,7 @@ class MarkdownOptions {
     this.code,
     this.linkIcon,
     this.codeIcon,
+    this.fileTag,
     this.image,
     this.onToggleTask,
   });
@@ -176,6 +276,10 @@ class MarkdownOptions {
   /// the icon of the file or folder it opens, say; nothing when null.
   final Widget? Function(String? href)? linkIcon;
   final Widget? Function(String code)? codeIcon;
+
+  /// What a link to `href` labeled [label] shows in its place, as a tag:
+  /// an image file's, say; the link when null, or it gives none.
+  final InlineSpan? Function(String? href, String label)? fileTag;
 
   /// An image (`![alt](src "title")`, or HTML's with its [width] and
   /// [height] in pixels); its alt text in brackets when null.
@@ -245,7 +349,7 @@ class MarkdownBlocks extends StatelessWidget {
 
 Widget? _block(md.Node node, TextStyle style, MarkdownOptions options) {
   if (node is md.Text) {
-    if (node.text.trim().isEmpty) return null;
+    if (node.text.trim().isEmpty || isHtmlComment(node.text)) return null;
     return Text.rich(TextSpan(style: style, text: node.text));
   }
   if (node is! md.Element) return null;
@@ -277,9 +381,7 @@ Widget? _block(md.Node node, TextStyle style, MarkdownOptions options) {
       return Container(
         padding: const EdgeInsets.only(bottom: 6),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: themeColors['textSeparator.foreground']),
-          ),
+          border: Border(bottom: BorderSide(color: AppColors.partBorder)),
         ),
         child: heading,
       );
@@ -307,19 +409,12 @@ Widget? _block(md.Node node, TextStyle style, MarkdownOptions options) {
         language: name == null || name.isEmpty ? null : name,
       );
     case 'blockquote':
-      return Container(
-        padding: const EdgeInsets.only(left: 12),
-        decoration: BoxDecoration(
-          color: themeColors['textBlockQuote.background'],
-          border: Border(
-            left: BorderSide(
-              color: themeColors['textBlockQuote.border'],
-              width: 3,
-            ),
-          ),
-        ),
+      final children = node.children ?? const <md.Node>[];
+      return MarkdownQuoteBlock(
+        // Its paragraphs' text, as they read.
+        text: children.map((child) => child.textContent).join('\n\n'),
         child: MarkdownBlocks(
-          nodes: node.children ?? const [],
+          nodes: children,
           style: style.copyWith(color: AppColors.textMuted),
           options: options,
         ),
@@ -336,6 +431,8 @@ Widget? _block(md.Node node, TextStyle style, MarkdownOptions options) {
       );
     case 'table':
       return _Table(node: node, style: style, options: options);
+    case TagBlockSyntax.tag:
+      return TagSection(node: node, style: style, options: options);
     default:
       return InlineCodeText(_inlines([node], style, options));
   }
@@ -578,12 +675,26 @@ TextSpan _inlines(
 );
 
 InlineSpan _inline(md.Node node, MarkdownOptions options) {
-  if (node is md.Text) return TextSpan(text: _unescape(node.text));
+  if (node is md.Text) {
+    // A comment is the writer's note, not shown (as HTML has it); the
+    // parser joins it to the text after it.
+    final text = node.text.contains('<!--')
+        ? node.text.replaceAll(_htmlComment, '')
+        : node.text;
+    return TextSpan(text: _unescape(text));
+  }
   if (node is! md.Element) return const TextSpan();
   final children = node.children ?? const <md.Node>[];
   List<InlineSpan> inner() => [
     for (final child in children) _inline(child, options),
   ];
+  if (node.tag == 'a') {
+    final href = node.attributes['href'];
+    if (options.fileTag?.call(href, _unescape(node.textContent))
+        case final tag?) {
+      return tag;
+    }
+  }
   return switch (node.tag) {
     'strong' || 'b' => TextSpan(
       style: TextStyle(
@@ -675,6 +786,13 @@ GestureRecognizer? _linkRecognizer(String? href) {
   return TapGestureRecognizer()..onTap = () => openExternal(uri.toString());
 }
 
+/// Whether [text] is HTML comments alone (`<!-- note -->`), which do not
+/// show.
+bool isHtmlComment(String text) => _htmlComments.hasMatch(text);
+
+final _htmlComments = RegExp(r'^\s*(?:<!--[\s\S]*?-->\s*)+$');
+final _htmlComment = RegExp(r'<!--[\s\S]*?-->');
+
 const _fileIconSize = 14.0;
 
 /// Whether a link to [written] (as the agent wrote it), [known] to be a
@@ -696,6 +814,9 @@ WidgetSpan _linkIcon(
   EdgeInsets padding,
 ) {
   icon = Padding(padding: padding, child: icon);
+  if (recognizer is FileLinkRecognizer) {
+    icon = FileLinkMenuRegion(menu: recognizer.menu, child: icon);
+  }
   if (recognizer is TapGestureRecognizer) {
     icon = MouseRegion(
       cursor: SystemMouseCursors.click,

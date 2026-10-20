@@ -487,16 +487,19 @@ class _GoalPanelState extends State<GoalPanel> {
         const SizedBox(height: 6),
         Row(
           children: [
-            if (widget.activity == GoalActivity.working)
-              Flexible(
-                child: Text(
-                  l10n.goalStopsTurn,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: AppColors.textFaint, fontSize: 12),
-                ),
-              ),
-            const Spacer(),
+            Expanded(
+              child: widget.activity == GoalActivity.working
+                  ? Text(
+                      l10n.goalStopsTurn,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppColors.textFaint,
+                        fontSize: 12,
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
             _TextAction(
               label: l10n.commonCancel,
               onTap: () => setState(() => _editing = false),

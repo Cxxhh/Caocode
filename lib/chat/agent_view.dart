@@ -69,8 +69,7 @@ class ConversationLayer extends StatelessWidget {
   }
 }
 
-/// Above a subagent's conversation: back, and the way here, e.g.
-/// "← Conversation › Compare the three games › Read game.js".
+/// Above a subagent's conversation: the back button and its trail of titles.
 class SubagentHeader extends StatelessWidget {
   const SubagentHeader({
     super.key,
@@ -103,6 +102,7 @@ class SubagentHeader extends StatelessWidget {
       child: ChatColumn(
         maxWidth: maxContentWidth + 48,
         right: math.max(0, ChatColumnInset.of(context) - 24),
+        left: math.max(0, ChatColumnInset.leftOf(context) - 24),
         // Level with the history's, its padding as wide as its margin.
         room: minimap ? ChatMinimap.room - 24 : 0,
         roomFrom: ChatMinimap.roomFrom + 48,
@@ -123,14 +123,7 @@ class SubagentHeader extends StatelessWidget {
                 onTap: () => onBack(trail.length - 1),
               ),
               for (final (i, label) in trail.indexed) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: Icon(
-                    Icons.chevron_right_rounded,
-                    size: 15,
-                    color: AppColors.textFaint,
-                  ),
-                ),
+                const SizedBox(width: 8),
                 if (i == trail.length - 1)
                   Flexible(
                     child: Text(

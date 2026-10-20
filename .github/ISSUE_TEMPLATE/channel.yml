@@ -1,0 +1,100 @@
+name: Become a BaoCode channel / 成为 BaoCode 渠道
+description: Your users get BaoCode with your brand, signed in to your new-api or sub2api site, its keys and models ready. 你的用户拿到带你品牌的 BaoCode，登录你的 new-api 或 sub2api 站点即可使用其中的 Key 和模型。
+title: "[Channel] "
+labels: ["channel"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        How it works: you get a link, baocode.dev/?your-id. Whoever comes through it sees your logo and name on the site, downloads the channel build, and signs in to your site in BaoCode; the key in use is their model provider, and Settings shows their balance and keys.
+        工作方式：你会拿到一个推广链接 baocode.dev/?你的ID。从这个链接进来的用户，在官网看到你的 logo 和名字，下载渠道版，在 BaoCode 里登录你的站点；在用的 Key 就是他们的模型来源，设置里能看到余额和 Key。
+
+        Free. We sign in to your site once to check it works, then put it live and reply here with your link.
+        免费。我们会先在你的站点登录一次确认可用，然后上线，并在这里回复你的推广链接。
+  - type: input
+    id: name
+    attributes:
+      label: Name / 名称
+      description: As the site and the app show it, in Chinese and English. 官网和应用里显示的名称，中英文各一个。
+      placeholder: "zh: 我的站点 / en: My Site"
+    validations:
+      required: true
+  - type: input
+    id: id
+    attributes:
+      label: Channel ID / 渠道 ID
+      description: Lowercase letters, digits, - or _; your link is baocode.dev/?<ID>. 小写字母、数字、- 或 _；推广链接是 baocode.dev/?<ID>。
+      placeholder: mysite
+    validations:
+      required: true
+  - type: dropdown
+    id: software
+    attributes:
+      label: What your site runs / 站点系统
+      options:
+        - new-api (v1.0 or later / v1.0 及以上)
+        - sub2api
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: Site address / 站点地址
+      description: Where your users sign in, HTTPS. 用户登录的地址，必须是 HTTPS。
+      placeholder: https://example.com
+    validations:
+      required: true
+  - type: input
+    id: api
+    attributes:
+      label: API address / API 地址
+      description: Only if your keys are used at another address than the site's. 只有 Key 的调用地址和站点不同时填写。
+      placeholder: https://api.example.com
+  - type: dropdown
+    id: protocol
+    attributes:
+      label: API format / 接口格式
+      description: What BaoCode speaks to your API with. BaoCode 用哪种格式调用你的接口。
+      options:
+        - Anthropic (Claude) / Anthropic（Claude）
+        - OpenAI Chat Completions
+        - OpenAI Responses
+        - As the key's group says (sub2api) / 按 Key 所在分组（sub2api）
+    validations:
+      required: true
+  - type: textarea
+    id: subtitle
+    attributes:
+      label: Subtitle / 副标题
+      description: Optional. Replaces the home page's line under the title, for your users; Chinese and English. 选填。替换首页标题下的那句话，只有你的用户看到；中英文各一句。
+      placeholder: |
+        zh: ……
+        en: …
+  - type: textarea
+    id: welcome
+    attributes:
+      label: Welcome / 欢迎语
+      description: Optional. The title and text of BaoCode's sign-in window; "Welcome to <name>" otherwise. 选填。BaoCode 登录窗口的标题和正文；不填就是“欢迎使用 <名称>”。
+  - type: textarea
+    id: logo
+    attributes:
+      label: Logo
+      description: SVG best, or a square PNG at least 256×256; drag it in here. SVG 最好，或者至少 256×256 的正方形 PNG，拖进这里上传。
+    validations:
+      required: true
+  - type: input
+    id: contact
+    attributes:
+      label: Contact / 联系方式
+      description: How we can reach you (email, Telegram, WeChat…). 我们联系你的方式（邮箱、Telegram、微信等）。
+    validations:
+      required: true
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Rules / 规则
+      options:
+        - label: The logo and name are mine to use. Logo 和名称归我所有或我有权使用。
+          required: true
+        - label: I understand a channel whose site stops working, or that misleads users, is taken off. 我了解站点失效或误导用户的渠道会被下架。
+          required: true

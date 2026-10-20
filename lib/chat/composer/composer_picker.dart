@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import '../../ide/ide_fuzzy.dart';
 import '../../ide/ide_hover.dart';
 import '../../ide/ide_menu.dart' show IdeMenuColors;
+import '../../ide/ide_switch.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/codicons.dart';
@@ -37,8 +38,10 @@ class ComposerPicker extends StatefulWidget {
     required this.onSelected,
     this.label,
     this.describes = true,
+    this.descriptionAside = false,
     this.settingsOf,
     this.submenuOf,
+    this.checks,
     this.emphasized = false,
     this.title,
     this.tooltip,
@@ -59,6 +62,10 @@ class ComposerPicker extends StatefulWidget {
   /// Shows each option's description under it.
   final bool describes;
 
+  /// With [describes], each description at its row's end, on the label's
+  /// line: rows as low as without.
+  final bool descriptionAside;
+
   /// The settings picked beside an option, e.g. a model's effort: in a
   /// menu at its side, shown when it is pointed at.
   final List<ModelSettingChoice> Function(KernelOption option)? settingsOf;
@@ -69,6 +76,10 @@ class ComposerPicker extends StatefulWidget {
   /// but opens them; checked when [selected] is among them. None for an
   /// empty list. Not with [settingsOf].
   final List<KernelOption> Function(KernelOption option)? submenuOf;
+
+  /// Which of a submenu's options are checked, where each has one (each
+  /// folder's branch); [selected] if null.
+  final bool Function(KernelOption option)? checks;
 
   /// Draws a filled pill, used for the mode picker.
   final bool emphasized;
@@ -244,6 +255,19 @@ class ComposerPickerState extends State<ComposerPicker> {
     });
   }
 
+  /// The option checked, in the middle of the list as the menu opens: not
+  /// to be scrolled to in a long one. Its group collapsed, the list as it is.
+  void _revealSelected() {
+    final index = _selectedIndex;
+    if (index < 0) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_open || index >= _rowKeys.length) return;
+      final row = _rowKeys[index].currentContext;
+      if (row == null || !row.mounted) return;
+      unawaited(Scrollable.ensureVisible(row, alignment: .5));
+    });
+  }
+
   // --- Stuck headings ------------------------------------------------------
   //
   // The heading of the group scrolled into stays over the list, as long as
@@ -396,6 +420,7 @@ class ComposerPickerState extends State<ComposerPicker> {
       FloatingRegistry.openPopover(this, () {
         if (mounted) _setOpen(false);
       }, onKey: _handleKey);
+      _revealSelected();
     } else {
       FloatingRegistry.closePopover(this);
     }
@@ -447,12 +472,13 @@ class ComposerPickerState extends State<ComposerPicker> {
       }
       runs.last.add(option);
     }
+    final checks = widget.checks ?? (option) => option == widget.selected;
     return [
       for (final run in runs)
         ModelSettingChoice(
           kind: KernelChoiceKind.model,
           options: run,
-          selected: run.contains(widget.selected) ? widget.selected : null,
+          selected: run.where(checks).firstOrNull,
           onSelected: widget.onSelected,
         ),
     ];
@@ -466,7 +492,12 @@ class ComposerPickerState extends State<ComposerPicker> {
       for (final option in setting.options) (setting, option),
   ];
 
+  /// Picks [option] in [setting]. One that is a switch ([setting] is on or
+  /// off) leaves the menu, and its settings, where they are: what it turns
+  /// on is looked at with them still open, more than once. Any other is a
+  /// choice made and done with, and closes them.
   void _selectSetting(ModelSettingChoice setting, KernelOption option) {
+    if (setting.toggle) return setting.onSelected(option);
     _setOpen(false);
     setting.onSelected(option);
   }
@@ -711,9 +742,16 @@ class ComposerPickerState extends State<ComposerPicker> {
       cursor: SystemMouseCursors.click,
       builder: (context, hovered) => _buildPill(hovered, _open),
     );
-    // The workbench hover, as upstream's pickers in the chat input have.
+    // The workbench hover, as upstream's pickers in the chat input have. In
+    // a node of its own: the menu's layer and the hover's each graft their
+    // overlay under the node of what they are around, and in one node the
+    // menu's would win; the hover's, under none, would leave the desktop
+    // engines' semantics tree behind as it shows.
     if (widget.tooltip case final tooltip?) {
-      pill = IdeHover(message: tooltip, child: pill);
+      pill = Semantics(
+        container: true,
+        child: IdeHover(message: tooltip, child: pill),
+      );
     }
     return FloatingLayer(
       visible: _open,
@@ -774,9 +812,14 @@ class ComposerPickerState extends State<ComposerPicker> {
           widget.selected.iconBuilder?.call(13, color) ??
               Icon(widget.selected.icon, size: 13, color: color),
           const SizedBox(width: 4),
-          Text(
-            widget.label ?? widget.selected.label,
-            style: TextStyle(color: color, fontSize: 12),
+          // Cut short where the input is narrow, not over its edge.
+          Flexible(
+            child: Text(
+              widget.label ?? widget.selected.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: color, fontSize: 12),
+            ),
           ),
           Icon(
             Icons.keyboard_arrow_down_rounded,
@@ -796,7 +839,8 @@ class ComposerPickerState extends State<ComposerPicker> {
   /// Settings open this far from the menu's edge.
   static const _settingsGap = 4.0;
 
-  double get _rowHeight => widget.describes ? 40 : 30;
+  double get _rowHeight =>
+      widget.describes && !widget.descriptionAside ? 40 : 30;
 
   /// As upstream's action widget, its pickers' menu: in a context menu's
   /// colors ([IdeMenuColors]), as the other dropdowns.
@@ -885,9 +929,11 @@ class ComposerPickerState extends State<ComposerPicker> {
               _SettingRow(
                 option: option,
                 full: submenu,
-                describes: submenu && widget.describes,
+                describes:
+                    submenu && widget.describes && !widget.descriptionAside,
                 height: submenu ? _rowHeight : _settingRowHeight,
                 selected: option == setting.selected,
+                toggle: setting.toggle,
                 index: starts[i] + j,
                 highlight: _settingHighlight,
                 onHover: () => _setting = starts[i] + j,
@@ -1003,7 +1049,10 @@ class ComposerPickerState extends State<ComposerPicker> {
             matches: _matchesIn(option.label),
             height: _rowHeight,
             describes: widget.describes,
+            aside: widget.descriptionAside,
             hasSettings: _settingsFor(i).isNotEmpty,
+            settingsAside:
+                widget.settingsOf != null || widget.submenuOf != null,
             selected: i == selected,
             index: i,
             highlight: _highlight,
@@ -1355,7 +1404,9 @@ class _PickerRow extends StatelessWidget {
     this.matches = const [],
     required this.height,
     required this.describes,
+    this.aside = false,
     required this.hasSettings,
+    this.settingsAside = false,
     required this.selected,
     required this.index,
     required this.highlight,
@@ -1370,8 +1421,15 @@ class _PickerRow extends StatelessWidget {
   final double height;
   final bool describes;
 
+  /// Its description at its end, on its label's line.
+  final bool aside;
+
   /// Has settings of its own, at its side.
   final bool hasSettings;
+
+  /// Others in the menu have: with [aside], its description ends where
+  /// theirs do, before their chevrons.
+  final bool settingsAside;
   final bool selected;
 
   /// Highlighted while [highlight] is [index]: only it redrawn as that
@@ -1386,6 +1444,38 @@ class _PickerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final caution = option.caution;
+    final label = Text.rich(
+      // What was searched marked, as the command palette's.
+      TextSpan(
+        children: ideHighlightSpans(
+          option.label,
+          matches,
+          TextStyle(
+            color: themeColors['list.highlightForeground'],
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      // One line, cut with an ellipsis: the row's height is fixed, and a
+      // name too long for the menu would otherwise wrap within it.
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        color: caution ? AppColors.caution : IdeMenuColors.foreground,
+        fontSize: 12.5,
+      ),
+    );
+    final description = Text(
+      option.description,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        color: caution
+            ? AppColors.caution.withValues(alpha: 0.8)
+            : AppColors.textFaint,
+        fontSize: 11,
+      ),
+    );
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onHover: (event) => onHover(event.position),
@@ -1408,50 +1498,24 @@ class _PickerRow extends StatelessWidget {
                     color: caution ? AppColors.caution : AppColors.textMuted,
                   ),
               const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text.rich(
-                      // What was searched marked, as the command palette's.
-                      TextSpan(
-                        children: ideHighlightSpans(
-                          option.label,
-                          matches,
-                          TextStyle(
-                            color: themeColors['list.highlightForeground'],
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      // One line, cut with an ellipsis: the row's height is
-                      // fixed, and a name too long for the menu would
-                      // otherwise wrap within it.
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: caution
-                            ? AppColors.caution
-                            : IdeMenuColors.foreground,
-                        fontSize: 12.5,
-                      ),
+              if (aside) ...[
+                Expanded(child: label),
+                if (describes)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 12, right: 4),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 140),
+                      child: description,
                     ),
-                    if (describes)
-                      Text(
-                        option.description,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: caution
-                              ? AppColors.caution.withValues(alpha: 0.8)
-                              : AppColors.textFaint,
-                          fontSize: 11,
-                        ),
-                      ),
-                  ],
+                  ),
+              ] else
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [label, if (describes) description],
+                  ),
                 ),
-              ),
               if (selected)
                 Icon(
                   Icons.check_rounded,
@@ -1466,7 +1530,9 @@ class _PickerRow extends StatelessWidget {
                     size: 15,
                     color: AppColors.textFaint,
                   ),
-                ),
+                )
+              else if (aside && settingsAside)
+                const SizedBox(width: 4 + 15),
             ],
           ),
         ),
@@ -1531,6 +1597,7 @@ class _SettingRow extends StatelessWidget {
     required this.describes,
     required this.height,
     required this.selected,
+    required this.toggle,
     required this.index,
     required this.highlight,
     required this.onHover,
@@ -1542,6 +1609,7 @@ class _SettingRow extends StatelessWidget {
   final bool describes;
   final double height;
   final bool selected;
+  final bool toggle;
 
   /// Highlighted while [highlight] is [index], counting across the
   /// settings.
@@ -1596,7 +1664,13 @@ class _SettingRow extends StatelessWidget {
                   ],
                 ),
               ),
-              if (selected)
+              if (toggle)
+                IdeSwitch(
+                  value: selected,
+                  semanticLabel: option.label,
+                  onChanged: (_) => onTap(),
+                )
+              else if (selected)
                 Icon(
                   Icons.check_rounded,
                   size: 15,

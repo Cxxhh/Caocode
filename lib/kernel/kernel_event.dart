@@ -69,6 +69,15 @@ final class ItemUpserted extends KernelEvent {
   final bool streaming;
 }
 
+/// Earlier [items] of the conversation, read on asking: they go before all
+/// there is (but any leading history, see [Transcript]), oldest first.
+/// Those with an id already here are left out.
+final class HistoryPrepended extends KernelEvent {
+  const HistoryPrepended(super.seq, this.items);
+
+  final List<(String, ChatItem)> items;
+}
+
 /// [text] at [offset] of a streaming text or thought: the part already
 /// there is skipped, so a repeated delta adds nothing.
 final class TextDelta extends KernelEvent {
@@ -112,10 +121,13 @@ final class InteractionResolved extends KernelEvent {
 /// A file the agent changed in turn [turnId]. Pending until kept or
 /// reverted.
 final class FileEdited extends KernelEvent {
-  const FileEdited(super.seq, this.change, {this.turnId});
+  const FileEdited(super.seq, this.change, {this.turnId, this.original});
 
   final FileChange change;
   final String? turnId;
+
+  /// What the file was before; null when the agent did not tell.
+  final FileOriginal? original;
 }
 
 /// The agent wrote its plan, the file at [path]: not a change to review,
@@ -139,6 +151,14 @@ final class Rewound extends KernelEvent {
 
   final int? index;
   final String? itemId;
+}
+
+/// What the model has written so far in the turn under way, and how fast
+/// (see [TurnOutput]).
+final class OutputReported extends KernelEvent {
+  const OutputReported(super.seq, this.output);
+
+  final TurnOutput output;
 }
 
 final class UsageReported extends KernelEvent {

@@ -377,8 +377,6 @@ void main() {
           break;
         case QuestionRequest():
           session.answer(const QuestionAnswer([], skipped: true));
-        case PlanReviewRequest():
-          session.answer(const PlanAnswer(PlanDecision.approve));
         case null:
       }
       if (session.pendingInteraction is ApprovalRequest) break;

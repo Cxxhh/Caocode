@@ -125,7 +125,8 @@ abstract final class LinkConnector {
     var left = endpoints.length;
     for (final endpoint in endpoints) {
       final host = endpoint.isIPv6 ? '[${endpoint.host}]' : endpoint.host;
-      WebSocket.connect('ws://$host:${endpoint.port}$linkPath')
+      final scheme = endpoint.secure ? 'wss' : 'ws';
+      WebSocket.connect('$scheme://$host:${endpoint.port}$linkPath')
           .timeout(timeout)
           .then(
             (socket) {

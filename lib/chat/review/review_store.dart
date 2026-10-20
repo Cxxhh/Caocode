@@ -8,8 +8,8 @@ import 'review_store_stub.dart'
 
 export 'package:bao_remote/review.dart';
 
-/// The store for the project at [root]; null where there is none (no Git,
-/// no such folder, the web, or under test). A remote project's is its
+/// The store for the project at [root]; null where there is none (no such
+/// folder, the web, or under test). A remote project's is its
 /// host's: its checkpoints there, in the server's data folder.
 Future<ReviewStore?> openReviewStore(String root) async {
   if (RemoteLocation.hostOf(root) case final host?) {

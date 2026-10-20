@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../channel/channel_setup.dart' show ChannelSetup;
+import '../kernel/claude_code/claude_core_setting.dart';
 import '../settings/user_settings.dart';
 import 'model_provider.dart';
 import 'secret_store.dart';
@@ -63,6 +65,11 @@ class ModelProviders extends ChangeNotifier {
   static const builtinHiddenKey = 'models.builtin.hidden';
   static const defaultKey = 'models.default';
   static const auxiliaryKey = 'models.auxiliary';
+  static const actionsKey = 'models.actions';
+  static const imageKey = 'models.image';
+
+  /// [actionsModel]'s value for the auxiliary model, whatever it is.
+  static const followAuxiliary = 'auxiliary';
 
   final Object? Function(String key) _read;
   final Future<void> Function(String key, Object? value) _write;
@@ -97,16 +104,21 @@ class ModelProviders extends ChangeNotifier {
       providers.where((provider) => provider.id == id).firstOrNull;
 
   /// The provider and model [ref] (a [modelRef]) picks, if both are there;
-  /// the provider's main model when the one picked is gone.
+  /// the provider's main model when the one picked is gone, or is an image
+  /// model (not one to converse with).
   (ModelProvider, ProviderModel)? resolve(String? ref) {
     final parsed = parseModelRef(ref);
     if (parsed == null) return null;
     final provider = this.provider(parsed.provider);
     if (provider == null) return null;
+    ProviderModel? chat(String id) => switch (provider.model(id)) {
+      final model? when !model.kind.generatesImages => model,
+      _ => null,
+    };
     final model =
-        provider.model(parsed.model) ??
+        chat(parsed.model) ??
         switch (provider.roles.main) {
-          final main? => provider.model(main),
+          final main? => chat(main),
           null => null,
         };
     if (model == null) return null;
@@ -117,10 +129,32 @@ class ModelProviders extends ChangeNotifier {
   /// picker.
   bool get builtinHidden => _read(builtinHiddenKey) == true;
 
+  /// Whether there is Claude Code as set up on this machine (its login,
+  /// its models, its settings') to run on: only for the CLI. Caocode's own
+  /// core runs on the upstreams here alone, and the channel build on its
+  /// account's (lib/channel/): never on this machine's.
+  bool get builtinAvailable =>
+      !ChannelSetup.channelBuild && ClaudeCore.current() == ClaudeCore.cli;
+
+  /// Whether Claude Code as set up on this machine is in the picker.
+  bool get builtinOffered => builtinAvailable && !builtinHidden;
+
+  /// The model a session on Caocode's own core starts on when the one
+  /// picked is no upstream's: the first of the first upstream turned on;
+  /// null without one.
+  String? get firstModel => switch (enabled.firstOrNull) {
+    final provider? => modelRef(provider.id, provider.enabledModels.first.id),
+    null => null,
+  };
+
   /// The model new sessions start with (a [modelRef], or a model of the
-  /// built-in provider); null for the last one picked.
+  /// built-in provider while it is [builtinAvailable]); null for the last
+  /// one picked.
   String? get defaultModel => switch (_read(defaultKey)) {
-    final String model when model.isNotEmpty => model,
+    final String model
+        when model.isNotEmpty &&
+            (builtinAvailable || parseModelRef(model) != null) =>
+      model,
     _ => null,
   };
 
@@ -135,15 +169,62 @@ class ModelProviders extends ChangeNotifier {
   /// What a small job is asked of: the auxiliary model, as it is
   /// ([exact]); automatic, [model] (the session's, or new sessions'
   /// default), by its provider's Haiku tier. A null model is Claude
-  /// Code's own Haiku.
+  /// Code's own Haiku; picked while it is not [builtinAvailable], it is
+  /// automatic.
   ({String? model, bool exact}) auxiliary(String? model) =>
       switch (auxiliaryModel) {
-        builtinProviderId => (model: null, exact: true),
+        builtinProviderId when builtinAvailable => (model: null, exact: true),
+        null || builtinProviderId => (model: model, exact: false),
         final String picked => (model: picked, exact: true),
-        null => (model: model, exact: false),
       };
 
   Future<void> setAuxiliaryModel(String? model) => _write(auxiliaryKey, model);
+
+  /// The model the AI actions a user asks for ask (a stash said clearly,
+  /// polished, searched by meaning), picked beside them and shared: a
+  /// [modelRef], [builtinProviderId] for Claude Code's own Haiku, or
+  /// [followAuxiliary]; null while none is picked (they ask first).
+  String? get actionsModel => switch (_read(actionsKey)) {
+    final String model when model.isNotEmpty => model,
+    _ => null,
+  };
+
+  /// What an AI action is asked of ([actionsModel], as [auxiliary] gives
+  /// one); the auxiliary model while none is picked (or Claude Code's own
+  /// Haiku is, while it is not [builtinAvailable]).
+  ({String? model, bool exact}) get actions => switch (actionsModel) {
+    builtinProviderId when builtinAvailable => (model: null, exact: true),
+    null || followAuxiliary || builtinProviderId => auxiliary(null),
+    final String picked => (model: picked, exact: true),
+  };
+
+  Future<void> setActionsModel(String? model) => _write(actionsKey, model);
+
+  /// The image model the agents make pictures with unless they name
+  /// another (a [modelRef]); null for the first turned on.
+  String? get imageModel => switch (_read(imageKey)) {
+    final String model when model.isNotEmpty => model,
+    _ => null,
+  };
+
+  Future<void> setImageModel(String? model) => _write(imageKey, model);
+
+  /// The image models the agents make pictures with: those turned on of the
+  /// upstreams turned on, [imageModel] first, the others in order.
+  List<({ModelProvider provider, ProviderModel model})> get imageModels {
+    final all = [
+      for (final provider in providers)
+        if (provider.enabled && provider.connected)
+          for (final model in provider.imageModels)
+            (provider: provider, model: model),
+    ];
+    final picked = imageModel;
+    final index = all.indexWhere(
+      (entry) => modelRef(entry.provider.id, entry.model.id) == picked,
+    );
+    if (index <= 0) return all;
+    return [all[index], ...all.take(index), ...all.skip(index + 1)];
+  }
 
   /// Adds [provider], or replaces the one of its id.
   Future<void> save(ModelProvider provider) async {
@@ -169,6 +250,12 @@ class ModelProviders extends ChangeNotifier {
     }
     if (parseModelRef(auxiliaryModel)?.provider == id) {
       await setAuxiliaryModel(null);
+    }
+    if (parseModelRef(actionsModel)?.provider == id) {
+      await setActionsModel(null);
+    }
+    if (parseModelRef(imageModel)?.provider == id) {
+      await setImageModel(null);
     }
     _errors.remove(id);
     try {

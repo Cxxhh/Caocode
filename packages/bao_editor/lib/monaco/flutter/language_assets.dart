@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 
+import 'language_overrides.dart';
+
 import '../vs/editor/standalone/common/monarch/monarch_compile.dart' as monarch;
 import '../vs/editor/standalone/common/monarch/monarch_common.dart';
 import '../vs/editor/standalone/common/monarch/monarch_types.dart';
@@ -220,9 +222,17 @@ class MonacoLanguageAssets {
     String path, {
     String? firstLine,
   }) async {
+    final candidates = await registrations();
+    // Picked for it: that one, or none (plain text, or a language only
+    // TextMate has).
+    if (EditorLanguageOverrides.instance.of(path) case final picked?) {
+      for (final registration in candidates) {
+        if (registration.id == picked) return registration;
+      }
+      return null;
+    }
     final filename = p.basename(path);
     final lower = filename.toLowerCase();
-    final candidates = await registrations();
     for (final registration in candidates) {
       if (registration.filenames.any((name) => name.toLowerCase() == lower)) {
         return registration;

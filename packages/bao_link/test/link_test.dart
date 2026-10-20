@@ -56,6 +56,23 @@ void main() {
     return (connected, await accepted);
   }
 
+  test('a session update tells of earlier items only when it is asked', () {
+    const plain = LinkSessionUpdate(session: 's', start: 0, items: [], count: 0);
+    expect(plain.toJson().containsKey('earlier'), isFalse);
+    expect(LinkSessionUpdate.fromJson(plain.toJson()).earlier, isNull);
+    for (final earlier in [true, false]) {
+      final update = LinkSessionUpdate(
+        session: 's',
+        start: 0,
+        items: const [],
+        count: 0,
+        earlier: earlier,
+      );
+      expect(update.toJson()['earlier'], earlier);
+      expect(LinkSessionUpdate.fromJson(update.toJson()).earlier, earlier);
+    }
+  });
+
   group('SecureChannel', () {
     test(
       'both ends learn the other\'s key, and messages go both ways',
@@ -179,6 +196,7 @@ void main() {
           DirectEndpoint('192.168.1.5', 47100),
           DirectEndpoint('2408:8207::1', 47100),
           DirectEndpoint('home.example.com', 443),
+          DirectEndpoint('link.example.com', 443, secure: true),
         ],
         relay: RelayEndpoint(Uri.parse('wss://relay.caocode.dev'), 'room'),
       );
@@ -207,6 +225,35 @@ void main() {
       );
       expect(DirectEndpoint.parse('a.b:9'), const DirectEndpoint('a.b', 9));
       expect(() => DirectEndpoint.parse('a.b:x'), throwsFormatException);
+      expect(
+        DirectEndpoint.parse('a.b', defaultPort: 9),
+        const DirectEndpoint('a.b', 9),
+      );
+    });
+
+    test('addresses with a scheme: wss over TLS, on 443 or 80 by default', () {
+      const tls = DirectEndpoint('link.example.com', 443, secure: true);
+      expect(DirectEndpoint.parse('wss://link.example.com'), tls);
+      expect(DirectEndpoint.parse('https://link.example.com/'), tls);
+      expect(
+        DirectEndpoint.parse('WSS://link.example.com:443/caocode-link'),
+        tls,
+      );
+      expect(
+        DirectEndpoint.parse('wss://[2408::1]:8443'),
+        const DirectEndpoint('2408::1', 8443, secure: true),
+      );
+      expect(
+        DirectEndpoint.parse('ws://link.example.com', defaultPort: 9),
+        const DirectEndpoint('link.example.com', 80),
+      );
+      expect(
+        DirectEndpoint.parse('http://link.example.com:8080'),
+        const DirectEndpoint('link.example.com', 8080),
+      );
+      expect('$tls', 'wss://link.example.com:443');
+      expect(DirectEndpoint.parse('$tls'), tls);
+      expect(tls, isNot(const DirectEndpoint('link.example.com', 443)));
     });
 
     test('the safety code is the same on both ends, and differs per pair', () {

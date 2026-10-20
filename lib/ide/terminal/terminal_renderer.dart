@@ -620,8 +620,9 @@ class TerminalRenderer {
         argb = inverse ? _backgroundArgb : _foregroundArgb;
     }
     if (dim) {
-      // color.multiplyOpacity: the alpha halved, rounded as Math.round.
-      final alpha = ((argb >>> 24) * dimOpacity + 0.5).floor();
+      // color.multiplyOpacity: the alpha halved, rounded as Math.round. The
+      // palette's colors come out of an Int32List, negative: masked to 8 bits.
+      final alpha = (((argb >> 24) & 0xFF) * dimOpacity + 0.5).floor();
       argb = (alpha << 24) | (argb & 0xFFFFFF);
     }
     return argb;

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+import '../../base/tooltip_scroll.dart';
 import '../../ide/ide_hover.dart';
 import 'floating_layer.dart';
 import 'floating_placement.dart';
@@ -131,10 +132,13 @@ class _HoverTooltipState extends State<HoverTooltip> {
       placement: widget.placement,
       enterDuration: const Duration(milliseconds: 100),
       exitDuration: const Duration(milliseconds: 80),
-      builder: (context) => MouseRegion(
-        onEnter: _enterTooltip,
-        onExit: _exitTooltip,
-        child: TooltipSurface(child: widget.content(context)),
+      builder: (context) => TooltipScroll(
+        anchorContext: this.context,
+        child: MouseRegion(
+          onEnter: _enterTooltip,
+          onExit: _exitTooltip,
+          child: TooltipSurface(child: widget.content(context)),
+        ),
       ),
       child: MouseRegion(
         onEnter: _enterChild,

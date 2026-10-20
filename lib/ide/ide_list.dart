@@ -20,6 +20,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/workbench_theme.dart' show themeColors;
 import 'ide_hover.dart';
@@ -53,6 +54,64 @@ abstract final class IdeListColors {
   /// Modern UI insets a pane's rows 4px each side, with rounded corners.
   static const inset = 4.0;
 }
+
+/// Shared focus, selected rows and range anchor for workbench lists.
+class IdeListSelection<T> {
+  T? focused;
+  T? anchor;
+  final Set<T> values = {};
+
+  void select(T? item) {
+    focused = anchor = item;
+    values
+      ..clear()
+      ..addAll([?item]);
+  }
+
+  void toggle(T item) {
+    focused = anchor = item;
+    if (!values.remove(item)) values.add(item);
+  }
+
+  void range(T item, List<T> visible) {
+    final to = visible.indexOf(item);
+    if (to < 0) return;
+    final anchored = anchor;
+    var from = anchored == null ? -1 : visible.indexOf(anchored);
+    if (from < 0) {
+      from = to;
+      anchor = item;
+    }
+    focused = item;
+    values
+      ..clear()
+      ..addAll(visible.sublist(math.min(from, to), math.max(from, to) + 1));
+  }
+
+  void selectAll(List<T> visible) {
+    if (visible.isEmpty) return;
+    focused ??= visible.first;
+    anchor ??= focused;
+    values
+      ..clear()
+      ..addAll(visible);
+  }
+}
+
+/// Navigation keys stay in a list when no command handles them.
+final ideListNavigationKeys = {
+  LogicalKeyboardKey.arrowDown,
+  LogicalKeyboardKey.arrowUp,
+  LogicalKeyboardKey.arrowLeft,
+  LogicalKeyboardKey.arrowRight,
+  LogicalKeyboardKey.home,
+  LogicalKeyboardKey.end,
+  LogicalKeyboardKey.pageDown,
+  LogicalKeyboardKey.pageUp,
+  LogicalKeyboardKey.enter,
+  LogicalKeyboardKey.numpadEnter,
+  LogicalKeyboardKey.space,
+};
 
 /// `.monaco-count-badge` in Modern UI: 10px, `padding: 4px 6px`, at least
 /// 19px, round.
@@ -142,6 +201,7 @@ class IdeListRow extends StatefulWidget {
     this.selected = false,
     this.focusedItem,
     this.focused = false,
+    this.keepSelectionActive = false,
     this.height = IdeListColors.rowHeight,
     this.tooltip,
   });
@@ -158,6 +218,10 @@ class IdeListRow extends StatefulWidget {
 
   /// Whether the list has focus: its selection is the active one.
   final bool focused;
+
+  /// Keeps the active selection colors and outline when opening a row
+  /// moves keyboard focus to its content.
+  final bool keepSelectionActive;
   final double height;
   final String? tooltip;
 
@@ -174,20 +238,32 @@ class _IdeListRowState extends State<IdeListRow> {
   Duration? _lastTap;
   Duration? _down;
 
+  /// The row clicked last, of every list: a click on another row between
+  /// two on this one makes them two clicks, not a double click.
+  static _IdeListRowState? _lastTapped;
+
   void _tapped() {
     final now = _down;
     final last = _lastTap;
     final double =
         widget.onDoubleTap != null &&
+        identical(_lastTapped, this) &&
         now != null &&
         last != null &&
         now - last <= kDoubleTapTimeout;
     _lastTap = double ? null : now;
+    _lastTapped = double ? null : this;
     if (double) {
       widget.onDoubleTap!();
     } else {
       widget.onTap?.call();
     }
+  }
+
+  @override
+  void dispose() {
+    if (identical(_lastTapped, this)) _lastTapped = null;
+    super.dispose();
   }
 
   /// The row's outline (`listWidget.ts` `DefaultStyleController`): the
@@ -198,7 +274,8 @@ class _IdeListRowState extends State<IdeListRow> {
     final colors = themeColors;
     final contrast = colors.get('contrastActiveBorder');
     final focusedItem = widget.focusedItem ?? widget.selected;
-    if (widget.focused && focusedItem) {
+    if ((widget.focused && focusedItem) ||
+        (widget.selected && widget.keepSelectionActive)) {
       return widget.selected
           ? colors.get('list.focusAndSelectionOutline') ??
                 contrast ??
@@ -237,7 +314,7 @@ class _IdeListRowState extends State<IdeListRow> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(4),
               color: selected
-                  ? (widget.focused
+                  ? (widget.focused || widget.keepSelectionActive
                         ? IdeListColors.activeSelection
                         : IdeListColors.inactiveSelection)
                   : _hover
@@ -450,20 +527,24 @@ void ideRevealRow(
   double rowHeight = IdeListColors.rowHeight,
   double top = 0,
 }) {
+  top += index * rowHeight;
+  ideRevealRange(controller, top, top + rowHeight);
+}
+
+/// Reveals a variable-height row in the list's content coordinates.
+void ideRevealRange(ScrollController controller, double top, double bottom) {
   if (!controller.hasClients) return;
   final position = controller.position;
-  top += index * rowHeight;
-  final bottom = top + rowHeight;
-  final view = position.viewportDimension;
   final double? target = top < position.pixels
       ? top
-      : bottom > position.pixels + view
-      ? bottom - view
+      : bottom > position.pixels + position.viewportDimension
+      ? bottom - position.viewportDimension
       : null;
-  if (target == null) return;
-  controller.jumpTo(
-    target.clamp(position.minScrollExtent, position.maxScrollExtent),
-  );
+  if (target != null) {
+    controller.jumpTo(
+      target.clamp(position.minScrollExtent, position.maxScrollExtent),
+    );
+  }
 }
 
 /// How many [rowHeight] rows [controller]'s view shows (a page).

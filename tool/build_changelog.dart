@@ -138,6 +138,7 @@ String _html(_Page page, List<(AppVersion, String?)> releases) {
 <meta name="description" content="${page.lead}">
 <link rel="icon" href="/icon.png">
 <link rel="stylesheet" href="/style.css">
+<script src="/head.js"></script>
 <link rel="alternate" hreflang="en" href="https://caocode.dev${_Page.en.url}">
 <link rel="alternate" hreflang="zh" href="https://caocode.dev${_Page.zh.url}">
 </head>

@@ -93,7 +93,12 @@ std::optional<WPARAM> CommandForButton(HWND window, LRESULT part) {
 // the editor would add a cursor (an Alt+click) and select nothing. The
 // release is told as the key's own would be, as the engine does for a
 // Control it forges (see its KeyboardManager); one of a key it does not hold
-// is let go of there.
+// is let go of there. An Alt's own is a WM_SYSKEYUP, and it must be: the
+// engine hands a WM_KEYUP the framework leaves alone back to the view, whose
+// default procedure takes a lone Alt let go for the window menu's — the
+// window would sit in menu mode, its next key lost and its frames stalled
+// until a click. A WM_SYSKEYUP the engine neither hands back nor lets reach
+// the default procedure.
 void ReleaseModifiersLetGoElsewhere(HWND view) {
   for (const int key : {VK_LMENU, VK_RMENU, VK_LWIN, VK_RWIN}) {
     if (::GetAsyncKeyState(key) & 0x8000) {
@@ -111,9 +116,9 @@ void ReleaseModifiersLetGoElsewhere(HWND view) {
         1 /* repeat count */ | ((scancode & 0xFF) << 16) |
         (extended ? 1u << 24 : 0u) | (1u << 30) /* was down */ |
         (1u << 31) /* going up */);
-    const WPARAM virtual_key = static_cast<WPARAM>(
-        key == VK_LMENU || key == VK_RMENU ? VK_MENU : key);
-    ::SendMessageW(view, WM_KEYUP, virtual_key, lparam);
+    const bool alt = key == VK_LMENU || key == VK_RMENU;
+    ::SendMessageW(view, alt ? WM_SYSKEYUP : WM_KEYUP,
+                   static_cast<WPARAM>(alt ? VK_MENU : key), lparam);
   }
 }
 

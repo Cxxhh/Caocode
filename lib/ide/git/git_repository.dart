@@ -308,6 +308,42 @@ class IdeGitRepository extends ChangeNotifier {
     if (head.ahead > 0) await service.push(remote, '$branch:$name');
   });
 
+  /// Git: Fetch (`Repository.fetch`), or from every remote
+  /// (`Repository.fetchAll`, which the title bar's Fetch From All Remotes
+  /// runs) when [remote] is null.
+  Future<void> fetch({String? remote}) =>
+      _operate(() => service.fetch(remote: remote));
+
+  /// Git: Pull (`Repository.pull`): pulls the branch's upstream. Throws
+  /// when the branch has none (`Repository.pull`'s "no tracking
+  /// information" message), for the view to report.
+  Future<void> pull() => _operate(() async {
+    final (remote, name) = await _upstream('pull');
+    await service.pull(remote, name);
+  });
+
+  /// Git: Push (`Repository.push`): pushes the branch to its upstream.
+  /// Throws when the branch has none.
+  Future<void> push() => _operate(() async {
+    final branch = _state?.head.branch;
+    final (remote, name) = await _upstream('push');
+    await service.push(remote, '$branch:$name');
+  });
+
+  /// The branch's upstream as (remote, remote branch), or an error saying
+  /// there is none to [action] from or to.
+  Future<(String, String)> _upstream(String action) async {
+    final branch = _state?.head.branch;
+    final upstream = _state?.head.upstream;
+    if (branch == null || upstream == null) {
+      throw IdeGitException(
+        'There is no tracking information for the current branch: '
+        'nothing to $action.',
+      );
+    }
+    return splitUpstream(upstream, await service.remotes());
+  }
+
   /// Publish Branch to [remote] (`Repository.pushTo`, setting the
   /// upstream).
   Future<void> publish(String remote) => _whileSyncing(() async {
@@ -345,6 +381,19 @@ class IdeGitRepository extends ChangeNotifier {
   /// Whether older commits can be loaded ([loadMoreGraph]).
   bool get graphHasMore => _graphHasMore;
 
+  /// Whether the graph has every branch's commits, local and remote, not
+  /// only the current branch's and its upstream's.
+  bool get graphAllBranches => _graphAllBranches;
+  bool _graphAllBranches = false;
+  set graphAllBranches(bool value) {
+    if (value == _graphAllBranches) return;
+    _graphAllBranches = value;
+    // After a load that started with the other refs, another.
+    _graphStale = true;
+    unawaited(_graphLoad ?? _reloadGraph());
+    _notify();
+  }
+
   Future<void> loadMoreGraph() {
     _graphLimit += 50;
     // After a load that started with the smaller limit, another.
@@ -379,7 +428,9 @@ class IdeGitRepository extends ChangeNotifier {
           ? await service.mergeBase(headRevision, remoteRevision)
           : null;
       final commits = await service.log(
-        refs: ['HEAD', ?remoteRef],
+        refs: _graphAllBranches
+            ? const ['HEAD', '--branches', '--remotes']
+            : ['HEAD', ?remoteRef],
         limit: _graphLimit + 1,
       );
       if (_disposed) return;

@@ -2,6 +2,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../theme/app_theme.dart';
+import '../chat_find.dart' show ChatFindMarks;
 
 /// Inline code: its text, on `textPreformat.background` painted by the
 /// [InlineCodeText] it is in.
@@ -30,7 +31,7 @@ class InlineCodeText extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _InlineCodeBackdrop(
     color: AppColors.inlineCodeBackground,
-    child: Text.rich(span),
+    child: ChatFindMarks(child: Text.rich(span)),
   );
 }
 

@@ -154,6 +154,7 @@ class FeatureTipsController extends ChangeNotifier {
   bool _showDismissed = false;
 
   /// The version that ran before this launch, when it was older: an update.
+  AppVersion? get updatedFrom => _updatedFrom;
   AppVersion? _updatedFrom;
   List<FeatureTip> _upgradeTips = const [];
 

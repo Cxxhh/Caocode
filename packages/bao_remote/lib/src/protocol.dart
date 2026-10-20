@@ -15,7 +15,7 @@ import 'search/text_query.dart';
 abstract final class RemoteProtocol {
   /// Raise it whenever a method or a shape changes: an app and a server of
   /// another version do not talk, and the app puts its own server in place.
-  static const version = 5;
+  static const version = 7;
 
   static const initialize = 'initialize';
   static const shutdown = 'shutdown';
@@ -35,6 +35,13 @@ abstract final class RemoteProtocol {
   static const fsCopy = 'fs/copy';
   static const fsDelete = 'fs/delete';
   static const fsReadBytes = 'fs/readBytes';
+
+  /// A stretch of a file's bytes and its size: a big file is downloaded a
+  /// stretch at a time, not in one message holding up all the others.
+  static const fsReadRange = 'fs/readRange';
+
+  /// How many bytes files and folders take, counted up to a limit.
+  static const fsSize = 'fs/size';
   static const fsWriteBytes = 'fs/writeBytes';
   static const fsWalk = 'fs/walk';
   static const fsWatch = 'fs/watch';

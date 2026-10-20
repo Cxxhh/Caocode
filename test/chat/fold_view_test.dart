@@ -8,6 +8,7 @@ import 'package:caocode/chat/chat_models.dart';
 import 'package:caocode/chat/chat_session.dart';
 import 'package:caocode/chat/composer/composer_draft.dart';
 import 'package:caocode/chat/widgets/fold_line.dart';
+import 'package:caocode/chat/widgets/live_selectable_text.dart';
 import 'package:caocode/theme/app_theme.dart';
 import 'package:super_sliver_list/super_sliver_list.dart';
 
@@ -129,9 +130,8 @@ void main() {
     expect(_text('Done, fixed.'), findsOneWidget);
   });
 
-  testWidgets('a run under way shows the step it is on, then folds', (
-    tester,
-  ) async {
+  testWidgets('a run under way shows the step it is on once it has run a '
+      'moment, then folds', (tester) async {
     final feed = _Feed([
       const UserMessageItem(text: 'Fix the bug'),
       const ToolCallItem(kind: ToolKind.read, target: 'a.dart'),
@@ -146,6 +146,10 @@ void main() {
     await _pump(tester, feed);
     expect(_text('Read 1 file, searched 1 pattern'), findsOneWidget);
     expect(_text('a.dart'), findsNothing);
+    // Not in a blink: it might be done before it is seen.
+    expect(_text('needle'), findsNothing);
+    await tester.pump(const Duration(milliseconds: 301));
+    await tester.pump();
     expect(_text('needle'), findsOneWidget);
 
     // Done: the turn's work folds before its answer.
@@ -163,6 +167,88 @@ void main() {
     expect(_text('Read 1 file'), findsNothing);
   });
 
+  testWidgets('a step under way done in a blink never shows; one that '
+      'showed stays a moment once done', (tester) async {
+    List<ChatItem> turn(ToolStatus last) => [
+      const UserMessageItem(text: 'Fix the bug'),
+      const ToolCallItem(kind: ToolKind.read, target: 'a.dart'),
+      ToolCallItem(kind: ToolKind.grep, target: 'needle', status: last),
+      const LiveStatusItem('Planning next move', visible: false),
+    ];
+    final feed = _Feed(turn(ToolStatus.running), streaming: true);
+    await _pump(tester, feed);
+    await tester.pump(const Duration(milliseconds: 100));
+    feed.update(turn(ToolStatus.succeeded), streaming: true);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(_text('needle'), findsNothing);
+
+    // Run again, long enough to show; done, kept, then folded.
+    feed.update(turn(ToolStatus.running), streaming: true);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 301));
+    await tester.pump();
+    expect(_text('needle'), findsOneWidget);
+    feed.update(turn(ToolStatus.succeeded), streaming: true);
+    await tester.pump();
+    expect(_text('needle'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 701));
+    await tester.pump();
+    expect(_text('needle'), findsNothing);
+  });
+
+  testWidgets('a thought of a blink stays closed; a longer one opens as it '
+      'streams', (tester) async {
+    List<ChatItem> turn({int? seconds}) => [
+      const UserMessageItem(text: 'Fix the bug'),
+      ThinkingItem(text: 'Where is the needle', tokens: 4, seconds: seconds),
+      const LiveStatusItem('Planning next move', visible: false),
+    ];
+    final feed = _Feed(turn(), streaming: true);
+    // Its words as they stream.
+    final words = find.byType(LiveSelectableText);
+    await _pump(tester, feed);
+    expect(words, findsNothing);
+    feed.update(turn(seconds: 0), streaming: true);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(words, findsNothing);
+    expect(_text('Where is the needle'), findsNothing);
+
+    feed.update([
+      ...turn(seconds: 0).take(2),
+      ...turn().skip(1),
+    ], streaming: true);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 301));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(words, findsOneWidget);
+  });
+
+  testWidgets('a step shown on its own stays a moment as a run takes it', (
+    tester,
+  ) async {
+    final feed = _Feed([
+      const UserMessageItem(text: 'Fix the bug'),
+      const ToolCallItem(kind: ToolKind.read, target: 'a.dart'),
+      const LiveStatusItem('Planning next move', visible: false),
+    ], streaming: true);
+    await _pump(tester, feed);
+    expect(_text('a.dart'), findsOneWidget);
+    feed.update([
+      const UserMessageItem(text: 'Fix the bug'),
+      const ToolCallItem(kind: ToolKind.read, target: 'a.dart'),
+      const ToolCallItem(kind: ToolKind.read, target: 'b.dart'),
+      const LiveStatusItem('Planning next move', visible: false),
+    ], streaming: true);
+    await tester.pump();
+    expect(_text('Read 2 files'), findsOneWidget);
+    expect(_text('a.dart'), findsOneWidget, reason: 'not gone in a blink');
+    await tester.pump(const Duration(milliseconds: 701));
+    await tester.pump();
+    expect(_text('a.dart'), findsNothing);
+  });
+
   testWidgets('a turn ending while the user reads above folds once they '
       'are back at the bottom', (tester) async {
     final long = List.filled(60, 'A line of what was found.').join('\n\n');
@@ -176,7 +262,9 @@ void main() {
     pointer.hover(tester.getCenter(list));
     for (var i = 0; i < 40; i++) {
       await tester.sendEventToBinding(pointer.scroll(const Offset(0, -200)));
+      // The wheel's notch eased out (120 ms).
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
     }
     await tester.pumpAndSettle();
     expect(_text('Fix the bug'), findsWidgets);
@@ -192,6 +280,7 @@ void main() {
     for (var i = 0; i < 80; i++) {
       await tester.sendEventToBinding(pointer.scroll(const Offset(0, 400)));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
     }
     await tester.pumpAndSettle();
     expect(_text('Worked for 30s'), findsOneWidget);

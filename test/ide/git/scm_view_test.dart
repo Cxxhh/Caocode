@@ -316,6 +316,31 @@ void main() {
     ]);
   });
 
+  testWidgets('a folder\'s menu has, besides Git\'s, the reveals, its path '
+      'and folding; a file\'s its paths', (tester) async {
+    await pumpScm(tester);
+    await rightClick(tester, rowOf('lib').last);
+    for (final item in [
+      'Discard Changes',
+      'Stage Changes',
+      'Add to .gitignore',
+      'Reveal in Explorer View',
+      'Copy Path',
+      'Copy Relative Path',
+      'Collapse All',
+    ]) {
+      expect(find.text(item), findsOneWidget, reason: item);
+    }
+    await tester.tap(find.text('Collapse All'));
+    await tester.pumpAndSettle();
+    expect(text('a.dart'), findsNothing);
+
+    await rightClick(tester, rowOf('notes.md'));
+    for (final item in ['Open File', 'Copy Path', 'Copy Relative Path']) {
+      expect(find.text(item), findsOneWidget, reason: item);
+    }
+  });
+
   testWidgets('Discard All Changes offers tracked files alone, or all', (
     tester,
   ) async {
@@ -373,13 +398,17 @@ void main() {
     git.refs['HEAD'] = 'c2';
     git.log =
         '${gitLogRecord('c2', ['c1'], 'Second', refs: 'HEAD -> refs/heads/main, tag: refs/tags/v1')}\n'
-        '${gitLogRecord('c1', [], 'First', author: 'Grace')}';
+        '${gitLogRecord('c1', [], 'First', author: 'Grace', refs: 'refs/heads/topic, tag: refs/tags/v0')}';
     git.show['c2'] = 'M\x00lib/a.dart\x00A\x00lib/b.dart\x00';
     await pumpScm(tester, files: const {'lib/a.dart': 'a', 'lib/b.dart': 'b'});
     expect(find.textContaining('Second', findRichText: true), findsOneWidget);
     expect(find.textContaining('Grace', findRichText: true), findsOneWidget);
-    // HEAD's badge carries the branch name.
+    // Every reference's badge carries its name: HEAD's branch, the other
+    // branches and the tags.
     expect(find.text('main'), findsWidgets);
+    for (final name in ['v1', 'topic', 'v0']) {
+      expect(find.text(name), findsOneWidget, reason: name);
+    }
 
     await tester.tap(find.textContaining('Second', findRichText: true));
     await tester.pumpAndSettle();
@@ -392,10 +421,24 @@ void main() {
       ),
     );
     expect(label.letter, 'A');
+    // As a tree: the files under their folder, one level in; the folder
+    // closes and opens.
+    expect(
+      tester.getTopLeft(text('b.dart')).dx,
+      greaterThan(tester.getTopLeft(text('lib')).dx),
+    );
+    await tester.tap(rowOf('lib'));
+    await tester.pumpAndSettle();
+    expect(text('a.dart'), findsNothing);
+    expect(text('b.dart'), findsNothing);
+    await tester.tap(rowOf('lib'));
+    await tester.pumpAndSettle();
+    expect(text('b.dart'), findsOneWidget);
 
     await tester.tap(find.textContaining('Second', findRichText: true));
     await tester.pumpAndSettle();
     expect(text('b.dart'), findsNothing);
+    expect(text('lib'), findsNothing);
   });
 
   testWidgets('a commit\'s files grow in, and so does a refresh\'s new '
@@ -412,11 +455,13 @@ void main() {
 
     await tester.tap(find.textContaining('Second', findRichText: true));
     await tester.pump();
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 60));
-    expect(height('changes:c2'), greaterThan(0));
-    expect(height('changes:c2'), lessThan(2 * IdeListColors.rowHeight));
+    final file = 'file:c2:${inRoot('lib/b.dart')}';
+    expect(height(file), greaterThan(0));
+    expect(height(file), lessThan(IdeListColors.rowHeight));
     await tester.pumpAndSettle();
-    expect(height('changes:c2'), 2 * IdeListColors.rowHeight);
+    expect(height(file), IdeListColors.rowHeight);
 
     git.refs['HEAD'] = 'c3';
     git.log =
@@ -432,6 +477,36 @@ void main() {
     expect(height('commit:c3'), lessThan(IdeListColors.rowHeight));
     await tester.pumpAndSettle();
     expect(height('commit:c3'), IdeListColors.rowHeight);
+  });
+
+  testWidgets('the graph shows all branches when asked, the current one '
+      'again after', (tester) async {
+    git.status = '## main\x00';
+    git.refs['HEAD'] = 'c2';
+    git.log =
+        '${gitLogRecord('c2', ['c1'], 'On main', refs: 'HEAD -> refs/heads/main')}\n'
+        '${gitLogRecord('c1', [], 'First')}';
+    await pumpScm(tester);
+    List<String> lastLog() => git.callsTo('log').last;
+    expect(lastLog(), isNot(contains('--branches')));
+
+    git.log =
+        '${gitLogRecord('f1', ['c1'], 'On feature', refs: 'refs/heads/feature')}\n'
+        '${gitLogRecord('c2', ['c1'], 'On main', refs: 'HEAD -> refs/heads/main')}\n'
+        '${gitLogRecord('c1', [], 'First')}';
+    await hover(tester, find.text('Graph'));
+    await tester.tap(find.byTooltip('Branches Shown'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('All Branches'));
+    await tester.pumpAndSettle();
+    expect(lastLog(), containsAllInOrder(['HEAD', '--branches', '--remotes']));
+    expect(find.byKey(const ValueKey('commit:f1')), findsWidgets);
+
+    await tester.tap(find.byTooltip('Branches Shown'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Current Branch'));
+    await tester.pumpAndSettle();
+    expect(lastLog(), isNot(contains('--branches')));
   });
 
   testWidgets('Undo Last Commit restores its message to the input', (

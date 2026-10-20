@@ -44,11 +44,6 @@ class DataDirectoryPage extends StatefulWidget {
   /// (see `AppLifecycleListener` in main.dart).
   final Future<void> Function()? quit;
 
-  /// Reveal in Finder, or in File Explorer.
-  static String revealLabel(AppLocalizations l10n) => AppPlatform.isWindows
-      ? l10n.dataDirRevealInFileExplorer
-      : l10n.explorerRevealInFinder;
-
   static bool get canReveal =>
       WindowControls.canRevealInFileManager || AppPlatform.isWindows;
 
@@ -80,9 +75,6 @@ class _DataDirectoryPageState extends State<DataDirectoryPage> {
 
   /// The folder picked, checked, and not yet saved.
   DataDirectoryTarget? _draft;
-
-  static String _revealLabel(AppLocalizations l10n) =>
-      DataDirectoryPage.revealLabel(l10n);
 
   static bool get _canReveal => DataDirectoryPage.canReveal;
 
@@ -315,7 +307,7 @@ class _DataDirectoryPageState extends State<DataDirectoryPage> {
                     : [
                         if (_canReveal)
                           IdeButton(
-                            label: _revealLabel(l10n),
+                            label: l10n.revealInFileManager,
                             secondary: true,
                             onPressed: () => unawaited(_reveal(current.path)),
                           ),

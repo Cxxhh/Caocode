@@ -69,25 +69,17 @@ class ChangeReviews extends ChangeNotifier {
     }
   }
 
-  set working(bool working) {
-    for (final part in _parts) {
-      part.working = working;
-    }
-  }
-
   void abandon(String reason) {
     for (final part in _parts) {
       part.abandon(reason);
     }
   }
 
-  Future<void> begin() => _all((part) => part.begin());
-
-  Future<void> observe({bool full = true}) =>
-      _all((part) => part.observe(full: full));
+  Future<void> refresh() => _all((part) => part.refresh());
 
   /// A relative path is the agent's directory's, and so the first's.
-  void report(FileChange change) => _partOf(change.path).report(change);
+  void report(FileChange change, {FileOriginal? original}) =>
+      _partOf(change.path).report(change, original: original);
 
   Future<void> keep(Iterable<String> paths) =>
       _each(paths, (part, paths) => part.keep(paths));
@@ -101,6 +93,14 @@ class ChangeReviews extends ChangeNotifier {
 
   Future<String> Function()? original(String path) =>
       _partOf(path).original(_absolute(path));
+
+  String? baseOf(String path) => _partOf(path).baseOf(_absolute(path));
+
+  Future<void> keepPart(String path, String base) =>
+      _partOf(path).keepPart(_absolute(path), base);
+
+  Future<void> settle(Iterable<String> paths) =>
+      _each(paths, (part, paths) => part.settle(paths));
 
   Future<void> discard() => _all((part) => part.discard());
 

@@ -406,7 +406,7 @@ class EditorDocumentModel {
         ? ''
         : tree.getValueInRange2(tree.nodeAt(start)!, tree.nodeAt(end)!);
     final reversed = <List<_OffsetEdit>>[];
-    var changed = false;
+    final applied = <_OffsetEdit>[];
     _beginChanges(undoing: undoing, redoing: redoing);
     for (final group in groups) {
       final inverses = <_OffsetEdit>[];
@@ -420,18 +420,49 @@ class EditorDocumentModel {
         if (end > start) tree.delete(start, end - start);
         if (edit.text.isNotEmpty) tree.insert(start, edit.text);
         inverses.add(_OffsetEdit(start, start + edit.text.length, removed));
-        changed = true;
+        applied.add(_OffsetEdit(start, end, edit.text));
       }
       reversed.insert(0, inverses.reversed.toList());
     }
-    if (changed) _commitTreeChange();
+    if (applied.isNotEmpty) _commitTreeChange(applied);
     _endChanges();
     return reversed;
   }
 
-  void _commitTreeChange() {
+  /// Takes the tree's text after [applied], edits made one after another,
+  /// each against the text the one before left.
+  void _commitTreeChange(List<_OffsetEdit> applied) {
     _contentFlagsStale = true;
-    _snapshot = DocumentSnapshot(_buffer.getValue());
+    // A few edits (typing, with a cursor or a few) are applied to the
+    // snapshot, scanning only the lines they touch; many are read back whole.
+    if (applied.length <= 3) {
+      for (final edit in applied) {
+        _snapshot = DocumentSnapshot.edited(
+          _snapshot,
+          edit.start,
+          edit.end,
+          edit.text,
+        );
+      }
+    } else {
+      // The span they all fall in, for those who read what changed.
+      final before = _snapshot.text.length;
+      var length = before;
+      var prefix = length;
+      var suffix = length;
+      for (final edit in applied) {
+        if (edit.start < prefix) prefix = edit.start;
+        if (length - edit.end < suffix) suffix = length - edit.end;
+        length += edit.text.length - (edit.end - edit.start);
+      }
+      _snapshot = DocumentSnapshot.replaced(
+        _snapshot,
+        _buffer.getValue(),
+        prefix,
+        before - suffix,
+      );
+    }
+    assert(_snapshot.text.length == _buffer.getPieceTree().getLength());
     _version++;
   }
 
@@ -447,6 +478,7 @@ class EditorDocumentModel {
     final before = _snapshot.text;
     final tree = _buffer.getPieceTree();
     final inverses = <_OffsetEdit>[];
+    final applied = <_OffsetEdit>[];
     _beginChanges();
     for (final edit in edits.reversed) {
       final removed = before.substring(edit.start, edit.end);
@@ -458,12 +490,13 @@ class EditorDocumentModel {
       inverses.add(
         _OffsetEdit(edit.start, edit.start + edit.text.length, removed),
       );
+      applied.add(edit);
     }
     if (inverses.isEmpty) {
       _pendingChanges = null;
       return const [];
     }
-    _commitTreeChange();
+    _commitTreeChange(applied);
     _endChanges();
     // Inverses were produced last-to-first, so the lowest edit is last. Its
     // offsets are valid in the final text; each earlier inverse is valid once

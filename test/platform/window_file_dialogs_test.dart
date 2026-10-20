@@ -28,7 +28,11 @@ void main() {
     messenger.setMockMethodCallHandler(_window, null);
   });
 
-  for (final platform in [TargetPlatform.macOS, TargetPlatform.windows]) {
+  for (final platform in [
+    TargetPlatform.macOS,
+    TargetPlatform.windows,
+    TargetPlatform.linux,
+  ]) {
     group(platform.name, () {
       setUp(() => debugDefaultTargetPlatformOverride = platform);
 
@@ -81,14 +85,16 @@ void main() {
     expect(calls.first.arguments, {'file': 'Datei'});
     expect(calls.last.arguments, ['/a', '/b']);
 
-    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-    await WindowControls.setFileMenuTitles({'file': 'Datei'});
-    await WindowControls.setRecentItems(['/a']);
+    for (final other in [TargetPlatform.windows, TargetPlatform.linux]) {
+      debugDefaultTargetPlatformOverride = other;
+      await WindowControls.setFileMenuTitles({'file': 'Datei'});
+      await WindowControls.setRecentItems(['/a']);
+    }
     expect(calls, hasLength(2));
   });
 
   test('no panels where there is no window (the web, others)', () async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
     expect(await WindowControls.pickOpenFiles(), isEmpty);
     expect(await WindowControls.pickSaveFile(), isNull);
     expect(calls, isEmpty);

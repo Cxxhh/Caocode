@@ -24,6 +24,7 @@ import 'package:caocode/chat/widgets/shimmer_text.dart';
 import 'package:caocode/chat/widgets/thinking_section.dart';
 import 'package:caocode/chat/widgets/chat_item_view.dart';
 import 'package:caocode/chat/widgets/user_message_bubble.dart';
+import 'package:caocode/chat/chat_find.dart';
 import 'package:caocode/chat/chat_history_view.dart';
 import 'package:caocode/chat/chat_session.dart';
 import 'package:caocode/chat/chat_screen.dart';
@@ -37,6 +38,7 @@ import 'package:caocode/chat/composer/suggestion_menu.dart';
 import 'package:caocode/chat/panels/activity_strip.dart';
 import 'package:caocode/chat/panels/interaction_panel.dart';
 import 'package:caocode/chat/panels/context_usage_panel.dart';
+import 'package:caocode/keybindings/keybinding_service.dart';
 import 'package:caocode/theme/app_theme.dart';
 
 Future<ChatSession> pumpScreen(
@@ -104,6 +106,21 @@ void main() {
         )
         .width;
     expect(width(false), width(true) - 2 * UserMessageBubble.radius);
+  });
+
+  testWidgets('in the IDE the conversation spans its pane, not centered in '
+      'it', (tester) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    Rect composer() => tester.getRect(find.byType(ChatComposer).last);
+
+    await pumpScreen(tester);
+    expect(composer().left, greaterThan(300));
+
+    await pumpScreen(tester, embedded: true);
+    expect(composer().left, lessThanOrEqualTo(24));
+    expect(composer().width, greaterThanOrEqualTo(1400 - 2 * 24));
   });
 
   testWidgets('@ opens the files of the project, narrowed by what follows', (
@@ -798,6 +815,44 @@ void main() {
       expect(content(tester), 'see [@README.md] \n');
     });
 
+    testWidgets('a composition in a URL stays where it is typed', (
+      tester,
+    ) async {
+      await pumpScreen(tester);
+      // #99: Quill's rule that finds links put the text replacing another
+      // before it, not in its place: the composition went in the URL ahead
+      // of the caret, and the candidate picked left it there.
+      const url = 'fetch("http://a.b/baf/attachment/download")';
+      await paste(tester, url);
+      final at = url.indexOf('/download');
+      String typed(String text) =>
+          url.substring(0, at) + text + url.substring(at);
+      // An inline emoji suggestion after the caret, as in the other test.
+      for (final (composition, caret) in [
+        ('ni', 2),
+        ('ni〔表情：👋〕', 2),
+        ('ni hc〔表情：👋〕', 5),
+      ]) {
+        tester.testTextInput.updateEditingValue(
+          TextEditingValue(
+            text: '${typed(composition)}\n',
+            selection: TextSelection.collapsed(offset: at + caret),
+            composing: TextRange(start: at, end: at + composition.length),
+          ),
+        );
+        await tester.pump();
+        expect(content(tester), '${typed(composition)}\n');
+      }
+      tester.testTextInput.updateEditingValue(
+        TextEditingValue(
+          text: '${typed('你好')}\n',
+          selection: TextSelection.collapsed(offset: at + 2),
+        ),
+      );
+      await tester.pump();
+      expect(content(tester), '${typed('你好')}\n');
+    });
+
     testWidgets('keeps a tag before a composition whose caret is not at its '
         'end', (tester) async {
       await pumpScreen(tester);
@@ -824,6 +879,65 @@ void main() {
       await tester.pump();
       expect(content(tester), '[@lib/main.dart] 你好\n');
     });
+
+    testWidgets('Shift+Cmd+V pastes the raw text, past the long-paste tag', (
+      tester,
+    ) async {
+      KeybindingService.instance = KeybindingService();
+      addTearDown(() => KeybindingService.instance = KeybindingService());
+      await pumpScreen(tester);
+      final long = List.generate(30, (i) => 'line $i').join('\n');
+      tester.binding.defaultBinaryMessenger
+        ..setMockMethodCallHandler(
+          SystemChannels.platform,
+          (call) async =>
+              call.method == 'Clipboard.getData' ? {'text': long} : null,
+        )
+        // The pasteboard's own channel: no images, as the composer's paste
+        // asks it (else the ask never answers under the test binding).
+        ..setMockMethodCallHandler(
+          const MethodChannel('caocode/window'),
+          (call) async => null,
+        );
+      addTearDown(() {
+        tester.binding.defaultBinaryMessenger
+          ..setMockMethodCallHandler(SystemChannels.platform, null)
+          ..setMockMethodCallHandler(
+            const MethodChannel('caocode/window'),
+            null,
+          );
+      });
+
+      // The plain paste still tags it (too long for the text).
+      await composerController(tester).clipboardPaste();
+      await tester.pump();
+      expect(
+        composerController(tester).document.toDelta().toList().where(
+          (op) => op.data is Map,
+        ),
+        hasLength(1),
+      );
+
+      // The shortcut pastes the raw text in, with no tag.
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyV, character: 'V');
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(SuggestionMenu), findsNothing);
+      final delta = composerController(tester).document.toDelta().toList();
+      expect(
+        delta.where((op) => op.data is Map).map((op) => op.data),
+        hasLength(1),
+        reason: 'only the first (plain) paste is a tag',
+      );
+      expect(
+        composerController(tester).document.toPlainText(),
+        contains('line 29'),
+      );
+    }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
   });
 
   testWidgets(
@@ -1336,6 +1450,39 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
     });
 
+    testWidgets('a message opened as another closes makes room for all of '
+        'its editor', (tester) async {
+      // Tall enough for all four turns: the one message's editor closes, in
+      // view, as the other's opens.
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await pumpScreen(tester, historyCount: 32);
+      Rect editor() => tester.getRect(
+        find.descendant(
+          of: find.byType(ChatHistoryView),
+          matching: find.byType(ChatComposer),
+        ),
+      );
+      Rect row(int index) => tester.getRect(
+        find.byWidgetPredicate(
+          (widget) => widget is ChatFindRow && widget.index == index,
+        ),
+      );
+      await tester.tap(bubble('第 4 轮'));
+      await settleAnimations(tester);
+      final height = editor().height;
+      await tester.tap(bubble('第 2 轮'));
+      await settleAnimations(tester);
+
+      // The two messages are alike: their editors are as tall.
+      expect(editor().height, height);
+      // Its row is as tall as the editor, not as the message was: what
+      // follows it is below the editor, not under it.
+      expect(row(8).height, moreOrLessEquals(height));
+      expect(row(9).top, greaterThan(editor().bottom));
+    });
+
     testWidgets('an edited message replaces the rest of the conversation', (
       tester,
     ) async {
@@ -1599,6 +1746,7 @@ void main() {
       wheel.hover(tester.getCenter(composer));
       await tester.sendEventToBinding(wheel.scroll(const Offset(0, -30)));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
       expect(position.pixels, lessThan(position.maxScrollExtent));
 
       // Back: in place again.

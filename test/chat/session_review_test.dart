@@ -31,7 +31,7 @@ class _Review extends ChangeReview {
 
   final calls = <String>[];
   final reported = <String>[];
-  Completer<void>? holdBegin;
+  Completer<void>? holdRefresh;
   List<FileChange> listed = const [];
 
   @override
@@ -43,17 +43,14 @@ class _Review extends ChangeReview {
   }
 
   @override
-  Future<void> begin() async {
-    calls.add('begin');
-    await holdBegin?.future;
+  Future<void> refresh() async {
+    calls.add('refresh');
+    await holdRefresh?.future;
   }
 
   @override
-  Future<void> observe({bool full = true}) async =>
-      calls.add(full ? 'observe' : 'observe reported');
-
-  @override
-  void report(FileChange change) => reported.add(change.path);
+  void report(FileChange change, {FileOriginal? original}) =>
+      reported.add(change.path);
 
   @override
   Future<void> keep(Iterable<String> paths) async =>
@@ -94,7 +91,6 @@ void main() {
   }
 
   Future<void> finish(WidgetTester tester, ChatSession session) async {
-    // The message goes once the snapshot before it is taken.
     await tester.pump(const Duration(milliseconds: 100));
     for (var i = 0; i < 400 && session.isStreaming; i++) {
       switch (session.pendingInteraction) {
@@ -109,26 +105,23 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
   }
 
-  testWidgets('a message goes without waiting for the snapshot before it', (
-    tester,
-  ) async {
+  testWidgets('the edits go to the review, its files looked at again around '
+      'a turn, which does not wait for it', (tester) async {
     final session = await pump(tester);
-    // The project was snapshotted as the conversation showed.
-    expect(review.calls, ['begin']);
+    expect(review.calls, ['refresh']);
 
-    review.holdBegin = Completer();
+    review.holdRefresh = Completer();
     session.send(const ComposerMessage(text: '把输入框改成随内容增高'));
-    // Shown at once, the snapshot taken as it goes.
-    expect(review.calls, ['begin', 'begin']);
+    // Shown at once.
+    expect(review.calls, ['refresh', 'refresh']);
     expect(session.itemCount, greaterThan(0));
 
-    review.holdBegin!.complete();
+    review.holdRefresh!.complete();
     await finish(tester, session);
 
-    // The edits it reported were looked at, and all at the turn's end.
     expect(review.reported, isNotEmpty);
-    expect(review.calls, contains('observe reported'));
-    expect(review.calls.last, 'observe');
+    // And again at the turn's end.
+    expect(review.calls.last, 'refresh');
     // Its background tests settle.
     await tester.pump(const Duration(seconds: 5));
   });

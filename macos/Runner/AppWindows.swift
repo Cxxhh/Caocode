@@ -90,6 +90,15 @@ final class AppWindows: NSObject {
       started = enableMultiView()
       if !started && !main.isVisible { show(main) }
       result(started)
+    case "createStash":
+      result(createStash())
+    case "showStash":
+      stash?.alphaValue = 1
+      stash?.present()
+      result(nil)
+    case "hideStash":
+      stash?.dismiss()
+      result(nil)
     case "create":
       let arguments = call.arguments as? [String: Any] ?? [:]
       result(create(
@@ -99,6 +108,12 @@ final class AppWindows: NSObject {
     case "close":
       if let viewId = Self.id(call.arguments) { close(viewId) }
       result(nil)
+    case "leaveFullScreen":
+      guard let viewId = Self.id(call.arguments), let window = window(viewId) else {
+        result(false)
+        return
+      }
+      leaveFullScreen(window) { result($0) }
     case "focus":
       if let viewId = Self.id(call.arguments), let window = window(viewId) {
         window.alphaValue = 1
@@ -244,6 +259,33 @@ final class AppWindows: NSObject {
     window.contentViewController = nil
   }
 
+  /// Takes [window] out of full screen, then [done]: whether it was in it.
+  /// Closed or hidden in full screen, its Space would go black while AppKit
+  /// takes it away, its view emptied (#148); out of it first, it shrinks
+  /// back as it is, as Chromium closes a window in full screen
+  /// (NativeWidgetMacFullscreenController's OnWindowWantsToClose).
+  private func leaveFullScreen(_ window: NSWindow, then done: @escaping (Bool) -> Void) {
+    guard window.styleMask.contains(.fullScreen) else {
+      done(false)
+      return
+    }
+    let center = NotificationCenter.default
+    var observer: NSObjectProtocol?
+    var finished = false
+    let finish = {
+      guard !finished else { return }
+      finished = true
+      if let observer { center.removeObserver(observer) }
+      done(true)
+    }
+    observer = center.addObserver(
+      forName: NSWindow.didExitFullScreenNotification, object: window, queue: .main
+    ) { _ in finish() }
+    window.toggleFullScreen(nil)
+    // AppKit may not leave it (another transition under way): closed anyway.
+    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { finish() }
+  }
+
   /// Brings [window] back, hidden or minimized, in front, the keyboard's.
   func show(_ window: NSWindow) {
     if window.isMiniaturized { window.deminiaturize(nil) }
@@ -268,15 +310,41 @@ final class AppWindows: NSObject {
   // MARK: The windows' events
 
   @objc private func becameKey(_ notification: Notification) {
-    guard started, let window = notification.object as? BaoWindow else { return }
+    guard started, let window = notification.object as? FlutterHostWindow else { return }
     tellEngine("windowDidBecomeKey:", window.viewId)
+    // The stash's panel is none of the app's windows (see StashPanel).
+    guard window is BaoWindow else { return }
     channel.invokeMethod("focused", arguments: window.viewId)
     Attention.shared?.refreshTray()
   }
 
   @objc private func resignedKey(_ notification: Notification) {
-    guard started, let window = notification.object as? BaoWindow else { return }
+    guard started, let window = notification.object as? FlutterHostWindow else { return }
     tellEngine("windowDidResignKey:", window.viewId)
+  }
+
+  // MARK: The stash's panel
+
+  /// The stash's panel, once made (see StashPanel).
+  private var stash: StashPanel?
+
+  /// Makes the stash's panel, hidden: its view's id. Made once.
+  private func createStash() -> Int64? {
+    guard started else { return nil }
+    if let stash { return stash.viewId }
+    let flutter = FlutterViewController(engine: engine, nibName: nil, bundle: nil)
+    let panel = StashPanel(flutter: flutter)
+    stash = panel
+    // On screen once, unseen, for Flutter to draw it: shown later, it is
+    // there at once rather than empty for a frame.
+    panel.alphaValue = 0
+    panel.orderFrontRegardless()
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak panel] in
+      guard let panel else { return }
+      if panel.alphaValue == 0 { panel.orderOut(nil) }
+      panel.alphaValue = 1
+    }
+    return flutter.viewIdentifier
   }
 
   @objc private func frameChanged(_ notification: Notification) {

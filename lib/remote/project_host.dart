@@ -73,6 +73,7 @@ class LocalHost implements ProjectHost {
         scan,
         list: files(root).list,
         isRepositoryTop: (folder) => IdeGitService(folder).isRepositoryTop(),
+        submodulesOf: (folder) => IdeGitService(folder).submodulePaths(),
       );
 
   @override

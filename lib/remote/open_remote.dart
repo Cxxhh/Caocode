@@ -12,7 +12,9 @@ import '../ide/ide_quick_input.dart';
 import '../ide/ide_spinning.dart';
 import '../l10n/l10n.dart';
 import '../theme/codicons.dart';
+import 'remote_files.dart';
 import 'remote_location.dart';
+import 'remote_status.dart' show sshErrorText;
 import 'ssh_host.dart';
 
 /// The command's id, in the palettes and on the start page.
@@ -28,19 +30,25 @@ class OpenRemoteFlow {
     this.onConnected,
     this.added = const [],
     String Function(String host)? labelOf,
+    this.addressOf,
     this.iconOf,
+    this.onAdd,
+    this.onEdit,
+    this.onForgetHostKey,
     SshHosts? hosts,
-    Future<List<String>> Function()? configHosts,
+    this.configHosts,
   }) : hosts = hosts ?? SshHosts.instance,
-       labelOf = labelOf ?? _itself,
-       _configHosts = configHosts ?? defaultConfigHosts;
+       labelOf = labelOf ?? _itself;
 
   static String _itself(String host) => host;
 
   /// Where the hosts to pick from come from when not given: `~/.ssh/config`;
-  /// replaceable under test.
+  /// replaceable under test (see [defaultRemoteConfigHosts]).
   @visibleForTesting
-  static Future<List<String>> Function() defaultConfigHosts = sshConfigHosts;
+  static Future<List<String>> Function() get defaultConfigHosts =>
+      defaultRemoteConfigHosts;
+  static set defaultConfigHosts(Future<List<String>> Function() value) =>
+      defaultRemoteConfigHosts = value;
 
   final void Function(IdeQuickPick pick) show;
   final AppLocalizations l10n;
@@ -53,79 +61,40 @@ class OpenRemoteFlow {
   /// the names ([labelOf]) and icons ([iconOf]) given them.
   final List<String> added;
   final String Function(String host) labelOf;
+  final String Function(String host)? addressOf;
   final Widget? Function(String host)? iconOf;
+
+  /// Adds a server (see [RemoteHostPicker.onAdd]).
+  final ValueChanged<String?>? onAdd;
+
+  /// Edits an added host's server (see [RemoteHostPicker.onEdit]); offered
+  /// too when connecting to it failed.
+  final ValueChanged<String>? onEdit;
+
+  /// Asks to forget the host key known for a host whose key changed, and
+  /// does (see [SshHosts.forgetHostKey]): whether it did, to connect again.
+  final Future<bool> Function(String host)? onForgetHostKey;
   final SshHosts hosts;
-  final Future<List<String>> Function() _configHosts;
+  final Future<List<String>> Function()? configHosts;
 
   /// The next step's pick, once the one accepted has hidden.
   void _next(IdeQuickPick pick) => Timer.run(() => show(pick));
 
-  /// The hosts to pick from.
-  Future<void> start() async {
-    List<String> known;
-    try {
-      known = await _configHosts();
-    } on Object {
-      known = const [];
-    }
-    final connected = {for (final host in hosts.connected) host.host};
-    final added = [...this.added];
-    final config = [
-      for (final host in known)
-        if (!added.contains(host)) host,
-    ];
-    IdeQuickPickItem hostItem(String host) {
-      final label = labelOf(host);
-      final description = [
-        if (label != host) host,
-        if (connected.contains(host)) l10n.sidebarHostConnected,
-      ].join(' · ');
-      return IdeQuickPickItem(
-        label: label,
-        icon: iconOf?.call(host) ?? const Icon(Codicons.remote),
-        description: description.isEmpty ? null : description,
-        onAccept: () => _connect(host),
-      );
-    }
-
-    show(
-      IdeQuickPick(
-        placeholder: l10n.remoteHostPlaceholder,
-        sortByLabel: false,
-        matchOnDescription: true,
-        itemsFor: (value) {
-          final typed = value.trim();
-          return [
-            if (typed.isNotEmpty &&
-                !known.contains(typed) &&
-                !added.contains(typed))
-              SshTarget.isValid(typed)
-                  ? IdeQuickPickItem(
-                      label: l10n.remoteConnectTo(typed),
-                      icon: const Icon(Codicons.plug),
-                      alwaysShow: true,
-                      onAccept: () => _connect(typed),
-                    )
-                  : IdeQuickPickItem(
-                      label: l10n.remoteInvalidHost,
-                      alwaysShow: true,
-                    ),
-            if (known.isEmpty && added.isEmpty && typed.isEmpty)
-              IdeQuickPickItem(label: l10n.remoteNoHosts),
-            if (added.isNotEmpty) ...[
-              IdeQuickPickSeparator(l10n.remoteAddedHosts),
-              for (final host in added) hostItem(host),
-            ],
-            if (config.isNotEmpty) ...[
-              const IdeQuickPickSeparator('~/.ssh/config'),
-              for (final host in config) hostItem(host),
-            ],
-          ];
-        },
-        onDidAccept: (item) => item?.onAccept?.call(),
-      ),
-    );
-  }
+  /// The hosts to pick from (see [RemoteHostPicker]).
+  Future<void> start() => RemoteHostPicker(
+    show: show,
+    l10n: l10n,
+    placeholder: l10n.remoteHostPlaceholder,
+    onPick: (host) => _connect(host),
+    added: added,
+    labelOf: labelOf,
+    addressOf: addressOf,
+    iconOf: iconOf,
+    onAdd: onAdd,
+    onEdit: onEdit,
+    hosts: hosts,
+    configHosts: configHosts,
+  ).start();
 
   /// Opens a folder of [host], known already: connects (its progress
   /// shown), then browses its home.
@@ -150,28 +119,50 @@ class OpenRemoteFlow {
       try {
         client = await ssh.reconnect();
       } on Object catch (error) {
-        final (message, detail) = switch (error) {
-          SshConnectException(:final message, :final detail) => (
-            message,
-            detail,
-          ),
-          _ => ('$error', null),
-        };
+        final (message, detail) = sshErrorText(error, l10n);
+        final failure = error is SshConnectException ? error.failure : null;
+        final forget = onForgetHostKey;
+        final edit = onEdit;
+        // Its own server to fix, not one of ~/.ssh/config.
+        final editable =
+            edit != null &&
+            switch (failure) {
+              SshFailure.authentication || SshFailure.unreachable => true,
+              _ => false,
+            } &&
+            !(await (configHosts ?? defaultRemoteConfigHosts)().catchError(
+              (Object _) => const <String>[],
+            )).contains(host);
         _next(
           IdeQuickPick(
             placeholder: l10n.remoteConnectFailed(host),
             sortByLabel: false,
             items: [
               IdeQuickPickItem(
-                label: message,
+                label: message ?? l10n.remoteConnectFailed(host),
                 detail: detail?.split('\n').last,
                 icon: const Icon(Codicons.error),
               ),
-              IdeQuickPickItem(
-                label: l10n.remoteRetry,
-                icon: const Icon(Codicons.refresh),
-                onAccept: () => _connect(host),
-              ),
+              if (failure == SshFailure.hostKeyChanged && forget != null)
+                IdeQuickPickItem(
+                  label: l10n.remoteForgetHostKey,
+                  icon: const Icon(Codicons.key),
+                  onAccept: () => unawaited(() async {
+                    if (await forget(host)) _connect(host, now: true);
+                  }()),
+                )
+              else
+                IdeQuickPickItem(
+                  label: l10n.remoteRetry,
+                  icon: const Icon(Codicons.refresh),
+                  onAccept: () => _connect(host),
+                ),
+              if (editable)
+                IdeQuickPickItem(
+                  label: l10n.remoteEditServer,
+                  icon: const Icon(Codicons.edit),
+                  onAccept: () => edit(host),
+                ),
             ],
             onDidAccept: (item) => item?.onAccept?.call(),
           ),

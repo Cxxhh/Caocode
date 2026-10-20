@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:bao_remote/lsp.dart' show jdtlsLauncher;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:caocode/ide/lsp/install/archive.dart';
 import 'package:caocode/ide/lsp/install/install_io.dart';
@@ -163,6 +164,80 @@ final registry = MasonRegistry.fromJson({
 });
 
 void main() {
+  group('jdtls\'s launcher', () {
+    late Directory dir;
+    late String package;
+    late String javaHome;
+    setUp(() {
+      dir = Directory.systemTemp.createTempSync('jdtls-launcher');
+      package = p.join(dir.path, 'jdtls');
+      for (final folder in ['plugins', 'config_mac', 'config_linux']) {
+        Directory(p.join(package, folder)).createSync(recursive: true);
+      }
+      File(p.join(package, 'plugins', 'org.eclipse.equinox.launcher_1.7.jar'))
+          .writeAsStringSync('');
+      File(p.join(package, 'lombok.jar')).writeAsStringSync('');
+      File(p.join(package, 'mason-bin', 'jdtls'))
+        ..createSync(recursive: true)
+        ..writeAsStringSync(jdtlsLauncher(windows: false));
+      javaHome = p.join(dir.path, 'java home');
+      Directory(p.join(javaHome, 'bin')).createSync(recursive: true);
+    });
+    tearDown(() => dir.deleteSync(recursive: true));
+
+    /// A java that says it is [version], and writes what it runs with.
+    void java(String version) {
+      final java = File(p.join(javaHome, 'bin', 'java'))
+        ..writeAsStringSync(
+          '#!/bin/sh\n'
+          'if [ "\$1" = -version ]; then\n'
+          '  echo \'openjdk version "$version" 2026-01-20\' >&2\n'
+          '  exit 0\n'
+          'fi\n'
+          'printf "%s\\n" "\$@" > "${p.join(dir.path, 'args')}"\n',
+        );
+      Process.runSync('chmod', ['755', java.path, '$package/mason-bin/jdtls']);
+    }
+
+    Future<ProcessResult> run() => Process.run(
+      p.join(package, 'mason-bin', 'jdtls'),
+      const [],
+      workingDirectory: dir.path,
+      environment: {'JAVA_HOME': javaHome},
+    );
+
+    test('runs java with the launcher jar, the platform\'s configuration '
+        'and Lombok', () async {
+      java('21.0.2');
+      final result = await run();
+      expect(result.exitCode, 0, reason: '${result.stderr}');
+      final args = File(p.join(dir.path, 'args')).readAsLinesSync();
+      expect(
+        args,
+        containsAll([
+          '-jar',
+          p.join(package, 'plugins', 'org.eclipse.equinox.launcher_1.7.jar'),
+          '-javaagent:${p.join(package, 'lombok.jar')}',
+          '-data',
+        ]),
+      );
+      expect(
+        args,
+        contains(
+          startsWith('-Dosgi.sharedConfiguration.area=$package/config_'),
+        ),
+      );
+    });
+
+    test('says when java is too old', () async {
+      java('17.0.9');
+      final result = await run();
+      expect(result.exitCode, 1);
+      expect(result.stderr, contains('Java 21 or newer'));
+      expect(result.stderr, contains('not Java 17'));
+    });
+  }, skip: Platform.isWindows);
+
   late Directory temp;
   late String root;
   late String toolsDir;
@@ -522,6 +597,52 @@ void main() {
       final mason = provider(downloader: downloader);
       await Future.wait([mason.install('fake-zip'), mason.install('fake-zip')]);
       expect(downloader.requested, hasLength(1));
+    });
+  });
+
+  group('on Windows', () {
+    MasonServerProvider windows() => MasonServerProvider(
+      registry: registry,
+      installRoot: root,
+      downloader: FakeDownloader(const {}),
+      runner: FakeRunner(),
+      environment: () async => environment,
+      platform: const MasonPlatform('win', 'x64'),
+    );
+
+    test('runs npm-cli.js with node, not npm.cmd through cmd.exe', () async {
+      final npm = p.join(toolsDir, 'npm.cmd');
+      final node = p.join(toolsDir, 'node.exe');
+      Future<List<String>> command(MasonServerProvider mason) async {
+        final (executable, arguments) = await mason.npmCommand(npm, node);
+        return [executable, ...arguments];
+      }
+
+      expect(await command(windows()), [npm]);
+      final script = p.join(
+        toolsDir,
+        'node_modules',
+        'npm',
+        'bin',
+        'npm-cli.js',
+      );
+      await File(script).create(recursive: true);
+      expect(await command(windows()), [node, script]);
+      expect(await command(provider()), [npm]);
+    });
+
+    test('which skips the extensionless script beside npm.cmd', () async {
+      await tool('npm');
+      await tool('npm.cmd');
+      final mason = windows();
+      expect(
+        await mason.which('npm', {...environment, 'PATHEXT': '.exe;.cmd'}),
+        p.join(toolsDir, 'npm.cmd'),
+      );
+      expect(
+        await mason.which('npm.cmd', environment),
+        p.join(toolsDir, 'npm.cmd'),
+      );
     });
   });
 

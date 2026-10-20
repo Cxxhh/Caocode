@@ -303,6 +303,9 @@ class DataDirectoryService {
         }
       }
       await _verify(entries, target, copied);
+      // The copied keys keep only the user able to read them: a copy does
+      // not always carry the mode a [FileSecretStore] gave them.
+      await _tightenSecrets(p.join(target, 'secrets'));
       await DataDirectoryPointer(
         dataDir: _same(target, defaultPath) ? null : target,
         previousDataDir: source,
@@ -482,6 +485,23 @@ class DataDirectoryService {
       if (!ok) {
         throw FileSystemException('Not copied whole', path);
       }
+    }
+  }
+
+  /// The copied keys' folder [directory] goes to the user alone (0700),
+  /// each file in it to them alone too (0600): where the system keeps no
+  /// keychain of its own, the keys are files only the user may read
+  /// ([FileSecretStore]). Nothing to do on Windows (DPAPI files) nor when
+  /// the folder was not copied at all.
+  static Future<void> _tightenSecrets(String directory) async {
+    if (Platform.isWindows) return;
+    if (FileSystemEntity.typeSync(directory) !=
+        FileSystemEntityType.directory) {
+      return;
+    }
+    await Process.run('chmod', ['700', directory]);
+    await for (final entity in Directory(directory).list(followLinks: false)) {
+      if (entity is File) await Process.run('chmod', ['600', entity.path]);
     }
   }
 

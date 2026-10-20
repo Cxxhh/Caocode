@@ -63,6 +63,17 @@ class ClaudeStorage implements SessionCatalog {
     return ClaudeSessions.read(path);
   }
 
+  /// Some of it (see [ClaudeSessions.readPage]).
+  static Future<ClaudeHistoryPage> readPage(
+    SessionRecord session, {
+    required int turns,
+    String? before,
+  }) {
+    final path = session.path;
+    if (path == null) return Future.value(const ClaudeHistoryPage([]));
+    return ClaudeSessions.readPage(path, turns: turns, before: before);
+  }
+
   /// [project] as the kernels list it, its folder and sessions' given by
   /// [location] (on another machine, see host.dart).
   static ProjectRecord projectRecord(

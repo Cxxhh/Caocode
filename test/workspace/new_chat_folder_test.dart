@@ -216,7 +216,13 @@ void main() {
     expect(find.text('/home/me/app'), findsOneWidget);
     expect(
       tester.getTopLeft(find.text('Choose Folder…')).dy,
-      lessThan(tester.getTopLeft(find.text('app').last).dy),
+      lessThan(
+        tester
+            .getTopLeft(
+              find.descendant(of: _bar, matching: find.text('app')).last,
+            )
+            .dy,
+      ),
     );
     expect(
       tester.getTopLeft(find.text('/home/me/api')).dx,
@@ -243,7 +249,7 @@ void main() {
           .widget<IdeQuickInput>(find.byType(IdeQuickInput))
           .pick
           ?.placeholder,
-      'Select a host of ~/.ssh/config, or type user@host[:port]',
+      'Select a host, add one, or type user@host[:port]',
     );
   }, variant: _mac);
 }

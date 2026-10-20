@@ -166,6 +166,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cmdChatFocusList => 'Focus Chat List';
 
   @override
+  String get cmdChatFind => 'Find in Chat';
+
+  @override
   String get cmdChatCancel => 'Cancel';
 
   @override
@@ -209,6 +212,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cmdChatAttachContext => 'Add Context…';
+
+  @override
+  String get cmdChatPasteRaw => 'Paste as Plain Text';
 
   @override
   String get cmdChatSelectNextSuggestion => 'Select Next Suggestion';
@@ -1325,6 +1331,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get quickOpenLoadingFiles => 'Loading files…';
 
   @override
+  String get quickOpenSearchingFiles => 'Searching files…';
+
+  @override
   String get quickOpenNoFiles => 'No files in this project';
 
   @override
@@ -1412,6 +1421,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cmdToggleSidePanel => 'Toggle Side Panel';
 
   @override
+  String get cmdToggleSidePanelPosition => 'Toggle Side Panel Position';
+
+  @override
   String get cmdSidePanelChanges => 'Show Agent Changes';
 
   @override
@@ -1428,6 +1440,165 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sidePanelTerminal => 'Terminal';
+
+  @override
+  String get sidePanelBrowser => 'Browser';
+
+  @override
+  String get browserNotConnected =>
+      'No browser is connected. Add Caocode\'s extension to Chrome (or Edge, Brave, Arc) and agents can use the tabs you share with them.';
+
+  @override
+  String get browserNoSharedTab =>
+      'No tab is shared yet. Ask an agent to open a page, or click Caocode in the browser toolbar to share the tab in front.';
+
+  @override
+  String get browserOtherApp => 'Another Caocode is connected to the browser.';
+
+  @override
+  String get browserSharedTabs => 'Shared Tabs';
+
+  @override
+  String get browserReload => 'Reload';
+
+  @override
+  String get browserShowInBrowser => 'Show in Browser';
+
+  @override
+  String get browserDetached =>
+      'The browser stopped letting Caocode see this tab.';
+
+  @override
+  String get browserReconnect => 'Reconnect';
+
+  @override
+  String get browserShowInPanel => 'Show in Side Panel';
+
+  @override
+  String get browserWatchTitle => 'Watching you in the browser';
+
+  @override
+  String get browserWatchHint =>
+      'Do it in the Caocode tab of your browser. When you\'re done, click Done here or the Caocode button in the browser\'s toolbar.';
+
+  @override
+  String browserWatchSteps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count steps recorded',
+      one: '1 step recorded',
+      zero: 'Nothing recorded yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get browserWatchCancel => 'Cancel';
+
+  @override
+  String get browserWatchDone => 'Done';
+
+  @override
+  String browserWatchedStep(String kind) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'click': 'Clicked',
+      'input': 'Set',
+      'key': 'Pressed',
+      'submit': 'Submitted',
+      'navigate': 'Went to',
+      'closed': 'Closed the tab',
+      'other': 'Did',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String browserTraceReveal(String app) {
+    return 'Show the trace in $app (drop it into DevTools\' Performance panel to look closer)';
+  }
+
+  @override
+  String browserStepDone(String action) {
+    String _temp0 = intl.Intl.selectLogic(action, {
+      'tabs': 'Listed tabs',
+      'open': 'Opened',
+      'navigate': 'Went to',
+      'back': 'Went back',
+      'forward': 'Went forward',
+      'reload': 'Reloaded',
+      'snapshot': 'Read the page',
+      'screenshot': 'Took a screenshot',
+      'click': 'Clicked',
+      'type': 'Typed',
+      'press': 'Pressed',
+      'scroll': 'Scrolled',
+      'evaluate': 'Ran',
+      'close': 'Closed the tab',
+      'console': 'Read the console',
+      'network': 'Listed requests',
+      'request': 'Read the request',
+      'performance': 'Profiled',
+      'recordStart': 'Started profiling',
+      'recordStop': 'Profiled',
+      'emulate': 'Emulated',
+      'watch': 'Watched you',
+      'act': 'Acted',
+      'inspect': 'Inspected',
+      'sources': 'Read the sources',
+      'breakpoints': 'Set breakpoints',
+      'debugger': 'Debugged',
+      'intercept': 'Intercepted requests',
+      'storage': 'Read site data',
+      'dialog': 'Answered the dialog',
+      'coverage': 'Measured coverage',
+      'memory': 'Measured memory',
+      'history': 'Read the debugging history',
+      'other': 'Used the browser',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String browserStepRunning(String action) {
+    String _temp0 = intl.Intl.selectLogic(action, {
+      'tabs': 'Listing tabs',
+      'open': 'Opening',
+      'navigate': 'Going to',
+      'back': 'Going back',
+      'forward': 'Going forward',
+      'reload': 'Reloading',
+      'snapshot': 'Reading the page',
+      'screenshot': 'Taking a screenshot',
+      'click': 'Clicking',
+      'type': 'Typing',
+      'press': 'Pressing',
+      'scroll': 'Scrolling',
+      'evaluate': 'Running',
+      'close': 'Closing the tab',
+      'console': 'Reading the console',
+      'network': 'Listing requests',
+      'request': 'Reading the request',
+      'performance': 'Profiling',
+      'recordStart': 'Starting to profile',
+      'recordStop': 'Profiling',
+      'emulate': 'Emulating',
+      'watch': 'Watching you',
+      'act': 'Acting',
+      'inspect': 'Inspecting',
+      'sources': 'Reading the sources',
+      'breakpoints': 'Setting breakpoints',
+      'debugger': 'Debugging',
+      'intercept': 'Intercepting requests',
+      'storage': 'Reading site data',
+      'dialog': 'Answering the dialog',
+      'coverage': 'Measuring coverage',
+      'memory': 'Measuring memory',
+      'history': 'Reading the debugging history',
+      'other': 'Using the browser',
+    });
+    return '$_temp0';
+  }
 
   @override
   String get sidePanelPlan => 'Plan';
@@ -1457,6 +1628,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sidePanelHide => 'Hide side panel';
 
   @override
+  String get sidePanelMoveLeft => 'Move to the Left of the Conversation';
+
+  @override
+  String get sidePanelMoveRight => 'Move to the Right of the Conversation';
+
+  @override
   String get sidePanelChanges => 'Changes';
 
   @override
@@ -1483,6 +1660,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sidePanelSource => 'Source';
+
+  @override
+  String get sidePanelEdit => 'Edit';
 
   @override
   String get sidePanelNoOriginal =>
@@ -1519,6 +1699,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sidePanelNoFolder => 'This conversation has no project folder';
+
+  @override
+  String get sidePanelSearchFiles => 'Search the project\'s files';
+
+  @override
+  String get sidePanelCloseSearch => 'Close the search';
 
   @override
   String get sidePanelShowList => 'Show List';
@@ -1676,6 +1862,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get sidebarDeleteAgentsTitle => 'Delete agents?';
+
+  @override
+  String sidebarDeleteAgentsMessage(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'The $count agents and their conversations will be deleted',
+      one: 'The agent and its conversation will be deleted',
+    );
+    return '$_temp0, from their kernels too. This cannot be undone.';
+  }
+
+  @override
   String sidebarDeleteAgentMessageKernel(String title, String kernel) {
     return '“$title” and its conversation will be deleted, from $kernel too. This cannot be undone.';
   }
@@ -1685,6 +1885,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ideChatHistory => 'Agent History';
+
+  @override
+  String get ideChatShowArchived => 'Show archived agents';
 
   @override
   String get ideChatNoAgents => 'No agents in this project';
@@ -1727,7 +1930,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sidebarUnarchive => 'Unarchive';
 
   @override
+  String sidebarPinCount(int count) {
+    return 'Pin $count Agents';
+  }
+
+  @override
+  String sidebarUnpinCount(int count) {
+    return 'Unpin $count Agents';
+  }
+
+  @override
+  String sidebarArchiveCount(int count) {
+    return 'Archive $count Agents';
+  }
+
+  @override
+  String sidebarUnarchiveCount(int count) {
+    return 'Unarchive $count Agents';
+  }
+
+  @override
+  String sidebarDeleteCount(int count) {
+    return 'Delete $count Agents…';
+  }
+
+  @override
   String get sidebarCopySessionId => 'Copy session ID';
+
+  @override
+  String sidebarOpenStash(int id) {
+    return 'Open Stash #$id';
+  }
 
   @override
   String get sidebarFork => 'Fork';
@@ -1909,6 +2142,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workspaceFileExplorer => 'File Explorer';
 
   @override
+  String get workspaceFileManager => 'File Manager';
+
+  @override
   String get workspaceTerminalApp => 'Terminal';
 
   @override
@@ -1986,6 +2222,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatOpensItsConversation => 'Opens its conversation';
+
+  @override
+  String get chatLoadEarlier => 'Load earlier messages';
 
   @override
   String get chatStop => 'Stop';
@@ -2078,6 +2317,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get toolUsed => 'Used';
 
   @override
+  String get toolGeneratingImage => 'Generating image';
+
+  @override
+  String get toolGeneratedImage => 'Generated image';
+
+  @override
+  String get toolImageFailed => 'Image not generated';
+
+  @override
+  String get toolImageWaiting => 'Generate image';
+
+  @override
+  String get imagePickTitle => 'Pick the model to generate it with';
+
+  @override
+  String get imagePickGenerate => 'Generate';
+
+  @override
+  String get imagePickDecline => 'Skip';
+
+  @override
+  String get imageSetDefault => 'Set as default';
+
+  @override
+  String get imageDefaultSet => 'Set as default image model';
+
+  @override
   String get toolProposingGoal => 'Proposing a goal';
 
   @override
@@ -2155,6 +2421,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String pastedTextGone(String path) {
+    return 'This paste is no longer at $path.';
+  }
+
+  @override
   String pastedTextLines(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -2224,6 +2495,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String stepsBrowsed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'took $count steps in the browser',
+      one: 'took 1 step in the browser',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String stepsUsed(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -2264,7 +2546,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get turnSpeedHint => 'Output speed';
+  String get turnSpeedHint => 'Average output speed';
+
+  @override
+  String get turnOutputTokensHint => 'Written so far this turn';
+
+  @override
+  String get turnSpeedLiveHint =>
+      'Output speed, sampled over the last 2 seconds';
 
   @override
   String get turnDurationHint => 'Time this turn took';
@@ -2289,13 +2578,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get planDrafting => 'Drafting';
 
   @override
-  String get planAwaiting => 'Awaiting approval';
+  String get planAwaiting => 'Ready to start';
 
   @override
   String get planApproved => 'Approved';
 
   @override
   String get planSentBack => 'Sent back';
+
+  @override
+  String get planStart => 'Start';
+
+  @override
+  String get planStartHint => 'Leave Plan mode and carry out this plan';
+
+  @override
+  String get planStartMessage => 'Carry out the plan';
 
   @override
   String turnFiles(int count) {
@@ -2335,6 +2633,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatSubagent => 'Subagent';
 
   @override
+  String get chatLoadingHistory => 'Loading conversation…';
+
+  @override
   String get activityCompacting => 'Compacting conversation';
 
   @override
@@ -2342,7 +2643,64 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activityMusings =>
-      'Pondering\nNoodling\nPercolating\nCogitating\nSimmering\nMarinating\nTinkering\nGrokking\nMulling it over\nConnecting the dots\nChasing a hunch\nBrewing a plan\nHatching a plan\nWeighing the options\nUntangling threads\nHerding tokens\nSummoning context\nReticulating splines\nAsking the rubber duck\nReading the tea leaves\nSketching on a napkin\nDoodling in the margins\nSquinting at the diff\nCounting parentheses\nBefriending the compiler\nNegotiating with types\nWrangling edge cases\nTracing the stack\nFlipping through the docs\nSpelunking the codebase\nLining up the ducks\nShaking the magic 8-ball\nWarming up the neurons\nFolding thoughts\nTuning the vibes\nBinding the monad\nLifting into the monad\nAsking the oracle\nStirring the pot\nPolishing the plan';
+      'Pondering\nNoodling\nPercolating\nCogitating\nSimmering\nMarinating\nTinkering\nGrokking\nMulling it over\nConnecting the dots\nChasing a hunch\nBrewing a plan\nHatching a plan\nWeighing the options\nUntangling threads\nHerding tokens\nSummoning context\nAsking the rubber duck\nReading the tea leaves\nSketching on a napkin\nDoodling in the margins\nSquinting at the diff\nCounting parentheses\nBefriending the compiler\nNegotiating with types\nWrangling edge cases\nTracing the stack\nFlipping through the docs\nSpelunking the codebase\nLining up the ducks\nShaking the magic 8-ball\nWarming up the neurons\nFolding thoughts\nBinding the monad\nAsking the oracle\nStirring the pot\nPolishing the plan';
+
+  @override
+  String activityMusingsCommand(String name) {
+    return 'Squinting at $name\'s output\nDigesting what $name said\nPicking through $name\'s output\nNodding along to $name';
+  }
+
+  @override
+  String activityMusingsCommandFailed(String name) {
+    return 'Staring down $name\'s error\nAsking $name what went wrong\nUntangling $name\'s complaint\nConsoling $name';
+  }
+
+  @override
+  String activityMusingsRead(String name) {
+    return 'Leafing through $name\nGetting to know $name\nPulling threads in $name\nReading between the lines of $name';
+  }
+
+  @override
+  String activityMusingsEdit(String name) {
+    return 'Admiring the new $name\nDouble-checking $name\nHoping $name still compiles\nGiving $name a once-over';
+  }
+
+  @override
+  String activityMusingsSearch(String name) {
+    return 'Panning $name results for gold\nSifting through $name matches\nFollowing $name leads';
+  }
+
+  @override
+  String activityMusingsFolder(String name) {
+    return 'Poking around $name\nTaking roll call in $name\nSizing up $name';
+  }
+
+  @override
+  String activityMusingsWeb(String name) {
+    return 'Taking notes from $name\nDigesting $name';
+  }
+
+  @override
+  String activityMusingsAgent(String name) {
+    return 'Debriefing $name\nGrading $name\'s homework\nGoing over $name\'s findings';
+  }
+
+  @override
+  String activityMusingsMcp(String name) {
+    return 'Unwrapping $name\'s reply\nSeeing what $name sent back';
+  }
+
+  @override
+  String get activityMusingsBrowser =>
+      'Peering at the page\nSquinting at the screenshot';
+
+  @override
+  String get activityMusingsImage =>
+      'Admiring the fresh picture\nNitpicking the new image';
+
+  @override
+  String get activityMusingsDenied =>
+      'Finding another way\nTaking the scenic route';
 
   @override
   String get composerCommands => 'Commands';
@@ -2516,6 +2874,28 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String stripAgentsRunning(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count subagents running',
+      one: '1 subagent running',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String stripTasksRunning(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count background tasks running',
+      one: '1 background task running',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get stripUndoAll => 'Undo all';
 
   @override
@@ -2526,6 +2906,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stripUndo => 'Undo';
+
+  @override
+  String get agentKeepFile => 'Keep file';
+
+  @override
+  String get agentUndoFile => 'Undo file';
+
+  @override
+  String get agentPreviousChange => 'Previous change';
+
+  @override
+  String get agentNextChange => 'Next change';
+
+  @override
+  String get agentMoreActions => 'More actions';
 
   @override
   String get stripChangeAdded => 'Added';
@@ -2541,12 +2936,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Changed again since the agent left it, so Undo could not take the agent\'s change out. Undo it by hand, then keep it.';
 
   @override
-  String get stripChangeShared =>
-      'Another agent was working in this project at the same time: some of this change may be its.';
-
-  @override
   String get stripChangeUntracked =>
-      'Not in the project\'s snapshots (ignored, too large, or outside the project): it can be kept, not undone.';
+      'What it was before is not known (the agent did not tell, it is too large, or outside the project): it can be kept, not undone.';
 
   @override
   String get stripChangesDiff => 'Agent Changes';
@@ -2640,7 +3031,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String healthFolderGone(String folder) {
+    return 'The project folder is gone: $folder';
+  }
+
+  @override
   String get healthHideDetails => 'Hide details';
+
+  @override
+  String get markdownDetails => 'Details';
 
   @override
   String get healthDetails => 'Details';
@@ -2664,39 +3063,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get interactionDenyHint => 'Tell the agent what to do instead';
 
   @override
-  String get interactionPlanTitle => 'Ready to code?';
-
-  @override
-  String get interactionStartBuilding => 'Yes, start building';
-
-  @override
-  String interactionStartWith(String approvals) {
-    return 'Yes, start · $approvals';
-  }
-
-  @override
-  String get interactionKeepPlanningOption => 'No, keep planning';
-
-  @override
-  String get interactionWhatShouldChange => 'What should change?';
-
-  @override
-  String get interactionSayWhatToChange =>
-      'Or say what should change in the message box';
-
-  @override
-  String get interactionViewPlan => 'View plan';
-
-  @override
   String interactionStepOf(int step, int total) {
     return '$step / $total';
   }
 
   @override
   String get interactionSkip => 'Skip';
-
-  @override
-  String get interactionKeepPlanning => 'Keep planning';
 
   @override
   String get interactionSubmit => 'Submit';
@@ -2848,6 +3220,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tabCloseAll => 'Close All';
+
+  @override
+  String get fileLinkOpen => 'Open';
+
+  @override
+  String get fileLinkOpenInPanel => 'Open in Side Panel';
+
+  @override
+  String get fileLinkPreview => 'Preview';
+
+  @override
+  String get fileLinkOpenInBrowser => 'Open in Browser';
 
   @override
   String get tabCopyPath => 'Copy Path';
@@ -3116,6 +3500,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get explorerPreparingTransfer => 'Preparing files...';
 
   @override
+  String composerCopyToHostFailed(String error) {
+    return 'Couldn\'t copy the files to the remote host: $error';
+  }
+
+  @override
   String get explorerNewFile => 'New File...';
 
   @override
@@ -3126,6 +3515,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get explorerFindInFolder => 'Find in Folder...';
+
+  @override
+  String get explorerOpenInTerminal => 'Open in Terminal';
 
   @override
   String get explorerRename => 'Rename...';
@@ -3203,11 +3595,37 @@ class AppLocalizationsEn extends AppLocalizations {
       'Who the commits and pull requests an agent writes credit. Applies to agents started after a change; Claude Code only for now.';
 
   @override
-  String get generalSettingsTelemetry => 'Send Usage Data';
+  String get generalSettingsClaudeCore => 'Core';
 
   @override
-  String get generalSettingsTelemetryDescription =>
-      'Once a day Caocode is used, it sends a random install ID, its version, and your system and processor type, so we can tell how many people use it and come back. Nothing about you, your code, or what you do in Caocode (telemetry.telemetryLevel).';
+  String get generalSettingsClaudeCoreDescription =>
+      'Claude Code CLI: Anthropic\'s own program, with this machine\'s sign-in and setup; pick it to use a Claude subscription. Built-in: comes with Caocode, and uses only the models added in Settings → Models. The CLI is the default when Claude Code is installed here, the built-in core otherwise. Changes apply to new sessions.';
+
+  @override
+  String get generalSettingsClaudeCoreBuiltin => 'Built-in';
+
+  @override
+  String get generalSettingsClaudeCoreCli => 'Claude Code CLI';
+
+  @override
+  String get generalSettingsQueuedMessages => 'Messages Sent While Working';
+
+  @override
+  String get generalSettingsQueuedMessagesDescription =>
+      'When a message sent while the agent is still working is taken up. Applies to messages sent after a change; Claude Code only for now.';
+
+  @override
+  String get generalSettingsQueuedAfterTurn => 'After the Current Task';
+
+  @override
+  String get generalSettingsQueuedDuringTurn => 'Join the Current Task';
+
+  @override
+  String get generalSettingsPromptSuggestions => 'Suggest Next Prompt';
+
+  @override
+  String get generalSettingsPromptSuggestionsDescription =>
+      'After each turn, a greyed-out suggestion for your next message, taken with Tab. Each one is an extra request with the whole conversation; turn it off to save tokens. Applies from the next message; Claude Code only.';
 
   @override
   String generalSettingsCommitAttributionLabel(String name) {
@@ -3743,6 +4161,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scmUndoLastCommit => 'Undo Last Commit';
 
   @override
+  String get scmGraphBranches => 'Branches Shown';
+
+  @override
+  String get scmGraphCurrentBranch => 'Current Branch';
+
+  @override
+  String get scmGraphAllBranches => 'All Branches';
+
+  @override
   String get scmGoToCurrent => 'Go to Current History Item';
 
   @override
@@ -3841,6 +4268,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get scmSynchronizingChanges => 'Synchronizing Changes...';
+
+  @override
+  String get scmFetch => 'Fetch';
+
+  @override
+  String get scmFetchFromAllRemotes => 'Fetch From All Remotes';
+
+  @override
+  String get scmPull => 'Pull';
+
+  @override
+  String get scmPush => 'Push';
 
   @override
   String scmPullCommits(int count, String upstream) {
@@ -4368,26 +4807,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get langClickToRetry => 'Click to retry';
 
   @override
-  String langNotInstalled(String id) {
-    return '$id not installed';
-  }
-
-  @override
-  String langNeedsRuntime(String id, String runtime) {
-    return 'Installing $id needs $runtime, which was not found';
-  }
-
-  @override
-  String langClickToInstall(String id) {
-    return 'Click to install $id';
-  }
-
-  @override
-  String langNotOnPath(String id) {
-    return '$id was not found on PATH';
-  }
-
-  @override
   String langInstallingItem(String id) {
     return 'Installing $id…';
   }
@@ -4460,6 +4879,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get langNoFormatter => 'No formatter for this file.';
+
+  @override
+  String langNoFormatterInstall(String id, String language) {
+    return 'No formatter for this file. Install the \'$id\' language server to format $language files.';
+  }
 
   @override
   String get langNoRefactorings => 'No refactorings available';
@@ -4719,18 +5143,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wbUnpinTimeline => 'Unpin the Current Timeline';
 
   @override
-  String get wbLanguageServices => 'Language services';
-
-  @override
-  String get wbMonacoEditor => 'Monaco editor';
-
-  @override
-  String get wbTextEditor => 'Text editor';
-
-  @override
-  String get wbRetryLanguageServices => 'Retry language services';
-
-  @override
   String get wbNoProblems => 'No Problems';
 
   @override
@@ -4778,6 +5190,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wbLanguageMode => 'Language Mode';
+
+  @override
+  String get shownImage => 'Image';
+
+  @override
+  String get shownReadOnly => 'Read-only';
+
+  @override
+  String get languageModeAuto => 'Auto Detect';
+
+  @override
+  String get languageModePlaceholder => 'Select Language Mode';
+
+  @override
+  String get languageModeChange => 'Change Language Mode';
 
   @override
   String get editorCommandPalette => 'Command Palette...';
@@ -4999,6 +5426,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dataDirRevealInFileExplorer => 'Reveal in File Explorer';
+
+  @override
+  String get dataDirRevealInFileManager => 'Reveal in File Manager';
 
   @override
   String get dataDirChecking => 'Checking the folder…';
@@ -5456,11 +5886,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get generalSettingsWindows => 'Windows';
 
   @override
+  String get generalSettingsIde => 'Fast IDE';
+
+  @override
+  String get generalSettingsAutoOpenChanges => 'Show agent changes as diffs';
+
+  @override
+  String get generalSettingsAutoOpenChangesDescription =>
+      'While the IDE shows, a file the agent changes opens as a diff of it against its text before, as the agent edits it.';
+
+  @override
+  String get explorerExcludeSetting => 'Hidden files and folders';
+
+  @override
+  String get explorerExcludeSettingDescription =>
+      'Files and folders the explorer does not show, comma separated: a name (`node_modules`, `*.log`) matches anywhere, a path (`build/**`, `src/generated`) matches within the folder.';
+
+  @override
+  String get explorerExcludeSettingPlaceholder =>
+      'e.g. .git, node_modules, *.log';
+
+  @override
   String get claudePathSetting => 'Path';
 
   @override
   String get claudePathSettingDescription =>
-      'Empty: the newest of the Claude Code installed on this machine and the one Caocode downloaded (downloaded the first time there is none). A path: that one, always, e.g. one you built. (claudeCode.path)';
+      'Empty: the newest Claude Code on this machine, downloaded if there is none. A path: always that one, e.g. one you built. (claudeCode.path)';
 
   @override
   String get claudePathSettingHint => 'Automatic';
@@ -5492,7 +5943,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get generalSettingsIdeWindowsDescription =>
-      'Where the Fast Ide opens: in windows of its own, one per folder (New Window, ⇧⌘N / Ctrl+Shift+N, opens an empty one), or in the main window in place of the chat, one folder at a time. Applies at once. (window.ideWindows)';
+      'Where the Fast Ide opens: in the main window in place of the chat, one folder at a time, or in windows of its own, one per folder (New Window, ⇧⌘N / Ctrl+Shift+N, opens an empty one). Applies at once. (window.ideWindows)';
 
   @override
   String get generalSettingsIdeWindowsSeparate => 'Separate windows';
@@ -6423,6 +6874,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'One KEY=VALUE a line, given to Claude Code after the settings above.';
 
   @override
+  String get modelsHeaders => 'Custom Headers';
+
+  @override
+  String get modelsHeadersDescription =>
+      'One Name: Value a line, sent on every request to this upstream. Values may use the CLAUDE_SESSION_ID variable (this conversation\'s session) and ANTHROPIC_MODEL (the model asked for), each between double braces; over the direct Anthropic protocol those two go as written, so only fixed values work there. Auth headers (Authorization, x-api-key) are ignored here: the key is set above.';
+
+  @override
+  String get modelsHeadersPlaceholder => 'x-session-id: my-session';
+
+  @override
   String get modelsDelete => 'Delete Upstream';
 
   @override
@@ -6545,6 +7006,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get modelsNoImages => 'Does not take images';
 
   @override
+  String get modelsKind => 'Used for';
+
+  @override
+  String get modelsKindChat => 'Conversations';
+
+  @override
+  String get modelsKindImage => 'Image generation (Images API)';
+
+  @override
+  String get modelsKindImageChat => 'Image generation (in a conversation)';
+
+  @override
+  String get modelsKindDescription =>
+      'Image models are not offered in the model picker: agents make pictures with them through the generate_image tool.';
+
+  @override
+  String get modelsImageBadge => 'Image';
+
+  @override
+  String get modelsImage => 'Image model';
+
+  @override
+  String get modelsImageDescription =>
+      'What agents make pictures with (the generate_image tool), unless you ask them for another; asked each time, you pick it in the conversation. Turn on image models in an upstream\'s list.';
+
+  @override
+  String get modelsImageFirst => 'Ask each time';
+
+  @override
+  String get modelsImageNone => 'None turned on';
+
+  @override
   String get modelsSave => 'Save';
 
   @override
@@ -6557,7 +7050,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get modelsSwitchDetail =>
-      'Claude Code restarts on the other upstream and resumes this conversation (--resume). Its history is sent to the new model as it is; some upstreams take it slower the first time.';
+      'Claude Code restarts on the other upstream and resumes this conversation (--resume). Its history is sent to the new model as it is; some upstreams take it slower the first time. A reply still running stops when you send the next message.';
 
   @override
   String get modelsSwitchConfirm => 'Switch';
@@ -6959,11 +7452,36 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get appearanceSettingsReplyScroll => 'As a Reply Comes';
+
+  @override
+  String get appearanceSettingsReplyScrollDescription =>
+      'Where the conversation stays as the reply to your message is written: at its end, following it; or at its start, your message at the top, for you to read on from there. Scrolled to the end, it follows again.';
+
+  @override
+  String get appearanceSettingsReplyScrollFollow => 'Automatic';
+
+  @override
+  String get appearanceSettingsReplyScrollStart => 'Stay at its start';
+
+  @override
+  String appearanceSettingsReplyScrollLabel(String choice) {
+    return 'As a reply comes: $choice';
+  }
+
+  @override
   String get appearanceSettingsMinimap => 'Conversation Minimap';
 
   @override
   String get appearanceSettingsMinimapDescription =>
       'A minimap of the whole conversation at the left of its column, where you are in it shown as you scroll; click or drag it to get somewhere. It stands in for the scrollbar, and is not shown in a window too narrow for it. Off: the scrollbar.';
+
+  @override
+  String get appearanceSettingsSidebarTimes => 'Times in the Sidebar';
+
+  @override
+  String get appearanceSettingsSidebarTimesDescription =>
+      'Each agent in the sidebar ends with when it last did something. Off: only its hover tells it.';
 
   @override
   String get appearanceSettingsMinimapGlass => 'Glass Opacity';
@@ -7024,7 +7542,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appearanceSettingsCodeSizeDescription =>
-      'The size of code in the IDE editor and the side panel\'s file and changes views. Code in the chat follows the interface text size; the terminal has its own size.';
+      'The size of code in the IDE editor and the side panel\'s file and changes views. Code in the chat follows the interface size; the terminal has its own size.';
 
   @override
   String appearanceSettingsCodeSizeLabel(String size) {
@@ -7039,15 +7557,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Draws sequences such as => and != as one glyph where the font has one. The terminal does not.';
 
   @override
-  String get appearanceSettingsUiScale => 'Interface Text Size';
+  String get appearanceSettingsUiScale => 'Interface Size';
 
   @override
   String get appearanceSettingsUiScaleDescription =>
-      'The size of interface text, code in the chat, and terminal text while the terminal size follows it. Code in the IDE editor and side panel files and changes keeps its own size.';
+      'Zooms the whole interface (its text, icons and spacing), code in the chat, and terminal text while the terminal size follows it. Code in the IDE editor and side panel files and changes keeps its own size.';
 
   @override
   String appearanceSettingsUiScaleLabel(String percent) {
-    return 'Interface text size: $percent%';
+    return 'Interface size: $percent%';
   }
 
   @override
@@ -7055,11 +7573,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appearanceSettingsTerminalSizeDescription =>
-      'The size of terminal text. By default it follows the interface text size; it can be set on its own.';
+      'The size of terminal text. By default it follows the interface size; it can be set on its own.';
 
   @override
-  String get appearanceSettingsTerminalSizeFollow =>
-      'Follow Interface Text Size';
+  String get appearanceSettingsTerminalSizeFollow => 'Follow Interface Size';
 
   @override
   String get appearanceSettingsTerminalSizeCustom => 'Custom';
@@ -7076,7 +7593,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get generalSettingsContextMenuFinder => 'Finder Context Menu';
 
   @override
-  String get generalSettingsContextMenuExplorer => 'Explorer Context Menu';
+  String get generalSettingsContextMenuExplorer => 'File Explorer Context Menu';
 
   @override
   String get generalSettingsContextMenuDescription =>
@@ -7119,8 +7636,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cmdOpenRemoteFolder => 'Open Remote Project...';
 
   @override
+  String get cmdOpenRemoteFile => 'Open Remote File...';
+
+  @override
   String get remoteHostPlaceholder =>
-      'Select a host of ~/.ssh/config, or type user@host[:port]';
+      'Select a host, add one, or type user@host[:port]';
 
   @override
   String remoteConnectTo(String host) {
@@ -7128,7 +7648,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get remoteNoHosts => 'No hosts in ~/.ssh/config: type one';
+  String get remoteNoHosts => 'No hosts yet: add one, or type user@host';
 
   @override
   String get remoteInvalidHost =>
@@ -7181,6 +7701,37 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String remoteListFailed(String path) {
     return 'Could not list $path';
+  }
+
+  @override
+  String get remoteFileHostPlaceholder => 'Select a host, to browse its files';
+
+  @override
+  String remoteFilePlaceholder(String host) {
+    return 'A file on $host: pick one, or type a path';
+  }
+
+  @override
+  String remoteOpenFile(String path) {
+    return 'Open $path';
+  }
+
+  @override
+  String remoteOpenFailed(String path) {
+    return 'Could not open $path';
+  }
+
+  @override
+  String get remoteRecentFiles => 'Recent Remote Files';
+
+  @override
+  String remoteOpenFileOn(String host) {
+    return 'Open File on $host...';
+  }
+
+  @override
+  String remoteStatusActions(String host) {
+    return 'Click for the hosts and $host\'s actions';
   }
 
   @override
@@ -7860,6 +8411,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get extsTabLanguageServers => 'Language Servers';
 
   @override
+  String get sidebarAllHosts => 'All';
+
+  @override
   String get sidebarThisMachine => 'This Computer';
 
   @override
@@ -7921,6 +8475,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sidebarRenameHost => 'Rename Host';
+
+  @override
+  String get sidebarEditHost => 'Edit Connection...';
 
   @override
   String get explorerNoPermission => 'No permission to read this folder';
@@ -8005,7 +8562,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mobilePublicAddressDescription =>
-      'A domain or IP this computer can be reached at from the internet (with the port forwarded), put in the QR code; several separated by commas. Public IPv6 addresses are found by themselves.';
+      'A domain or IP this computer can be reached at from the internet (with the port forwarded), put in the QR code; several separated by commas. Behind a proxy that only takes HTTPS (such as a Cloudflare Tunnel), write it as wss://domain. Public IPv6 addresses are found by themselves.';
 
   @override
   String get mobileRelay => 'Relay';
@@ -8110,4 +8667,1655 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mobilePairAllow => 'Allow';
+
+  @override
+  String get settingsSectionStash => 'Stash';
+
+  @override
+  String get settingsSectionCustomize => 'Customize';
+
+  @override
+  String get settingsCustomizeKeywords =>
+      'skills subagents rules commands agents claude memory hooks mcp plugins';
+
+  @override
+  String get stashTitle => 'Stash';
+
+  @override
+  String get stashHeading => 'Stash';
+
+  @override
+  String get stashNew => 'New stash';
+
+  @override
+  String get stashLinkOpen => 'Open link';
+
+  @override
+  String get stashLinkEdit => 'Edit link';
+
+  @override
+  String get stashDraft => 'Draft';
+
+  @override
+  String get stashCodeChip => 'Code';
+
+  @override
+  String get stashTableChip => 'Table';
+
+  @override
+  String stashLines(int count) {
+    return '$count lines';
+  }
+
+  @override
+  String get stashNewButton => 'New';
+
+  @override
+  String get stashNewTooltip => 'New stash';
+
+  @override
+  String get stashPlaceholder => 'Jot it down…';
+
+  @override
+  String get stashHintNew => 'New';
+
+  @override
+  String get stashProjectTooltip => 'Project it is about';
+
+  @override
+  String get stashNoProject => 'No project';
+
+  @override
+  String get stashFormatBold => 'Bold';
+
+  @override
+  String get stashFormatItalic => 'Italic';
+
+  @override
+  String get stashFormatStrike => 'Strikethrough';
+
+  @override
+  String get stashFormatUnderline => 'Underline';
+
+  @override
+  String get stashFormatCode => 'Code';
+
+  @override
+  String get stashFormatLink => 'Link';
+
+  @override
+  String get stashFormatColor => 'Text and background color';
+
+  @override
+  String get stashFormatHeading1 => 'Heading 1';
+
+  @override
+  String get stashFormatHeading2 => 'Heading 2';
+
+  @override
+  String get stashFormatHeading3 => 'Heading 3';
+
+  @override
+  String get stashFormatBullets => 'Bulleted list';
+
+  @override
+  String get stashFormatNumbers => 'Numbered list';
+
+  @override
+  String get stashFormatTasks => 'Task list';
+
+  @override
+  String get stashFormatQuote => 'Quote';
+
+  @override
+  String get stashFormatCodeBlock => 'Code block';
+
+  @override
+  String get stashFormatClear => 'Clear formatting';
+
+  @override
+  String get stashPolish => 'Polish';
+
+  @override
+  String get stashPolishing => 'Polishing…';
+
+  @override
+  String get stashPolishHint =>
+      'Has AI make the selection clearer, in your words, without adding structure';
+
+  @override
+  String get composerPolish => 'Polish';
+
+  @override
+  String get composerPolishing => 'Polishing…';
+
+  @override
+  String get composerPolishHint =>
+      'Polish: the auxiliary model makes the message clearer, in your words; pictures, files, code and links stay as they are; Undo takes it back';
+
+  @override
+  String composerPolishFailed(String error) {
+    return 'Could not polish: $error';
+  }
+
+  @override
+  String get generalSettingsComposerPolish => 'Polish button';
+
+  @override
+  String get generalSettingsComposerPolishDescription =>
+      'A button in the message box that has the auxiliary model make what you wrote clearer before you send it';
+
+  @override
+  String get generalSettingsLiveTurnStats => 'Live Speed and Time';
+
+  @override
+  String get generalSettingsLiveTurnStatsDescription =>
+      'While the agent works, a line under the reply with how long the turn has taken, how fast the model writes and the tokens so far, changing as it goes. The figures under a finished turn always show.';
+
+  @override
+  String stashPolishFailed(String error) {
+    return 'Could not polish: $error';
+  }
+
+  @override
+  String get stashLinkTitle => 'Link';
+
+  @override
+  String get stashRemove => 'Remove';
+
+  @override
+  String get stashEdit => 'Edit';
+
+  @override
+  String get stashFormulaTitle => 'Formula (TeX)';
+
+  @override
+  String get stashTableTitle => 'Table (Markdown)';
+
+  @override
+  String get stashCodeTitle => 'Code block';
+
+  @override
+  String stashBigFileTitle(String name) {
+    return '“$name” is over 200 MB';
+  }
+
+  @override
+  String get stashBigFileDetail =>
+      'Link to it where it is, or copy it into the stash anyway?';
+
+  @override
+  String get stashBigFileLink => 'Link';
+
+  @override
+  String get stashBigFileCopy => 'Copy';
+
+  @override
+  String get stashSearchPlaceholder =>
+      'Search stashes, and the text in their pictures';
+
+  @override
+  String get stashAiSearch => 'AI search';
+
+  @override
+  String get stashAiSearchHint =>
+      'Finds stashes by what they mean, not only their words. Asks the model: it costs.';
+
+  @override
+  String stashAiResults(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'AI found $count',
+      one: 'AI found 1',
+      zero: 'AI found nothing',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get stashAiClear => 'Clear';
+
+  @override
+  String stashAiSearchFailed(String error) {
+    return 'AI search failed: $error';
+  }
+
+  @override
+  String get stashAiNoAnswer => 'The model gave no usable answer.';
+
+  @override
+  String get aiModelAuxiliary => 'Same as Auxiliary Model';
+
+  @override
+  String get aiModelFirst =>
+      'Pick a model first: AI actions use it from then on';
+
+  @override
+  String get aiModelNone => 'none picked yet';
+
+  @override
+  String aiModelTooltip(String model) {
+    return 'Model for AI actions: $model';
+  }
+
+  @override
+  String get stashFilterAnyTime => 'Any time';
+
+  @override
+  String get stashFilterAnyProject => 'Any project';
+
+  @override
+  String get stashFilterAnyStatus => 'Any status';
+
+  @override
+  String get stashFilterOpen => 'Not done';
+
+  @override
+  String get stashGroupPinned => 'Pinned';
+
+  @override
+  String get stashGroupToday => 'Today';
+
+  @override
+  String get stashGroupYesterday => 'Yesterday';
+
+  @override
+  String get stashGroupWeek => 'Past 7 days';
+
+  @override
+  String get stashGroupMonth => 'Past 30 days';
+
+  @override
+  String get stashGroupEarlier => 'Earlier';
+
+  @override
+  String get stashGroupDone => 'Done';
+
+  @override
+  String get stashStatus => 'Status';
+
+  @override
+  String get stashStatusCollected => 'Collected';
+
+  @override
+  String get stashStatusRequirement => 'Requirement';
+
+  @override
+  String get stashStatusImplementing => 'Implementing';
+
+  @override
+  String get stashStatusDone => 'Done';
+
+  @override
+  String stashEmpty(String hotkey) {
+    return 'Nothing stashed yet.\nPress $hotkey in any app to jot something down.';
+  }
+
+  @override
+  String get stashEmptyNoHotkey =>
+      'Nothing stashed yet.\nClick + to write one; set a shortcut in Settings to jot one down from any app.';
+
+  @override
+  String get stashNoMatch => 'No stash matches.';
+
+  @override
+  String get stashPin => 'Pin';
+
+  @override
+  String get stashUnpin => 'Unpin';
+
+  @override
+  String get stashOpenInPanel => 'Open in Floating Panel';
+
+  @override
+  String get stashLinkProject => 'Link to Project';
+
+  @override
+  String get stashMerge => 'Merge';
+
+  @override
+  String stashMergeTitle(String stashes) {
+    return 'Merge $stashes?';
+  }
+
+  @override
+  String stashMergeDetail(String target) {
+    return 'Their text goes into $target, one after another; the others go, their numbers leading to it.';
+  }
+
+  @override
+  String stashMergeSuggestion(String stashes) {
+    return '$stashes look like the same thing.';
+  }
+
+  @override
+  String get stashDismiss => 'Dismiss';
+
+  @override
+  String get stashDelete => 'Delete';
+
+  @override
+  String stashDeleteOne(String stash) {
+    return 'Delete $stash?';
+  }
+
+  @override
+  String stashDeleteMany(int count) {
+    return 'Delete $count stashes?';
+  }
+
+  @override
+  String get stashDeleteDetail =>
+      'Their pictures and files go with them. This cannot be undone.';
+
+  @override
+  String stashPicked(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get stashMarkDone => 'Mark Done';
+
+  @override
+  String get stashReopen => 'Reopen';
+
+  @override
+  String get stashClearPicked => 'Clear selection';
+
+  @override
+  String get stashClose => 'Close Stash';
+
+  @override
+  String get stashCloseDetail => 'Close';
+
+  @override
+  String get stashMore => 'More';
+
+  @override
+  String get stashExpand => 'Clarify';
+
+  @override
+  String get stashExpandHint =>
+      'AI says your note clearly, filling in what its pictures and files show, adding no structure; it replaces the text, and Undo takes it back';
+
+  @override
+  String get stashClarifying => 'Clarifying…';
+
+  @override
+  String get stashCancelClarify => 'Stop Clarifying';
+
+  @override
+  String get stashClarifyFailedShort => 'Not clarified';
+
+  @override
+  String get stashClarifyChanged =>
+      'The note changed while it was being clarified, so nothing was replaced. Try again.';
+
+  @override
+  String get stashRetry => 'Retry';
+
+  @override
+  String stashExpandFailed(String error) {
+    return 'The note could not be clarified: $error';
+  }
+
+  @override
+  String get stashImplement => 'Implement in Caocode';
+
+  @override
+  String get stashImplementHow => 'How should the agent work on it?';
+
+  @override
+  String get stashImplementHowDetail =>
+      'In a new git worktree (a branch of its own, your working copy untouched), or directly in the project as it is.';
+
+  @override
+  String get stashImplementWorktree => 'New Worktree';
+
+  @override
+  String get stashImplementDirect => 'Directly';
+
+  @override
+  String stashImplementStarter(String stash) {
+    return 'Please implement what $stash asks for.';
+  }
+
+  @override
+  String get stashImplementInWorktree =>
+      'First create a new git worktree on a new branch for this work and do it there; tell me the branch when done.';
+
+  @override
+  String get stashImplementInPlace =>
+      'Work directly in this project, on the current branch.';
+
+  @override
+  String get stashImplementComplete =>
+      'When it is finished, mark it done in the Stash.';
+
+  @override
+  String get stashThreads => 'Conversations';
+
+  @override
+  String get stashThreadSource => 'Noted in this conversation';
+
+  @override
+  String get stashThreadNoReply => 'No reply yet';
+
+  @override
+  String get stashThreadGone => 'No longer in the list';
+
+  @override
+  String get stashOpenThread => 'Open';
+
+  @override
+  String stashProjectSuggestion(String project) {
+    return 'AI thinks this is about $project.';
+  }
+
+  @override
+  String get stashLinkIt => 'Link';
+
+  @override
+  String get stashSettingsDescription =>
+      'A note jotted down from any app, in a floating panel, to turn into work later.';
+
+  @override
+  String get stashSettingsHotkey => 'Shortcut';
+
+  @override
+  String stashSettingsHotkeyCurrent(String hotkey) {
+    return '$hotkey shows the panel from any app.';
+  }
+
+  @override
+  String get stashSettingsHotkeyNone =>
+      'No shortcut: the panel only shows from the Stash page.';
+
+  @override
+  String get stashSettingsHotkeyTaken =>
+      'Another app holds this shortcut; pick another.';
+
+  @override
+  String get stashSettingsHotkeyHelp =>
+      'Click, then press the new keys; Escape keeps it, Delete clears it.';
+
+  @override
+  String get stashHotkeyPress => 'Press the keys…';
+
+  @override
+  String get stashHotkeyRefused =>
+      'Needs a modifier with a letter, digit or common key';
+
+  @override
+  String get stashHotkeyNone => 'None';
+
+  @override
+  String get stashHotkeyClear => 'Clear';
+
+  @override
+  String stashHotkeySuggested(String hotkey) {
+    return 'Use $hotkey';
+  }
+
+  @override
+  String get stashHotkeyGlobal => 'Show the Stash panel';
+
+  @override
+  String get stashHotkeyGlobalHint => 'A global shortcut: works from any app.';
+
+  @override
+  String get stashHotkeyTooltip => 'The panel\'s shortcut; click to change';
+
+  @override
+  String get stashSettingsDirectory => 'Location';
+
+  @override
+  String get stashSettingsDirectoryChange => 'Change…';
+
+  @override
+  String get stashSettingsDirectoryReset => 'Default';
+
+  @override
+  String get stashSettingsDirectoryRestart =>
+      'Takes effect after Caocode restarts.';
+
+  @override
+  String get stashAll => 'All';
+
+  @override
+  String get stashAllTooltip => 'Show every stash';
+
+  @override
+  String get stashHintSave => 'Save';
+
+  @override
+  String get stashHintClose => 'Close';
+
+  @override
+  String get stashSaved => 'Saved';
+
+  @override
+  String get stashFilter => 'Filter';
+
+  @override
+  String get stashSort => 'Sort';
+
+  @override
+  String get stashSortManual => 'Custom (drag to order)';
+
+  @override
+  String get stashSortUpdated => 'Last edited';
+
+  @override
+  String get stashSortCreated => 'Last created';
+
+  @override
+  String get stashSortNumber => 'Number';
+
+  @override
+  String get stashOpen => 'Open';
+
+  @override
+  String stashCount(int count) {
+    return '$count stashes';
+  }
+
+  @override
+  String get stashFormatMore => 'More';
+
+  @override
+  String get branchBarSwitch => 'Switch Branch';
+
+  @override
+  String get branchBarSearch => 'Search branches';
+
+  @override
+  String get branchBarCreate => 'Create Branch…';
+
+  @override
+  String branchBarCreateFrom(String branch) {
+    return 'Create a branch from “$branch”';
+  }
+
+  @override
+  String branchBarCreateIn(String folder) {
+    return 'Create a branch in “$folder”';
+  }
+
+  @override
+  String get branchBarCreateButton => 'Create';
+
+  @override
+  String get branchBarDetached => 'Detached HEAD';
+
+  @override
+  String get branchBarRunning =>
+      'Branches can\'t be switched while the agent works';
+
+  @override
+  String branchBarFailed(String branch) {
+    return 'Couldn\'t switch to “$branch”';
+  }
+
+  @override
+  String get branchBarNotRepository => 'Not a Git repository';
+
+  @override
+  String get branchBarWorkspace => 'Branches of the folders';
+
+  @override
+  String get settingsSectionAccounts => 'Git Accounts';
+
+  @override
+  String get settingsAccountsKeywords =>
+      'GitHub GitLab sign in login token issue pull request merge request';
+
+  @override
+  String get accountsDescription =>
+      'Sign in to GitHub or GitLab to see the state of the issues and pull requests linked in Stash, import issues as stashes, and reply to them once you confirm.';
+
+  @override
+  String get accountsSignedIn => 'Signed in';
+
+  @override
+  String get accountsAdd => 'Add an account';
+
+  @override
+  String get accountsKeptLocally =>
+      'Tokens are kept in this computer\'s keychain and are sent only to the GitHub or GitLab they are for. Nothing is posted without your confirmation.';
+
+  @override
+  String get accountsGitHubHosts =>
+      'github.com, or your company\'s GitHub Enterprise';
+
+  @override
+  String get accountsGitLabHosts => 'gitlab.com, or a self-managed GitLab';
+
+  @override
+  String get accountsSignInBrowser => 'Sign in with Browser';
+
+  @override
+  String get accountsSignInToken => 'Use a Token…';
+
+  @override
+  String get accountsViaBrowser => 'signed in with browser';
+
+  @override
+  String get accountsViaToken => 'signed in with token';
+
+  @override
+  String get accountsSignOut => 'Sign Out';
+
+  @override
+  String accountsSignOutTitle(String login, String forge) {
+    return 'Sign out of $forge account $login?';
+  }
+
+  @override
+  String accountsSignOutDetail(String forge) {
+    return 'The token is deleted from this computer. To revoke Caocode\'s access altogether, revoke it in your $forge settings too.';
+  }
+
+  @override
+  String accountsRevoke(String forge) {
+    return 'Sign Out and Open $forge Settings';
+  }
+
+  @override
+  String accountsTokenTitle(String forge) {
+    return 'Sign in to $forge with a Token';
+  }
+
+  @override
+  String get accountsSignIn => 'Sign In';
+
+  @override
+  String get accountsHost => 'Host';
+
+  @override
+  String get accountsToken => 'Token';
+
+  @override
+  String get accountsTokenGitHubScopes =>
+      'A classic token with the repo and read:user scopes, or a fine-grained token with read and write access to issues and pull requests.';
+
+  @override
+  String get accountsTokenGitLabScopes =>
+      'A personal access token with the api scope.';
+
+  @override
+  String accountsTokenCreate(String host) {
+    return 'Create a Token on $host';
+  }
+
+  @override
+  String get accountsTokenRefused =>
+      'The token was not accepted. Check that it is complete and has not expired.';
+
+  @override
+  String accountsBrowserTitle(String forge) {
+    return 'Sign in to $forge';
+  }
+
+  @override
+  String accountsBrowserDetail(String host) {
+    return 'Enter this code on $host to let Caocode access your account:';
+  }
+
+  @override
+  String get accountsCopyAndOpen => 'Copy Code and Open Browser';
+
+  @override
+  String get accountsOpenAgain => 'Copied · Open Again';
+
+  @override
+  String get accountsBrowserStarting => 'Getting a code…';
+
+  @override
+  String get accountsBrowserWaiting =>
+      'Waiting for you to authorize in the browser…';
+
+  @override
+  String get accountsRetry => 'Try Again';
+
+  @override
+  String get forgeStateOpen => 'Open';
+
+  @override
+  String get forgeStateDraft => 'Draft';
+
+  @override
+  String get forgeStateClosed => 'Closed';
+
+  @override
+  String get forgeStateMerged => 'Merged';
+
+  @override
+  String get forgeChecksPassed => 'Checks passed';
+
+  @override
+  String get forgeChecksFailed => 'Checks failed';
+
+  @override
+  String get forgeChecksRunning => 'Checks running';
+
+  @override
+  String get stashIssues => 'Issues & pull requests';
+
+  @override
+  String stashIssueClosedBanner(String tag) {
+    return '$tag was closed. Is this stash done too?';
+  }
+
+  @override
+  String stashIssueOpenBanner(String tag) {
+    return 'This stash is done, but $tag is still open.';
+  }
+
+  @override
+  String get stashIssueReplyClose => 'Reply and close…';
+
+  @override
+  String stashIssueNotSignedIn(String forge) {
+    return 'Sign in to $forge to see its state';
+  }
+
+  @override
+  String get stashIssueSignIn => 'Sign In…';
+
+  @override
+  String get stashIssueFailed => 'Could not refresh';
+
+  @override
+  String get stashIssueOpen => 'Open in Browser';
+
+  @override
+  String get stashIssueCopy => 'Copy Link';
+
+  @override
+  String get stashIssueComment => 'Comment…';
+
+  @override
+  String get stashIssueClose => 'Close Issue…';
+
+  @override
+  String get stashIssueUnlink => 'Unlink';
+
+  @override
+  String stashWriteFixedIn(String pulls) {
+    return 'Fixed in $pulls.';
+  }
+
+  @override
+  String stashWriteTitle(String tag) {
+    return 'Comment on $tag';
+  }
+
+  @override
+  String stashWriteCloseTitle(String tag) {
+    return 'Close $tag';
+  }
+
+  @override
+  String get stashWriteSend => 'Comment';
+
+  @override
+  String get stashWriteSendClose => 'Comment and Close';
+
+  @override
+  String get stashWriteCloseOnly => 'Close Issue';
+
+  @override
+  String get stashWriteSendAnyway => 'Send Anyway';
+
+  @override
+  String get stashWritePlaceholder => 'Write a comment (Markdown)';
+
+  @override
+  String get stashWriteAlsoClose => 'Close the issue too';
+
+  @override
+  String get stashWriteSensitive =>
+      'This looks like it has paths on this computer or secrets, which everyone who can see the issue will see:';
+
+  @override
+  String stashWriteAs(String login, String host) {
+    return 'Posted as $login on $host.';
+  }
+
+  @override
+  String stashWriteFailed(String error) {
+    return 'Not sent: $error';
+  }
+
+  @override
+  String get stashImport => 'Import from Issues…';
+
+  @override
+  String get stashImportTitle => 'Import Issues';
+
+  @override
+  String get stashImportAction => 'Import';
+
+  @override
+  String stashImportCount(int count) {
+    return 'Import $count';
+  }
+
+  @override
+  String get stashImportPaste => 'Paste an issue or pull request link';
+
+  @override
+  String get stashImportAdd => 'Add';
+
+  @override
+  String get stashImportNotALink =>
+      'Not a GitHub or GitLab issue or pull request link.';
+
+  @override
+  String stashImportSignIn(String forge) {
+    return 'Sign in to $forge in Settings → Accounts to list its issues.';
+  }
+
+  @override
+  String get stashImportRepo => 'Repository';
+
+  @override
+  String get stashImportAssigned => 'Assigned to me';
+
+  @override
+  String get stashImportCreated => 'Created by me';
+
+  @override
+  String get stashImportAll => 'All open';
+
+  @override
+  String get stashImportSearch => 'Search';
+
+  @override
+  String get stashImportLoading => 'Loading…';
+
+  @override
+  String get stashImportNoRepos =>
+      'No project has a GitHub or GitLab remote. Paste an issue link above.';
+
+  @override
+  String get stashImportNone => 'No open issues here.';
+
+  @override
+  String stashImportKnown(int id) {
+    return 'in Stash #$id';
+  }
+
+  @override
+  String sidebarOpenPull(String tag) {
+    return 'Open $tag';
+  }
+
+  @override
+  String get stashGroupOthers => 'Others';
+
+  @override
+  String stashFilterProjects(int count) {
+    return '$count projects';
+  }
+
+  @override
+  String get stashFilterJoiner => ', ';
+
+  @override
+  String get stashWelcomeTitle => 'Meet Stash';
+
+  @override
+  String get stashWelcomeLead =>
+      'Note things down the moment they come to you, hand them to an agent when you are ready, and see how each one is going.';
+
+  @override
+  String get stashWelcomeNoteTitle => 'Note it down';
+
+  @override
+  String get stashWelcomeAgentTitle => 'Hand it to an agent';
+
+  @override
+  String get stashWelcomeAgent =>
+      'Click Implement in Caocode, or mention it in a conversation; the conversation and the stash stay linked.';
+
+  @override
+  String get stashWelcomeTrackTitle => 'See how it goes';
+
+  @override
+  String get stashWelcomeTrack =>
+      'Cards show their conversations live, and the GitHub and GitLab issues and pull requests they link to stay in sync.';
+
+  @override
+  String get stashWelcomeStart => 'Get Started';
+
+  @override
+  String get stashWelcomeNoteBody =>
+      'Text, screenshots and links all go in, and each one gets a number of its own, like an issue.';
+
+  @override
+  String get stashWelcomeHotkeyTitle => 'Set a shortcut to note things down';
+
+  @override
+  String get stashWelcomeHotkeySetTitle => 'Shortcut set';
+
+  @override
+  String get stashWelcomeHotkey =>
+      'Press it in any app and the Stash panel comes up, ready to type. Click the box below and press the keys you want.';
+
+  @override
+  String stashWelcomeHotkeySet(String hotkey) {
+    return 'Press $hotkey in any app to note something down. Change it here or in Settings → Stash any time.';
+  }
+
+  @override
+  String get stashWelcomeHotkeyLater =>
+      'You can also set it later in Settings → Stash.';
+
+  @override
+  String get settingsSectionBrowser => 'Browser';
+
+  @override
+  String get settingsBrowserKeywords =>
+      'chrome extension edge brave arc web page tab agent';
+
+  @override
+  String get browserSettingsDescription =>
+      'Let agents use your own browser, signed in as you: open pages, read them, click and type in the tabs you share with them. You can watch every step in the side panel.';
+
+  @override
+  String get browserSettingsUnsupported =>
+      'The browser is available on macOS, Windows and Linux only.';
+
+  @override
+  String get browserSettingsEnabled => 'Let Agents Use the Browser';
+
+  @override
+  String get browserSettingsEnabledDescription =>
+      'When off, agents have no browser tools and the extension disconnects.';
+
+  @override
+  String get browserSettingsStatus => 'Status';
+
+  @override
+  String get browserSettingsNotInstalled => 'No browser has connected yet';
+
+  @override
+  String get browserSettingsNotInstalledDescription =>
+      'Install the extension either way below, then open the browser: it connects automatically.';
+
+  @override
+  String get browserSettingsNotRunning => 'No browser connected';
+
+  @override
+  String get browserSettingsNotRunningDescription =>
+      'Open a browser with Caocode\'s extension: it connects automatically.';
+
+  @override
+  String get browserSettingsSandboxed =>
+      'Snap and Flatpak browsers can\'t connect';
+
+  @override
+  String get browserSettingsSandboxedDescription =>
+      'Their sandbox keeps Caocode\'s helper from running. Install the browser from its own .deb or .rpm package instead, such as Google Chrome from google.com/chrome.';
+
+  @override
+  String browserSettingsConnected(String browser) {
+    return '$browser connected';
+  }
+
+  @override
+  String browserSettingsIncompatible(String browser) {
+    return '$browser: extension version doesn\'t match';
+  }
+
+  @override
+  String browserSettingsExtensionVersion(String version) {
+    return 'Extension $version';
+  }
+
+  @override
+  String get browserSettingsExtensionOld =>
+      'The extension is out of date. From the store, it updates automatically, or click Update in chrome://extensions; installed manually, download the zip again, replace the folder\'s contents and click reload.';
+
+  @override
+  String get browserSettingsAppOld =>
+      'The extension is newer than this Caocode. Update Caocode.';
+
+  @override
+  String get browserSettingsInstall => 'Get the Extension';
+
+  @override
+  String get browserSettingsStore => 'Chrome Web Store';
+
+  @override
+  String get browserSettingsStoreDescription =>
+      'Recommended. Updates automatically; works in Chrome, Edge, Brave, Arc and other Chromium browsers.';
+
+  @override
+  String get browserSettingsStoreOpen => 'Open Store';
+
+  @override
+  String get browserSettingsUnpacked => 'Install Manually (Developer Mode)';
+
+  @override
+  String get browserSettingsUnpackedDescription =>
+      'Unzip it into a folder you\'ll keep. In chrome://extensions, turn on Developer mode at the top right, click Load unpacked and choose the folder. It doesn\'t update automatically.';
+
+  @override
+  String get browserSettingsUnpackedDownload => 'Download Zip';
+
+  @override
+  String get browserSettingsOpen => 'Browser Settings';
+
+  @override
+  String get browserHistoryTitle => 'Debugging history';
+
+  @override
+  String get browserHistoryDescription =>
+      'What the tabs shared with Caocode do is kept as it happens, no recording needed: the pages, the requests, console errors and warnings. Agents look back at it when you ask (“it failed when I saved”). Kept on this computer; cookies and tokens are not.';
+
+  @override
+  String get browserHistoryDetailed => 'Detailed history';
+
+  @override
+  String get browserHistoryDetailedDescription =>
+      'Also keeps the request and response bodies, what you do (clicks and typing, never passwords) and every console message. Takes more space.';
+
+  @override
+  String browserHistorySize(String size) {
+    return 'Using $size';
+  }
+
+  @override
+  String get browserHistoryClear => 'Clear';
+
+  @override
+  String get browserHistoryClearConfirm => 'Clear the debugging history?';
+
+  @override
+  String get browserHistoryClearDetail =>
+      'The pages, requests and console messages kept are deleted. This cannot be undone.';
+
+  @override
+  String browserHistoryTooLarge(String size) {
+    return 'The browser\'s debugging history takes $size';
+  }
+
+  @override
+  String get browserHistoryTooLargeDetail =>
+      'Clear it, or look at it in Settings → Browser.';
+
+  @override
+  String get browserHistoryOpenSettings => 'Browser settings';
+
+  @override
+  String get browserWelcomeTitle => 'Agents can use your browser now';
+
+  @override
+  String get browserWelcomeLead =>
+      'With Caocode\'s extension, agents open pages, read them, click and type in your own Chrome, signed in as you are.';
+
+  @override
+  String get browserWelcomeSharedTitle => 'Only the tabs you share';
+
+  @override
+  String get browserWelcomeShared =>
+      'They work in the yellow Caocode tab group alone; your other tabs stay yours.';
+
+  @override
+  String get browserWelcomeWatchTitle => 'Watch it work';
+
+  @override
+  String get browserWelcomeWatch =>
+      'The side panel shows the page live as the agent uses it. Take over any time.';
+
+  @override
+  String get browserWelcomeShowTitle => 'Show it once';
+
+  @override
+  String get browserWelcomeShow =>
+      'Ask an agent to watch, do it yourself in the browser, and it sees each step you took.';
+
+  @override
+  String get browserWelcomeInstallTitle => 'Add the extension';
+
+  @override
+  String get browserWelcomeInstall =>
+      'For Chrome, Edge, Brave and Arc. It connects by itself, and this turns green.';
+
+  @override
+  String get browserWelcomeTurnedOff =>
+      'The browser is turned off in Settings → Browser.';
+
+  @override
+  String browserWelcomeConnected(String browser) {
+    return '$browser is connected';
+  }
+
+  @override
+  String get browserWelcomeTry =>
+      'Try telling an agent: “Open caocode.dev and look at the download page.”';
+
+  @override
+  String get browserWelcomeUnpacked => 'Developer Mode Zip';
+
+  @override
+  String get browserWelcomeDone => 'Got It';
+
+  @override
+  String get cmdBrowserWelcome => 'Connect Your Browser...';
+
+  @override
+  String get cmdStashWelcome => 'Meet Stash...';
+
+  @override
+  String get cmdModelWelcome => 'Set Up a Model...';
+
+  @override
+  String get modelWelcomeTitle => 'Pick a Model to Start';
+
+  @override
+  String get modelWelcomeLead =>
+      'Caocode runs your agents on a model of your choosing. Add an upstream, a service with an API key, and its models are ready to use.';
+
+  @override
+  String get modelWelcomeAnyTitle => 'Any upstream';
+
+  @override
+  String get modelWelcomeAny =>
+      'Anthropic\'s API, OpenAI\'s Chat Completions or Responses, or a service that speaks one of them, such as OpenRouter or DeepSeek.';
+
+  @override
+  String get modelWelcomeKeysTitle => 'Your keys stay with you';
+
+  @override
+  String get modelWelcomeKeys =>
+      'Keys are kept in the system keychain, and requests go from this computer straight to the upstream.';
+
+  @override
+  String get modelWelcomeSwitchTitle => 'Switch any time';
+
+  @override
+  String get modelWelcomeSwitch =>
+      'Add more upstreams whenever you like, and pick the model for each conversation under its input.';
+
+  @override
+  String get modelWelcomeStepTitle => 'Add your first upstream';
+
+  @override
+  String get modelWelcomeStep =>
+      'Its address and key, then the models to use. Some services can also add theirs in one click from Settings → Models.';
+
+  @override
+  String get modelWelcomeReadyTitle => 'Ready to go';
+
+  @override
+  String modelWelcomeReady(String model) {
+    return 'New conversations start on $model. Pick another under the input any time.';
+  }
+
+  @override
+  String get modelWelcomeLater =>
+      'You can also add one later in Settings → Models.';
+
+  @override
+  String get modelWelcomeSkip => 'Later';
+
+  @override
+  String get modelWelcomeStart => 'Start Chatting';
+
+  @override
+  String get healthNoModel =>
+      'Pick a model to start: add an upstream and its models are ready to use.';
+
+  @override
+  String get modelSetUp => 'Set Up a Model';
+
+  @override
+  String get remoteAddServer => 'Add SSH Server...';
+
+  @override
+  String get remoteEditServer => 'Edit';
+
+  @override
+  String get settingsSectionSsh => 'SSH Servers';
+
+  @override
+  String get settingsSshKeywords =>
+      'ssh remote server host jump bastion key password core';
+
+  @override
+  String get sshSettingsDescription =>
+      'The servers remote projects connect to: their address, how they sign in, a jump host, and the core each runs.';
+
+  @override
+  String get sshSettingsServers => 'Servers';
+
+  @override
+  String get sshSettingsServersDescription =>
+      'Those added in the app, and the hosts the sidebar has.';
+
+  @override
+  String get sshSettingsNone => 'No servers yet';
+
+  @override
+  String get sshSettingsAdd => 'Add Server…';
+
+  @override
+  String get sshSettingsEdit => 'Edit…';
+
+  @override
+  String get sshSettingsConnect => 'Connect';
+
+  @override
+  String get sshSettingsDisconnect => 'Disconnect';
+
+  @override
+  String sshSettingsDisconnectTitle(String host) {
+    return 'Disconnect from $host?';
+  }
+
+  @override
+  String get sshSettingsDisconnectDetail =>
+      'The conversations and terminals running there end.';
+
+  @override
+  String sshSettingsCore(String core) {
+    return 'Core: $core';
+  }
+
+  @override
+  String sshSettingsVia(String host) {
+    return 'through $host';
+  }
+
+  @override
+  String get sshSettingsTyped => 'As typed';
+
+  @override
+  String get sshSettingsConfigHosts => 'Hosts of ~/.ssh/config';
+
+  @override
+  String get sshSettingsConfigHostsDescription =>
+      'Changed in that file; their core is Automatic.';
+
+  @override
+  String get sshSettingsOpenConfig => 'Open File';
+
+  @override
+  String get sshServerAddTitle => 'Add SSH Server';
+
+  @override
+  String get sshServerAddSubtitle =>
+      'Saved to the remote list: connect to it in one click.';
+
+  @override
+  String sshServerEditTitle(String name) {
+    return 'Edit $name';
+  }
+
+  @override
+  String get sshServerHost => 'Host';
+
+  @override
+  String get sshServerHostPlaceholder =>
+      'Domain or IP; user@host:port is split up';
+
+  @override
+  String get sshServerPort => 'Port';
+
+  @override
+  String get sshServerUser => 'User';
+
+  @override
+  String get sshServerName => 'Name (optional)';
+
+  @override
+  String get sshServerNamePlaceholder => 'e.g. Production';
+
+  @override
+  String get sshServerAuth => 'Sign in with';
+
+  @override
+  String get sshServerAuthPassword => 'Password';
+
+  @override
+  String get sshServerAuthKey => 'Private Key';
+
+  @override
+  String get sshServerAuthAuto => 'Automatic';
+
+  @override
+  String get sshServerAuthAutoHint =>
+      'As ssh does in a terminal: ssh-agent, the keys in ~/.ssh, ~/.ssh/config. A password is asked for if the server wants one.';
+
+  @override
+  String get sshServerPasswordHint =>
+      'Kept in the system keychain. Leave it empty to be asked when connecting.';
+
+  @override
+  String get sshServerPasswordKept => 'Saved: leave empty to keep it';
+
+  @override
+  String get sshServerKeyPlaceholder =>
+      'Path of the private key, e.g. ~/.ssh/id_ed25519';
+
+  @override
+  String get sshServerKeyBrowse => 'Browse...';
+
+  @override
+  String get sshServerKeysFound => 'Keys in ~/.ssh';
+
+  @override
+  String get sshServerKeyHint =>
+      'If the key has a passphrase, it is asked for when connecting.';
+
+  @override
+  String get sshServerCore => 'Core';
+
+  @override
+  String get sshServerCoreAuto => 'Automatic';
+
+  @override
+  String get sshServerCoreAutoHint =>
+      'The server\'s Claude Code CLI if it has one, else the built-in core.';
+
+  @override
+  String get sshServerCoreBuiltinHint =>
+      'Caocode\'s own core: it runs on the upstreams of Settings → Models.';
+
+  @override
+  String get sshServerCoreCliHint =>
+      'The server\'s Claude Code CLI, installed there if it has none.';
+
+  @override
+  String get sshServerJump => 'Jump Host (optional)';
+
+  @override
+  String get sshServerNoJump => 'None: connect directly';
+
+  @override
+  String get sshServerSaveConnect => 'Save and Connect';
+
+  @override
+  String get sshServerSave => 'Save';
+
+  @override
+  String get sshServerHostRequired => 'Enter the server\'s domain or IP';
+
+  @override
+  String get sshServerHostInvalid => 'No spaces, and not starting with \'-\'';
+
+  @override
+  String get sshServerPortInvalid => 'A port is from 1 to 65535';
+
+  @override
+  String get sshServerKeyRequired => 'Choose the private key file';
+
+  @override
+  String get sshServerKeyMissing => 'There is no such file';
+
+  @override
+  String get remoteForgetHostKey => 'Remove the Old Key and Connect';
+
+  @override
+  String remoteForgetHostKeyTitle(String host) {
+    return 'Remove the old key of $host?';
+  }
+
+  @override
+  String get remoteForgetHostKeyDetail =>
+      'Only if you know the server was reinstalled or its key changed: otherwise someone may be between you and it. The key it has now is accepted at the next connection.';
+
+  @override
+  String get remoteForgetHostKeyButton => 'Remove and Connect';
+
+  @override
+  String get remoteFailNoSsh =>
+      'There is no ssh on this computer: install the OpenSSH client.';
+
+  @override
+  String get remoteFailAuth =>
+      'The server refused to sign in: check the user, password or key.';
+
+  @override
+  String get remoteFailCancelled => 'Signing in was cancelled.';
+
+  @override
+  String get remoteFailHostKey =>
+      'The server\'s key is not known, and your ssh config says not to accept new ones (StrictHostKeyChecking).';
+
+  @override
+  String get remoteFailHostKeyChanged =>
+      'The server\'s key changed since the last connection: it was reinstalled, or someone is in between.';
+
+  @override
+  String get remoteFailUnreachable =>
+      'The server could not be reached: check the address, port and network.';
+
+  @override
+  String get channelSetupTitle => 'Welcome to Caocode';
+
+  @override
+  String get channelSetupLead =>
+      'Finish your first-time setup on caocode.dev. It takes about 10 seconds.';
+
+  @override
+  String get channelSetupStepTitle => 'Finish setup in your browser';
+
+  @override
+  String get channelSetupStep =>
+      'Caocode opens caocode.dev in your browser. Once the page says it\'s done, Caocode continues on its own.';
+
+  @override
+  String get channelSetupWaitingTitle => 'Waiting for your browser…';
+
+  @override
+  String get channelSetupWaiting =>
+      'Once the page says it\'s done, Caocode continues on its own. Closed the page by mistake? Open it again.';
+
+  @override
+  String get channelSetupOffline =>
+      'Can\'t reach caocode.dev. You need to be online to finish setup.';
+
+  @override
+  String get channelSetupRetry => 'Retry';
+
+  @override
+  String get channelSetupDoneTitle => 'Setup complete';
+
+  @override
+  String get channelSetupOpen => 'Finish Setup in Browser';
+
+  @override
+  String get channelSetupOpenAgain => 'Open the Page Again';
+
+  @override
+  String get channelSetupNoResponse => 'Browser not responding?';
+
+  @override
+  String get channelSetupPasteLead =>
+      'If the page shows a link, copy it and paste it here:';
+
+  @override
+  String get channelSetupPasteConfirm => 'OK';
+
+  @override
+  String get channelSetupLinkInvalid =>
+      'That isn\'t the link from the page. Copy the whole link shown there.';
+
+  @override
+  String get channelSetupLinkOther =>
+      'That link is for another Caocode install. Use the page this Caocode opened.';
+
+  @override
+  String get channelSetupTrouble => 'Having trouble?';
+
+  @override
+  String get channelSetupOnceTitle => 'Only once';
+
+  @override
+  String get channelSetupOnce =>
+      'Once it\'s done, this won\'t show again, not even after an update.';
+
+  @override
+  String get channelSetupPrivateTitle => 'Nothing personal';
+
+  @override
+  String get channelSetupPrivate =>
+      'The page only tells Caocode where you heard of it, like a video or a website.';
+
+  @override
+  String get channelSetupFindingTitle => 'Getting your channel ready…';
+
+  @override
+  String get channelSetupFinding => 'Just a moment.';
+
+  @override
+  String get channelSetupSiteOfflineTitle => 'Can\'t reach caocode.dev';
+
+  @override
+  String get channelSetupSiteOffline =>
+      'Caocode needs to be online to read your channel. Check your connection and retry.';
+
+  @override
+  String get channelSetupUnavailableTitle => 'This channel isn\'t available';
+
+  @override
+  String get channelSetupUnavailable =>
+      'The channel this installer came from doesn\'t have accounts set up yet. If you downloaded it through another channel, confirm where you came from in your browser; otherwise contact whoever gave you the installer, or download the standard edition from caocode.dev.';
+
+  @override
+  String get channelSetupConfirmAgain => 'Confirm in Browser';
+
+  @override
+  String channelWelcomeTitle(String channel) {
+    return 'Welcome to $channel';
+  }
+
+  @override
+  String channelWelcomeText(String channel) {
+    return 'Sign in to your $channel account to get started.';
+  }
+
+  @override
+  String get channelWelcomeSignIn => 'Sign In';
+
+  @override
+  String get channelWelcomeSigningIn => 'Sign in in the window that opened…';
+
+  @override
+  String get channelWelcomePreparing => 'Getting ready…';
+
+  @override
+  String channelWelcomeFailed(String error) {
+    return 'Couldn\'t finish signing in: $error';
+  }
+
+  @override
+  String get channelAccountTitle => 'Account';
+
+  @override
+  String get channelAccountBalance => 'Balance';
+
+  @override
+  String get channelAccountRefresh => 'Refresh';
+
+  @override
+  String get channelAccountSignOut => 'Sign Out';
+
+  @override
+  String get channelAccountSignOutTitle => 'Sign out?';
+
+  @override
+  String channelAccountSignOutDetail(String channel) {
+    return 'You\'ll need to sign in to $channel again to keep using Caocode.';
+  }
+
+  @override
+  String get channelAccountOpenSite => 'Open Website';
+
+  @override
+  String get channelAccountDefaultModel => 'Default model for new chats';
+
+  @override
+  String get channelAccountNoModels =>
+      'The key in use doesn\'t reach any models.';
+
+  @override
+  String get channelAccountKeys => 'My API Keys';
+
+  @override
+  String get channelAccountCreateKey => 'Create Key';
+
+  @override
+  String get channelAccountKeyName => 'Name';
+
+  @override
+  String get channelAccountKeyGroup => 'Group';
+
+  @override
+  String get channelAccountUseKey => 'Use This Key';
+
+  @override
+  String get channelAccountInUse => 'In Use';
+
+  @override
+  String get channelAccountNoKeys => 'No API keys yet.';
+
+  @override
+  String get channelAccountSignedOut => 'You\'re not signed in.';
+
+  @override
+  String get channelAccountUnavailable =>
+      'This channel isn\'t available. Contact whoever gave you the installer.';
+
+  @override
+  String channelAccountFailed(String error) {
+    return 'Something went wrong: $error';
+  }
+
+  @override
+  String channelAccountBlocked(String site, String request) {
+    return '$site refused this computer\'s connection ($request); its firewall may be blocking the IP of your network or proxy. Try another network, or reach $site without the proxy.';
+  }
+
+  @override
+  String get settingsSectionAbout => 'About';
+
+  @override
+  String get aboutTagline =>
+      'An awesome, easy-to-use desktop UI for Claude Code, with a millisecond-fast IDE built in.';
+
+  @override
+  String aboutVersion(String version, int build) {
+    return 'Version $version ($build)';
+  }
+
+  @override
+  String aboutRepository(String repository) {
+    return '$repository · free and open source, under the GPL-3.0';
+  }
+
+  @override
+  String get aboutWebsite => 'Website';
+
+  @override
+  String get aboutChangelog => 'Changelog';
+
+  @override
+  String get aboutChangelogDetail => 'What each version changed';
+
+  @override
+  String get aboutFeedback => 'Report an Issue';
+
+  @override
+  String get aboutFeedbackDetail =>
+      'Open an issue on GitHub, or see those others opened';
+
+  @override
+  String get aboutOpen => 'Open';
 }

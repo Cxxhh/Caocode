@@ -209,7 +209,9 @@ class AttentionService {
         unawaited(host.requestAttention());
       case AttentionEvent.finished:
         final reply = _lastReply(thread);
-        body = reply == null
+        body = thread.session.awaitingPlan != null
+            ? l10n.attentionPlanReady
+            : reply == null
             ? l10n.attentionFinished
             : '${l10n.attentionFinished} · $reply';
     }
@@ -237,36 +239,17 @@ class AttentionService {
   /// What the agent waits on, in a line.
   static String? _request(InteractionRequest? request, AppLocalizations l10n) =>
       switch (request) {
-        QuestionRequest(:final questions) when questions.isNotEmpty => _excerpt(
-          questions.first.prompt,
-        ),
-        PlanReviewRequest() => l10n.attentionPlanReady,
+        QuestionRequest(:final questions) when questions.isNotEmpty =>
+          oneLineExcerpt(questions.first.prompt),
         InteractionRequest(:final title) when title.trim().isNotEmpty =>
-          _excerpt(title),
+          oneLineExcerpt(title),
         _ => null,
       };
 
   /// The start of what the agent last said, if it said anything this run.
-  static String? _lastReply(AgentThread thread) {
-    final session = thread.session;
-    for (var i = session.itemCount - 1; i >= 0; i--) {
-      final item = session.itemAt(i);
-      if (item is UserMessageItem) return null;
-      if (item is AssistantTextItem && item.text.trim().isNotEmpty) {
-        return _excerpt(item.text);
-      }
-    }
-    return null;
-  }
-
-  /// [text] on one line, its markup's marks dropped, at most [max]
-  /// characters.
-  static String _excerpt(String text, {int max = 140}) {
-    final line = text
-        .replaceAll(RegExp(r'[`*_#>]+'), '')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
-    if (line.length <= max) return line;
-    return '${line.substring(0, max - 1).trimRight()}…';
-  }
+  static String? _lastReply(AgentThread thread) =>
+      switch (thread.session.lastReply) {
+        final reply? => oneLineExcerpt(reply),
+        null => null,
+      };
 }

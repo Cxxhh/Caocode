@@ -175,6 +175,100 @@ void main() {
     expect(hoverRect.top, closeTo(target.bottom - 2, 0.01));
   });
 
+  testWidgets('scrolling over a file row tooltip still scrolls the list', (
+    tester,
+  ) async {
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ListView(
+            controller: controller,
+            children: [
+              const SizedBox(height: 100),
+              const IdeHover(
+                message: '~/project/a/very/long/file/path.dart',
+                followMouse: true,
+                child: SizedBox(height: 32, child: Text('file.dart')),
+              ),
+              for (var i = 0; i < 40; i++)
+                SizedBox(height: 32, child: Text('$i')),
+            ],
+          ),
+        ),
+      ),
+    );
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    addTearDown(mouse.removePointer);
+    await mouse.addPointer(location: Offset.zero);
+    await mouse.moveTo(tester.getCenter(find.text('file.dart')));
+    await tester.pump();
+    await tester.pump(ideHoverDelay + const Duration(milliseconds: 150));
+    const message = '~/project/a/very/long/file/path.dart';
+    final tip = find.ancestor(
+      of: find.text(message),
+      matching: find.byType(IdeHoverBox),
+    );
+    expect(tip, findsOneWidget);
+    final at = tester.getCenter(tip);
+    await mouse.moveTo(at);
+    await tester.pump();
+    expect(find.text(message), findsOneWidget);
+
+    await tester.sendEventToBinding(
+      PointerScrollEvent(position: at, scrollDelta: const Offset(0, 120)),
+    );
+    await tester.pump();
+    expect(controller.offset, greaterThan(0));
+  });
+
+  testWidgets('interactive hover forwards wheel without losing its button', (
+    tester,
+  ) async {
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    var taps = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ListView(
+            controller: controller,
+            children: [
+              const SizedBox(height: 140),
+              IdeHover(
+                content: TextButton(
+                  onPressed: () => taps++,
+                  child: const Text('Open detail'),
+                ),
+                interactive: true,
+                child: const SizedBox(height: 32, child: Text('row')),
+              ),
+              for (var i = 0; i < 40; i++)
+                SizedBox(height: 32, child: Text('$i')),
+            ],
+          ),
+        ),
+      ),
+    );
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    addTearDown(mouse.removePointer);
+    await mouse.addPointer(location: Offset.zero);
+    await mouse.moveTo(tester.getCenter(find.text('row')));
+    await tester.pump();
+    await tester.pump(ideHoverDelay + const Duration(milliseconds: 150));
+    final at = tester.getCenter(find.text('Open detail'));
+    await mouse.moveTo(at);
+    await tester.pump();
+    await tester.sendEventToBinding(
+      PointerScrollEvent(position: at, scrollDelta: const Offset(0, 30)),
+    );
+    await tester.pump();
+    expect(controller.offset, greaterThan(0));
+    await tester.tap(find.text('Open detail'));
+    expect(taps, 1);
+  });
+
   test('codicons are the pinned VS Code ones, and the font is bundled', () {
     // Spot checks against src/vs/base/common/codiconsLibrary.ts.
     expect(Codicons.files.codePoint, 0xeaf0);

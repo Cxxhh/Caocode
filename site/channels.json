@@ -1,0 +1,13 @@
+{
+  "youtube": {
+    "logo": "/channels/youtube.svg",
+    "name": { "zh": "YouTube", "en": "YouTube" },
+    "subtitle": { "zh": "从 YouTube 来的朋友，欢迎！这是为您 YouTube 专属的 vibe coding 客户端。", "en": "Welcome, friends from YouTube! This is your own vibe coding client, made for YouTube." }
+  },
+  "aijws": {
+    "logo": "/channels/myjarvis.svg",
+    "name": { "zh": "我的贾维斯", "en": "My JARVIS" },
+    "subtitle": { "zh": "强大的 AI 编程助手，搭配专业的 AI API 中转服务。多模型接入、统一接口、高效调用，为每一位开发者提供更自由的 AI 开发体验。", "en": "A powerful AI coding assistant, with a professional AI API relay: many models, one interface, fast calls. A freer way to build with AI, for every developer." },
+    "account": { "type": "sub2api", "url": "https://api.aijws.com" }
+  }
+}

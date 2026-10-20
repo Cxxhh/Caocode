@@ -35,11 +35,30 @@ typedef StepRow = ({StepFold? work, StepFold? steps, bool item});
 /// one line before its answer ("Worked for 4m 32s"). Edits, subagents and
 /// the agent's words stand apart: they break a run. A plan's card is never
 /// folded.
+///
+/// Thoughts one after another, nothing between them, show as one (see
+/// [mergeThoughts]): its row is the first's, the others show nothing.
 class StepFolds {
-  StepFolds._(this._steps, this._work, this._liveEnd, this._turnEnds);
+  StepFolds._(
+    this._steps,
+    this._work,
+    this._liveEnd,
+    this._turnEnds,
+    this._items,
+    this._thoughtRuns,
+    this._thoughtOf,
+  );
 
   /// Nothing folded.
-  static final none = StepFolds._(const [], const [], null, const {});
+  static final none = StepFolds._(
+    const [],
+    const [],
+    null,
+    const {},
+    const [],
+    const {},
+    const [],
+  );
 
   /// Folds the [count] items given by [itemAt]. While [live], the last turn
   /// is under way: it does not fold yet.
@@ -52,6 +71,24 @@ class StepFolds {
     final steps = List<StepFold?>.filled(count, null);
     final work = List<StepFold?>.filled(count, null);
     final turnEnds = <int, int>{};
+    final thoughtRuns = <int, int>{};
+    final thoughtOf = List<int?>.filled(count, null);
+
+    for (var start = 0; start < count;) {
+      if (items[start] is! ThinkingItem) {
+        start++;
+        continue;
+      }
+      var end = start + 1;
+      while (end < count && items[end] is ThinkingItem) {
+        end++;
+      }
+      if (end - start >= 2) {
+        thoughtRuns[start] = end;
+        thoughtOf.fillRange(start + 1, end, start);
+      }
+      start = end;
+    }
 
     for (var start = 0; start < count;) {
       if (!isQuickStep(items[start])) {
@@ -88,7 +125,7 @@ class StepFolds {
       // have a copy button. Only measured turns show usage without an answer.
       if (last > prompt &&
           (worked != null || items[last] is AssistantTextItem)) {
-        turnEnds[last] = prompt;
+        turnEnds[thoughtOf[last] ?? last] = prompt;
       }
       if (worked == null ||
           last <= prompt ||
@@ -125,11 +162,50 @@ class StepFolds {
 
     var liveEnd = count;
     if (count > 0 && items[count - 1] is LiveStatusItem) liveEnd--;
-    return StepFolds._(steps, work, live ? liveEnd : null, turnEnds);
+    return StepFolds._(
+      steps,
+      work,
+      live ? liveEnd : null,
+      turnEnds,
+      items,
+      thoughtRuns,
+      thoughtOf,
+    );
   }
 
   final List<StepFold?> _steps;
   final List<StepFold?> _work;
+  final List<ChatItem> _items;
+
+  /// Where each run of thoughts shown as one ends, by where it starts.
+  final Map<int, int> _thoughtRuns;
+
+  /// For each thought shown in an earlier one's row, where that run starts.
+  final List<int?> _thoughtOf;
+
+  /// The runs of thoughts as one, as asked for.
+  final Map<int, ThinkingItem> _merged = {};
+
+  /// What row [index] shows of [item], the item there: the thoughts of the
+  /// run it starts as one, else [item] itself.
+  ChatItem shownAt(int index, ChatItem item) {
+    final end = _thoughtRuns[index];
+    if (end == null) return item;
+    return _merged[index] ??= mergeThoughts([
+      for (var i = index; i < end; i++) _items[i] as ThinkingItem,
+    ]);
+  }
+
+  /// Whether item [index] is a thought shown in an earlier one's row.
+  bool _mergedAway(int index) =>
+      index < _thoughtOf.length && _thoughtOf[index] != null;
+
+  /// The last item row [index] shows: of a run of thoughts it starts, the
+  /// run's last.
+  int _rowEnd(int index) => switch (_thoughtRuns[index]) {
+    final end? => end - 1,
+    null => index,
+  };
 
   /// For the last item of a finished turn with an answer or a duration,
   /// its prompt's index.
@@ -154,15 +230,20 @@ class StepFolds {
     final work = workAt(index);
     final workLine = work?.start == index ? work : null;
     if (work != null && !isOpen(work)) {
-      return (work: workLine, steps: null, item: false);
+      // Pictures made stand out of it, as the answer would show them.
+      return (work: workLine, steps: null, item: standsOutOfWork(item));
     }
+    final own = !_mergedAway(index);
     final steps = stepsAt(index);
-    if (steps == null) return (work: workLine, steps: null, item: true);
+    if (steps == null) return (work: workLine, steps: null, item: own);
     final stepsLine = steps.start == index ? steps : null;
     // Closed, a run still under way shows its last step as it goes.
     final shown =
-        isOpen(steps) ||
-        (index == steps.end - 1 && steps.end == _liveEnd && isUnderWay(item));
+        own &&
+        (isOpen(steps) ||
+            (_rowEnd(index) == steps.end - 1 &&
+                steps.end == _liveEnd &&
+                isUnderWay(shownAt(index, item))));
     return (work: workLine, steps: stepsLine, item: shown);
   }
 }
@@ -170,8 +251,8 @@ class StepFolds {
 /// Whether [item] is a quick step, folded with others like it: a thought,
 /// or a tool call that only looks around or runs something. Not an edit
 /// (shown on its own), a subagent, a message to another agent, a goal
-/// proposed, a refused call, nor a command left running in the
-/// background.
+/// proposed, pictures made, a refused call, nor a command left running in
+/// the background.
 bool isQuickStep(ChatItem item) => switch (item) {
   ThinkingItem() => true,
   ToolCallItem(:final kind, :final status) =>
@@ -180,10 +261,19 @@ bool isQuickStep(ChatItem item) => switch (item) {
           ToolKind.edit ||
           ToolKind.agent ||
           ToolKind.message ||
-          ToolKind.goal => false,
+          ToolKind.goal ||
+          ToolKind.image => false,
           _ => true,
         },
   TerminalItem(:final background) => !background,
+  _ => false,
+};
+
+/// Whether [item] shows though its turn's work is folded: pictures an
+/// image model made, which are what the user asked for.
+bool standsOutOfWork(ChatItem item) => switch (item) {
+  ToolCallItem(kind: ToolKind.image, :final status, :final images) =>
+    status == ToolStatus.succeeded && images.isNotEmpty,
   _ => false,
 };
 
@@ -197,8 +287,32 @@ bool isUnderWay(ChatItem item) => switch (item) {
   _ => false,
 };
 
+/// [thoughts], one after another, as one: their words a blank line apart,
+/// their times added up. A model may think in many parts in one reply
+/// (each kept apart, to be sent back as it was), most without words: one
+/// thought to the user, as long as they all took. Still streaming while
+/// one of them is, its time counting on from where the others' ends.
+ThinkingItem mergeThoughts(List<ThinkingItem> thoughts) {
+  final took = thoughts.fold(0, (sum, thought) => sum + (thought.seconds ?? 0));
+  final streaming = thoughts.where((thought) => thought.streaming).lastOrNull;
+  return ThinkingItem(
+    text: [
+      for (final thought in thoughts)
+        if (thought.text.trim() case final text when text.isNotEmpty) text,
+    ].join('\n\n'),
+    tokens: thoughts.fold(0, (sum, thought) => sum + thought.tokens),
+    seconds:
+        streaming == null && thoughts.any((thought) => thought.seconds != null)
+        ? took
+        : null,
+    startedAt: streaming?.startedAt?.subtract(Duration(seconds: took)),
+    streaming: streaming != null,
+    summarized: thoughts.every((thought) => thought.summarized),
+  );
+}
+
 /// What a quick step did, as a run's line counts it.
-enum StepAction { read, search, list, fetch, run, use }
+enum StepAction { read, search, list, fetch, run, browse, use }
 
 /// The steps of a run, counted by what they did.
 class StepTally {
@@ -211,6 +325,7 @@ class StepTally {
           ToolKind.listDir => StepAction.list,
           ToolKind.web => StepAction.fetch,
           ToolKind.command => StepAction.run,
+          ToolKind.browser => StepAction.browse,
           _ => StepAction.use,
         },
         TerminalItem(:final command) => commandAction(command),

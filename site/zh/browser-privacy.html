@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caocode 浏览器扩展：隐私说明</title>
+<meta name="description" content="Caocode 浏览器扩展读取什么、交给谁，以及哪些数据绝不离开你的电脑。">
+<link rel="icon" href="/icon.png">
+<link rel="stylesheet" href="/style.css">
+<script src="/head.js"></script>
+<link rel="alternate" hreflang="en" href="https://caocode.dev/browser-privacy">
+<link rel="alternate" hreflang="zh" href="https://caocode.dev/zh/browser-privacy">
+</head>
+<body>
+<canvas class="grid" aria-hidden="true"></canvas>
+<svg class="sprite" aria-hidden="true">
+  <!-- Lucide (ISC), https://lucide.dev -->
+  <symbol id="ic-github" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5c.08-1.25-.27-2.48-1-3.5c.28-1.15.28-2.35 0-3.5c0 0-1 0-3 1.5c-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5c-.39.49-.68 1.05-.85 1.65S8.93 17.38 9 18v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></g></symbol>
+</svg>
+<header class="top">
+  <a class="brand" href="/zh/"><img src="/icon.png" alt="">Caocode</a>
+  <a href="/zh/download">下载</a>
+  <a href="/zh/changelog">更新日志</a>
+  <a href="https://github.com/Cxxhh/Caocode"><svg class="ic" aria-hidden="true"><use href="#ic-github"/></svg>GitHub</a>
+  <a class="lang" href="/browser-privacy" hreflang="en" lang="en">English</a>
+</header>
+
+<main class="page">
+  <h1>浏览器扩展与你的隐私</h1>
+  <p class="meta"><span>更新于 2026 年 10 月 17 日</span></p>
+
+  <p>Caocode 浏览器扩展让桌面应用 Caocode 里的 agent 使用你浏览器中的标签页：打开网页、阅读、点击、输入和截图，全程在你眼前。本页说明它读取什么，以及这些数据去了哪里。</p>
+
+  <h2 class="plain">只有你共享的标签页</h2>
+  <p>扩展只在黄色的「Caocode」标签页分组里工作：agent 打开的标签页，以及你自己拖进分组或用扩展工具栏按钮共享的标签页。它不读取你的其他标签页、浏览记录、书签、密码或 Cookie。它查看标签页列表，只是为了判断哪些在分组里。把标签页移出分组，或在该标签页上再点一次工具栏按钮，它就不再被共享。</p>
+
+  <h2 class="plain">被要求时读取什么</h2>
+  <p>在共享的标签页里，agent 请求时才会读取：网页地址、标题和文字，可以点击或输入的元素，截图，网页在控制台输出的信息，它发出的网络请求，以及性能数据。扩展通过浏览器的调试接口读取这些，所以 Chrome 会显示一条“正在调试此标签页”的提示。</p>
+  <p>当 agent 请求“看你操作”且你同意时，它会记录你在该标签页里的点击和输入，直到你点「完成」。密码框里输入的内容永远不会被记录。</p>
+
+  <h2 class="plain">数据去了哪里</h2>
+  <p>只交给同一台电脑上的 Caocode，不去任何别的地方：扩展通过浏览器的本地消息（Native Messaging）与 Caocode 通信，不经过网络。扩展和 Caocode 都不会把这些数据发给我们，我们也没有可以接收它们的服务器。</p>
+  <p>Caocode 会把 agent 要的内容交给 agent，就像你分享给它一个文件。agent 会把对话（包括这些内容）发送给你使用的 AI 模型（Claude Code 用的是 Anthropic 的模型，或你自己配置的服务商），适用该服务商的条款。</p>
+
+  <h2 class="plain">它绝不做的事</h2>
+  <ul>
+    <li>没有统计、没有追踪、没有广告。扩展不会把你或你的使用情况发给任何人。</li>
+    <li>不加载外部代码：它运行的一切都在扩展包里。</li>
+    <li>不出售数据，也不交给任何第三方。</li>
+    <li>对通过 Google API 获得的信息的使用遵守 Chrome 应用商店用户数据政策，包括其中的“有限使用”要求。</li>
+  </ul>
+
+  <h2 class="plain">关闭它</h2>
+  <p>退出 Caocode，扩展就无处可连。在 Caocode 的 设置 → 浏览器 里可以关闭 agent 使用浏览器。也可以直接从浏览器里移除扩展。</p>
+
+  <h2 class="plain">有问题？</h2>
+  <p>Caocode 和这个扩展都是开源的：可以<a href="https://github.com/Cxxhh/Caocode/tree/main/browser_extension">查看扩展的代码</a>，或<a href="https://github.com/Cxxhh/Caocode/issues">提一个 issue</a>。</p>
+</main>
+<script src="/site.js"></script>
+</body>
+</html>

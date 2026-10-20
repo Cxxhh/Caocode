@@ -8,9 +8,18 @@
 //     --macos-x64 build/installers/Caocode-1.2.0-mac-x64.zip \
 //     [--dmg-arm64 build/installers/Caocode-1.2.0-arm64.dmg] \
 //     [--dmg-x64 build/installers/Caocode-1.2.0-x64.dmg] \
+//     [--linux-x64 build/installers/Caocode-1.2.0-linux-amd64.deb] \
+//     [--linux-arm64 build/installers/Caocode-1.2.0-linux-arm64.deb] \
 //     [--notes-en <text or file>] [--notes-zh <text or file>] \
 //     [--minimum-version 1.0.0] [--version 1.2.0+12] \
 //     [--manifest build/installers/latest.json]
+//
+// The channel build's (lib/channel/) beside them, each option with
+// -channel after it (--windows-channel, --macos-arm64-channel,
+// --dmg-arm64-channel, --linux-x64-channel…): signed for its own platform
+// keys (`windows-x64-channel`…), which the channel build alone updates from
+// (each edition updates to itself), and given to the download page as
+// `downloads.<os>.channel`, for whoever came through the site.
 //
 //   dart run tool/release_manifest.dart --generate-key <file>
 //   dart run tool/release_manifest.dart --public-key
@@ -30,7 +39,8 @@
 //
 // Besides what the app reads, `downloads` gives the download page
 // (site/site.js) what it offers: the disk images (--dmg-arm64, --dmg-x64),
-// which the app does not update from, and the Windows installer.
+// which the app does not update from, the Windows installer, and the Linux
+// packages (which the app updates from too).
 import 'dart:convert';
 import 'dart:io';
 
@@ -51,6 +61,14 @@ Uri _link(AppVersion version, String name, String sha256) => Uri.parse(
 /// the app takes its processor's (lib/update/installer_io.dart).
 const _macArchitectures = ['arm64', 'x64'];
 
+/// The Linux packages built (tool/package_linux_deb.sh), the same.
+const _linuxArchitectures = ['x64', 'arm64'];
+
+/// The editions built: the standard one, and the channel build, whose
+/// options and platform keys end in this.
+const _channel = '-channel';
+const _editions = ['', _channel];
+
 /// Where the private key's path is given.
 const _keyVariable = 'CAOCODE_UPDATE_SIGNING_KEY';
 
@@ -59,6 +77,8 @@ Usage:
   dart run tool/release_manifest.dart [--windows <setup.exe>]
       [--macos-arm64 <mac-arm64.zip>] [--macos-x64 <mac-x64.zip>]
       [--dmg-arm64 <arm64.dmg>] [--dmg-x64 <x64.dmg>]
+      [--linux-x64 <amd64.deb>] [--linux-arm64 <arm64.deb>]
+      [each of those with -channel after it: the channel build's]
       [--notes-en <text|file>] [--notes-zh <text|file>]
       [--minimum-version <version>] [--version <version>]
       [--manifest <latest.json>]
@@ -94,13 +114,21 @@ Future<void> main(List<String> arguments) async {
     options['version'] ?? _pubspecVersion(File('${root.path}/pubspec.yaml')),
   );
   final files = {
-    if (options['windows'] case final path?) 'windows-x64': File(path),
-    for (final arch in _macArchitectures)
-      if (options['macos-$arch'] case final path?) 'macos-$arch': File(path),
+    for (final edition in _editions) ...{
+      if (options['windows$edition'] case final path?)
+        'windows-x64$edition': File(path),
+      for (final arch in _macArchitectures)
+        if (options['macos-$arch$edition'] case final path?)
+          'macos-$arch$edition': File(path),
+      for (final arch in _linuxArchitectures)
+        if (options['linux-$arch$edition'] case final path?)
+          'linux-$arch$edition': File(path),
+    },
   };
   if (files.isEmpty) {
     _fail(
-      'Nothing to sign: give --windows, --macos-arm64 or --macos-x64.\n\n'
+      'Nothing to sign: give --windows, --macos-arm64, --macos-x64, '
+      '--linux-x64 or --linux-arm64.\n\n'
       '$_usage',
     );
   }
@@ -160,25 +188,53 @@ Future<void> main(List<String> arguments) async {
       signature: signature,
     );
   }
-  if (assets['windows-x64'] case final installer?) {
-    downloads['windows'] = {
-      'url': '${installer.url}',
-      'size': installer.size,
-      'sha256': installer.sha256,
+  // [os]'s download for [edition]: the entry itself, the channel build's
+  // in it as `channel`.
+  void offer(String os, String edition, Map<String, Object?> file) {
+    final entry = {
+      if (downloads[os] case final Map<String, Object?> before) ...before,
     };
+    if (edition == _channel) {
+      entry['channel'] = file;
+    } else {
+      entry.addAll(file);
+    }
+    downloads[os] = entry;
+  }
+
+  for (final edition in _editions) {
+    if (assets['windows-x64$edition'] case final installer?) {
+      offer('windows', edition, {
+        'url': '${installer.url}',
+        'size': installer.size,
+        'sha256': installer.sha256,
+      });
+    }
+    // The packages as they are: the page's links, and the app's updates.
+    for (final arch in _linuxArchitectures) {
+      if (assets['linux-$arch$edition'] case final package?) {
+        offer('linux-$arch', edition, {
+          'url': '${package.url}',
+          'size': package.size,
+          'sha256': package.sha256,
+        });
+      }
+    }
   }
   final dmgs = {
-    for (final arch in _macArchitectures)
-      if (options['dmg-$arch'] case final path?) 'macos-$arch': File(path),
+    for (final edition in _editions)
+      for (final arch in _macArchitectures)
+        if (options['dmg-$arch$edition'] case final path?)
+          (os: 'macos-$arch', edition: edition): File(path),
   };
-  for (final MapEntry(key: platform, value: dmg) in dmgs.entries) {
+  for (final MapEntry(key: (:os, :edition), value: dmg) in dmgs.entries) {
     if (!dmg.existsSync()) _fail('No such file: ${dmg.path}');
     final sha256 = '${await crypto.sha256.bind(dmg.openRead()).first}';
-    downloads[platform] = {
+    offer(os, edition, {
       'url': '${_link(version, dmg.uri.pathSegments.last, sha256)}',
       'size': dmg.lengthSync(),
       'sha256': sha256,
-    };
+    });
   }
 
   final manifest = UpdateManifest(
@@ -206,15 +262,21 @@ Future<void> main(List<String> arguments) async {
   for (final MapEntry(key: platform, value: file) in files.entries) {
     stdout.writeln('  ${file.path}\n    -> ${assets[platform]!.url}');
   }
-  for (final MapEntry(key: platform, value: dmg) in dmgs.entries) {
-    stdout.writeln(
-      '  ${dmg.path}\n    -> ${(downloads[platform] as Map)['url']}',
-    );
+  for (final MapEntry(key: (:os, :edition), value: dmg) in dmgs.entries) {
+    final entry = downloads[os] as Map;
+    final file = edition == _channel ? entry['channel'] as Map : entry;
+    stdout.writeln('  ${dmg.path}\n    -> ${file['url']}');
   }
   stdout.writeln('  ${manifestFile.path}\n    -> $defaultManifestUrl');
+  // The channel build's too, once there is one.
   final missing = {
-    'windows-x64',
-    for (final arch in _macArchitectures) 'macos-$arch',
+    for (final edition in _editions)
+      if (edition.isEmpty ||
+          assets.keys.any((key) => key.endsWith(edition))) ...{
+        'windows-x64$edition',
+        for (final arch in _macArchitectures) 'macos-$arch$edition',
+        for (final arch in _linuxArchitectures) 'linux-$arch$edition',
+      },
   }.difference(assets.keys.toSet());
   if (missing.isNotEmpty) {
     stdout.writeln(
@@ -277,12 +339,18 @@ String _textOrFile(String value) {
 /// `--name value` pairs; `--flag` alone for those without one.
 Map<String, String?> _parse(List<String> arguments) {
   const flags = {'public-key', 'help'};
-  const valued = {
+  const files = {
     'windows',
     'macos-arm64',
     'macos-x64',
     'dmg-arm64',
     'dmg-x64',
+    'linux-x64',
+    'linux-arm64',
+  };
+  final valued = {
+    for (final edition in _editions)
+      for (final file in files) '$file$edition',
     'notes-en',
     'notes-zh',
     'minimum-version',

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/l10n.dart';
 import '../platform/app_platform.dart';
+import '../theme/codicons.dart';
 
 import 'editor_launcher_stub.dart'
     if (dart.library.io) 'editor_launcher_io.dart'
@@ -20,29 +21,23 @@ enum Editor {
     'VS Code',
     'code',
     macApp: 'Visual Studio Code',
-    icon: Icons.code_rounded,
+    icon: Codicons.vscode,
   ),
-  cursor('Cursor', 'cursor', macApp: 'Cursor', icon: Icons.near_me_outlined),
-  zed('Zed', 'zed', macApp: 'Zed', icon: Icons.bolt_rounded),
-  xcode(
-    'Xcode',
-    null,
-    macApp: 'Xcode',
-    icon: Icons.build_outlined,
-    macOSOnly: true,
-  ),
+  cursor('Cursor', 'cursor', macApp: 'Cursor', icon: Codicons.cursor),
+  zed('Zed', 'zed', macApp: 'Zed', icon: Codicons.zap),
+  xcode('Xcode', null, macApp: 'Xcode', icon: Codicons.tools, macOSOnly: true),
   folder(
     'Finder',
     null,
     windowsLabel: 'File Explorer',
-    icon: Icons.folder_open_outlined,
+    icon: Codicons.folderOpened,
   ),
   terminal(
     'Terminal',
     'wt',
     macApp: 'Terminal',
     windowsLabel: 'Windows Terminal',
-    icon: Icons.terminal_rounded,
+    icon: Codicons.terminal,
   );
 
   const Editor(
@@ -76,6 +71,8 @@ enum Editor {
   /// Whether it is Caocode's own ([fastIde]), shown instead of launched.
   final bool builtIn;
 
+  /// Its icon: a codicon, as the IDE's own buttons have theirs, but for the
+  /// Fast Ide's own.
   final IconData icon;
 
   /// What the platform calls it.
@@ -85,8 +82,7 @@ enum Editor {
   /// [platformLabel] in [l10n]'s language: the system's own apps are named
   /// as the system names them there.
   String localizedPlatformLabel(AppLocalizations l10n) => switch (this) {
-    folder when AppPlatform.isWindows => l10n.workspaceFileExplorer,
-    folder => l10n.workspaceFinder,
+    folder => l10n.fileManager,
     terminal when AppPlatform.isWindows => l10n.workspaceWindowsTerminal,
     terminal => l10n.workspaceTerminalApp,
     _ => platformLabel,

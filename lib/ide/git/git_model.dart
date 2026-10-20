@@ -608,7 +608,16 @@ IdeGitHead _parseBranchLine(String line) {
   const initial = 'Initial commit on ';
   for (final prefix in [unborn, initial]) {
     if (line.startsWith(prefix)) {
-      return IdeGitHead(branch: line.substring(prefix.length), unborn: true);
+      // With its upstream too, when it has one (`main...origin/main
+      // [gone]`).
+      final head = _parseBranchLine(line.substring(prefix.length));
+      return IdeGitHead(
+        branch: head.branch,
+        upstream: head.upstream,
+        ahead: head.ahead,
+        behind: head.behind,
+        unborn: true,
+      );
     }
   }
   if (line.startsWith('HEAD (no branch)')) return const IdeGitHead();

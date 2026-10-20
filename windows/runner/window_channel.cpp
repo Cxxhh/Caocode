@@ -744,6 +744,25 @@ void WindowChannel::HandleMethodCall(
     return;
   }
 
+  if (method == "dragWindow") {
+    // Moved by the pointer held down on Flutter's own strip (the stash's
+    // panel, which marks no header): the system's move, as its title bar
+    // would start. The press is let go inside it, unseen by the view, which
+    // is told of it after for Flutter's gesture to end.
+    result->Success();
+    if (::GetAsyncKeyState(VK_LBUTTON) & 0x8000) {
+      ::ReleaseCapture();
+      ::SendMessageW(window_, WM_SYSCOMMAND, SC_MOVE | HTCAPTION, 0);
+      if (view_ != nullptr) {
+        POINT point = {};
+        ::GetCursorPos(&point);
+        ::ScreenToClient(view_, &point);
+        ::PostMessageW(view_, WM_LBUTTONUP, 0, MAKELPARAM(point.x, point.y));
+      }
+    }
+    return;
+  }
+
   if (method == "growWindow") {
     // Room for conversations side by side (see chat_grid_view.dart).
     Grow(Number(arguments, "width"), Number(arguments, "height"));

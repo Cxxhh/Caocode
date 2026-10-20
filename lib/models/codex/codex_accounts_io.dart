@@ -422,13 +422,86 @@ class CodexAccounts extends CodexService {
           '${upstreamErrorMessage(status, text)} (GET $url)',
         );
       }
-      return parseCodexModels(_decode(text));
+      return [
+        ...parseCodexModels(_decode(text)),
+        // Its pictures, as the Codex CLI makes them.
+        const RemoteModel(codexImageModel, label: 'GPT Image 2'),
+      ];
     } on CodexException catch (error) {
       throw UpstreamException(error.message);
     } on SocketException catch (error) {
       throw UpstreamException('Could not connect: ${error.message}');
     } on TimeoutException {
       throw const UpstreamException('No answer in time.');
+    }
+  }
+
+  /// POSTs [body] (of [contentType]) to [url] as one of [provider]'s
+  /// accounts, by its balance ([session]'s, if any): its token refreshed
+  /// once if refused, the next account asked when one is out of quota.
+  /// The status and text answered. Throws [UpstreamException].
+  Future<(int, String)> post(
+    ModelProvider provider,
+    Uri url,
+    List<int> body, {
+    required ContentType contentType,
+    String? session,
+    bool events = false,
+    Duration timeout = const Duration(minutes: 5),
+  }) async {
+    final tried = <String>{};
+    while (true) {
+      final account = pick(provider, session: session, exclude: tried);
+      if (account == null) {
+        throw UpstreamException(
+          provider.accounts.isEmpty
+              ? 'Sign in to a ChatGPT account first.'
+              : 'No account can be used now.',
+        );
+      }
+      tried.add(account.id);
+      try {
+        String? rejected;
+        for (var attempt = 0; ; attempt++) {
+          final token = await accessToken(
+            provider,
+            account,
+            rejected: rejected,
+          );
+          final request = await _http.postUrl(url);
+          codexHeaders(
+            token,
+            accountId: account.accountId,
+            session: session,
+            events: events,
+            version: codexVersionOf(provider),
+          ).forEach(request.headers.set);
+          request.headers.contentType = contentType;
+          request.add(body);
+          final response = await request.close().timeout(timeout);
+          final text = await utf8.decodeStream(response).timeout(timeout);
+          if (response.statusCode == 401 && attempt == 0) {
+            rejected = token;
+            continue;
+          }
+          record(provider, account, response.headers.value);
+          // Out of quota: the next account's turn.
+          if (codexLimitReset(response.statusCode, text, _now())
+              case final until?) {
+            markLimited(provider, account, until);
+            break;
+          }
+          return (response.statusCode, text);
+        }
+      } on CodexException catch (error) {
+        throw UpstreamException(error.message);
+      } on SocketException catch (error) {
+        throw UpstreamException('Could not connect: ${error.message}');
+      } on TimeoutException {
+        throw const UpstreamException('No answer in time.');
+      } on HttpException catch (error) {
+        throw UpstreamException(error.message);
+      }
     }
   }
 

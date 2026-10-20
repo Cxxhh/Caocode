@@ -46,6 +46,20 @@ void main() {
       ]);
     });
 
+    test('atLine: the path read as file:line[:col]', () {
+      expect(
+        const CodeTarget('/w/a.vue:58:11').atLine,
+        const CodeTarget('/w/a.vue', line: 58, column: 11),
+      );
+      expect(
+        const CodeTarget(r'C:\w\a.vue:58').atLine,
+        const CodeTarget(r'C:\w\a.vue', line: 58),
+      );
+      expect(const CodeTarget('/w/a.vue').atLine, isNull);
+      expect(const CodeTarget(r'C:\w\a.vue').atLine, isNull);
+      expect(const CodeTarget('/w/a.vue:3', line: 3).atLine, isNull);
+    });
+
     test('options it does not know are left out; -- ends the options', () {
       final args = CodeArgs.parse(['--wait', '-x', 'a', '--', '-n'], cwd: '/w');
       expect(args.paths, const [CodeTarget('/w/a'), CodeTarget('/w/-n')]);

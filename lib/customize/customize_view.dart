@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 
 import 'package:bao_editor/monaco/flutter/editor_surface_controller.dart';
 
+import '../base/smooth_scroll.dart';
 import '../chat/floating/floating_placement.dart';
 import '../chat/widgets/hover_builder.dart';
 import '../ide/ide_code_editor.dart';
@@ -76,6 +77,7 @@ class CustomizeView extends StatefulWidget {
     this.titleBarInset = 12,
     this.onOpenFile,
     this.host,
+    this.showTitleBar = true,
   });
 
   /// The customizations of the machine shown: this one's, or [host]'s.
@@ -94,12 +96,20 @@ class CustomizeView extends StatefulWidget {
   final CustomizationKind kind;
   final VoidCallback onClose;
 
-  /// Before the title, by the traffic lights: the sidebar's toggle.
+  /// The title bar's first widget, right of [titleBarInset]: the
+  /// sidebar's toggle.
   final Widget? leading;
+
+  /// From the window's left edge to the title bar's first widget: clear of
+  /// the native traffic lights on macOS, which the leading sits after.
   final double titleBarInset;
 
   /// Opens a file in the IDE; none when null.
   final ValueChanged<String>? onOpenFile;
+
+  /// Whether its own title bar shows (a Close button and the like); false
+  /// where it is a settings page, under the dialog's own.
+  final bool showTitleBar;
 
   /// Opens a folder in Finder; replaceable under test.
   @visibleForTesting
@@ -119,6 +129,7 @@ class CustomizeViewState extends State<CustomizeView> {
   late CustomizationKind _kind = widget.kind;
   late Project? _project = widget.project;
   final TextEditingController _query = TextEditingController();
+  final _scroll = SmoothScrollController();
 
   List<Customization>? _items;
   Object? _error;
@@ -164,6 +175,7 @@ class CustomizeViewState extends State<CustomizeView> {
   @override
   void dispose() {
     _query.dispose();
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -325,7 +337,7 @@ class CustomizeViewState extends State<CustomizeView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildTitleBar(context.l10n),
+        if (widget.showTitleBar) _buildTitleBar(context.l10n),
         Expanded(
           child: open != null
               ? _CustomizationEditor(
@@ -359,9 +371,8 @@ class CustomizeViewState extends State<CustomizeView> {
         height: AppMetrics.titleBarHeight,
         child: Row(
           children: [
-            SizedBox(width: widget.leading == null ? widget.titleBarInset : 0),
+            SizedBox(width: widget.titleBarInset),
             if (widget.leading case final leading?) ...[
-              SizedBox(width: widget.titleBarInset - 34),
               leading,
               const SizedBox(width: 10),
             ],
@@ -444,6 +455,7 @@ class CustomizeViewState extends State<CustomizeView> {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 760),
         child: ListView(
+          controller: _scroll,
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
           children: [
             _SearchBox(controller: _query),
@@ -1150,32 +1162,41 @@ class _CustomizationEditorState extends State<_CustomizationEditor> {
                   const SizedBox(width: 8),
                   Icon(_item.kind.icon, size: 15, color: AppColors.textMuted),
                   const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      _item.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  // The name and its save state take the rest of the row
+                  // together, so the actions sit flush right: a loose
+                  // Flexible next to a Spacer would leave half the slack
+                  // after them.
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            _item.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        if (_item.editable)
+                          Text(
+                            _dirty
+                                ? l10n.customizeUnsaved
+                                : _justSaved
+                                ? l10n.customizeSaved
+                                : '',
+                            style: TextStyle(
+                              color: AppColors.textFaint,
+                              fontSize: 12,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  if (_item.editable)
-                    Text(
-                      _dirty
-                          ? l10n.customizeUnsaved
-                          : _justSaved
-                          ? l10n.customizeSaved
-                          : '',
-                      style: TextStyle(
-                        color: AppColors.textFaint,
-                        fontSize: 12,
-                      ),
-                    ),
-                  const Spacer(),
                   if (widget.onOpenFile case final open? when _item.editable)
                     SidebarIconButton(
                       icon: Codicons.goToFile,
@@ -1354,18 +1375,15 @@ class _McpStatusPanel extends StatelessWidget {
           Row(
             children: [
               _McpStatusBadge(status),
-              if (status.server case final server? when server.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    server,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: AppColors.textFaint, fontSize: 12),
-                  ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  status.server ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: AppColors.textFaint, fontSize: 12),
                 ),
-              ],
-              const Spacer(),
+              ),
               if (onTest case final onTest?)
                 _Button(
                   label: l10n.mcpTest,

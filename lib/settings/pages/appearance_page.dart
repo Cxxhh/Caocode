@@ -8,6 +8,7 @@ import 'package:flutter/material.dart' hide ColorScheme;
 
 import '../../chat/chat_keys.dart';
 import '../../chat/chat_width.dart';
+import '../../chat/reply_scroll.dart';
 import '../../chat/user_message_style.dart';
 import '../../chat/widgets/chat_minimap.dart';
 import '../../chat/widgets/pixel_loader.dart';
@@ -18,6 +19,7 @@ import '../../ide/terminal/terminal_colors.dart' show terminalColorTheme;
 import '../../ide/terminal/terminal_render_theme.dart'
     show terminalBaseFontSize, vscodeTerminalFontSize;
 import '../../ide/ide_menu.dart';
+import '../../sidebar/sidebar_times.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/code_font.dart';
@@ -30,7 +32,8 @@ import 'settings_widgets.dart';
 /// Preferences: Color Theme picks it), the chat's, the IDE's and the
 /// terminal's alike, and how wide the conversation grows
 /// (`chat.maxWidth`, see [ChatWidth]); what an agent and a subagent show
-/// running (see [PixelLoaderRole]); then the code's font, size and
+/// running (see [PixelLoaderRole]); whether the sidebar's agents show
+/// their times ([SidebarTimes]); then the code's font, size and
 /// ligatures, the window's text size and the terminal's (see [CodeFont]). A
 /// choice is applied and kept at once.
 class AppearanceSettingsPage extends StatelessWidget {
@@ -162,6 +165,17 @@ class AppearanceSettingsPage extends StatelessWidget {
     _keep(UserMessageStyle.settingKey, style.setting);
   }
 
+  static String _replyScrollName(BuildContext context, ReplyScroll choice) =>
+      switch (choice) {
+        ReplyScroll.follow => context.l10n.appearanceSettingsReplyScrollFollow,
+        ReplyScroll.start => context.l10n.appearanceSettingsReplyScrollStart,
+      };
+
+  void _selectReplyScroll(ReplyScroll choice) {
+    ReplyScroll.current.value = choice;
+    _keep(ReplyScroll.settingKey, choice.setting);
+  }
+
   void _selectMinimap(bool on) {
     ChatMinimap.enabled.value = on;
     _keep(ChatMinimap.settingKey, ChatMinimap.setting(on));
@@ -175,6 +189,11 @@ class AppearanceSettingsPage extends StatelessWidget {
   void _selectMinimapElasticity(ChatMinimapElasticity level) {
     ChatMinimap.elasticity.value = level;
     _keep(ChatMinimap.elasticityKey, ChatMinimap.elasticitySetting(level));
+  }
+
+  void _selectSidebarTimes(bool on) {
+    SidebarTimes.shown.value = on;
+    _keep(SidebarTimes.settingKey, SidebarTimes.setting(on));
   }
 
   static String elasticityName(
@@ -338,9 +357,11 @@ class AppearanceSettingsPage extends StatelessWidget {
         changes,
         ChatWidth.current,
         UserMessageStyle.current,
+        ReplyScroll.current,
         ChatMinimap.enabled,
         ChatMinimap.glass,
         ChatMinimap.elasticity,
+        SidebarTimes.shown,
         for (final role in PixelLoaderRole.values) ...[role.style, role.speed],
         CodeFont.families,
         CodeFont.size,
@@ -352,6 +373,10 @@ class AppearanceSettingsPage extends StatelessWidget {
         final widthStep = ChatWidth.stepOf(ChatWidth.current.value);
         final widthShown = widthName(context, ChatWidth.steps[widthStep]);
         final styleShown = _styleName(context, UserMessageStyle.current.value);
+        final replyScrollShown = _replyScrollName(
+          context,
+          ReplyScroll.current.value,
+        );
         final glass = ChatMinimap.glass.value;
         final glassShown = '${(glass * 100).round()}%';
         final elasticityShown = elasticityName(
@@ -442,6 +467,27 @@ class AppearanceSettingsPage extends StatelessWidget {
                     ]),
                   ),
                 ),
+                SettingsRow(
+                  label: l10n.appearanceSettingsReplyScroll,
+                  description: l10n.appearanceSettingsReplyScrollDescription,
+                  trailing: SettingsDropdown(
+                    current: replyScrollShown,
+                    width: 220,
+                    semanticLabel: l10n.appearanceSettingsReplyScrollLabel(
+                      replyScrollShown,
+                    ),
+                    entries: () => ideMenuGroups([
+                      [
+                        for (final choice in ReplyScroll.values)
+                          IdeMenuAction(
+                            _replyScrollName(context, choice),
+                            checked: choice == ReplyScroll.current.value,
+                            onSelected: () => _selectReplyScroll(choice),
+                          ),
+                      ],
+                    ]),
+                  ),
+                ),
                 SettingsSwitchRow(
                   label: l10n.appearanceSettingsMinimap,
                   description: l10n.appearanceSettingsMinimapDescription,
@@ -496,6 +542,16 @@ class AppearanceSettingsPage extends StatelessWidget {
                   PixelLoaderRole.subagent,
                   label: l10n.appearanceSettingsSubagentLoader,
                   description: l10n.appearanceSettingsSubagentLoaderDescription,
+                ),
+              ],
+            ),
+            SettingsCard(
+              children: [
+                SettingsSwitchRow(
+                  label: l10n.appearanceSettingsSidebarTimes,
+                  description: l10n.appearanceSettingsSidebarTimesDescription,
+                  value: SidebarTimes.shown.value,
+                  onChanged: _selectSidebarTimes,
                 ),
               ],
             ),

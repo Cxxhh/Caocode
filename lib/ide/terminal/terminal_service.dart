@@ -106,16 +106,19 @@ class TerminalService extends ChangeNotifier {
   /// [profile]'s shell, else the default profile's (see
   /// [TerminalProfileService.defaultShell]).
   ///
+  /// [cwd] starts it in that folder instead of [root] (Open in Terminal).
   /// An extension's terminal starts as its [config] says; one
   /// `hideFromUser` is not listed in [instances], nor made active, until
   /// [show]n.
   TerminalInstance create({
     TerminalProfile? profile,
     TerminalLaunchConfig? config,
+    String? cwd,
   }) {
     final instance = TerminalInstance(
       id: _nextId++,
       root: root,
+      cwd: cwd,
       backend: backend,
       columns: _active?.columns ?? 80,
       rows: _active?.rows ?? 24,

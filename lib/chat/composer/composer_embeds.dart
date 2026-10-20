@@ -1,20 +1,29 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
+import 'package:path/path.dart' as p;
 
 import '../../kernel/kernel_types.dart' show FileSuggestion;
 import '../../l10n/l10n.dart';
+import '../../stash/stash_store.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/codicons.dart';
 import '../../theme/material_file_icons.dart';
 import '../../theme/workbench_theme.dart' show themeColors;
 import '../chat_models.dart';
 import '../floating/hover_tooltip.dart';
 import '../widgets/file_label.dart';
+import '../side_panel/file_link_menu.dart';
+import '../side_panel/file_open.dart';
 import '../widgets/image_thumbnails.dart';
+import '../widgets/text_preview.dart';
 import 'composer_files.dart';
+import 'paste_store.dart';
 import 'composer_mock_data.dart';
 
 /// Inline, atomic token for a file or folder, or a /command. It occupies a
@@ -142,6 +151,23 @@ class ComposerPastedTextEmbed {
   static String plainText(Object? data) => decode(data).reference;
 }
 
+/// Inline, atomic reference to a stash: the message's text says
+/// `[Stash #12]`, and the stash's text goes after it (see
+/// [StashReference], [codeAppendix]).
+class ComposerStashEmbed {
+  static const type = 'composer-stash';
+
+  static Embeddable of(StashReference stash) =>
+      Embeddable(type, jsonEncode(stash.toJson()));
+
+  static StashReference decode(Object? data) => StashReference.fromJson(
+    jsonDecode(data as String) as Map<String, Object?>,
+  );
+
+  /// Text it contributes to the sent message and to plain-text copies.
+  static String plainText(Object? data) => decode(data).reference;
+}
+
 /// Where what is dragged over the composer would go, released: the tags it
 /// would put in, faint. Never sent; only there while the drag is.
 class ComposerGhostEmbed {
@@ -200,10 +226,19 @@ class ComposerVocabulary extends InheritedWidget {
     required this.commands,
     this.suggestFiles,
     this.sessions,
+    this.stashes,
+    this.stash,
     required super.child,
   });
 
   final List<Suggestion> commands;
+
+  /// The stashes `@` offers ([Suggestion.stash]s), listed after the files;
+  /// none without it.
+  final List<Suggestion> Function()? stashes;
+
+  /// The stash numbered so, to put in; null when it is gone.
+  final StashReference? Function(int id)? stash;
 
   /// Files and folders matching what follows an `@` (see [fileSuggestion]);
   /// null when there is no looking.
@@ -231,6 +266,7 @@ class ComposerVocabulary extends InheritedWidget {
   bool updateShouldNotify(ComposerVocabulary oldWidget) =>
       !identical(commands, oldWidget.commands) ||
       (sessions == null) != (oldWidget.sessions == null) ||
+      (stashes == null) != (oldWidget.stashes == null) ||
       (suggestFiles == null) != (oldWidget.suggestFiles == null);
 }
 
@@ -317,6 +353,7 @@ Delta composerDeltaFromPaste(
           delta.insert(switch (reference) {
             CodeReference() => ComposerCodeEmbed.of(reference).toJson(),
             PastedText() => ComposerPastedTextEmbed.of(reference).toJson(),
+            StashReference() => ComposerStashEmbed.of(reference).toJson(),
           });
           i = close + 1;
           continue;
@@ -451,6 +488,11 @@ class ComposerTokenChip extends StatelessWidget {
                 ],
               ),
               SuggestionKind.file => FileLabel(token.label, fontSize: 12),
+              // Stashes have tags of their own ([ComposerStashChip]).
+              SuggestionKind.stash => Text(
+                token.label,
+                style: TextStyle(color: AppColors.text, fontSize: 12),
+              ),
               SuggestionKind.session => Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -540,7 +582,8 @@ class ComposerCodeEmbedBuilder extends EmbedBuilder {
 
 /// The inline tag for lines of a file ([ComposerCodeEmbed] data), centered
 /// on text of [textStyle]: the file's name and the lines, the lines
-/// themselves on hover. In the composer and in sent messages alike.
+/// themselves on hover, all of them on a click (see [showTextPreview]). In
+/// the composer and in sent messages alike.
 ///
 /// Inside a selectable area it copies as its message text
 /// (`[lib/main.dart:12-30]`).
@@ -608,7 +651,18 @@ class ComposerCodeChip extends StatelessWidget {
       child: HoverTooltip(
         content: (context) =>
             _TextPreview(label: reference.label, text: reference.code),
-        child: tag,
+        child: PreviewClick(
+          onOpen: () => showTextPreview(
+            context,
+            title: reference.label,
+            text: reference.code,
+            // Its file's extension, for its language.
+            name:
+                '${p.basenameWithoutExtension(name)} ($lines)'
+                '${p.extension(name)}',
+          ),
+          child: tag,
+        ),
       ),
     );
   }
@@ -703,7 +757,8 @@ class ComposerPastedTextEmbedBuilder extends EmbedBuilder {
 
 /// The inline tag for a long paste ([ComposerPastedTextEmbed] data),
 /// centered on text of [textStyle]: its number and its count of lines, its
-/// first lines on hover. In the composer and in sent messages alike.
+/// first lines on hover, all of it on a click (see [showTextPreview]). In
+/// the composer and in sent messages alike.
 ///
 /// Inside a selectable area it copies as its message text
 /// (`[Pasted text #1 +120 lines]`).
@@ -769,8 +824,190 @@ class ComposerPastedTextChip extends StatelessWidget {
     return _SelectableToken(
       text: pasted.reference,
       child: HoverTooltip(
-        content: (context) => _TextPreview(label: name, text: pasted.text),
-        child: tag,
+        content: (context) => switch (pasted.file) {
+          final file? => _KeptTextPreview(label: name, file: file),
+          null => _TextPreview(label: name, text: pasted.text),
+        },
+        child: PreviewClick(
+          onOpen: () => unawaited(() async {
+            final text = await _textOf(pasted, context.l10n);
+            if (context.mounted) {
+              await showTextPreview(context, title: name, text: text);
+            }
+          }()),
+          child: tag,
+        ),
+      ),
+    );
+  }
+
+  /// What [pasted] says: read from where it is kept, if it is.
+  static Future<String> _textOf(
+    PastedText pasted,
+    AppLocalizations l10n,
+  ) async => switch (pasted.file) {
+    final file? => await PasteStore.read(file) ?? l10n.pastedTextGone(file),
+    null => pasted.text,
+  };
+}
+
+/// A kept paste's hover (see [PastedText.file]): read as it shows.
+class _KeptTextPreview extends StatefulWidget {
+  const _KeptTextPreview({required this.label, required this.file});
+
+  final String label;
+  final String file;
+
+  @override
+  State<_KeptTextPreview> createState() => _KeptTextPreviewState();
+}
+
+class _KeptTextPreviewState extends State<_KeptTextPreview> {
+  late final Future<String?> _text = PasteStore.read(widget.file);
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder(
+    future: _text,
+    builder: (context, snapshot) => _TextPreview(
+      label: widget.label,
+      text: switch (snapshot) {
+        AsyncSnapshot(data: final text?) => text,
+        AsyncSnapshot(connectionState: ConnectionState.done) =>
+          context.l10n.pastedTextGone(widget.file),
+        _ => '…',
+      },
+    ),
+  );
+}
+
+class ComposerStashEmbedBuilder extends EmbedBuilder {
+  const ComposerStashEmbedBuilder();
+
+  @override
+  String get key => ComposerStashEmbed.type;
+
+  @override
+  bool get expanded => false;
+
+  // As a token's (see [ComposerTokenEmbedBuilder]).
+  @override
+  WidgetSpan buildWidgetSpan(Widget widget) => WidgetSpan(
+    alignment: PlaceholderAlignment.baseline,
+    baseline: TextBaseline.alphabetic,
+    child: widget,
+  );
+
+  @override
+  String toPlainText(Embed node) =>
+      ComposerStashEmbed.plainText(node.value.data);
+
+  @override
+  Widget build(BuildContext context, EmbedContext embedContext) =>
+      ComposerStashChip(
+        data: embedContext.node.value.data,
+        textStyle: embedContext.textStyle,
+      );
+}
+
+/// The inline tag for a stash ([ComposerStashEmbed] data), centered on
+/// text of [textStyle]: its number and title, its text on hover, the stash
+/// itself on a click (where the chat's files open, as the Stash page shows
+/// it; its text by [showTextPreview] once it is gone). In the composer and
+/// in sent messages alike.
+class ComposerStashChip extends StatelessWidget {
+  const ComposerStashChip({
+    super.key,
+    required this.data,
+    required this.textStyle,
+  });
+
+  final Object? data;
+  final TextStyle textStyle;
+
+  /// [ComposerStashChip] as a span for rich text of [textStyle].
+  static InlineSpan span(Object? data, TextStyle textStyle) => WidgetSpan(
+    alignment: PlaceholderAlignment.baseline,
+    baseline: TextBaseline.alphabetic,
+    child: ComposerStashChip(data: data, textStyle: textStyle),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final stash = ComposerStashEmbed.decode(data);
+    final name = 'Stash #${stash.id}';
+    final title = stash.title.trim();
+    final tag = _CenteredOnText(
+      textStyle: textStyle,
+      child: DefaultTextStyle.merge(
+        style: const TextStyle(
+          height: 1.25,
+          leadingDistribution: TextLeadingDistribution.even,
+        ),
+        child: SelectionContainer.disabled(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 1),
+            padding: const EdgeInsets.fromLTRB(4, 1, 5, 1),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: themeColors['chat.requestBorder']),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Codicons.note, size: 13, color: AppColors.textMuted),
+                const SizedBox(width: 4),
+                Text(
+                  name,
+                  style: TextStyle(color: AppColors.text, fontSize: 12),
+                ),
+                if (title.isNotEmpty)
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 220),
+                    child: Text(
+                      ' $title',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    final label = title.isEmpty ? name : '$name · $title';
+    return _SelectableToken(
+      text: stash.reference,
+      child: HoverTooltip(
+        content: (context) => _TextPreview(label: label, text: stash.text),
+        child: PreviewClick(
+          onOpen: () {
+            // The stash itself, as the Stash page shows it, while it is
+            // kept; else the text it was sent with.
+            if ((
+                  FileOpenScope.find(context),
+                  StashStore.current?.fileOf(stash.id),
+                )
+                case (final scope?, final file?)) {
+              scope.showLocal(file);
+              return;
+            }
+            unawaited(
+              showTextPreview(
+                context,
+                title: label,
+                text: stash.text,
+                name: '$name.md',
+              ),
+            );
+          },
+          child: tag,
+        ),
       ),
     );
   }
@@ -985,22 +1222,192 @@ class ComposerImageChip extends StatelessWidget {
     if (image != null) {
       chip = ImagePreviewClick(image: image, child: chip);
       chip = HoverTooltip(
-        content: (context) => ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 240, maxHeight: 180),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: Image.memory(
-              image.bytes,
-              fit: BoxFit.contain,
-              cacheWidth: 720,
-              gaplessPlayback: true,
-            ),
-          ),
-        ),
-        child: chip,
+        content: (context) => _ImageHover(image.bytes),
+        child: FileLinkMenuRegion(menu: ImageMenu(image), child: chip),
       );
     }
     return _SelectableToken(text: imageReference(number), child: chip);
+  }
+}
+
+/// An image on hover, small.
+class _ImageHover extends StatelessWidget {
+  const _ImageHover(this.bytes);
+
+  final Uint8List bytes;
+
+  @override
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: const BoxConstraints(maxWidth: 240, maxHeight: 180),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: Image.memory(
+        bytes,
+        fit: BoxFit.contain,
+        cacheWidth: 720,
+        gaplessPlayback: true,
+      ),
+    ),
+  );
+}
+
+/// The tag for an image file the chat links to, as an attached image's
+/// ([ComposerImageChip]): its picture small and the link's [label],
+/// centered on text of [textStyle]. A click shows it enlarged; a right
+/// click has the file's menu (see [FileOpenScope.menuFor]).
+class FileImageChip extends StatefulWidget {
+  const FileImageChip({
+    super.key,
+    required this.path,
+    required this.label,
+    required this.files,
+    required this.textStyle,
+  });
+
+  /// Absolute, on the project's host.
+  final String path;
+  final String label;
+  final FileOpenScope files;
+  final TextStyle textStyle;
+
+  /// [FileImageChip] as a span for rich text of [textStyle].
+  static InlineSpan span({
+    required String path,
+    required String label,
+    required FileOpenScope files,
+    required TextStyle textStyle,
+  }) => WidgetSpan(
+    alignment: PlaceholderAlignment.baseline,
+    baseline: TextBaseline.alphabetic,
+    child: FileImageChip(
+      path: path,
+      label: label,
+      files: files,
+      textStyle: textStyle,
+    ),
+  );
+
+  @override
+  State<FileImageChip> createState() => _FileImageChipState();
+}
+
+class _FileImageChipState extends State<FileImageChip> {
+  /// The images read lately, by where they are read from (a project's
+  /// host) and path: the history builds its rows anew as they scroll into
+  /// view.
+  static final _read = <(Object?, String), Future<ImageAttachment?>>{};
+
+  /// Past this an image is not read to be shown this small.
+  static const _maxBytes = 20 << 20;
+
+  late Future<ImageAttachment?> _image = _imageOf(widget.path);
+
+  Future<ImageAttachment?> _imageOf(String path) {
+    final key = (widget.files.readBytes, path);
+    if (_read.remove(key) case final read?) return _read[key] = read;
+    if (_read.length >= 24) _read.remove(_read.keys.first);
+    return _read[key] = widget.files.image(path, maxBytes: _maxBytes);
+  }
+
+  @override
+  void didUpdateWidget(FileImageChip oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.path != oldWidget.path) _image = _imageOf(widget.path);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final FileImageChip(:path, :label, :files) = widget;
+    return FutureBuilder(
+      future: _image,
+      builder: (context, snapshot) {
+        final image = snapshot.data;
+        Widget chip = _CenteredOnText(
+          textStyle: widget.textStyle,
+          child: DefaultTextStyle.merge(
+            style: const TextStyle(
+              height: 1.25,
+              leadingDistribution: TextLeadingDistribution.even,
+            ),
+            child: SelectionContainer.disabled(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 1),
+                padding: const EdgeInsets.fromLTRB(2, 1, 5, 1),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: themeColors['chat.requestBorder']),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(2.5),
+                      child: SizedBox.square(
+                        dimension: ComposerImageChip._pictureSize,
+                        child: image == null
+                            ? Icon(
+                                snapshot.connectionState == ConnectionState.done
+                                    ? Icons.broken_image_outlined
+                                    : Icons.image_outlined,
+                                size: 12,
+                                color: AppColors.textMuted,
+                              )
+                            : Image.memory(
+                                image.bytes,
+                                fit: BoxFit.cover,
+                                cacheWidth: (ComposerImageChip._pictureSize * 3)
+                                    .round(),
+                                gaplessPlayback: true,
+                                errorBuilder: (context, error, stack) => Icon(
+                                  Icons.broken_image_outlined,
+                                  size: 12,
+                                  color: AppColors.textFaint,
+                                ),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: AppColors.text, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+        chip = PreviewClick(
+          onOpen: () => unawaited(
+            files.preview(
+              context,
+              path,
+              orElse: () => files.onOpen(FileOpenRequest(path)),
+            ),
+          ),
+          child: FileLinkMenuRegion(
+            menu: files.menuFor(
+              path,
+              () => files.onOpen(FileOpenRequest(path)),
+              context: context,
+            ),
+            child: chip,
+          ),
+        );
+        if (image != null) {
+          chip = HoverTooltip(
+            content: (context) => _ImageHover(image.bytes),
+            child: chip,
+          );
+        }
+        return _SelectableToken(text: label, child: chip);
+      },
+    );
   }
 }
 
@@ -1199,8 +1606,16 @@ class _CenteredOnText extends SingleChildRenderObjectWidget {
 
   /// Distance from the alphabetic baseline up to the glyph center.
   double _glyphCenterAboveBaseline(TextScaler scaler) {
+    // The line's leading, if any, even above and below: as the font's own
+    // metrics, else (proportional) more of it above, and the center higher.
+    // (`copyWith(height: null)` keeps the height.)
     final painter = TextPainter(
-      text: TextSpan(text: 'x', style: textStyle.copyWith(height: null)),
+      text: TextSpan(
+        text: 'x',
+        style: textStyle.copyWith(
+          leadingDistribution: TextLeadingDistribution.even,
+        ),
+      ),
       textDirection: TextDirection.ltr,
       textScaler: scaler,
     )..layout();

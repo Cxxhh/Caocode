@@ -95,7 +95,7 @@ abstract interface class KernelChoiceSource {
   void select(String id);
 }
 
-enum KernelChoiceKind { model, mode, permission, effort, context }
+enum KernelChoiceKind { model, mode, permission, effort, context, fast }
 
 abstract interface class SelectsModel {
   KernelChoiceSource get model;
@@ -113,6 +113,15 @@ abstract interface class ConfirmsModelSwitch {
 /// or plan first.
 abstract interface class SelectsMode {
   KernelChoiceSource get mode;
+}
+
+/// Puts its plans to the user without waiting on them: a plan's card
+/// shows it awaiting, the turn over, for the user to start when they like
+/// or to say in a message what should change.
+abstract interface class StartsPlans {
+  /// Out of planning, into building with the approvals picked: the next
+  /// message carries out the plan awaiting.
+  void startBuilding();
 }
 
 /// How the agent's actions are approved: e.g. ask each time, accept
@@ -140,6 +149,10 @@ abstract interface class ModelSetting {
 
   /// Picks [id], with [model] in use: switched to first, if another is.
   void select(String model, String id);
+
+  /// Whether this setting is on or off rather than one of several: shown
+  /// and picked as a switch, and picked without the menu closing.
+  bool get toggle => false;
 }
 
 /// The key a setting of [kind] picked with [model] is kept under, beside
@@ -164,6 +177,11 @@ abstract interface class TogglesFastMode {
 /// How much of the conversation the model holds, e.g. 200K or 1M tokens.
 abstract interface class SelectsContextSize {
   ModelSetting get contextSize;
+}
+
+/// Whether supported upstream models use the Fast service tier for this chat.
+abstract interface class SelectsFast {
+  ModelSetting get fast;
 }
 
 abstract interface class ProvidesCommands {
@@ -250,6 +268,25 @@ abstract interface class RenamesSession {
 
 /// Takes pictures with a message ([KernelTurn.images]).
 abstract interface class AcceptsImages {}
+
+/// Reads the conversation it continues ([KernelContext.resume]) before
+/// showing it.
+abstract interface class LoadsHistory {
+  /// Whether that conversation is still being read: it may take a while,
+  /// e.g. from a remote project's host.
+  bool get loadingHistory;
+
+  /// Whether there is more of it before what was read: a long one is read
+  /// from its end, the rest on asking (see [loadEarlier]).
+  bool get hasEarlierHistory;
+
+  /// Whether that is being read.
+  bool get loadingEarlier;
+
+  /// Reads some more of it, before what was ([HistoryPrepended]). Asked
+  /// again meanwhile, it is the same reading.
+  Future<void> loadEarlier();
+}
 
 /// Offers what the user would likely send next, after a turn.
 abstract interface class SuggestsPrompts {

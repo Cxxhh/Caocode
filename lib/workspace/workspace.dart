@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:bao_remote/client.dart' show SshServer;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show TextSelection;
 import 'package:flutter_quill/quill_delta.dart';
@@ -198,6 +199,7 @@ class AgentThread {
     model: _session?.selected(KernelChoiceKind.model),
     effort: _session?.selected(KernelChoiceKind.effort),
     context: _session?.selected(KernelChoiceKind.context),
+    fast: _session?.selected(KernelChoiceKind.fast),
   );
 }
 
@@ -212,6 +214,7 @@ typedef _Snapshot = ({
   String? model,
   String? effort,
   String? context,
+  String? fast,
 });
 
 /// Projects and their agents. Any number of agents may run at once; the
@@ -993,7 +996,7 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   }
 
   /// Takes [thread], deleted or dropped, out of the IDE's tabs.
-  void _closeIdeChats(AgentThread thread) {
+  void _closeIdeChats(AgentThread thread, {bool save = true}) {
     _ideChatsUnkept.remove(thread);
     for (final folder in [..._ideChats.keys]) {
       if (!_ideChats[folder]!.remove(thread)) continue;
@@ -1003,7 +1006,7 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
       if (folder == _ideFolder || _windowFolders.contains(folder)) {
         _ensureIdeChat(folder);
       }
-      _save();
+      if (save) _save();
     }
   }
 
@@ -1145,7 +1148,7 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   void reorderPinned(List<AgentThread> ordered) {
     for (final thread in ordered) {
       thread.pinned = true;
-      _keepMarks(thread);
+      _keepMarks(thread, save: false);
     }
     final ids = [for (final thread in ordered) ?thread.id];
     // Those not listed (e.g. of a project taken off the list) after.
@@ -1206,13 +1209,25 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   }
 
   /// Lists [project]'s agents in the order of [ordered] from now on.
-  void reorder(Project project, List<AgentThread> ordered) {
+  void reorder(
+    Project project,
+    List<AgentThread> ordered, {
+    bool unpin = false,
+  }) {
+    if (unpin) {
+      for (final thread in ordered) {
+        if (thread.project != project) continue;
+        thread.pinned = false;
+        _keepMarks(thread, save: false);
+      }
+    }
     final ids = [for (final thread in ordered) ?thread.id];
+    final listed = ids.toSet();
     _order[project.path] = [
       ...ids,
       // Those not listed now (e.g. archived) keep their place after.
       for (final id in _order[project.path] ?? const <String>[])
-        if (!ids.contains(id)) id,
+        if (!listed.contains(id)) id,
     ];
     _save();
     notifyListeners();
@@ -1291,9 +1306,10 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   }
 
   /// Takes [host] off, its projects off the sidebar ([hideProject]):
-  /// nothing of them is deleted.
+  /// nothing of them is deleted. What the form saved of it goes.
   void removeSshHost(String host) {
     _sshHosts.remove(host);
+    _sshServers.remove(host);
     final now = DateTime.now();
     for (final project in _projects) {
       if (project.host == host) _hiddenProjects[project.path] = now;
@@ -1304,15 +1320,57 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   }
 
   /// The SSH host whose projects and agents the sidebar lists; null for
-  /// this machine's (and while there is no host to switch to).
+  /// this machine's (and while there is no host to switch to, or it lists
+  /// all of them, [sidebarAllHosts]).
   String? get sidebarHost =>
-      _sidebarHost != null && sshHosts.contains(_sidebarHost)
+      !sidebarAllHosts &&
+          _sidebarHost != null &&
+          sshHosts.contains(_sidebarHost)
       ? _sidebarHost
       : null;
   String? _sidebarHost;
   set sidebarHost(String? host) {
-    if (host == _sidebarHost) return;
+    if (host == _sidebarHost && !_sidebarAll) return;
     _sidebarHost = host;
+    _sidebarAll = false;
+    _save();
+    notifyListeners();
+  }
+
+  /// Whether the sidebar lists the projects and agents of this machine and
+  /// of every SSH host together (while there are hosts).
+  bool get sidebarAllHosts => _sidebarAll && sshHosts.isNotEmpty;
+  bool _sidebarAll = false;
+  set sidebarAllHosts(bool all) {
+    if (all == _sidebarAll) return;
+    _sidebarAll = all;
+    _save();
+    notifyListeners();
+  }
+
+  /// Whether the sidebar lists what is on [host] (this machine for null).
+  bool listsHost(String? host) => sidebarAllHosts || host == sidebarHost;
+
+  /// The projects the sidebar lists where it is: on its host, or all.
+  List<Project> get sidebarProjectsHere =>
+      sidebarAllHosts ? sidebarProjects : sidebarProjectsOn(sidebarHost);
+
+  /// The servers the user saved with the app's form, by host (see
+  /// [SshServer]): reached as saved rather than as the host's text says.
+  final Map<String, SshServer> _sshServers = {};
+  Map<String, SshServer> get sshServers => Map.unmodifiable(_sshServers);
+
+  /// Saves [server] as [host]'s, kept among [sshHosts] and called [name]
+  /// (by itself for none).
+  void saveSshServer(String host, SshServer server, {String? name}) {
+    _sshServers[host] = server;
+    if (!_sshHosts.contains(host)) _sshHosts.add(host);
+    name = name?.trim();
+    if (name == null || name.isEmpty || name == host) {
+      _hostNames.remove(host);
+    } else {
+      _hostNames[host] = name;
+    }
     _save();
     notifyListeners();
   }
@@ -1352,7 +1410,7 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   /// The sidebar lists where an agent picked is: its host's.
   void _followInSidebar(AgentThread thread) {
     final host = thread.project.host;
-    if (host == sidebarHost || isHidden(thread.project)) return;
+    if (listsHost(host) || isHidden(thread.project)) return;
     _sidebarHost = host;
     _save();
   }
@@ -1374,19 +1432,52 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
     notifyListeners();
   }
 
+  /// Pins or unpins [threads], saving and notifying once.
+  void setPinnedAll(Iterable<AgentThread> threads, bool pinned) {
+    final ordered = threads.toSet().toList();
+    var changed = false;
+    for (final thread in pinned ? ordered.reversed : ordered) {
+      changed = _setPinned(thread, pinned, save: false) || changed;
+    }
+    if (!changed) return;
+    _save();
+    notifyListeners();
+  }
+
+  /// Archives or unarchives [threads], saving and notifying once.
+  void setArchivedAll(Iterable<AgentThread> threads, bool archived) {
+    final selected = {...threads};
+    var changed = false;
+    for (final thread in selected) {
+      changed =
+          _setArchived(thread, archived, leave: false, save: false) || changed;
+    }
+    if (!changed) return;
+    if (archived) _leaveMany(selected);
+    _save();
+    notifyListeners();
+  }
+
+  /// Deletes [threads], stopping them and removing their catalog records.
+  void deleteAll(Iterable<AgentThread> threads) {
+    final selected = {...threads};
+    var changed = false;
+    for (final thread in selected) {
+      changed = _delete(thread, leave: false, save: false) || changed;
+    }
+    if (!changed) return;
+    _leaveMany(selected);
+    _save();
+    notifyListeners();
+  }
+
   /// Archives [project]'s agents (not a new one nothing was sent to).
   void archiveAll(Project project) {
-    for (final thread in [..._threads]) {
-      if (thread.project != project || thread.archived || thread.untouched) {
-        continue;
-      }
-      thread
-        ..archived = true
-        ..pinned = false;
-      _keepMarks(thread);
-      _leave(thread);
-    }
-    notifyListeners();
+    setArchivedAll([
+      for (final thread in [..._threads])
+        if (thread.project == project && !thread.archived && !thread.untouched)
+          thread,
+    ], true);
   }
 
   /// Unarchives every archived agent ([where] there is one, those it takes).
@@ -1402,9 +1493,10 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   /// Deletes every archived agent ([where] there is one, those it takes),
   /// each as [delete] does.
   void deleteArchived({bool Function(AgentThread thread)? where}) {
-    for (final thread in [..._threads]) {
-      if (thread.archived && (where?.call(thread) ?? true)) delete(thread);
-    }
+    deleteAll([
+      for (final thread in [..._threads])
+        if (thread.archived && (where?.call(thread) ?? true)) thread,
+    ]);
   }
 
   // --- Workspaces -------------------------------------------------------------
@@ -1764,7 +1856,14 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
               number: image['number'] as int?,
             ),
       ];
-      final content = Delta.fromJson(kept['content']! as List<Object?>);
+      // As plain text: not with a style kept from before the composer's
+      // text was kept plain (a header ⌘2 made, several times its size).
+      final content = Delta();
+      for (final op in Delta.fromJson(
+        kept['content']! as List<Object?>,
+      ).toList()) {
+        if (op.isInsert) content.insert(op.data);
+      }
       final selection = TextSelection(
         baseOffset: kept['base']! as int,
         extentOffset: kept['extent']! as int,
@@ -1859,7 +1958,14 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
       _projectOrder.addAll(list('projectOrder'));
       _sshHosts.addAll(list('sshHosts'));
       _hostNames.addAll(strings(sidebar['hostNames']));
+      if (sidebar['sshServers'] case final Map<Object?, Object?> servers) {
+        for (final MapEntry(:key, :value) in servers.entries) {
+          final server = SshServer.fromJson(value);
+          if (key is String && server != null) _sshServers[key] = server;
+        }
+      }
       if (sidebar['host'] case final String host) _sidebarHost = host;
+      _sidebarAll = sidebar['allHosts'] == true;
       for (final MapEntry(:key, :value) in strings(
         sidebar['hiddenProjects'],
       ).entries) {
@@ -1961,7 +2067,12 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
         'projectOrder': [..._projectOrder],
         'sshHosts': [..._sshHosts],
         'hostNames': {..._hostNames},
+        'sshServers': {
+          for (final MapEntry(:key, :value) in _sshServers.entries)
+            key: value.toJson(),
+        },
         'host': ?_sidebarHost,
+        if (_sidebarAll) 'allHosts': true,
         'hiddenProjects': {
           for (final MapEntry(:key, :value) in _hiddenProjects.entries)
             key: value.toIso8601String(),
@@ -2033,8 +2144,15 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
         (KernelChoiceKind.model, snapshot.model),
         (KernelChoiceKind.effort, snapshot.effort),
         (KernelChoiceKind.context, snapshot.context),
+        (KernelChoiceKind.fast, snapshot.fast),
       ])
         kind.name: ?value,
+      for (final entry
+          in _agentSettings[id]?.entries ?? <String, String>{}.entries)
+        if (entry.key.startsWith('${KernelChoiceKind.fast.name}@'))
+          entry.key: entry.value,
+      if (snapshot.model case final model? when snapshot.fast != null)
+        modelSettingKey(KernelChoiceKind.fast, model): snapshot.fast!,
     };
     if (choices.isEmpty || mapEquals(choices, _agentSettings[id])) {
       return false;
@@ -2079,6 +2197,7 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   /// its first message, notes what was seen, and notifies only when
   /// something shown changed (not on every streamed character).
   void _sync(AgentThread thread) {
+    if (!_threads.contains(thread)) return;
     final session = thread.session;
     if (thread._title.isEmpty && session.itemCount > 0) {
       if (session.itemAt(0) case UserMessageItem(:final text)) {
@@ -2341,11 +2460,11 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   /// if it is where the sidebar lists: else the first project there). An
   /// untouched new agent there is reused rather than piling up.
   AgentThread create({Project? project}) {
-    final host = sidebarHost;
     project ??= switch (_selected?.project) {
-      final current? when !isHidden(current) && current.host == host => current,
+      final current? when !isHidden(current) && listsHost(current.host) =>
+        current,
       final current =>
-        sidebarProjectsOn(host).firstOrNull ??
+        sidebarProjectsHere.firstOrNull ??
             (current != null && !isHidden(current) ? current : null) ??
             sidebarProjects.firstOrNull ??
             _projects.firstOrNull,
@@ -2419,7 +2538,7 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
     if (record == null || _disposed) return null;
     final settings = {
       for (final kind in KernelChoiceKind.values)
-        kind.name: ?session.selected(kind),
+        if (kind != KernelChoiceKind.fast) kind.name: ?session.selected(kind),
     };
     if (settings.isNotEmpty) {
       _agentSettings[record.id] = settings;
@@ -2526,43 +2645,68 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   }
 
   void setPinned(AgentThread thread, bool pinned) {
-    thread.pinned = pinned;
-    _keepMarks(thread);
+    _setPinned(thread, pinned);
     notifyListeners();
   }
 
   void setArchived(AgentThread thread, bool archived) {
+    _setArchived(thread, archived);
+    notifyListeners();
+  }
+
+  bool _setPinned(AgentThread thread, bool pinned, {bool save = true}) {
+    final changed = thread.pinned != pinned;
+    thread.pinned = pinned;
+    final kept = _keepMarks(thread, save: save);
+    return changed || kept;
+  }
+
+  bool _setArchived(
+    AgentThread thread,
+    bool archived, {
+    bool leave = true,
+    bool save = true,
+  }) {
+    final changed = thread.archived != archived || (archived && thread.pinned);
     thread.archived = archived;
     if (archived) thread.pinned = false;
-    _keepMarks(thread);
-    if (archived) _leave(thread);
-    notifyListeners();
+    final kept = _keepMarks(thread, save: save);
+    if (archived && leave) _leave(thread);
+    return changed || kept;
   }
 
   /// Keeps whether [thread] is pinned and archived for the next run, once
   /// its session has an id (see [_sync] for a new agent's).
-  void _keepMarks(AgentThread thread) {
+  bool _keepMarks(AgentThread thread, {bool save = true}) {
     final id = thread._id;
-    if (id == null) return;
+    if (id == null) return false;
     bool mark(Set<String> ids, bool on) => on ? ids.add(id) : ids.remove(id);
     // Both, not only the first that changed.
     final pinned = mark(_pinned, thread.pinned);
     final archived = mark(_archived, thread.archived);
     // Pinned last, it is on top (see [inPinnedOrder]).
     if (pinned && thread.pinned) _setPinnedIds([id, ..._pinned]);
-    if (pinned || archived) _save();
+    if (save && (pinned || archived)) _save();
+    return pinned || archived;
   }
 
   /// Deletes [thread]: stops its agent, and once it has stopped, deletes
   /// the session its kernel kept (deleting it again does nothing).
   void delete(AgentThread thread) {
+    if (!_delete(thread)) return;
+    notifyListeners();
+  }
+
+  bool _delete(AgentThread thread, {bool leave = true, bool save = true}) {
+    if (!_threads.contains(thread)) return false;
     final id =
         thread.record?.id ?? (thread.isOpen ? thread.session.sessionId : null);
     if (id != null) {
       _removed.add(id);
       _forgetDraft(id);
       final kept = [_pinned.remove(id), _archived.remove(id)];
-      if (_names.remove(id) != null || kept.contains(true)) _save();
+      final named = _names.remove(id) != null;
+      if (save && (named || kept.contains(true))) _save();
     }
     final catalog = thread.kernel.catalog;
     final listener = _listeners.remove(thread);
@@ -2570,8 +2714,8 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
     _snapshots.remove(thread);
     if (_draftKeys.remove(thread) case final key?) _forgetDraft(key);
     _threads.remove(thread);
-    _leave(thread);
-    _closeIdeChats(thread);
+    if (leave) _leave(thread);
+    _closeIdeChats(thread, save: save);
     var stopped = Future<void>.value();
     if (thread.isOpen) {
       thread.session
@@ -2583,7 +2727,28 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
     if ((catalog, id) case (final catalog?, final id?)) {
       unawaited(stopped.then((_) => catalog.delete(id)).catchError((_) {}));
     }
-    notifyListeners();
+    return true;
+  }
+
+  void _leaveMany(Set<AgentThread> gone) {
+    final shown = gone.where(_grid.contains).toList();
+    for (final thread in shown) {
+      _grid.remove(thread);
+    }
+    if (shown.isEmpty) return;
+    if (_grid.isEmpty) {
+      final candidates = [
+        for (final thread in _threads)
+          if (!thread.archived && _projects.contains(thread.project)) thread,
+      ]..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      if (candidates.isNotEmpty) {
+        _focus(candidates.first);
+      } else {
+        _focus(_newThread(shown.first.project));
+      }
+    } else if (_selected == null || gone.contains(_selected)) {
+      _focus(_grid.panes.first);
+    }
   }
 
   /// After [gone] is archived or deleted: its pane closes, the one beside

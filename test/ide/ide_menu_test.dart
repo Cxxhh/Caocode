@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:caocode/ide/ide_menu.dart';
+import 'package:caocode/theme/codicons.dart';
 
 final _panels = find.byWidgetPredicate(
   (widget) => widget.runtimeType.toString() == '_MenuPanel',
@@ -134,5 +135,49 @@ void main() {
     _expectInset(submenu, size);
     expect(submenu.left, lessThan(parent.left));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('an action kept open toggles in place, its check read anew; '
+      'another closes it', (tester) async {
+    final picked = <String>{};
+    var all = 0;
+    await _open(
+      tester,
+      size: size,
+      anchor: const Rect.fromLTWH(20, 20, 100, 26),
+      entries: [
+        IdeMenuAction(
+          'All',
+          checkedNow: () => picked.isEmpty,
+          onSelected: () => all++,
+        ),
+        for (final name in ['One', 'Two'])
+          IdeMenuAction(
+            name,
+            keepOpen: true,
+            checkedNow: () => picked.contains(name),
+            onSelected: () {
+              if (!picked.remove(name)) picked.add(name);
+            },
+          ),
+      ],
+    );
+    Finder checks() => find.descendant(
+      of: _panels,
+      matching: find.byIcon(Codicons.menuSelection),
+    );
+    expect(checks(), findsOneWidget);
+    await tester.tap(find.text('One'));
+    await tester.pump();
+    await tester.tap(find.text('Two'));
+    await tester.pump();
+    expect(picked, {'One', 'Two'});
+    expect(_panels, findsOneWidget);
+    // All's check went with the first one picked.
+    expect(checks(), findsNWidgets(2));
+    await tester.tap(find.text('All'));
+    await tester.pumpAndSettle();
+    expect(_panels, findsNothing);
+    expect(all, 1);
   });
 }

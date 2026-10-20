@@ -112,7 +112,10 @@ abstract final class MockScript {
 
   static const codexDeclined = '好的，先不运行测试。改动已经写入，你可以稍后自己运行 `flutter test`。';
 
-  static const keepPlanning = '好的，我们继续完善计划。';
+  /// Where the plan is kept, as Claude Code names it.
+  static const planPath = '/tmp/.claude/plans/growing-input.md';
+
+  static const planReady = '计划已就绪：点「开始执行」按计划改，或直接告诉我要调整什么。';
 
   /// In Ask: an answer, and changes only suggested.
   static const discussion =

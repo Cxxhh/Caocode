@@ -20,9 +20,19 @@ abstract final class LinkMethods {
   /// `{}`: the [LinkState] now; [LinkEvents.state] follows each change.
   static const state = 'state';
 
-  /// `{"session"}`: follows the session, [LinkEvents.session] bringing all
-  /// of it at once, then what changes.
+  /// `{"session", "window"?}`: follows the session, [LinkEvents.session]
+  /// bringing all of it at once, then what changes. With `window` (an
+  /// int N), only the last N items at first, and more as it asks
+  /// ([earlier]); `start` and `count` of every update are then counted
+  /// from the first item the phone has, not the session's first.
   static const open = 'open';
+
+  /// `{"session", "count"?}` -> `{"items": [...], "earlier"}`: up to
+  /// `count` (50 if none) items before the first the phone has, oldest
+  /// first, read from the desktop's history first when it has no more in
+  /// memory. The phone puts them before its own; `earlier` tells whether
+  /// there are yet more. Only for a session [open]ed with `window`.
+  static const earlier = 'earlier';
 
   /// `{"session"}`: no longer followed.
   static const close = 'close';
@@ -41,6 +51,11 @@ abstract final class LinkMethods {
   /// `{"session", "request", "answer"}`: answers what the agent asked (see
   /// [LinkSessionUpdate.interaction]).
   static const answer = 'answer';
+
+  /// `{"session"}`: starts the plan the agent put to the user (its
+  /// history's plan item awaiting), as the desktop's Start: `notFound`
+  /// when none awaits, `busy` while the turn that put it runs.
+  static const startPlan = 'startPlan';
 
   /// `{"session", "kind", "option"}`: picks a model, a mode, a permission
   /// mode, an effort or a context size (see [LinkChoice]).
@@ -510,6 +525,7 @@ class LinkSessionUpdate {
     this.canUndo = false,
     this.canUndoFiles = false,
     this.canStopTasks = false,
+    this.earlier,
   });
 
   factory LinkSessionUpdate.fromJson(Map<String, Object?> json) =>
@@ -538,6 +554,7 @@ class LinkSessionUpdate {
         canUndo: json['canUndo'] == true,
         canUndoFiles: json['canUndoFiles'] == true,
         canStopTasks: json['canStopTasks'] == true,
+        earlier: json['earlier'] as bool?,
       );
 
   final String session;
@@ -568,6 +585,11 @@ class LinkSessionUpdate {
   final bool canUndoFiles;
   final bool canStopTasks;
 
+  /// Whether there is more before the first item, for a session followed
+  /// with a window; null if not (the desktop does not page, or it is not
+  /// asked to).
+  final bool? earlier;
+
   Map<String, Object?> toJson() => {
     'session': session,
     'start': start,
@@ -581,6 +603,7 @@ class LinkSessionUpdate {
     'canUndo': canUndo,
     'canUndoFiles': canUndoFiles,
     'canStopTasks': canStopTasks,
+    'earlier': ?earlier,
   };
 }
 

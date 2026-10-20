@@ -6,13 +6,13 @@
 import 'dart:async';
 import 'dart:collection' show UnmodifiableSetView;
 import 'dart:io' show Platform;
-import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show kIsWeb, listEquals, setEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 
+import '../base/smooth_scroll.dart';
 import '../chat/composer/composer_files.dart';
 import '../chat/composer/file_drag.dart';
 import '../chat/composer/file_drop.dart';
@@ -27,6 +27,7 @@ import '../workspace/window_controls.dart';
 
 import 'package:bao_editor/monaco/vs/base/common/labels.dart';
 
+import 'explorer_excludes.dart';
 import 'explorer_history.dart';
 import 'file_service.dart';
 import 'git/git_model.dart';
@@ -83,7 +84,12 @@ class IdeExplorerController extends ChangeNotifier {
     Stream<void> Function(String directory)? watch,
     List<String> roots = const [],
     p.Context? paths,
+    IdeExplorerExcludes excludes = IdeExplorerExcludes.none,
   }) : paths = paths ?? p.context,
+       // A private field with a setter, so the parameter cannot be an
+       // initializing formal.
+       // ignore: prefer_initializing_formals
+       _excludes = excludes,
        root = (paths ?? p.context).normalize(root),
        _watchDirectory =
            watch ??
@@ -99,6 +105,23 @@ class IdeExplorerController extends ChangeNotifier {
   final IdeFileService files;
   final String root;
   final p.Context paths;
+
+  /// The files and folders the tree leaves out (see
+  /// [IdeExplorerExcludes]).
+  IdeExplorerExcludes get excludes => _excludes;
+  IdeExplorerExcludes _excludes;
+
+  /// Shows [excludes] (the setting changed): the rows are made again.
+  set excludes(IdeExplorerExcludes excludes) {
+    if (_excludes == excludes) return;
+    _excludes = excludes;
+    _changed();
+  }
+
+  /// Whether [path] is shown: not among [excludes]. A hidden folder is not
+  /// descended into, so what is under it is left out with it.
+  bool _shown(String path) =>
+      _excludes.isEmpty || !_excludes.hides(path, rootOf(path), paths);
 
   /// A multi-folder workspace's folders, the tree's top rows in place of
   /// [root]'s entries (as VS Code lists workspace folders); none for a
@@ -168,22 +191,20 @@ class IdeExplorerController extends ChangeNotifier {
   final Set<String> _expanded = {};
   final Map<String, Future<void>> _loads = {};
   List<IdeExplorerRow>? _rows;
-  String? _selected;
-  final Set<String> _selection = {};
-  String? _anchor;
+  final IdeListSelection<String> _listSelection = IdeListSelection<String>();
   int _revealRequest = 0;
   bool _disposed = false;
 
   /// The focused row's path, if any (upstream's focus, as distinct from the
   /// selection): the one the keys move from, and which is acted on alone
   /// when it is not in the [selection].
-  String? get selected => _selected;
+  String? get selected => _listSelection.focused;
 
   /// The selected rows' paths: the focused one's alone, unless a modifier
   /// click or Shift with the arrows selected more.
-  Set<String> get selection => UnmodifiableSetView(_selection);
+  Set<String> get selection => UnmodifiableSetView(_listSelection.values);
 
-  bool isSelected(String path) => _selection.contains(path);
+  bool isSelected(String path) => _listSelection.values.contains(path);
 
   /// Increments whenever the selection should be scrolled into view.
   int get revealRequest => _revealRequest;
@@ -211,6 +232,8 @@ class IdeExplorerController extends ChangeNotifier {
       }
       for (final entry in _children[directory] ?? const <IdeFile>[]) {
         final path = paths.join(directory, entry.name);
+        // A hidden one is left out with everything under it.
+        if (!_shown(path)) continue;
         final expanded = entry.isDirectory && _expanded.contains(path);
         rows.add(
           IdeExplorerRow(
@@ -312,7 +335,9 @@ class IdeExplorerController extends ChangeNotifier {
 
   void collapse(String directory) {
     if (!_expanded.remove(directory)) return;
-    _selection.removeWhere((path) => paths.isWithin(directory, path));
+    _listSelection.values.removeWhere(
+      (path) => paths.isWithin(directory, path),
+    );
     _changed();
   }
 
@@ -326,21 +351,22 @@ class IdeExplorerController extends ChangeNotifier {
     _expanded.clear();
     _rows = null;
     final shown = {for (final row in rows) row.path};
-    if (_selected case final selected? when !shown.contains(selected)) {
-      _selected = null;
+    if (_listSelection.focused case final selected?
+        when !shown.contains(selected)) {
+      _listSelection.focused = null;
     }
-    _selection.retainWhere(shown.contains);
+    _listSelection.values.retainWhere(shown.contains);
     _changed();
   }
 
   /// Focuses and selects [path] alone (none for null), as a click does.
   void select(String? path, {bool reveal = false}) {
-    if (!reveal && _selected == path && setEquals(_selection, {?path})) return;
-    _selected = path;
-    _anchor = path;
-    _selection
-      ..clear()
-      ..addAll([?path]);
+    if (!reveal &&
+        _listSelection.focused == path &&
+        setEquals(_listSelection.values, {?path})) {
+      return;
+    }
+    _listSelection.select(path);
     if (reveal) _revealRequest++;
     _changed();
   }
@@ -348,9 +374,7 @@ class IdeExplorerController extends ChangeNotifier {
   /// Adds [path] to the selection, or takes it out, and focuses it, as a
   /// Cmd (Ctrl) click does.
   void toggleSelection(String path) {
-    _selected = path;
-    _anchor = path;
-    if (!_selection.remove(path)) _selection.add(path);
+    _listSelection.toggle(path);
     _changed();
   }
 
@@ -361,17 +385,8 @@ class IdeExplorerController extends ChangeNotifier {
       for (final row in rows)
         if (row.message == null) row.path,
     ];
-    final to = paths.indexOf(path);
-    if (to < 0) return;
-    var from = _anchor == null ? -1 : paths.indexOf(_anchor!);
-    if (from < 0) {
-      from = to;
-      _anchor = path;
-    }
-    _selected = path;
-    _selection
-      ..clear()
-      ..addAll(paths.sublist(math.min(from, to), math.max(from, to) + 1));
+    if (!paths.contains(path)) return;
+    _listSelection.range(path, paths);
     if (reveal) _revealRequest++;
     _changed();
   }
@@ -383,11 +398,7 @@ class IdeExplorerController extends ChangeNotifier {
         if (row.message == null) row.path,
     ];
     if (paths.isEmpty) return;
-    _selected ??= paths.first;
-    _anchor ??= _selected;
-    _selection
-      ..clear()
-      ..addAll(paths);
+    _listSelection.selectAll(paths);
     _changed();
   }
 
@@ -431,9 +442,13 @@ class IdeExplorerController extends ChangeNotifier {
     bool under(String other) => other == path || paths.isWithin(path, other);
     _expanded.removeWhere(under);
     _children.removeWhere((directory, _) => under(directory));
-    if (_selected case final selected? when under(selected)) _selected = null;
-    if (_anchor case final anchor? when under(anchor)) _anchor = null;
-    _selection.removeWhere(under);
+    if (_listSelection.focused case final selected? when under(selected)) {
+      _listSelection.focused = null;
+    }
+    if (_listSelection.anchor case final anchor? when under(anchor)) {
+      _listSelection.anchor = null;
+    }
+    _listSelection.values.removeWhere(under);
     _changed();
   }
 
@@ -507,6 +522,7 @@ class IdeExplorer extends StatefulWidget {
     this.onError,
     this.onOpenInDefaultApp,
     this.onFindInFolder,
+    this.onOpenInTerminal,
     this.isBound,
     this.local = true,
     this.repositories = const [],
@@ -560,6 +576,10 @@ class IdeExplorer extends StatefulWidget {
   /// Find in Folder...: searches in a folder.
   final ValueChanged<String>? onFindInFolder;
 
+  /// Open in Terminal: opens a terminal in the folder, or in the one
+  /// holding the file; null where there are no terminals.
+  final ValueChanged<String>? onOpenInTerminal;
+
   /// Whether a keybinding has a key: the explorer leaves it to the
   /// workbench, which runs its command (see [IdeExplorerState.contextKey]).
   final bool Function(KeyEvent event)? isBound;
@@ -587,8 +607,9 @@ class _ExplorerEdit {
   final String? renaming;
 }
 
-class IdeExplorerState extends State<IdeExplorer> {
-  final ScrollController _scroll = ScrollController();
+class IdeExplorerState extends State<IdeExplorer>
+    with IdeKeyboardList<IdeExplorer> {
+  final ScrollController _scroll = SmoothScrollController();
   FocusNode? _ownFocusNode;
   FocusNode get _focusNode =>
       widget.focusNode ?? (_ownFocusNode ??= FocusNode(debugLabel: 'explorer'));
@@ -666,19 +687,8 @@ class IdeExplorerState extends State<IdeExplorer> {
         (row) => row.path == _controller.selected,
       );
       if (index < 0) return;
-      const height = IdeExplorer.rowHeight;
-      final position = _scroll.position;
-      final top = index * height;
-      if (top < position.pixels) {
-        _scroll.jumpTo(top);
-      } else if (top + height > position.pixels + position.viewportDimension) {
-        _scroll.jumpTo(
-          (top + height - position.viewportDimension).clamp(
-            position.minScrollExtent,
-            position.maxScrollExtent,
-          ),
-        );
-      }
+      final top = index * IdeExplorer.rowHeight;
+      ideRevealRange(_scroll, top, top + IdeExplorer.rowHeight);
     });
   }
 
@@ -770,7 +780,7 @@ class IdeExplorerState extends State<IdeExplorer> {
     } else if (_runKeybinding(event)) {
       return KeyEventResult.handled;
     }
-    return _listKeys.contains(event.logicalKey)
+    return ideListNavigationKeys.contains(event.logicalKey)
         ? KeyEventResult.handled
         : KeyEventResult.ignored;
   }
@@ -834,20 +844,6 @@ class IdeExplorerState extends State<IdeExplorer> {
     _ => contextKey(key),
   };
 
-  static final _listKeys = {
-    LogicalKeyboardKey.arrowDown,
-    LogicalKeyboardKey.arrowUp,
-    LogicalKeyboardKey.arrowLeft,
-    LogicalKeyboardKey.arrowRight,
-    LogicalKeyboardKey.home,
-    LogicalKeyboardKey.end,
-    LogicalKeyboardKey.pageDown,
-    LogicalKeyboardKey.pageUp,
-    LogicalKeyboardKey.enter,
-    LogicalKeyboardKey.numpadEnter,
-    LogicalKeyboardKey.space,
-  };
-
   /// The explorer's context keys for its selection (upstream's
   /// `explorerResource*` and the tree's `treeElement*`); null for others.
   Object? contextKey(String key) {
@@ -887,7 +883,21 @@ class IdeExplorerState extends State<IdeExplorer> {
     return next.depth > rows[index].depth ? next : null;
   }
 
-  void _selectAt(int index) {
+  @override
+  bool get listHasFocus => _focusNode.hasFocus;
+
+  @override
+  int get listLength => _navigable.length;
+
+  @override
+  int get listFocusedIndex => _selectedIndex;
+
+  @override
+  int get listPageSize =>
+      ideRowsPerPage(_scroll, rowHeight: IdeExplorer.rowHeight);
+
+  @override
+  void listFocusAt(int index) {
     final rows = _navigable;
     if (rows.isEmpty) return;
     _controller.select(
@@ -896,34 +906,54 @@ class IdeExplorerState extends State<IdeExplorer> {
     );
   }
 
-  /// `list.focusDown` (1) / `list.focusUp` (-1); the first row when none is
-  /// selected.
-  void focusNext(int delta) {
-    final index = _selectedIndex;
-    _selectAt(index < 0 ? 0 : index + delta);
-  }
+  @override
+  void listSelect() => openSelected();
 
-  /// `list.focusPageDown` (1) / `list.focusPageUp` (-1).
-  void focusPage(int direction) {
-    final page = _scroll.hasClients
-        ? (_scroll.position.viewportDimension ~/ IdeExplorer.rowHeight) - 1
-        : 10;
-    final index = _selectedIndex;
-    _selectAt((index < 0 ? 0 : index) + direction * page);
-  }
+  @override
+  void listToggleExpand() => toggleSelected();
 
-  /// `list.focusFirst`.
-  void focusFirst() => _selectAt(0);
+  @override
+  void listExpand() => expandSelected();
 
-  /// `list.focusLast`.
-  void focusLast() => _selectAt(_navigable.length - 1);
+  @override
+  void listCollapse() => collapseSelected();
+
+  @override
+  void listCollapseAll() => _controller.collapseAll();
+
+  @override
+  bool get listSupportsMultiselect => true;
+
+  @override
+  bool get listHasSelection =>
+      _controller.selected != null || _controller.selection.isNotEmpty;
+
+  @override
+  void listExpandSelection(int delta) => expandSelection(delta);
+
+  @override
+  void listSelectAll() => selectAll();
+
+  @override
+  void listClear() => clearSelection();
+
+  @override
+  bool listTreeKey(String key) => contextKey(key) == true;
+
+  void focusNext(int delta) => listFocusNext(delta);
+
+  void focusPage(int direction) => listFocusPage(direction);
+
+  void focusFirst() => listFocusFirst();
+
+  void focusLast() => listFocusLast();
 
   /// `list.expandSelectionDown` (1) / `list.expandSelectionUp` (-1): the
   /// selection from the last row clicked to the next one.
   void expandSelection(int delta) {
     final rows = _navigable;
     final index = _selectedIndex;
-    if (index < 0) return _selectAt(0);
+    if (index < 0) return listFocusAt(0);
     final next = rows[(index + delta).clamp(0, rows.length - 1)];
     _controller.selectRange(next.path, reveal: true);
   }
@@ -1020,9 +1050,9 @@ class IdeExplorerState extends State<IdeExplorer> {
             final uploading = context.l10n.explorerUploading;
             await _withProgress(
               uploading,
-              (onProgress) => uploadTo(files, [
+              (transfer) => uploadTo(files, [
                 for (final (:source, :copy) in copies) (from: source, to: copy),
-              ], onProgress: onProgress),
+              ], onProgress: transfer.onProgress),
             );
             reveal = copies.lastOrNull?.copy;
           } else {
@@ -1179,7 +1209,7 @@ class IdeExplorerState extends State<IdeExplorer> {
   /// `list.expand`: opens the folder, or goes to its first child.
   void expandSelected() {
     final row = _selectedRow;
-    if (row == null) return _selectAt(0);
+    if (row == null) return listFocusAt(0);
     if (!row.isDirectory) return;
     if (!row.expanded) {
       unawaited(_controller.expand(row.path));
@@ -1191,7 +1221,7 @@ class IdeExplorerState extends State<IdeExplorer> {
   /// `list.collapse`: closes the folder, or goes to the parent.
   void collapseSelected() {
     final row = _selectedRow;
-    if (row == null) return _selectAt(0);
+    if (row == null) return listFocusAt(0);
     if (row.isDirectory && row.expanded) {
       _controller.collapse(row.path);
       return;
@@ -1241,24 +1271,41 @@ class IdeExplorerState extends State<IdeExplorer> {
   // --- Between this machine and a remote host --------------------------------
 
   /// Runs [transfer] (an upload, a download), how far it is shown in a
-  /// notification once it takes a moment: [message] of the files done.
+  /// notification once it takes a moment: [message] of the files done, and
+  /// how far the file on is. [cancellable], the notification can give it
+  /// up (the [_Transfer.cancel] it is given completes).
   Future<T> _withProgress<T>(
     String Function(int done, int total) message,
-    Future<T> Function(TransferProgress onProgress) transfer,
-  ) async {
+    Future<T> Function(_Transfer transfer) transfer, {
+    bool cancellable = false,
+  }) async {
     final notifications = IdeNotificationsScope.maybeOf(context);
-    final preparing = context.l10n.explorerPreparingTransfer;
+    final l10n = context.l10n;
+    final preparing = l10n.explorerPreparingTransfer;
+    final cancel = Completer<void>();
+    void giveUp() {
+      if (!cancel.isCompleted) cancel.complete();
+    }
+
     var done = 0;
     int? total;
+    // Of the file on: what part of it is there.
+    var part = 0.0;
     String text() => total == null ? preparing : message(done, total!);
     IdeNotificationProgress progress() => switch (total) {
       final total? when total > 0 => IdeNotificationProgress(
-        done.toDouble(),
+        done + part,
         total: total.toDouble(),
       ),
       _ => const IdeNotificationProgress.infinite(),
     };
     IdeNotification? shown;
+    void update() {
+      if (shown case final shown?) {
+        notifications!.update(shown, message: text(), progress: progress());
+      }
+    }
+
     // Not for what is done at once.
     final timer = notifications == null
         ? null
@@ -1268,16 +1315,33 @@ class IdeExplorerState extends State<IdeExplorer> {
               text(),
               progress: progress(),
               sticky: true,
+              primary: [
+                if (cancellable)
+                  IdeNotificationAction(l10n.commonCancel, giveUp),
+              ],
+              onClose: cancellable ? giveUp : null,
             );
           });
+    var lastPart = 0.0;
     try {
-      return await transfer((worked, of) {
-        done = worked;
-        total = of;
-        if (shown case final shown?) {
-          notifications!.update(shown, message: text(), progress: progress());
-        }
-      });
+      return await transfer(
+        _Transfer(
+          onProgress: (worked, of) {
+            done = worked;
+            total = of;
+            part = lastPart = 0;
+            update();
+          },
+          onFile: (read, size) {
+            part = size == 0 ? 1 : read / size;
+            // A notification a percent, not one a stretch.
+            if (part - lastPart < 0.01 && part < 1) return;
+            lastPart = part;
+            update();
+          },
+          cancel: cancel.future,
+        ),
+      );
     } finally {
       timer?.cancel();
       if (shown case final shown?) notifications!.close(shown);
@@ -1304,17 +1368,33 @@ class IdeExplorerState extends State<IdeExplorer> {
       items.add((from: row.path, to: to, directory: row.directory));
     }
     if (!mounted) return const [];
-    await _withProgress(
-      downloading,
-      (onProgress) => downloadFrom(files, items, onProgress: onProgress),
-    );
+    try {
+      await _withProgress(
+        downloading,
+        (transfer) => downloadFrom(
+          files,
+          items,
+          onProgress: transfer.onProgress,
+          onFile: transfer.onFile,
+          cancel: transfer.cancel,
+        ),
+        cancellable: true,
+      );
+    } on TransferCancelledException {
+      return null;
+    }
     return [for (final item in items) item.to];
   }
+
+  /// The most of a remote project's files a copy downloads onto the
+  /// system's clipboard: more stay the app's, pasted here (on the host,
+  /// with nothing downloaded), not to fill the connection to the host.
+  static const clipboardDownloadLimit = 20 << 20;
 
   /// Copied, this machine's files are on the system's clipboard too, as
   /// Finder copies them: to paste into the chat, or into another app.
   /// A remote project's are downloaded first, to be on it as this
-  /// machine's.
+  /// machine's, unless they are big (see [clipboardDownloadLimit]).
   void _copy(List<IdeExplorerRow> rows, {required bool cut}) {
     final paths = _paths(rows);
     final written = cut
@@ -1322,19 +1402,7 @@ class IdeExplorerState extends State<IdeExplorer> {
         : widget.local
         ? WindowControls.writePasteboardFiles(paths)
               .then((_) {}, onError: (Object _) {})
-        : _download([
-            for (final row in rows)
-              ComposerFile(row.path, directory: row.isDirectory),
-          ]).then(
-            (paths) async {
-              if (paths != null) {
-                await WindowControls.writePasteboardFiles(paths);
-              }
-            },
-            onError: (Object error) {
-              if (mounted) _report(error);
-            },
-          );
+        : _copyDownloaded(rows);
     _controller.clipboard = IdeExplorerClipboard(
       [
         for (final row in rows)
@@ -1345,6 +1413,27 @@ class IdeExplorerState extends State<IdeExplorer> {
         (_) async => _pathsOf(await _systemClipboardFiles()),
       ),
     );
+  }
+
+  /// A remote project's [rows], downloaded onto the system's clipboard
+  /// unless they take more than [clipboardDownloadLimit].
+  Future<void> _copyDownloaded(List<IdeExplorerRow> rows) async {
+    try {
+      final files = _controller.files;
+      if (files is IdeRangeFiles) {
+        final size = await (files as IdeRangeFiles).sizeOf([
+          for (final row in rows) row.path,
+        ], limit: clipboardDownloadLimit);
+        if (size > clipboardDownloadLimit) return;
+      }
+      final paths = await _download([
+        for (final row in rows)
+          ComposerFile(row.path, directory: row.isDirectory),
+      ]);
+      if (paths != null) await WindowControls.writePasteboardFiles(paths);
+    } on Object catch (error) {
+      if (mounted) _report(error);
+    }
   }
 
   /// What a paste puts in: what was cut or copied here, unless other files
@@ -1655,7 +1744,8 @@ class IdeExplorerState extends State<IdeExplorer> {
       if (uploads.isNotEmpty) {
         await _withProgress(
           uploading,
-          (onProgress) => uploadTo(files, uploads, onProgress: onProgress),
+          (transfer) =>
+              uploadTo(files, uploads, onProgress: transfer.onProgress),
         );
         for (final (:from, :to) in uploads) {
           copied.add((source: from, copy: to));
@@ -1747,6 +1837,16 @@ class IdeExplorerState extends State<IdeExplorer> {
                   if (!target.isDirectory) open(target.path);
                 }
               },
+            ),
+          // Open in Terminal: in the folder, or in the one holding the
+          // file; VS Code's `openInTerminal` (on the folder, the file's
+          // folder too).
+          if (widget.onOpenInTerminal case final openTerminal?)
+            IdeMenuAction(
+              l10n.explorerOpenInTerminal,
+              onSelected: () => openTerminal(
+                !isFolder ? _controller.paths.dirname(path) : path,
+              ),
             ),
           // To this machine, from a remote project's host too.
           if (!isFolder && !multiple && canSaveFileCopy)
@@ -2454,4 +2554,18 @@ class _IndentGuidesPainter extends CustomPainter {
   @override
   bool shouldRepaint(_IndentGuidesPainter oldDelegate) =>
       oldDelegate.depth != depth || oldDelegate.color != color;
+}
+
+/// What a transfer run by [IdeExplorerState._withProgress] tells how far it
+/// is, and when it is to stop.
+class _Transfer {
+  const _Transfer({
+    required this.onProgress,
+    required this.onFile,
+    required this.cancel,
+  });
+
+  final TransferProgress onProgress;
+  final FileProgress onFile;
+  final Future<void> cancel;
 }

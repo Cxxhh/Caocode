@@ -15,6 +15,7 @@ import 'package:caocode/ide/terminal/terminal_instance.dart';
 import 'package:caocode/main.dart';
 import 'package:caocode/settings/settings_dialog.dart';
 import 'package:caocode/sidebar/sidebar.dart';
+import 'package:caocode/theme/code_font.dart';
 import 'package:caocode/theme/codicons.dart';
 import 'package:caocode/theme/app_theme.dart';
 import 'package:caocode/workspace/back_to_chat_button.dart';
@@ -99,6 +100,56 @@ void main() {
     List<Object?> controls(MethodCall call) =>
         (call.arguments as Map)['controls'] as List<Object?>;
     expect(controls(reports().last), isNot(controls(reports().first)));
+  }, variant: _windows);
+
+  testWidgets('zoomed in, the window leaves the editor button to Flutter as '
+      'it is drawn: its chevron too, not dragging the window', (tester) async {
+    CodeFont.uiScale.value = 125;
+    addTearDown(() => CodeFont.uiScale.value = CodeFont.defaultUiScale);
+    final (_, calls) = await pumpWindowsApp(tester);
+    await tester.pump();
+    final button = tester.getRect(
+      find.descendant(
+        of: find.byType(WindowHeader),
+        matching: find.byType(OpenInEditorButton),
+      ),
+    );
+    final report = calls.lastWhere((call) => call.method == 'setHitTestAreas');
+    final controls = [
+      for (final control in (report.arguments as Map)['controls'] as List)
+        Rect.fromLTWH(
+          (control as Map)['left'] as double,
+          control['top'] as double,
+          control['width'] as double,
+          control['height'] as double,
+        ),
+    ];
+    expect(
+      controls.where(
+        (control) => control.contains(button.centerRight - const Offset(2, 0)),
+      ),
+      isNotEmpty,
+    );
+    expect(controls, contains(rectMoreOrLessEquals(button)));
+  }, variant: _windows);
+
+  testWidgets('Back to Chat takes Open in Fast Ide\'s place as it is, so '
+      'the switch does not jump', (tester) async {
+    final (workspace, _) = await pumpWindowsApp(tester);
+    workspace.preferredEditor = Editor.fastIde;
+    await tester.pump();
+    final header = find.byType(WindowHeader);
+    final open = tester.getRect(
+      find.descendant(of: header, matching: find.byType(OpenInEditorButton)),
+    );
+
+    workspace.layout = WorkspaceLayout.ide;
+    await tester.pump();
+    await tester.pump();
+    final back = tester.getRect(
+      find.descendant(of: header, matching: find.byType(BackToChatButton)),
+    );
+    expect(back, open);
   }, variant: _windows);
 
   testWidgets('over the IDE it is the IDE\'s title bar: no line under it, '
@@ -598,25 +649,29 @@ void main() {
     );
   }, variant: _windows);
 
-  testWidgets('on macOS the chat\'s own buttons keep to its column\'s right '
-      'edge', (tester) async {
+  testWidgets('on macOS the chat\'s own buttons are at the window\'s right, '
+      'in the IDE title bar\'s order', (tester) async {
     tester.view.physicalSize = const Size(1400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(CaocodeApp(workspace: Workspace.mock()));
     await tester.pump();
-    final button = tester.getRect(
-      find.descendant(
-        of: find.byType(ChatScreen),
-        matching: find.byType(SidePanelToggle),
-      ),
+    Rect rectOf(Type type) => tester.getRect(
+      find.descendant(of: find.byType(ChatScreen), matching: find.byType(type)),
     );
+    final sidePanel = rectOf(SidePanelToggle);
+    final pin = rectOf(PinWindowButton);
+    final open = rectOf(OpenInEditorButton);
+    // The side panel's toggle, the pin, then the editor's button last, as
+    // the IDE's panel and chat toggles, its pin and Back to Chat.
+    expect(sidePanel.right, lessThan(pin.left));
+    expect(pin.right, lessThan(open.left));
+    // At the window's end, not the conversation's column's.
+    expect(open.right, 1400 - 8);
     expect(
-      button.left,
-      greaterThan(tester.getRect(find.byType(OpenInEditorButton)).right),
+      open.right,
+      greaterThan(tester.getRect(find.byType(ChatComposer)).right),
     );
-    // Level with the composer's, as the title is with its left.
-    expect(button.right, tester.getRect(find.byType(ChatComposer)).right);
   }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
 
   testWidgets('About shows the app icon and the version this build is', (

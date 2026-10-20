@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
+import '../../base/smooth_scroll.dart';
 import '../../ide/git/git_model.dart';
 import '../../ide/git/scm_tree.dart';
 import '../../ide/ide_hover.dart';
@@ -79,11 +80,18 @@ class _ChangeTreeState extends State<ChangeTree> {
   /// The folders closed, by path.
   final Set<String> _collapsed = {};
   List<_Row> _rows = const [];
+  final _scroll = SmoothScrollController();
 
   @override
   void initState() {
     super.initState();
     _layOut();
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
   }
 
   @override
@@ -151,6 +159,7 @@ class _ChangeTreeState extends State<ChangeTree> {
     return SizedBox(
       height: math.min(rows.length, widget.maxRows) * IdeListColors.rowHeight,
       child: ListView.builder(
+        controller: _scroll,
         padding: EdgeInsets.zero,
         itemExtent: IdeListColors.rowHeight,
         itemCount: rows.length,
@@ -269,8 +278,6 @@ class _ChangeTreeState extends State<ChangeTree> {
         ? l10n.stripChangeConflict
         : !change.tracked
         ? l10n.stripChangeUntracked
-        : change.shared
-        ? l10n.stripChangeShared
         : null;
     final relative = _paths.isWithin(widget.root, change.path)
         ? _paths.relative(change.path, from: widget.root)

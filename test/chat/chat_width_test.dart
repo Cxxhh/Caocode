@@ -56,10 +56,9 @@ void main() {
     expect(width(), 1200);
     ChatWidth.current.value = double.infinity;
     await tester.pump();
-    // The window's width but its margins, the minimap's room in them.
-    expect(width(), 1800 - 2 * ChatMinimap.room);
-    // Without the minimap (Appearance), the room is the column's again: but
-    // its margins.
+    // The window's width but its margins: the minimap's room is beside the
+    // history only, not beside the composer.
+    expect(width(), 1800 - 2 * 24);
     ChatMinimap.enabled.value = false;
     addTearDown(() => ChatMinimap.enabled.value = true);
     await tester.pump();

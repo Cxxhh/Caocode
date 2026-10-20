@@ -610,7 +610,8 @@ void main() {
       expect(['ws-a', 'ws-b'], contains(usage['chatgpt-account-id']));
 
       final models = await accounts.listModels(provider());
-      expect(models.map((m) => m.id), ['gpt-5']);
+      // Its pictures' model beside them, as the Codex CLI makes them.
+      expect(models.map((m) => m.id), ['gpt-5', codexImageModel]);
       final asked = openai.to('/backend-api/codex/models').single;
       expect(asked.headers['chatgpt-account-id'], 'ws-a');
       expect(asked.query['client_version'], codexClientVersion);
@@ -794,7 +795,10 @@ void main() {
 
       tearDown(() => proxy.close());
 
-      Future<({int status, String text})> ask() async {
+      Future<({int status, String text})> ask({
+        String model = 'gpt-5(high)',
+        String? serviceTier,
+      }) async {
         final endpoint = await proxy.endpoint('cx');
         final client = HttpClient();
         try {
@@ -806,8 +810,9 @@ void main() {
             ..contentType = ContentType.json;
           request.write(
             jsonEncode({
-              'model': 'gpt-5(high)',
+              'model': model,
               'stream': true,
+              'service_tier': ?serviceTier,
               'max_tokens': 1000,
               'system': 'Be brief.',
               'messages': [
@@ -852,9 +857,41 @@ void main() {
         expect(body['store'], isFalse);
         expect(body['stream'], isTrue);
         expect(body['include'], ['reasoning.encrypted_content']);
+        expect(body.containsKey('service_tier'), isFalse);
         expect(body.containsKey('max_output_tokens'), isFalse);
         expect(accounts.usage('cx', 'a')!.primary!.usedPercent, 12);
         expect(errors.last, isNull);
+      });
+
+      test('per-request Fast reaches Codex unless overridden', () async {
+        openai.reply = (path, _, _) => switch (path) {
+          '/oauth/token' => tokens('access-a'),
+          _ => (200, const {'content-type': 'text/event-stream'}, _stream),
+        };
+
+        expect((await ask(model: 'gpt-5(high;fast)')).status, 200);
+        final fast = jsonDecode(
+          openai.to('/backend-api/codex/responses').last.body,
+        ) as Map;
+        expect(fast['model'], 'gpt-5');
+        expect(fast['reasoning'], containsPair('effort', 'high'));
+        expect(fast['service_tier'], 'priority');
+
+        expect(
+          (await ask(model: 'gpt-5(high;fast)', serviceTier: 'auto')).status,
+          200,
+        );
+        expect(
+          jsonDecode(openai.to('/backend-api/codex/responses').last.body)
+              as Map,
+          isNot(contains('service_tier')),
+        );
+        expect((await ask()).status, 200);
+        expect(
+          jsonDecode(openai.to('/backend-api/codex/responses').last.body)
+              as Map,
+          isNot(contains('service_tier')),
+        );
       });
 
       test(

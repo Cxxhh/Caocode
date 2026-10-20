@@ -12,6 +12,8 @@ environment:
   sdk: ^3.13.4
 
 dependencies:
+  bao_agent:
+    path: ../bao_agent
   crypto: ^3.0.6
   meta: ^1.15.0
   path: ^1.9.1

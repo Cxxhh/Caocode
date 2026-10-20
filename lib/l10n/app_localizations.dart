@@ -380,6 +380,12 @@ abstract class AppLocalizations {
   /// **'Focus Chat List'**
   String get cmdChatFocusList;
 
+  /// No description provided for @cmdChatFind.
+  ///
+  /// In en, this message translates to:
+  /// **'Find in Chat'**
+  String get cmdChatFind;
+
   /// No description provided for @cmdChatCancel.
   ///
   /// In en, this message translates to:
@@ -469,6 +475,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add Context…'**
   String get cmdChatAttachContext;
+
+  /// No description provided for @cmdChatPasteRaw.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste as Plain Text'**
+  String get cmdChatPasteRaw;
 
   /// No description provided for @cmdChatSelectNextSuggestion.
   ///
@@ -2612,6 +2624,12 @@ abstract class AppLocalizations {
   /// **'Loading files…'**
   String get quickOpenLoadingFiles;
 
+  /// No description provided for @quickOpenSearchingFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching files…'**
+  String get quickOpenSearchingFiles;
+
   /// No description provided for @quickOpenNoFiles.
   ///
   /// In en, this message translates to:
@@ -2774,6 +2792,12 @@ abstract class AppLocalizations {
   /// **'Toggle Side Panel'**
   String get cmdToggleSidePanel;
 
+  /// No description provided for @cmdToggleSidePanelPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle Side Panel Position'**
+  String get cmdToggleSidePanelPosition;
+
   /// No description provided for @cmdSidePanelChanges.
   ///
   /// In en, this message translates to:
@@ -2809,6 +2833,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Terminal'**
   String get sidePanelTerminal;
+
+  /// The side panel's browser page, there once the browser plugin is installed.
+  ///
+  /// In en, this message translates to:
+  /// **'Browser'**
+  String get sidePanelBrowser;
+
+  /// No description provided for @browserNotConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'No browser is connected. Add Caocode\'s extension to Chrome (or Edge, Brave, Arc) and agents can use the tabs you share with them.'**
+  String get browserNotConnected;
+
+  /// No description provided for @browserNoSharedTab.
+  ///
+  /// In en, this message translates to:
+  /// **'No tab is shared yet. Ask an agent to open a page, or click Caocode in the browser toolbar to share the tab in front.'**
+  String get browserNoSharedTab;
+
+  /// No description provided for @browserOtherApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Another Caocode is connected to the browser.'**
+  String get browserOtherApp;
+
+  /// No description provided for @browserSharedTabs.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared Tabs'**
+  String get browserSharedTabs;
+
+  /// No description provided for @browserReload.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload'**
+  String get browserReload;
+
+  /// No description provided for @browserShowInBrowser.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in Browser'**
+  String get browserShowInBrowser;
+
+  /// No description provided for @browserDetached.
+  ///
+  /// In en, this message translates to:
+  /// **'The browser stopped letting Caocode see this tab.'**
+  String get browserDetached;
+
+  /// No description provided for @browserReconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect'**
+  String get browserReconnect;
+
+  /// No description provided for @browserShowInPanel.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in Side Panel'**
+  String get browserShowInPanel;
+
+  /// The card in the conversation while an agent watches the user do something in their browser (browser_watch), recording it.
+  ///
+  /// In en, this message translates to:
+  /// **'Watching you in the browser'**
+  String get browserWatchTitle;
+
+  /// No description provided for @browserWatchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Do it in the Caocode tab of your browser. When you\'re done, click Done here or the Caocode button in the browser\'s toolbar.'**
+  String get browserWatchHint;
+
+  /// No description provided for @browserWatchSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Nothing recorded yet} =1{1 step recorded} other{{count} steps recorded}}'**
+  String browserWatchSteps(int count);
+
+  /// No description provided for @browserWatchCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get browserWatchCancel;
+
+  /// No description provided for @browserWatchDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get browserWatchDone;
+
+  /// A step the user took while watched, by its kind; what it was on follows (an element, a URL).
+  ///
+  /// In en, this message translates to:
+  /// **'{kind, select, click{Clicked} input{Set} key{Pressed} submit{Submitted} navigate{Went to} closed{Closed the tab} other{Did}}'**
+  String browserWatchedStep(String kind);
+
+  /// {app} is the system's file manager, as the system names it (Finder, File Explorer).
+  ///
+  /// In en, this message translates to:
+  /// **'Show the trace in {app} (drop it into DevTools\' Performance panel to look closer)'**
+  String browserTraceReveal(String app);
+
+  /// A browser step's verb once done, by the browser tool it called; what it did it on follows (a URL, an element's name).
+  ///
+  /// In en, this message translates to:
+  /// **'{action, select, tabs{Listed tabs} open{Opened} navigate{Went to} back{Went back} forward{Went forward} reload{Reloaded} snapshot{Read the page} screenshot{Took a screenshot} click{Clicked} type{Typed} press{Pressed} scroll{Scrolled} evaluate{Ran} close{Closed the tab} console{Read the console} network{Listed requests} request{Read the request} performance{Profiled} recordStart{Started profiling} recordStop{Profiled} emulate{Emulated} watch{Watched you} act{Acted} inspect{Inspected} sources{Read the sources} breakpoints{Set breakpoints} debugger{Debugged} intercept{Intercepted requests} storage{Read site data} dialog{Answered the dialog} coverage{Measured coverage} memory{Measured memory} history{Read the debugging history} other{Used the browser}}'**
+  String browserStepDone(String action);
+
+  /// A browser step's verb while it runs (see browserStepDone).
+  ///
+  /// In en, this message translates to:
+  /// **'{action, select, tabs{Listing tabs} open{Opening} navigate{Going to} back{Going back} forward{Going forward} reload{Reloading} snapshot{Reading the page} screenshot{Taking a screenshot} click{Clicking} type{Typing} press{Pressing} scroll{Scrolling} evaluate{Running} close{Closing the tab} console{Reading the console} network{Listing requests} request{Reading the request} performance{Profiling} recordStart{Starting to profile} recordStop{Profiling} emulate{Emulating} watch{Watching you} act{Acting} inspect{Inspecting} sources{Reading the sources} breakpoints{Setting breakpoints} debugger{Debugging} intercept{Intercepting requests} storage{Reading site data} dialog{Answering the dialog} coverage{Measuring coverage} memory{Measuring memory} history{Reading the debugging history} other{Using the browser}}'**
+  String browserStepRunning(String action);
 
   /// The side panel's plan page: the plan the agent wrote in plan mode, shown while there is one.
   ///
@@ -2864,6 +3002,18 @@ abstract class AppLocalizations {
   /// **'Hide side panel'**
   String get sidePanelHide;
 
+  /// No description provided for @sidePanelMoveLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to the Left of the Conversation'**
+  String get sidePanelMoveLeft;
+
+  /// No description provided for @sidePanelMoveRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to the Right of the Conversation'**
+  String get sidePanelMoveRight;
+
   /// The side panel's tab listing the files the agent changed.
   ///
   /// In en, this message translates to:
@@ -2917,6 +3067,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Source'**
   String get sidePanelSource;
+
+  /// Shows a markdown file's text in the side panel, to edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get sidePanelEdit;
 
   /// Over a side panel preview asked for a diff it cannot show.
   ///
@@ -2983,6 +3139,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This conversation has no project folder'**
   String get sidePanelNoFolder;
+
+  /// The files page's header button that shows the text search in place of the tree.
+  ///
+  /// In en, this message translates to:
+  /// **'Search the project\'s files'**
+  String get sidePanelSearchFiles;
+
+  /// The files page's header button that brings the tree back.
+  ///
+  /// In en, this message translates to:
+  /// **'Close the search'**
+  String get sidePanelCloseSearch;
 
   /// Shows the list at the left of the side panel's pages.
   ///
@@ -3230,6 +3398,18 @@ abstract class AppLocalizations {
   /// **'“{title}” and its conversation will be removed.'**
   String sidebarDeleteAgentMessage(String title);
 
+  /// No description provided for @sidebarDeleteAgentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete agents?'**
+  String get sidebarDeleteAgentsTitle;
+
+  /// No description provided for @sidebarDeleteAgentsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The agent and its conversation will be deleted} other{The {count} agents and their conversations will be deleted}}, from their kernels too. This cannot be undone.'**
+  String sidebarDeleteAgentsMessage(int count);
+
   /// No description provided for @sidebarDeleteAgentMessageKernel.
   ///
   /// In en, this message translates to:
@@ -3247,6 +3427,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Agent History'**
   String get ideChatHistory;
+
+  /// No description provided for @ideChatShowArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Show archived agents'**
+  String get ideChatShowArchived;
 
   /// No description provided for @ideChatNoAgents.
   ///
@@ -3320,11 +3506,47 @@ abstract class AppLocalizations {
   /// **'Unarchive'**
   String get sidebarUnarchive;
 
+  /// No description provided for @sidebarPinCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin {count} Agents'**
+  String sidebarPinCount(int count);
+
+  /// No description provided for @sidebarUnpinCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin {count} Agents'**
+  String sidebarUnpinCount(int count);
+
+  /// No description provided for @sidebarArchiveCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive {count} Agents'**
+  String sidebarArchiveCount(int count);
+
+  /// No description provided for @sidebarUnarchiveCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Unarchive {count} Agents'**
+  String sidebarUnarchiveCount(int count);
+
+  /// No description provided for @sidebarDeleteCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {count} Agents…'**
+  String sidebarDeleteCount(int count);
+
   /// An agent's menu in the sidebar: copies the id of its session, which Claude Code finds the conversation by.
   ///
   /// In en, this message translates to:
   /// **'Copy session ID'**
   String get sidebarCopySessionId;
+
+  /// No description provided for @sidebarOpenStash.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Stash #{id}'**
+  String sidebarOpenStash(int id);
 
   /// An agent's menu in the sidebar: copies its conversation into a new agent, which opens.
   ///
@@ -3644,6 +3866,12 @@ abstract class AppLocalizations {
   /// **'File Explorer'**
   String get workspaceFileExplorer;
 
+  /// The Linux desktop's file manager, which has no one name.
+  ///
+  /// In en, this message translates to:
+  /// **'File Manager'**
+  String get workspaceFileManager;
+
   /// The macOS Terminal app, as macOS names it.
   ///
   /// In en, this message translates to:
@@ -3763,6 +3991,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Opens its conversation'**
   String get chatOpensItsConversation;
+
+  /// No description provided for @chatLoadEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Load earlier messages'**
+  String get chatLoadEarlier;
 
   /// No description provided for @chatStop.
   ///
@@ -3944,6 +4178,60 @@ abstract class AppLocalizations {
   /// **'Used'**
   String get toolUsed;
 
+  /// No description provided for @toolGeneratingImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Generating image'**
+  String get toolGeneratingImage;
+
+  /// No description provided for @toolGeneratedImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Generated image'**
+  String get toolGeneratedImage;
+
+  /// No description provided for @toolImageFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Image not generated'**
+  String get toolImageFailed;
+
+  /// No description provided for @toolImageWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate image'**
+  String get toolImageWaiting;
+
+  /// No description provided for @imagePickTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the model to generate it with'**
+  String get imagePickTitle;
+
+  /// No description provided for @imagePickGenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate'**
+  String get imagePickGenerate;
+
+  /// No description provided for @imagePickDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get imagePickDecline;
+
+  /// No description provided for @imageSetDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as default'**
+  String get imageSetDefault;
+
+  /// No description provided for @imageDefaultSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as default image model'**
+  String get imageDefaultSet;
+
   /// No description provided for @toolProposingGoal.
   ///
   /// In en, this message translates to:
@@ -4070,6 +4358,12 @@ abstract class AppLocalizations {
   /// **'Pasted text #{number}'**
   String pastedTextChip(int number);
 
+  /// Shown in place of a long paste kept in a file that has since gone.
+  ///
+  /// In en, this message translates to:
+  /// **'This paste is no longer at {path}.'**
+  String pastedTextGone(String path);
+
   /// After a long paste's tag: how many lines it has past its first.
   ///
   /// In en, this message translates to:
@@ -4111,6 +4405,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{ran 1 command} other{ran {count} commands}}'**
   String stepsRan(int count);
+
+  /// No description provided for @stepsBrowsed.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{took 1 step in the browser} other{took {count} steps in the browser}}'**
+  String stepsBrowsed(int count);
 
   /// No description provided for @stepsUsed.
   ///
@@ -4163,8 +4463,20 @@ abstract class AppLocalizations {
   /// No description provided for @turnSpeedHint.
   ///
   /// In en, this message translates to:
-  /// **'Output speed'**
+  /// **'Average output speed'**
   String get turnSpeedHint;
+
+  /// No description provided for @turnOutputTokensHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Written so far this turn'**
+  String get turnOutputTokensHint;
+
+  /// No description provided for @turnSpeedLiveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Output speed, sampled over the last 2 seconds'**
+  String get turnSpeedLiveHint;
 
   /// No description provided for @turnDurationHint.
   ///
@@ -4205,7 +4517,7 @@ abstract class AppLocalizations {
   /// No description provided for @planAwaiting.
   ///
   /// In en, this message translates to:
-  /// **'Awaiting approval'**
+  /// **'Ready to start'**
   String get planAwaiting;
 
   /// No description provided for @planApproved.
@@ -4219,6 +4531,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sent back'**
   String get planSentBack;
+
+  /// On a plan put to the user: leaves Plan mode and has the agent carry the plan out, with the model picked beside it.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get planStart;
+
+  /// No description provided for @planStartHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave Plan mode and carry out this plan'**
+  String get planStartHint;
+
+  /// The message sent, as the user's, when they start a plan.
+  ///
+  /// In en, this message translates to:
+  /// **'Carry out the plan'**
+  String get planStartMessage;
 
   /// How many files a folded turn edited.
   ///
@@ -4274,6 +4604,12 @@ abstract class AppLocalizations {
   /// **'Subagent'**
   String get chatSubagent;
 
+  /// Shown in an earlier conversation while it is read, e.g. from a remote project's host.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading conversation…'**
+  String get chatLoadingHistory;
+
   /// No description provided for @activityCompacting.
   ///
   /// In en, this message translates to:
@@ -4289,8 +4625,80 @@ abstract class AppLocalizations {
   /// What the agent 'does' while the model has yet to answer: whimsical phrases, one per line, shown one at a time with dots after them. Any number of lines.
   ///
   /// In en, this message translates to:
-  /// **'Pondering\nNoodling\nPercolating\nCogitating\nSimmering\nMarinating\nTinkering\nGrokking\nMulling it over\nConnecting the dots\nChasing a hunch\nBrewing a plan\nHatching a plan\nWeighing the options\nUntangling threads\nHerding tokens\nSummoning context\nReticulating splines\nAsking the rubber duck\nReading the tea leaves\nSketching on a napkin\nDoodling in the margins\nSquinting at the diff\nCounting parentheses\nBefriending the compiler\nNegotiating with types\nWrangling edge cases\nTracing the stack\nFlipping through the docs\nSpelunking the codebase\nLining up the ducks\nShaking the magic 8-ball\nWarming up the neurons\nFolding thoughts\nTuning the vibes\nBinding the monad\nLifting into the monad\nAsking the oracle\nStirring the pot\nPolishing the plan'**
+  /// **'Pondering\nNoodling\nPercolating\nCogitating\nSimmering\nMarinating\nTinkering\nGrokking\nMulling it over\nConnecting the dots\nChasing a hunch\nBrewing a plan\nHatching a plan\nWeighing the options\nUntangling threads\nHerding tokens\nSummoning context\nAsking the rubber duck\nReading the tea leaves\nSketching on a napkin\nDoodling in the margins\nSquinting at the diff\nCounting parentheses\nBefriending the compiler\nNegotiating with types\nWrangling edge cases\nTracing the stack\nFlipping through the docs\nSpelunking the codebase\nLining up the ducks\nShaking the magic 8-ball\nWarming up the neurons\nFolding thoughts\nBinding the monad\nAsking the oracle\nStirring the pot\nPolishing the plan'**
   String get activityMusings;
+
+  /// Musings, as activityMusings, after a command it ran: {name} is the command, e.g. "flutter test". One per line, any number of lines.
+  ///
+  /// In en, this message translates to:
+  /// **'Squinting at {name}\'s output\nDigesting what {name} said\nPicking through {name}\'s output\nNodding along to {name}'**
+  String activityMusingsCommand(String name);
+
+  /// Musings, as activityMusings, after a command it ran that failed: {name} is the command, e.g. "flutter test". One per line, any number of lines.
+  ///
+  /// In en, this message translates to:
+  /// **'Staring down {name}\'s error\nAsking {name} what went wrong\nUntangling {name}\'s complaint\nConsoling {name}'**
+  String activityMusingsCommandFailed(String name);
+
+  /// Musings, as activityMusings, after a file it read: {name} is the file name. One per line, any number of lines.
+  ///
+  /// In en, this message translates to:
+  /// **'Leafing through {name}\nGetting to know {name}\nPulling threads in {name}\nReading between the lines of {name}'**
+  String activityMusingsRead(String name);
+
+  /// Musings, as activityMusings, after a file it changed: {name} is the file name. One per line, any number of lines.
+  ///
+  /// In en, this message translates to:
+  /// **'Admiring the new {name}\nDouble-checking {name}\nHoping {name} still compiles\nGiving {name} a once-over'**
+  String activityMusingsEdit(String name);
+
+  /// Musings, as activityMusings, after a search it made: {name} is how many matches, e.g. "12". One per line, any number of lines.
+  ///
+  /// In en, this message translates to:
+  /// **'Panning {name} results for gold\nSifting through {name} matches\nFollowing {name} leads'**
+  String activityMusingsSearch(String name);
+
+  /// Musings, as activityMusings, after a folder it listed: {name} is the folder name. One per line, any number of lines.
+  ///
+  /// In en, this message translates to:
+  /// **'Poking around {name}\nTaking roll call in {name}\nSizing up {name}'**
+  String activityMusingsFolder(String name);
+
+  /// Musings, as activityMusings, after a page it fetched: {name} is the site, e.g. "dart.dev". One per line, any number of lines.
+  ///
+  /// In en, this message translates to:
+  /// **'Taking notes from {name}\nDigesting {name}'**
+  String activityMusingsWeb(String name);
+
+  /// Musings, as activityMusings, after a subagent that reported back: {name} is the subagent's type, e.g. "Explore". One per line, any number of lines.
+  ///
+  /// In en, this message translates to:
+  /// **'Debriefing {name}\nGrading {name}\'s homework\nGoing over {name}\'s findings'**
+  String activityMusingsAgent(String name);
+
+  /// Musings, as activityMusings, after an MCP tool it called: {name} is the MCP tool's name. One per line, any number of lines.
+  ///
+  /// In en, this message translates to:
+  /// **'Unwrapping {name}\'s reply\nSeeing what {name} sent back'**
+  String activityMusingsMcp(String name);
+
+  /// Musings, as activityMusings, after something it did in the browser. One per line, any number of lines.
+  ///
+  /// In en, this message translates to:
+  /// **'Peering at the page\nSquinting at the screenshot'**
+  String get activityMusingsBrowser;
+
+  /// Musings, as activityMusings, after a picture it generated. One per line, any number of lines.
+  ///
+  /// In en, this message translates to:
+  /// **'Admiring the fresh picture\nNitpicking the new image'**
+  String get activityMusingsImage;
+
+  /// Musings, as activityMusings, after a tool call the user denied. One per line, any number of lines.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding another way\nTaking the scenic route'**
+  String get activityMusingsDenied;
 
   /// Suggestion menu title.
   ///
@@ -4580,6 +4988,18 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 file changed} other{{count} files changed}}'**
   String stripFilesChanged(int count);
 
+  /// No description provided for @stripAgentsRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 subagent running} other{{count} subagents running}}'**
+  String stripAgentsRunning(int count);
+
+  /// No description provided for @stripTasksRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 background task running} other{{count} background tasks running}}'**
+  String stripTasksRunning(int count);
+
   /// No description provided for @stripUndoAll.
   ///
   /// In en, this message translates to:
@@ -4603,6 +5023,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Undo'**
   String get stripUndo;
+
+  /// Over the editor's tabs while its file has an agent's change pending: keeps the whole change to this file.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep file'**
+  String get agentKeepFile;
+
+  /// Over the editor's tabs while its file has an agent's change pending: puts the whole file back as it was before the agent changed it.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo file'**
+  String get agentUndoFile;
+
+  /// No description provided for @agentPreviousChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous change'**
+  String get agentPreviousChange;
+
+  /// No description provided for @agentNextChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Next change'**
+  String get agentNextChange;
+
+  /// No description provided for @agentMoreActions.
+  ///
+  /// In en, this message translates to:
+  /// **'More actions'**
+  String get agentMoreActions;
 
   /// No description provided for @stripChangeAdded.
   ///
@@ -4628,16 +5078,10 @@ abstract class AppLocalizations {
   /// **'Changed again since the agent left it, so Undo could not take the agent\'s change out. Undo it by hand, then keep it.'**
   String get stripChangeConflict;
 
-  /// Tooltip of a changed file seen while another agent worked in the same project.
-  ///
-  /// In en, this message translates to:
-  /// **'Another agent was working in this project at the same time: some of this change may be its.'**
-  String get stripChangeShared;
-
   /// No description provided for @stripChangeUntracked.
   ///
   /// In en, this message translates to:
-  /// **'Not in the project\'s snapshots (ignored, too large, or outside the project): it can be kept, not undone.'**
+  /// **'What it was before is not known (the agent did not tell, it is too large, or outside the project): it can be kept, not undone.'**
   String get stripChangeUntracked;
 
   /// Label of the diff editor comparing a file before the agent changed it with the file now.
@@ -4772,11 +5216,23 @@ abstract class AppLocalizations {
   /// **'{name} stopped'**
   String healthStopped(String name);
 
+  /// No description provided for @healthFolderGone.
+  ///
+  /// In en, this message translates to:
+  /// **'The project folder is gone: {folder}'**
+  String healthFolderGone(String folder);
+
   /// No description provided for @healthHideDetails.
   ///
   /// In en, this message translates to:
   /// **'Hide details'**
   String get healthHideDetails;
+
+  /// The title of a folding section in a chat's markdown (HTML's <details>) that gives none.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get markdownDetails;
 
   /// No description provided for @healthDetails.
   ///
@@ -4820,48 +5276,6 @@ abstract class AppLocalizations {
   /// **'Tell the agent what to do instead'**
   String get interactionDenyHint;
 
-  /// No description provided for @interactionPlanTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Ready to code?'**
-  String get interactionPlanTitle;
-
-  /// No description provided for @interactionStartBuilding.
-  ///
-  /// In en, this message translates to:
-  /// **'Yes, start building'**
-  String get interactionStartBuilding;
-
-  /// Approves a plan, to be carried out with the approvals named (e.g. Accept edits).
-  ///
-  /// In en, this message translates to:
-  /// **'Yes, start · {approvals}'**
-  String interactionStartWith(String approvals);
-
-  /// No description provided for @interactionKeepPlanningOption.
-  ///
-  /// In en, this message translates to:
-  /// **'No, keep planning'**
-  String get interactionKeepPlanningOption;
-
-  /// No description provided for @interactionWhatShouldChange.
-  ///
-  /// In en, this message translates to:
-  /// **'What should change?'**
-  String get interactionWhatShouldChange;
-
-  /// Under 'No, keep planning' when the plan shows in the side panel: a message sent now goes to the agent as what to change.
-  ///
-  /// In en, this message translates to:
-  /// **'Or say what should change in the message box'**
-  String get interactionSayWhatToChange;
-
-  /// No description provided for @interactionViewPlan.
-  ///
-  /// In en, this message translates to:
-  /// **'View plan'**
-  String get interactionViewPlan;
-
   /// No description provided for @interactionStepOf.
   ///
   /// In en, this message translates to:
@@ -4873,12 +5287,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Skip'**
   String get interactionSkip;
-
-  /// No description provided for @interactionKeepPlanning.
-  ///
-  /// In en, this message translates to:
-  /// **'Keep planning'**
-  String get interactionKeepPlanning;
 
   /// No description provided for @interactionSubmit.
   ///
@@ -5113,6 +5521,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Close All'**
   String get tabCloseAll;
+
+  /// No description provided for @fileLinkOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get fileLinkOpen;
+
+  /// No description provided for @fileLinkOpenInPanel.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Side Panel'**
+  String get fileLinkOpenInPanel;
+
+  /// Context menu item of an image the chat names: shows it enlarged over the window.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get fileLinkPreview;
+
+  /// Context menu item of an HTML file the chat names: opens it in the default web browser.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Browser'**
+  String get fileLinkOpenInBrowser;
 
   /// No description provided for @tabCopyPath.
   ///
@@ -5486,6 +5918,12 @@ abstract class AppLocalizations {
   /// **'Preparing files...'**
   String get explorerPreparingTransfer;
 
+  /// Files of this computer put in a remote project's composer could not be copied to its host, for its agent to read.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t copy the files to the remote host: {error}'**
+  String composerCopyToHostFailed(String error);
+
   /// No description provided for @explorerNewFile.
   ///
   /// In en, this message translates to:
@@ -5509,6 +5947,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Find in Folder...'**
   String get explorerFindInFolder;
+
+  /// No description provided for @explorerOpenInTerminal.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Terminal'**
+  String get explorerOpenInTerminal;
 
   /// No description provided for @explorerRename.
   ///
@@ -5654,17 +6098,65 @@ abstract class AppLocalizations {
   /// **'Who the commits and pull requests an agent writes credit. Applies to agents started after a change; Claude Code only for now.'**
   String get generalSettingsCommitAttributionDescription;
 
-  /// No description provided for @generalSettingsTelemetry.
+  /// Settings → General → Claude Code row: what runs Claude Code sessions, Caocode's built-in core (written in Dart) or the Claude Code CLI.
   ///
   /// In en, this message translates to:
-  /// **'Send Usage Data'**
-  String get generalSettingsTelemetry;
+  /// **'Core'**
+  String get generalSettingsClaudeCore;
 
-  /// No description provided for @generalSettingsTelemetryDescription.
+  /// No description provided for @generalSettingsClaudeCoreDescription.
   ///
   /// In en, this message translates to:
-  /// **'Once a day Caocode is used, it sends a random install ID, its version, and your system and processor type, so we can tell how many people use it and come back. Nothing about you, your code, or what you do in Caocode (telemetry.telemetryLevel).'**
-  String get generalSettingsTelemetryDescription;
+  /// **'Claude Code CLI: Anthropic\'s own program, with this machine\'s sign-in and setup; pick it to use a Claude subscription. Built-in: comes with Caocode, and uses only the models added in Settings → Models. The CLI is the default when Claude Code is installed here, the built-in core otherwise. Changes apply to new sessions.'**
+  String get generalSettingsClaudeCoreDescription;
+
+  /// Claude Code core choice: Caocode's own agent core, written in Dart and run inside the app.
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in'**
+  String get generalSettingsClaudeCoreBuiltin;
+
+  /// Claude Code core choice: Anthropic's Claude Code command-line program, run as a process.
+  ///
+  /// In en, this message translates to:
+  /// **'Claude Code CLI'**
+  String get generalSettingsClaudeCoreCli;
+
+  /// No description provided for @generalSettingsQueuedMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages Sent While Working'**
+  String get generalSettingsQueuedMessages;
+
+  /// No description provided for @generalSettingsQueuedMessagesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'When a message sent while the agent is still working is taken up. Applies to messages sent after a change; Claude Code only for now.'**
+  String get generalSettingsQueuedMessagesDescription;
+
+  /// Queued messages choice: each waits for the turn running to end, then they run one after another.
+  ///
+  /// In en, this message translates to:
+  /// **'After the Current Task'**
+  String get generalSettingsQueuedAfterTurn;
+
+  /// Queued messages choice: the agent reads it in the turn running, between its tool calls, as Claude Code does in its own terminal.
+  ///
+  /// In en, this message translates to:
+  /// **'Join the Current Task'**
+  String get generalSettingsQueuedDuringTurn;
+
+  /// Settings → General switch: whether Claude Code suggests the next prompt in the composer after each turn.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest Next Prompt'**
+  String get generalSettingsPromptSuggestions;
+
+  /// No description provided for @generalSettingsPromptSuggestionsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'After each turn, a greyed-out suggestion for your next message, taken with Tab. Each one is an extra request with the whole conversation; turn it off to save tokens. Applies from the next message; Claude Code only.'**
+  String get generalSettingsPromptSuggestionsDescription;
 
   /// The commit attribution dropdown, as read out: its setting and the choice in effect.
   ///
@@ -6386,6 +6878,24 @@ abstract class AppLocalizations {
   /// **'Undo Last Commit'**
   String get scmUndoLastCommit;
 
+  /// No description provided for @scmGraphBranches.
+  ///
+  /// In en, this message translates to:
+  /// **'Branches Shown'**
+  String get scmGraphBranches;
+
+  /// No description provided for @scmGraphCurrentBranch.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Branch'**
+  String get scmGraphCurrentBranch;
+
+  /// No description provided for @scmGraphAllBranches.
+  ///
+  /// In en, this message translates to:
+  /// **'All Branches'**
+  String get scmGraphAllBranches;
+
   /// No description provided for @scmGoToCurrent.
   ///
   /// In en, this message translates to:
@@ -6565,6 +7075,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Synchronizing Changes...'**
   String get scmSynchronizingChanges;
+
+  /// No description provided for @scmFetch.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetch'**
+  String get scmFetch;
+
+  /// No description provided for @scmFetchFromAllRemotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetch From All Remotes'**
+  String get scmFetchFromAllRemotes;
+
+  /// No description provided for @scmPull.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull'**
+  String get scmPull;
+
+  /// No description provided for @scmPush.
+  ///
+  /// In en, this message translates to:
+  /// **'Push'**
+  String get scmPush;
 
   /// No description provided for @scmPullCommits.
   ///
@@ -7299,30 +7833,6 @@ abstract class AppLocalizations {
   /// **'Click to retry'**
   String get langClickToRetry;
 
-  /// No description provided for @langNotInstalled.
-  ///
-  /// In en, this message translates to:
-  /// **'{id} not installed'**
-  String langNotInstalled(String id);
-
-  /// No description provided for @langNeedsRuntime.
-  ///
-  /// In en, this message translates to:
-  /// **'Installing {id} needs {runtime}, which was not found'**
-  String langNeedsRuntime(String id, String runtime);
-
-  /// No description provided for @langClickToInstall.
-  ///
-  /// In en, this message translates to:
-  /// **'Click to install {id}'**
-  String langClickToInstall(String id);
-
-  /// No description provided for @langNotOnPath.
-  ///
-  /// In en, this message translates to:
-  /// **'{id} was not found on PATH'**
-  String langNotOnPath(String id);
-
   /// No description provided for @langInstallingItem.
   ///
   /// In en, this message translates to:
@@ -7418,6 +7928,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No formatter for this file.'**
   String get langNoFormatter;
+
+  /// No description provided for @langNoFormatterInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'No formatter for this file. Install the \'{id}\' language server to format {language} files.'**
+  String langNoFormatterInstall(String id, String language);
 
   /// No description provided for @langNoRefactorings.
   ///
@@ -7833,30 +8349,6 @@ abstract class AppLocalizations {
   /// **'Unpin the Current Timeline'**
   String get wbUnpinTimeline;
 
-  /// No description provided for @wbLanguageServices.
-  ///
-  /// In en, this message translates to:
-  /// **'Language services'**
-  String get wbLanguageServices;
-
-  /// No description provided for @wbMonacoEditor.
-  ///
-  /// In en, this message translates to:
-  /// **'Monaco editor'**
-  String get wbMonacoEditor;
-
-  /// No description provided for @wbTextEditor.
-  ///
-  /// In en, this message translates to:
-  /// **'Text editor'**
-  String get wbTextEditor;
-
-  /// No description provided for @wbRetryLanguageServices.
-  ///
-  /// In en, this message translates to:
-  /// **'Retry language services'**
-  String get wbRetryLanguageServices;
-
   /// No description provided for @wbNoProblems.
   ///
   /// In en, this message translates to:
@@ -7934,6 +8426,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Language Mode'**
   String get wbLanguageMode;
+
+  /// No description provided for @shownImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Image'**
+  String get shownImage;
+
+  /// No description provided for @shownReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-only'**
+  String get shownReadOnly;
+
+  /// No description provided for @languageModeAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Detect'**
+  String get languageModeAuto;
+
+  /// No description provided for @languageModePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Language Mode'**
+  String get languageModePlaceholder;
+
+  /// No description provided for @languageModeChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Language Mode'**
+  String get languageModeChange;
 
   /// No description provided for @editorCommandPalette.
   ///
@@ -8282,6 +8804,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reveal in File Explorer'**
   String get dataDirRevealInFileExplorer;
+
+  /// No description provided for @dataDirRevealInFileManager.
+  ///
+  /// In en, this message translates to:
+  /// **'Reveal in File Manager'**
+  String get dataDirRevealInFileManager;
 
   /// No description provided for @dataDirChecking.
   ///
@@ -8973,6 +9501,42 @@ abstract class AppLocalizations {
   /// **'Windows'**
   String get generalSettingsWindows;
 
+  /// No description provided for @generalSettingsIde.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast IDE'**
+  String get generalSettingsIde;
+
+  /// No description provided for @generalSettingsAutoOpenChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Show agent changes as diffs'**
+  String get generalSettingsAutoOpenChanges;
+
+  /// No description provided for @generalSettingsAutoOpenChangesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'While the IDE shows, a file the agent changes opens as a diff of it against its text before, as the agent edits it.'**
+  String get generalSettingsAutoOpenChangesDescription;
+
+  /// No description provided for @explorerExcludeSetting.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden files and folders'**
+  String get explorerExcludeSetting;
+
+  /// No description provided for @explorerExcludeSettingDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Files and folders the explorer does not show, comma separated: a name (`node_modules`, `*.log`) matches anywhere, a path (`build/**`, `src/generated`) matches within the folder.'**
+  String get explorerExcludeSettingDescription;
+
+  /// No description provided for @explorerExcludeSettingPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. .git, node_modules, *.log'**
+  String get explorerExcludeSettingPlaceholder;
+
   /// No description provided for @claudePathSetting.
   ///
   /// In en, this message translates to:
@@ -8982,7 +9546,7 @@ abstract class AppLocalizations {
   /// No description provided for @claudePathSettingDescription.
   ///
   /// In en, this message translates to:
-  /// **'Empty: the newest of the Claude Code installed on this machine and the one Caocode downloaded (downloaded the first time there is none). A path: that one, always, e.g. one you built. (claudeCode.path)'**
+  /// **'Empty: the newest Claude Code on this machine, downloaded if there is none. A path: always that one, e.g. one you built. (claudeCode.path)'**
   String get claudePathSettingDescription;
 
   /// No description provided for @claudePathSettingHint.
@@ -9030,7 +9594,7 @@ abstract class AppLocalizations {
   /// No description provided for @generalSettingsIdeWindowsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Where the Fast Ide opens: in windows of its own, one per folder (New Window, ⇧⌘N / Ctrl+Shift+N, opens an empty one), or in the main window in place of the chat, one folder at a time. Applies at once. (window.ideWindows)'**
+  /// **'Where the Fast Ide opens: in the main window in place of the chat, one folder at a time, or in windows of its own, one per folder (New Window, ⇧⌘N / Ctrl+Shift+N, opens an empty one). Applies at once. (window.ideWindows)'**
   String get generalSettingsIdeWindowsDescription;
 
   /// No description provided for @generalSettingsIdeWindowsSeparate.
@@ -10605,6 +11169,24 @@ abstract class AppLocalizations {
   /// **'One KEY=VALUE a line, given to Claude Code after the settings above.'**
   String get modelsEnvDescription;
 
+  /// No description provided for @modelsHeaders.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom Headers'**
+  String get modelsHeaders;
+
+  /// No description provided for @modelsHeadersDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'One Name: Value a line, sent on every request to this upstream. Values may use the CLAUDE_SESSION_ID variable (this conversation\'s session) and ANTHROPIC_MODEL (the model asked for), each between double braces; over the direct Anthropic protocol those two go as written, so only fixed values work there. Auth headers (Authorization, x-api-key) are ignored here: the key is set above.'**
+  String get modelsHeadersDescription;
+
+  /// No description provided for @modelsHeadersPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'x-session-id: my-session'**
+  String get modelsHeadersPlaceholder;
+
   /// No description provided for @modelsDelete.
   ///
   /// In en, this message translates to:
@@ -10821,6 +11403,66 @@ abstract class AppLocalizations {
   /// **'Does not take images'**
   String get modelsNoImages;
 
+  /// No description provided for @modelsKind.
+  ///
+  /// In en, this message translates to:
+  /// **'Used for'**
+  String get modelsKind;
+
+  /// No description provided for @modelsKindChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversations'**
+  String get modelsKindChat;
+
+  /// No description provided for @modelsKindImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Image generation (Images API)'**
+  String get modelsKindImage;
+
+  /// No description provided for @modelsKindImageChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Image generation (in a conversation)'**
+  String get modelsKindImageChat;
+
+  /// No description provided for @modelsKindDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Image models are not offered in the model picker: agents make pictures with them through the generate_image tool.'**
+  String get modelsKindDescription;
+
+  /// No description provided for @modelsImageBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Image'**
+  String get modelsImageBadge;
+
+  /// No description provided for @modelsImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Image model'**
+  String get modelsImage;
+
+  /// No description provided for @modelsImageDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'What agents make pictures with (the generate_image tool), unless you ask them for another; asked each time, you pick it in the conversation. Turn on image models in an upstream\'s list.'**
+  String get modelsImageDescription;
+
+  /// No description provided for @modelsImageFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask each time'**
+  String get modelsImageFirst;
+
+  /// No description provided for @modelsImageNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None turned on'**
+  String get modelsImageNone;
+
   /// No description provided for @modelsSave.
   ///
   /// In en, this message translates to:
@@ -10842,7 +11484,7 @@ abstract class AppLocalizations {
   /// No description provided for @modelsSwitchDetail.
   ///
   /// In en, this message translates to:
-  /// **'Claude Code restarts on the other upstream and resumes this conversation (--resume). Its history is sent to the new model as it is; some upstreams take it slower the first time.'**
+  /// **'Claude Code restarts on the other upstream and resumes this conversation (--resume). Its history is sent to the new model as it is; some upstreams take it slower the first time. A reply still running stops when you send the next message.'**
   String get modelsSwitchDetail;
 
   /// No description provided for @modelsSwitchConfirm.
@@ -11481,6 +12123,36 @@ abstract class AppLocalizations {
   /// **'Your messages: {style}'**
   String appearanceSettingsUserMessageStyleLabel(String style);
 
+  /// No description provided for @appearanceSettingsReplyScroll.
+  ///
+  /// In en, this message translates to:
+  /// **'As a Reply Comes'**
+  String get appearanceSettingsReplyScroll;
+
+  /// No description provided for @appearanceSettingsReplyScrollDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Where the conversation stays as the reply to your message is written: at its end, following it; or at its start, your message at the top, for you to read on from there. Scrolled to the end, it follows again.'**
+  String get appearanceSettingsReplyScrollDescription;
+
+  /// No description provided for @appearanceSettingsReplyScrollFollow.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get appearanceSettingsReplyScrollFollow;
+
+  /// No description provided for @appearanceSettingsReplyScrollStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay at its start'**
+  String get appearanceSettingsReplyScrollStart;
+
+  /// No description provided for @appearanceSettingsReplyScrollLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'As a reply comes: {choice}'**
+  String appearanceSettingsReplyScrollLabel(String choice);
+
   /// No description provided for @appearanceSettingsMinimap.
   ///
   /// In en, this message translates to:
@@ -11492,6 +12164,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A minimap of the whole conversation at the left of its column, where you are in it shown as you scroll; click or drag it to get somewhere. It stands in for the scrollbar, and is not shown in a window too narrow for it. Off: the scrollbar.'**
   String get appearanceSettingsMinimapDescription;
+
+  /// No description provided for @appearanceSettingsSidebarTimes.
+  ///
+  /// In en, this message translates to:
+  /// **'Times in the Sidebar'**
+  String get appearanceSettingsSidebarTimes;
+
+  /// No description provided for @appearanceSettingsSidebarTimesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Each agent in the sidebar ends with when it last did something. Off: only its hover tells it.'**
+  String get appearanceSettingsSidebarTimesDescription;
 
   /// No description provided for @appearanceSettingsMinimapGlass.
   ///
@@ -11592,7 +12276,7 @@ abstract class AppLocalizations {
   /// No description provided for @appearanceSettingsCodeSizeDescription.
   ///
   /// In en, this message translates to:
-  /// **'The size of code in the IDE editor and the side panel\'s file and changes views. Code in the chat follows the interface text size; the terminal has its own size.'**
+  /// **'The size of code in the IDE editor and the side panel\'s file and changes views. Code in the chat follows the interface size; the terminal has its own size.'**
   String get appearanceSettingsCodeSizeDescription;
 
   /// No description provided for @appearanceSettingsCodeSizeLabel.
@@ -11616,19 +12300,19 @@ abstract class AppLocalizations {
   /// No description provided for @appearanceSettingsUiScale.
   ///
   /// In en, this message translates to:
-  /// **'Interface Text Size'**
+  /// **'Interface Size'**
   String get appearanceSettingsUiScale;
 
   /// No description provided for @appearanceSettingsUiScaleDescription.
   ///
   /// In en, this message translates to:
-  /// **'The size of interface text, code in the chat, and terminal text while the terminal size follows it. Code in the IDE editor and side panel files and changes keeps its own size.'**
+  /// **'Zooms the whole interface (its text, icons and spacing), code in the chat, and terminal text while the terminal size follows it. Code in the IDE editor and side panel files and changes keeps its own size.'**
   String get appearanceSettingsUiScaleDescription;
 
   /// No description provided for @appearanceSettingsUiScaleLabel.
   ///
   /// In en, this message translates to:
-  /// **'Interface text size: {percent}%'**
+  /// **'Interface size: {percent}%'**
   String appearanceSettingsUiScaleLabel(String percent);
 
   /// No description provided for @appearanceSettingsTerminalSize.
@@ -11640,13 +12324,13 @@ abstract class AppLocalizations {
   /// No description provided for @appearanceSettingsTerminalSizeDescription.
   ///
   /// In en, this message translates to:
-  /// **'The size of terminal text. By default it follows the interface text size; it can be set on its own.'**
+  /// **'The size of terminal text. By default it follows the interface size; it can be set on its own.'**
   String get appearanceSettingsTerminalSizeDescription;
 
   /// No description provided for @appearanceSettingsTerminalSizeFollow.
   ///
   /// In en, this message translates to:
-  /// **'Follow Interface Text Size'**
+  /// **'Follow Interface Size'**
   String get appearanceSettingsTerminalSizeFollow;
 
   /// No description provided for @appearanceSettingsTerminalSizeCustom.
@@ -11676,7 +12360,7 @@ abstract class AppLocalizations {
   /// No description provided for @generalSettingsContextMenuExplorer.
   ///
   /// In en, this message translates to:
-  /// **'Explorer Context Menu'**
+  /// **'File Explorer Context Menu'**
   String get generalSettingsContextMenuExplorer;
 
   /// No description provided for @generalSettingsContextMenuDescription.
@@ -11745,10 +12429,16 @@ abstract class AppLocalizations {
   /// **'Open Remote Project...'**
   String get cmdOpenRemoteFolder;
 
+  /// No description provided for @cmdOpenRemoteFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Remote File...'**
+  String get cmdOpenRemoteFile;
+
   /// No description provided for @remoteHostPlaceholder.
   ///
   /// In en, this message translates to:
-  /// **'Select a host of ~/.ssh/config, or type user@host[:port]'**
+  /// **'Select a host, add one, or type user@host[:port]'**
   String get remoteHostPlaceholder;
 
   /// No description provided for @remoteConnectTo.
@@ -11760,7 +12450,7 @@ abstract class AppLocalizations {
   /// No description provided for @remoteNoHosts.
   ///
   /// In en, this message translates to:
-  /// **'No hosts in ~/.ssh/config: type one'**
+  /// **'No hosts yet: add one, or type user@host'**
   String get remoteNoHosts;
 
   /// No description provided for @remoteInvalidHost.
@@ -11840,6 +12530,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not list {path}'**
   String remoteListFailed(String path);
+
+  /// No description provided for @remoteFileHostPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a host, to browse its files'**
+  String get remoteFileHostPlaceholder;
+
+  /// No description provided for @remoteFilePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'A file on {host}: pick one, or type a path'**
+  String remoteFilePlaceholder(String host);
+
+  /// No description provided for @remoteOpenFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Open {path}'**
+  String remoteOpenFile(String path);
+
+  /// No description provided for @remoteOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open {path}'**
+  String remoteOpenFailed(String path);
+
+  /// No description provided for @remoteRecentFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Remote Files'**
+  String get remoteRecentFiles;
+
+  /// No description provided for @remoteOpenFileOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Open File on {host}...'**
+  String remoteOpenFileOn(String host);
+
+  /// No description provided for @remoteStatusActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Click for the hosts and {host}\'s actions'**
+  String remoteStatusActions(String host);
 
   /// No description provided for @remoteStatus.
   ///
@@ -12933,6 +13665,12 @@ abstract class AppLocalizations {
   /// **'Language Servers'**
   String get extsTabLanguageServers;
 
+  /// No description provided for @sidebarAllHosts.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get sidebarAllHosts;
+
   /// No description provided for @sidebarThisMachine.
   ///
   /// In en, this message translates to:
@@ -13028,6 +13766,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rename Host'**
   String get sidebarRenameHost;
+
+  /// No description provided for @sidebarEditHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Connection...'**
+  String get sidebarEditHost;
 
   /// No description provided for @explorerNoPermission.
   ///
@@ -13164,7 +13908,7 @@ abstract class AppLocalizations {
   /// No description provided for @mobilePublicAddressDescription.
   ///
   /// In en, this message translates to:
-  /// **'A domain or IP this computer can be reached at from the internet (with the port forwarded), put in the QR code; several separated by commas. Public IPv6 addresses are found by themselves.'**
+  /// **'A domain or IP this computer can be reached at from the internet (with the port forwarded), put in the QR code; several separated by commas. Behind a proxy that only takes HTTPS (such as a Cloudflare Tunnel), write it as wss://domain. Public IPv6 addresses are found by themselves.'**
   String get mobilePublicAddressDescription;
 
   /// No description provided for @mobileRelay.
@@ -13340,6 +14084,2826 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Allow'**
   String get mobilePairAllow;
+
+  /// No description provided for @settingsSectionStash.
+  ///
+  /// In en, this message translates to:
+  /// **'Stash'**
+  String get settingsSectionStash;
+
+  /// No description provided for @settingsSectionCustomize.
+  ///
+  /// In en, this message translates to:
+  /// **'Customize'**
+  String get settingsSectionCustomize;
+
+  /// No description provided for @settingsCustomizeKeywords.
+  ///
+  /// In en, this message translates to:
+  /// **'skills subagents rules commands agents claude memory hooks mcp plugins'**
+  String get settingsCustomizeKeywords;
+
+  /// No description provided for @stashTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stash'**
+  String get stashTitle;
+
+  /// No description provided for @stashHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Stash'**
+  String get stashHeading;
+
+  /// No description provided for @stashNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New stash'**
+  String get stashNew;
+
+  /// No description provided for @stashLinkOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open link'**
+  String get stashLinkOpen;
+
+  /// No description provided for @stashLinkEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit link'**
+  String get stashLinkEdit;
+
+  /// No description provided for @stashDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get stashDraft;
+
+  /// No description provided for @stashCodeChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get stashCodeChip;
+
+  /// No description provided for @stashTableChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Table'**
+  String get stashTableChip;
+
+  /// No description provided for @stashLines.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} lines'**
+  String stashLines(int count);
+
+  /// No description provided for @stashNewButton.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get stashNewButton;
+
+  /// No description provided for @stashNewTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'New stash'**
+  String get stashNewTooltip;
+
+  /// No description provided for @stashPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Jot it down…'**
+  String get stashPlaceholder;
+
+  /// No description provided for @stashHintNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get stashHintNew;
+
+  /// No description provided for @stashProjectTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Project it is about'**
+  String get stashProjectTooltip;
+
+  /// No description provided for @stashNoProject.
+  ///
+  /// In en, this message translates to:
+  /// **'No project'**
+  String get stashNoProject;
+
+  /// No description provided for @stashFormatBold.
+  ///
+  /// In en, this message translates to:
+  /// **'Bold'**
+  String get stashFormatBold;
+
+  /// No description provided for @stashFormatItalic.
+  ///
+  /// In en, this message translates to:
+  /// **'Italic'**
+  String get stashFormatItalic;
+
+  /// No description provided for @stashFormatStrike.
+  ///
+  /// In en, this message translates to:
+  /// **'Strikethrough'**
+  String get stashFormatStrike;
+
+  /// No description provided for @stashFormatUnderline.
+  ///
+  /// In en, this message translates to:
+  /// **'Underline'**
+  String get stashFormatUnderline;
+
+  /// No description provided for @stashFormatCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get stashFormatCode;
+
+  /// No description provided for @stashFormatLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get stashFormatLink;
+
+  /// No description provided for @stashFormatColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Text and background color'**
+  String get stashFormatColor;
+
+  /// No description provided for @stashFormatHeading1.
+  ///
+  /// In en, this message translates to:
+  /// **'Heading 1'**
+  String get stashFormatHeading1;
+
+  /// No description provided for @stashFormatHeading2.
+  ///
+  /// In en, this message translates to:
+  /// **'Heading 2'**
+  String get stashFormatHeading2;
+
+  /// No description provided for @stashFormatHeading3.
+  ///
+  /// In en, this message translates to:
+  /// **'Heading 3'**
+  String get stashFormatHeading3;
+
+  /// No description provided for @stashFormatBullets.
+  ///
+  /// In en, this message translates to:
+  /// **'Bulleted list'**
+  String get stashFormatBullets;
+
+  /// No description provided for @stashFormatNumbers.
+  ///
+  /// In en, this message translates to:
+  /// **'Numbered list'**
+  String get stashFormatNumbers;
+
+  /// No description provided for @stashFormatTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Task list'**
+  String get stashFormatTasks;
+
+  /// No description provided for @stashFormatQuote.
+  ///
+  /// In en, this message translates to:
+  /// **'Quote'**
+  String get stashFormatQuote;
+
+  /// Selection bar menu: makes the lines a code block, typed in in place.
+  ///
+  /// In en, this message translates to:
+  /// **'Code block'**
+  String get stashFormatCodeBlock;
+
+  /// No description provided for @stashFormatClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear formatting'**
+  String get stashFormatClear;
+
+  /// No description provided for @stashPolish.
+  ///
+  /// In en, this message translates to:
+  /// **'Polish'**
+  String get stashPolish;
+
+  /// No description provided for @stashPolishing.
+  ///
+  /// In en, this message translates to:
+  /// **'Polishing…'**
+  String get stashPolishing;
+
+  /// No description provided for @stashPolishHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Has AI make the selection clearer, in your words, without adding structure'**
+  String get stashPolishHint;
+
+  /// No description provided for @composerPolish.
+  ///
+  /// In en, this message translates to:
+  /// **'Polish'**
+  String get composerPolish;
+
+  /// No description provided for @composerPolishing.
+  ///
+  /// In en, this message translates to:
+  /// **'Polishing…'**
+  String get composerPolishing;
+
+  /// No description provided for @composerPolishHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Polish: the auxiliary model makes the message clearer, in your words; pictures, files, code and links stay as they are; Undo takes it back'**
+  String get composerPolishHint;
+
+  /// No description provided for @composerPolishFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not polish: {error}'**
+  String composerPolishFailed(String error);
+
+  /// No description provided for @generalSettingsComposerPolish.
+  ///
+  /// In en, this message translates to:
+  /// **'Polish button'**
+  String get generalSettingsComposerPolish;
+
+  /// No description provided for @generalSettingsComposerPolishDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'A button in the message box that has the auxiliary model make what you wrote clearer before you send it'**
+  String get generalSettingsComposerPolishDescription;
+
+  /// No description provided for @generalSettingsLiveTurnStats.
+  ///
+  /// In en, this message translates to:
+  /// **'Live Speed and Time'**
+  String get generalSettingsLiveTurnStats;
+
+  /// No description provided for @generalSettingsLiveTurnStatsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'While the agent works, a line under the reply with how long the turn has taken, how fast the model writes and the tokens so far, changing as it goes. The figures under a finished turn always show.'**
+  String get generalSettingsLiveTurnStatsDescription;
+
+  /// No description provided for @stashPolishFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not polish: {error}'**
+  String stashPolishFailed(String error);
+
+  /// No description provided for @stashLinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get stashLinkTitle;
+
+  /// No description provided for @stashRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get stashRemove;
+
+  /// No description provided for @stashEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get stashEdit;
+
+  /// No description provided for @stashFormulaTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Formula (TeX)'**
+  String get stashFormulaTitle;
+
+  /// No description provided for @stashTableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Table (Markdown)'**
+  String get stashTableTitle;
+
+  /// No description provided for @stashCodeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Code block'**
+  String get stashCodeTitle;
+
+  /// No description provided for @stashBigFileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'“{name}” is over 200 MB'**
+  String stashBigFileTitle(String name);
+
+  /// No description provided for @stashBigFileDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Link to it where it is, or copy it into the stash anyway?'**
+  String get stashBigFileDetail;
+
+  /// No description provided for @stashBigFileLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get stashBigFileLink;
+
+  /// No description provided for @stashBigFileCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get stashBigFileCopy;
+
+  /// No description provided for @stashSearchPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Search stashes, and the text in their pictures'**
+  String get stashSearchPlaceholder;
+
+  /// No description provided for @stashAiSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'AI search'**
+  String get stashAiSearch;
+
+  /// No description provided for @stashAiSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Finds stashes by what they mean, not only their words. Asks the model: it costs.'**
+  String get stashAiSearchHint;
+
+  /// No description provided for @stashAiResults.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{AI found nothing} =1{AI found 1} other{AI found {count}}}'**
+  String stashAiResults(int count);
+
+  /// No description provided for @stashAiClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get stashAiClear;
+
+  /// No description provided for @stashAiSearchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'AI search failed: {error}'**
+  String stashAiSearchFailed(String error);
+
+  /// No description provided for @stashAiNoAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'The model gave no usable answer.'**
+  String get stashAiNoAnswer;
+
+  /// No description provided for @aiModelAuxiliary.
+  ///
+  /// In en, this message translates to:
+  /// **'Same as Auxiliary Model'**
+  String get aiModelAuxiliary;
+
+  /// No description provided for @aiModelFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a model first: AI actions use it from then on'**
+  String get aiModelFirst;
+
+  /// No description provided for @aiModelNone.
+  ///
+  /// In en, this message translates to:
+  /// **'none picked yet'**
+  String get aiModelNone;
+
+  /// No description provided for @aiModelTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Model for AI actions: {model}'**
+  String aiModelTooltip(String model);
+
+  /// No description provided for @stashFilterAnyTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Any time'**
+  String get stashFilterAnyTime;
+
+  /// No description provided for @stashFilterAnyProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Any project'**
+  String get stashFilterAnyProject;
+
+  /// No description provided for @stashFilterAnyStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Any status'**
+  String get stashFilterAnyStatus;
+
+  /// No description provided for @stashFilterOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Not done'**
+  String get stashFilterOpen;
+
+  /// No description provided for @stashGroupPinned.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned'**
+  String get stashGroupPinned;
+
+  /// No description provided for @stashGroupToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get stashGroupToday;
+
+  /// No description provided for @stashGroupYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get stashGroupYesterday;
+
+  /// No description provided for @stashGroupWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Past 7 days'**
+  String get stashGroupWeek;
+
+  /// No description provided for @stashGroupMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Past 30 days'**
+  String get stashGroupMonth;
+
+  /// No description provided for @stashGroupEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier'**
+  String get stashGroupEarlier;
+
+  /// No description provided for @stashGroupDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get stashGroupDone;
+
+  /// No description provided for @stashStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get stashStatus;
+
+  /// No description provided for @stashStatusCollected.
+  ///
+  /// In en, this message translates to:
+  /// **'Collected'**
+  String get stashStatusCollected;
+
+  /// No description provided for @stashStatusRequirement.
+  ///
+  /// In en, this message translates to:
+  /// **'Requirement'**
+  String get stashStatusRequirement;
+
+  /// No description provided for @stashStatusImplementing.
+  ///
+  /// In en, this message translates to:
+  /// **'Implementing'**
+  String get stashStatusImplementing;
+
+  /// No description provided for @stashStatusDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get stashStatusDone;
+
+  /// No description provided for @stashEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing stashed yet.\nPress {hotkey} in any app to jot something down.'**
+  String stashEmpty(String hotkey);
+
+  /// No description provided for @stashEmptyNoHotkey.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing stashed yet.\nClick + to write one; set a shortcut in Settings to jot one down from any app.'**
+  String get stashEmptyNoHotkey;
+
+  /// No description provided for @stashNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No stash matches.'**
+  String get stashNoMatch;
+
+  /// No description provided for @stashPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin'**
+  String get stashPin;
+
+  /// No description provided for @stashUnpin.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin'**
+  String get stashUnpin;
+
+  /// No description provided for @stashOpenInPanel.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Floating Panel'**
+  String get stashOpenInPanel;
+
+  /// No description provided for @stashLinkProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Link to Project'**
+  String get stashLinkProject;
+
+  /// No description provided for @stashMerge.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge'**
+  String get stashMerge;
+
+  /// No description provided for @stashMergeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge {stashes}?'**
+  String stashMergeTitle(String stashes);
+
+  /// No description provided for @stashMergeDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Their text goes into {target}, one after another; the others go, their numbers leading to it.'**
+  String stashMergeDetail(String target);
+
+  /// No description provided for @stashMergeSuggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'{stashes} look like the same thing.'**
+  String stashMergeSuggestion(String stashes);
+
+  /// No description provided for @stashDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get stashDismiss;
+
+  /// No description provided for @stashDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get stashDelete;
+
+  /// No description provided for @stashDeleteOne.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {stash}?'**
+  String stashDeleteOne(String stash);
+
+  /// No description provided for @stashDeleteMany.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {count} stashes?'**
+  String stashDeleteMany(int count);
+
+  /// No description provided for @stashDeleteDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Their pictures and files go with them. This cannot be undone.'**
+  String get stashDeleteDetail;
+
+  /// No description provided for @stashPicked.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String stashPicked(int count);
+
+  /// No description provided for @stashMarkDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark Done'**
+  String get stashMarkDone;
+
+  /// No description provided for @stashReopen.
+  ///
+  /// In en, this message translates to:
+  /// **'Reopen'**
+  String get stashReopen;
+
+  /// No description provided for @stashClearPicked.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear selection'**
+  String get stashClearPicked;
+
+  /// No description provided for @stashClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close Stash'**
+  String get stashClose;
+
+  /// No description provided for @stashCloseDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get stashCloseDetail;
+
+  /// No description provided for @stashMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get stashMore;
+
+  /// No description provided for @stashExpand.
+  ///
+  /// In en, this message translates to:
+  /// **'Clarify'**
+  String get stashExpand;
+
+  /// No description provided for @stashExpandHint.
+  ///
+  /// In en, this message translates to:
+  /// **'AI says your note clearly, filling in what its pictures and files show, adding no structure; it replaces the text, and Undo takes it back'**
+  String get stashExpandHint;
+
+  /// No description provided for @stashClarifying.
+  ///
+  /// In en, this message translates to:
+  /// **'Clarifying…'**
+  String get stashClarifying;
+
+  /// No description provided for @stashCancelClarify.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop Clarifying'**
+  String get stashCancelClarify;
+
+  /// No description provided for @stashClarifyFailedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Not clarified'**
+  String get stashClarifyFailedShort;
+
+  /// No description provided for @stashClarifyChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The note changed while it was being clarified, so nothing was replaced. Try again.'**
+  String get stashClarifyChanged;
+
+  /// No description provided for @stashRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get stashRetry;
+
+  /// No description provided for @stashExpandFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The note could not be clarified: {error}'**
+  String stashExpandFailed(String error);
+
+  /// No description provided for @stashImplement.
+  ///
+  /// In en, this message translates to:
+  /// **'Implement in Caocode'**
+  String get stashImplement;
+
+  /// No description provided for @stashImplementHow.
+  ///
+  /// In en, this message translates to:
+  /// **'How should the agent work on it?'**
+  String get stashImplementHow;
+
+  /// No description provided for @stashImplementHowDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'In a new git worktree (a branch of its own, your working copy untouched), or directly in the project as it is.'**
+  String get stashImplementHowDetail;
+
+  /// No description provided for @stashImplementWorktree.
+  ///
+  /// In en, this message translates to:
+  /// **'New Worktree'**
+  String get stashImplementWorktree;
+
+  /// No description provided for @stashImplementDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'Directly'**
+  String get stashImplementDirect;
+
+  /// No description provided for @stashImplementStarter.
+  ///
+  /// In en, this message translates to:
+  /// **'Please implement what {stash} asks for.'**
+  String stashImplementStarter(String stash);
+
+  /// No description provided for @stashImplementInWorktree.
+  ///
+  /// In en, this message translates to:
+  /// **'First create a new git worktree on a new branch for this work and do it there; tell me the branch when done.'**
+  String get stashImplementInWorktree;
+
+  /// No description provided for @stashImplementInPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Work directly in this project, on the current branch.'**
+  String get stashImplementInPlace;
+
+  /// No description provided for @stashImplementComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'When it is finished, mark it done in the Stash.'**
+  String get stashImplementComplete;
+
+  /// No description provided for @stashThreads.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversations'**
+  String get stashThreads;
+
+  /// No description provided for @stashThreadSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Noted in this conversation'**
+  String get stashThreadSource;
+
+  /// No description provided for @stashThreadNoReply.
+  ///
+  /// In en, this message translates to:
+  /// **'No reply yet'**
+  String get stashThreadNoReply;
+
+  /// No description provided for @stashThreadGone.
+  ///
+  /// In en, this message translates to:
+  /// **'No longer in the list'**
+  String get stashThreadGone;
+
+  /// No description provided for @stashOpenThread.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get stashOpenThread;
+
+  /// No description provided for @stashProjectSuggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'AI thinks this is about {project}.'**
+  String stashProjectSuggestion(String project);
+
+  /// No description provided for @stashLinkIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get stashLinkIt;
+
+  /// No description provided for @stashSettingsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'A note jotted down from any app, in a floating panel, to turn into work later.'**
+  String get stashSettingsDescription;
+
+  /// No description provided for @stashSettingsHotkey.
+  ///
+  /// In en, this message translates to:
+  /// **'Shortcut'**
+  String get stashSettingsHotkey;
+
+  /// No description provided for @stashSettingsHotkeyCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'{hotkey} shows the panel from any app.'**
+  String stashSettingsHotkeyCurrent(String hotkey);
+
+  /// No description provided for @stashSettingsHotkeyNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No shortcut: the panel only shows from the Stash page.'**
+  String get stashSettingsHotkeyNone;
+
+  /// No description provided for @stashSettingsHotkeyTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'Another app holds this shortcut; pick another.'**
+  String get stashSettingsHotkeyTaken;
+
+  /// No description provided for @stashSettingsHotkeyHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Click, then press the new keys; Escape keeps it, Delete clears it.'**
+  String get stashSettingsHotkeyHelp;
+
+  /// No description provided for @stashHotkeyPress.
+  ///
+  /// In en, this message translates to:
+  /// **'Press the keys…'**
+  String get stashHotkeyPress;
+
+  /// No description provided for @stashHotkeyRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs a modifier with a letter, digit or common key'**
+  String get stashHotkeyRefused;
+
+  /// No description provided for @stashHotkeyNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get stashHotkeyNone;
+
+  /// No description provided for @stashHotkeyClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get stashHotkeyClear;
+
+  /// No description provided for @stashHotkeySuggested.
+  ///
+  /// In en, this message translates to:
+  /// **'Use {hotkey}'**
+  String stashHotkeySuggested(String hotkey);
+
+  /// No description provided for @stashHotkeyGlobal.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the Stash panel'**
+  String get stashHotkeyGlobal;
+
+  /// No description provided for @stashHotkeyGlobalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A global shortcut: works from any app.'**
+  String get stashHotkeyGlobalHint;
+
+  /// No description provided for @stashHotkeyTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'The panel\'s shortcut; click to change'**
+  String get stashHotkeyTooltip;
+
+  /// No description provided for @stashSettingsDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get stashSettingsDirectory;
+
+  /// No description provided for @stashSettingsDirectoryChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change…'**
+  String get stashSettingsDirectoryChange;
+
+  /// No description provided for @stashSettingsDirectoryReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get stashSettingsDirectoryReset;
+
+  /// No description provided for @stashSettingsDirectoryRestart.
+  ///
+  /// In en, this message translates to:
+  /// **'Takes effect after Caocode restarts.'**
+  String get stashSettingsDirectoryRestart;
+
+  /// Opens the list of every stash beside the one written in, in the stash panel.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get stashAll;
+
+  /// Tooltip of the stash panel's All button.
+  ///
+  /// In en, this message translates to:
+  /// **'Show every stash'**
+  String get stashAllTooltip;
+
+  /// Key hint in the stash panel footer: the shortcut saves.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get stashHintSave;
+
+  /// Key hint in the stash panel footer: the shortcut closes the panel.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get stashHintClose;
+
+  /// Shown briefly in the stash panel after saving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get stashSaved;
+
+  /// Tooltip of the filter button in the stash panel's list.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get stashFilter;
+
+  /// Menu title in the stash panel's list for how the stashes are ordered.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get stashSort;
+
+  /// Sort option: the order the user dragged the stashes in.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom (drag to order)'**
+  String get stashSortManual;
+
+  /// Sort option: the last edited stash first.
+  ///
+  /// In en, this message translates to:
+  /// **'Last edited'**
+  String get stashSortUpdated;
+
+  /// Sort option: the last created stash first.
+  ///
+  /// In en, this message translates to:
+  /// **'Last created'**
+  String get stashSortCreated;
+
+  /// Sort option: by stash number, highest first.
+  ///
+  /// In en, this message translates to:
+  /// **'Number'**
+  String get stashSortNumber;
+
+  /// Context menu item of a stash in the panel's list: opens it in the panel.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get stashOpen;
+
+  /// What is dragged in the stash panel's list, when it is several stashes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} stashes'**
+  String stashCount(int count);
+
+  /// Tooltip of the stash editor selection toolbar button that opens the less used formats.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get stashFormatMore;
+
+  /// Tooltip and menu title of the branch picker under the chat input.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch Branch'**
+  String get branchBarSwitch;
+
+  /// Placeholder of the branch picker's search line under the chat input.
+  ///
+  /// In en, this message translates to:
+  /// **'Search branches'**
+  String get branchBarSearch;
+
+  /// Action of the branch picker under the chat input: names a new branch and checks it out.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Branch…'**
+  String get branchBarCreate;
+
+  /// Message of the dialog that names a new branch, made where the branch {branch} is.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a branch from “{branch}”'**
+  String branchBarCreateFrom(String branch);
+
+  /// Message of the dialog that names a new branch of the workspace folder {folder}, made where its current branch is.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a branch in “{folder}”'**
+  String branchBarCreateIn(String folder);
+
+  /// Button of the dialog that names a new branch.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get branchBarCreateButton;
+
+  /// What the branch picker under the chat input shows when no branch is checked out.
+  ///
+  /// In en, this message translates to:
+  /// **'Detached HEAD'**
+  String get branchBarDetached;
+
+  /// Tooltip of the branch under the chat input while the agent is working.
+  ///
+  /// In en, this message translates to:
+  /// **'Branches can\'t be switched while the agent works'**
+  String get branchBarRunning;
+
+  /// Message of the dialog shown when Git refused to check out or create the branch {branch}; Git's own message is the detail.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t switch to “{branch}”'**
+  String branchBarFailed(String branch);
+
+  /// Under a workspace folder's name in the branch picker under the chat input: the folder has no Git repository.
+  ///
+  /// In en, this message translates to:
+  /// **'Not a Git repository'**
+  String get branchBarNotRepository;
+
+  /// Tooltip and menu title of the branch picker under the chat input of a multi-folder workspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Branches of the folders'**
+  String get branchBarWorkspace;
+
+  /// No description provided for @settingsSectionAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Git Accounts'**
+  String get settingsSectionAccounts;
+
+  /// No description provided for @settingsAccountsKeywords.
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub GitLab sign in login token issue pull request merge request'**
+  String get settingsAccountsKeywords;
+
+  /// No description provided for @accountsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to GitHub or GitLab to see the state of the issues and pull requests linked in Stash, import issues as stashes, and reply to them once you confirm.'**
+  String get accountsDescription;
+
+  /// No description provided for @accountsSignedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in'**
+  String get accountsSignedIn;
+
+  /// No description provided for @accountsAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an account'**
+  String get accountsAdd;
+
+  /// No description provided for @accountsKeptLocally.
+  ///
+  /// In en, this message translates to:
+  /// **'Tokens are kept in this computer\'s keychain and are sent only to the GitHub or GitLab they are for. Nothing is posted without your confirmation.'**
+  String get accountsKeptLocally;
+
+  /// No description provided for @accountsGitHubHosts.
+  ///
+  /// In en, this message translates to:
+  /// **'github.com, or your company\'s GitHub Enterprise'**
+  String get accountsGitHubHosts;
+
+  /// No description provided for @accountsGitLabHosts.
+  ///
+  /// In en, this message translates to:
+  /// **'gitlab.com, or a self-managed GitLab'**
+  String get accountsGitLabHosts;
+
+  /// No description provided for @accountsSignInBrowser.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Browser'**
+  String get accountsSignInBrowser;
+
+  /// No description provided for @accountsSignInToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a Token…'**
+  String get accountsSignInToken;
+
+  /// No description provided for @accountsViaBrowser.
+  ///
+  /// In en, this message translates to:
+  /// **'signed in with browser'**
+  String get accountsViaBrowser;
+
+  /// No description provided for @accountsViaToken.
+  ///
+  /// In en, this message translates to:
+  /// **'signed in with token'**
+  String get accountsViaToken;
+
+  /// No description provided for @accountsSignOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Out'**
+  String get accountsSignOut;
+
+  /// No description provided for @accountsSignOutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out of {forge} account {login}?'**
+  String accountsSignOutTitle(String login, String forge);
+
+  /// No description provided for @accountsSignOutDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'The token is deleted from this computer. To revoke Caocode\'s access altogether, revoke it in your {forge} settings too.'**
+  String accountsSignOutDetail(String forge);
+
+  /// No description provided for @accountsRevoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Out and Open {forge} Settings'**
+  String accountsRevoke(String forge);
+
+  /// No description provided for @accountsTokenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to {forge} with a Token'**
+  String accountsTokenTitle(String forge);
+
+  /// No description provided for @accountsSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign In'**
+  String get accountsSignIn;
+
+  /// No description provided for @accountsHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Host'**
+  String get accountsHost;
+
+  /// No description provided for @accountsToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Token'**
+  String get accountsToken;
+
+  /// No description provided for @accountsTokenGitHubScopes.
+  ///
+  /// In en, this message translates to:
+  /// **'A classic token with the repo and read:user scopes, or a fine-grained token with read and write access to issues and pull requests.'**
+  String get accountsTokenGitHubScopes;
+
+  /// No description provided for @accountsTokenGitLabScopes.
+  ///
+  /// In en, this message translates to:
+  /// **'A personal access token with the api scope.'**
+  String get accountsTokenGitLabScopes;
+
+  /// No description provided for @accountsTokenCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a Token on {host}'**
+  String accountsTokenCreate(String host);
+
+  /// No description provided for @accountsTokenRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'The token was not accepted. Check that it is complete and has not expired.'**
+  String get accountsTokenRefused;
+
+  /// No description provided for @accountsBrowserTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to {forge}'**
+  String accountsBrowserTitle(String forge);
+
+  /// No description provided for @accountsBrowserDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter this code on {host} to let Caocode access your account:'**
+  String accountsBrowserDetail(String host);
+
+  /// No description provided for @accountsCopyAndOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Code and Open Browser'**
+  String get accountsCopyAndOpen;
+
+  /// No description provided for @accountsOpenAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied · Open Again'**
+  String get accountsOpenAgain;
+
+  /// No description provided for @accountsBrowserStarting.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting a code…'**
+  String get accountsBrowserStarting;
+
+  /// No description provided for @accountsBrowserWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for you to authorize in the browser…'**
+  String get accountsBrowserWaiting;
+
+  /// No description provided for @accountsRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try Again'**
+  String get accountsRetry;
+
+  /// No description provided for @forgeStateOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get forgeStateOpen;
+
+  /// No description provided for @forgeStateDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get forgeStateDraft;
+
+  /// No description provided for @forgeStateClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get forgeStateClosed;
+
+  /// No description provided for @forgeStateMerged.
+  ///
+  /// In en, this message translates to:
+  /// **'Merged'**
+  String get forgeStateMerged;
+
+  /// No description provided for @forgeChecksPassed.
+  ///
+  /// In en, this message translates to:
+  /// **'Checks passed'**
+  String get forgeChecksPassed;
+
+  /// No description provided for @forgeChecksFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Checks failed'**
+  String get forgeChecksFailed;
+
+  /// No description provided for @forgeChecksRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Checks running'**
+  String get forgeChecksRunning;
+
+  /// No description provided for @stashIssues.
+  ///
+  /// In en, this message translates to:
+  /// **'Issues & pull requests'**
+  String get stashIssues;
+
+  /// No description provided for @stashIssueClosedBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'{tag} was closed. Is this stash done too?'**
+  String stashIssueClosedBanner(String tag);
+
+  /// No description provided for @stashIssueOpenBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'This stash is done, but {tag} is still open.'**
+  String stashIssueOpenBanner(String tag);
+
+  /// No description provided for @stashIssueReplyClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply and close…'**
+  String get stashIssueReplyClose;
+
+  /// No description provided for @stashIssueNotSignedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to {forge} to see its state'**
+  String stashIssueNotSignedIn(String forge);
+
+  /// No description provided for @stashIssueSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign In…'**
+  String get stashIssueSignIn;
+
+  /// No description provided for @stashIssueFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not refresh'**
+  String get stashIssueFailed;
+
+  /// No description provided for @stashIssueOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Browser'**
+  String get stashIssueOpen;
+
+  /// No description provided for @stashIssueCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Link'**
+  String get stashIssueCopy;
+
+  /// No description provided for @stashIssueComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment…'**
+  String get stashIssueComment;
+
+  /// No description provided for @stashIssueClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close Issue…'**
+  String get stashIssueClose;
+
+  /// No description provided for @stashIssueUnlink.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink'**
+  String get stashIssueUnlink;
+
+  /// No description provided for @stashWriteFixedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixed in {pulls}.'**
+  String stashWriteFixedIn(String pulls);
+
+  /// No description provided for @stashWriteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment on {tag}'**
+  String stashWriteTitle(String tag);
+
+  /// No description provided for @stashWriteCloseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Close {tag}'**
+  String stashWriteCloseTitle(String tag);
+
+  /// No description provided for @stashWriteSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment'**
+  String get stashWriteSend;
+
+  /// No description provided for @stashWriteSendClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment and Close'**
+  String get stashWriteSendClose;
+
+  /// No description provided for @stashWriteCloseOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Close Issue'**
+  String get stashWriteCloseOnly;
+
+  /// No description provided for @stashWriteSendAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Anyway'**
+  String get stashWriteSendAnyway;
+
+  /// No description provided for @stashWritePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a comment (Markdown)'**
+  String get stashWritePlaceholder;
+
+  /// No description provided for @stashWriteAlsoClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close the issue too'**
+  String get stashWriteAlsoClose;
+
+  /// No description provided for @stashWriteSensitive.
+  ///
+  /// In en, this message translates to:
+  /// **'This looks like it has paths on this computer or secrets, which everyone who can see the issue will see:'**
+  String get stashWriteSensitive;
+
+  /// No description provided for @stashWriteAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Posted as {login} on {host}.'**
+  String stashWriteAs(String login, String host);
+
+  /// No description provided for @stashWriteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent: {error}'**
+  String stashWriteFailed(String error);
+
+  /// No description provided for @stashImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import from Issues…'**
+  String get stashImport;
+
+  /// No description provided for @stashImportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Issues'**
+  String get stashImportTitle;
+
+  /// No description provided for @stashImportAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get stashImportAction;
+
+  /// No description provided for @stashImportCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Import {count}'**
+  String stashImportCount(int count);
+
+  /// No description provided for @stashImportPaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste an issue or pull request link'**
+  String get stashImportPaste;
+
+  /// No description provided for @stashImportAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get stashImportAdd;
+
+  /// No description provided for @stashImportNotALink.
+  ///
+  /// In en, this message translates to:
+  /// **'Not a GitHub or GitLab issue or pull request link.'**
+  String get stashImportNotALink;
+
+  /// No description provided for @stashImportSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to {forge} in Settings → Accounts to list its issues.'**
+  String stashImportSignIn(String forge);
+
+  /// No description provided for @stashImportRepo.
+  ///
+  /// In en, this message translates to:
+  /// **'Repository'**
+  String get stashImportRepo;
+
+  /// No description provided for @stashImportAssigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned to me'**
+  String get stashImportAssigned;
+
+  /// No description provided for @stashImportCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Created by me'**
+  String get stashImportCreated;
+
+  /// No description provided for @stashImportAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All open'**
+  String get stashImportAll;
+
+  /// No description provided for @stashImportSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get stashImportSearch;
+
+  /// No description provided for @stashImportLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading…'**
+  String get stashImportLoading;
+
+  /// No description provided for @stashImportNoRepos.
+  ///
+  /// In en, this message translates to:
+  /// **'No project has a GitHub or GitLab remote. Paste an issue link above.'**
+  String get stashImportNoRepos;
+
+  /// No description provided for @stashImportNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No open issues here.'**
+  String get stashImportNone;
+
+  /// No description provided for @stashImportKnown.
+  ///
+  /// In en, this message translates to:
+  /// **'in Stash #{id}'**
+  String stashImportKnown(int id);
+
+  /// No description provided for @sidebarOpenPull.
+  ///
+  /// In en, this message translates to:
+  /// **'Open {tag}'**
+  String sidebarOpenPull(String tag);
+
+  /// No description provided for @stashGroupOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'Others'**
+  String get stashGroupOthers;
+
+  /// No description provided for @stashFilterProjects.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} projects'**
+  String stashFilterProjects(int count);
+
+  /// No description provided for @stashFilterJoiner.
+  ///
+  /// In en, this message translates to:
+  /// **', '**
+  String get stashFilterJoiner;
+
+  /// No description provided for @stashWelcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Meet Stash'**
+  String get stashWelcomeTitle;
+
+  /// No description provided for @stashWelcomeLead.
+  ///
+  /// In en, this message translates to:
+  /// **'Note things down the moment they come to you, hand them to an agent when you are ready, and see how each one is going.'**
+  String get stashWelcomeLead;
+
+  /// No description provided for @stashWelcomeNoteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Note it down'**
+  String get stashWelcomeNoteTitle;
+
+  /// No description provided for @stashWelcomeAgentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hand it to an agent'**
+  String get stashWelcomeAgentTitle;
+
+  /// No description provided for @stashWelcomeAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Click Implement in Caocode, or mention it in a conversation; the conversation and the stash stay linked.'**
+  String get stashWelcomeAgent;
+
+  /// No description provided for @stashWelcomeTrackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'See how it goes'**
+  String get stashWelcomeTrackTitle;
+
+  /// No description provided for @stashWelcomeTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Cards show their conversations live, and the GitHub and GitLab issues and pull requests they link to stay in sync.'**
+  String get stashWelcomeTrack;
+
+  /// No description provided for @stashWelcomeStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Started'**
+  String get stashWelcomeStart;
+
+  /// No description provided for @stashWelcomeNoteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Text, screenshots and links all go in, and each one gets a number of its own, like an issue.'**
+  String get stashWelcomeNoteBody;
+
+  /// No description provided for @stashWelcomeHotkeyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a shortcut to note things down'**
+  String get stashWelcomeHotkeyTitle;
+
+  /// No description provided for @stashWelcomeHotkeySetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Shortcut set'**
+  String get stashWelcomeHotkeySetTitle;
+
+  /// No description provided for @stashWelcomeHotkey.
+  ///
+  /// In en, this message translates to:
+  /// **'Press it in any app and the Stash panel comes up, ready to type. Click the box below and press the keys you want.'**
+  String get stashWelcomeHotkey;
+
+  /// No description provided for @stashWelcomeHotkeySet.
+  ///
+  /// In en, this message translates to:
+  /// **'Press {hotkey} in any app to note something down. Change it here or in Settings → Stash any time.'**
+  String stashWelcomeHotkeySet(String hotkey);
+
+  /// No description provided for @stashWelcomeHotkeyLater.
+  ///
+  /// In en, this message translates to:
+  /// **'You can also set it later in Settings → Stash.'**
+  String get stashWelcomeHotkeyLater;
+
+  /// No description provided for @settingsSectionBrowser.
+  ///
+  /// In en, this message translates to:
+  /// **'Browser'**
+  String get settingsSectionBrowser;
+
+  /// No description provided for @settingsBrowserKeywords.
+  ///
+  /// In en, this message translates to:
+  /// **'chrome extension edge brave arc web page tab agent'**
+  String get settingsBrowserKeywords;
+
+  /// No description provided for @browserSettingsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Let agents use your own browser, signed in as you: open pages, read them, click and type in the tabs you share with them. You can watch every step in the side panel.'**
+  String get browserSettingsDescription;
+
+  /// No description provided for @browserSettingsUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'The browser is available on macOS, Windows and Linux only.'**
+  String get browserSettingsUnsupported;
+
+  /// No description provided for @browserSettingsEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Let Agents Use the Browser'**
+  String get browserSettingsEnabled;
+
+  /// No description provided for @browserSettingsEnabledDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'When off, agents have no browser tools and the extension disconnects.'**
+  String get browserSettingsEnabledDescription;
+
+  /// No description provided for @browserSettingsStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get browserSettingsStatus;
+
+  /// No description provided for @browserSettingsNotInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'No browser has connected yet'**
+  String get browserSettingsNotInstalled;
+
+  /// No description provided for @browserSettingsNotInstalledDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Install the extension either way below, then open the browser: it connects automatically.'**
+  String get browserSettingsNotInstalledDescription;
+
+  /// No description provided for @browserSettingsNotRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'No browser connected'**
+  String get browserSettingsNotRunning;
+
+  /// No description provided for @browserSettingsNotRunningDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a browser with Caocode\'s extension: it connects automatically.'**
+  String get browserSettingsNotRunningDescription;
+
+  /// No description provided for @browserSettingsSandboxed.
+  ///
+  /// In en, this message translates to:
+  /// **'Snap and Flatpak browsers can\'t connect'**
+  String get browserSettingsSandboxed;
+
+  /// No description provided for @browserSettingsSandboxedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Their sandbox keeps Caocode\'s helper from running. Install the browser from its own .deb or .rpm package instead, such as Google Chrome from google.com/chrome.'**
+  String get browserSettingsSandboxedDescription;
+
+  /// A browser connected, by its name (Google Chrome, Microsoft Edge…).
+  ///
+  /// In en, this message translates to:
+  /// **'{browser} connected'**
+  String browserSettingsConnected(String browser);
+
+  /// A browser connected whose extension Caocode cannot use: one too old, or newer than the app.
+  ///
+  /// In en, this message translates to:
+  /// **'{browser}: extension version doesn\'t match'**
+  String browserSettingsIncompatible(String browser);
+
+  /// The version of Caocode's extension in a connected browser.
+  ///
+  /// In en, this message translates to:
+  /// **'Extension {version}'**
+  String browserSettingsExtensionVersion(String version);
+
+  /// No description provided for @browserSettingsExtensionOld.
+  ///
+  /// In en, this message translates to:
+  /// **'The extension is out of date. From the store, it updates automatically, or click Update in chrome://extensions; installed manually, download the zip again, replace the folder\'s contents and click reload.'**
+  String get browserSettingsExtensionOld;
+
+  /// No description provided for @browserSettingsAppOld.
+  ///
+  /// In en, this message translates to:
+  /// **'The extension is newer than this Caocode. Update Caocode.'**
+  String get browserSettingsAppOld;
+
+  /// No description provided for @browserSettingsInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Get the Extension'**
+  String get browserSettingsInstall;
+
+  /// No description provided for @browserSettingsStore.
+  ///
+  /// In en, this message translates to:
+  /// **'Chrome Web Store'**
+  String get browserSettingsStore;
+
+  /// No description provided for @browserSettingsStoreDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended. Updates automatically; works in Chrome, Edge, Brave, Arc and other Chromium browsers.'**
+  String get browserSettingsStoreDescription;
+
+  /// No description provided for @browserSettingsStoreOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Store'**
+  String get browserSettingsStoreOpen;
+
+  /// No description provided for @browserSettingsUnpacked.
+  ///
+  /// In en, this message translates to:
+  /// **'Install Manually (Developer Mode)'**
+  String get browserSettingsUnpacked;
+
+  /// No description provided for @browserSettingsUnpackedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Unzip it into a folder you\'ll keep. In chrome://extensions, turn on Developer mode at the top right, click Load unpacked and choose the folder. It doesn\'t update automatically.'**
+  String get browserSettingsUnpackedDescription;
+
+  /// No description provided for @browserSettingsUnpackedDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Zip'**
+  String get browserSettingsUnpackedDownload;
+
+  /// No description provided for @browserSettingsOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Browser Settings'**
+  String get browserSettingsOpen;
+
+  /// No description provided for @browserHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Debugging history'**
+  String get browserHistoryTitle;
+
+  /// No description provided for @browserHistoryDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'What the tabs shared with Caocode do is kept as it happens, no recording needed: the pages, the requests, console errors and warnings. Agents look back at it when you ask (“it failed when I saved”). Kept on this computer; cookies and tokens are not.'**
+  String get browserHistoryDescription;
+
+  /// No description provided for @browserHistoryDetailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Detailed history'**
+  String get browserHistoryDetailed;
+
+  /// No description provided for @browserHistoryDetailedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Also keeps the request and response bodies, what you do (clicks and typing, never passwords) and every console message. Takes more space.'**
+  String get browserHistoryDetailedDescription;
+
+  /// No description provided for @browserHistorySize.
+  ///
+  /// In en, this message translates to:
+  /// **'Using {size}'**
+  String browserHistorySize(String size);
+
+  /// No description provided for @browserHistoryClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get browserHistoryClear;
+
+  /// No description provided for @browserHistoryClearConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear the debugging history?'**
+  String get browserHistoryClearConfirm;
+
+  /// No description provided for @browserHistoryClearDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'The pages, requests and console messages kept are deleted. This cannot be undone.'**
+  String get browserHistoryClearDetail;
+
+  /// No description provided for @browserHistoryTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'The browser\'s debugging history takes {size}'**
+  String browserHistoryTooLarge(String size);
+
+  /// No description provided for @browserHistoryTooLargeDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear it, or look at it in Settings → Browser.'**
+  String get browserHistoryTooLargeDetail;
+
+  /// No description provided for @browserHistoryOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Browser settings'**
+  String get browserHistoryOpenSettings;
+
+  /// No description provided for @browserWelcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Agents can use your browser now'**
+  String get browserWelcomeTitle;
+
+  /// No description provided for @browserWelcomeLead.
+  ///
+  /// In en, this message translates to:
+  /// **'With Caocode\'s extension, agents open pages, read them, click and type in your own Chrome, signed in as you are.'**
+  String get browserWelcomeLead;
+
+  /// No description provided for @browserWelcomeSharedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the tabs you share'**
+  String get browserWelcomeSharedTitle;
+
+  /// No description provided for @browserWelcomeShared.
+  ///
+  /// In en, this message translates to:
+  /// **'They work in the yellow Caocode tab group alone; your other tabs stay yours.'**
+  String get browserWelcomeShared;
+
+  /// No description provided for @browserWelcomeWatchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch it work'**
+  String get browserWelcomeWatchTitle;
+
+  /// No description provided for @browserWelcomeWatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The side panel shows the page live as the agent uses it. Take over any time.'**
+  String get browserWelcomeWatch;
+
+  /// No description provided for @browserWelcomeShowTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Show it once'**
+  String get browserWelcomeShowTitle;
+
+  /// No description provided for @browserWelcomeShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask an agent to watch, do it yourself in the browser, and it sees each step you took.'**
+  String get browserWelcomeShow;
+
+  /// No description provided for @browserWelcomeInstallTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the extension'**
+  String get browserWelcomeInstallTitle;
+
+  /// No description provided for @browserWelcomeInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'For Chrome, Edge, Brave and Arc. It connects by itself, and this turns green.'**
+  String get browserWelcomeInstall;
+
+  /// No description provided for @browserWelcomeTurnedOff.
+  ///
+  /// In en, this message translates to:
+  /// **'The browser is turned off in Settings → Browser.'**
+  String get browserWelcomeTurnedOff;
+
+  /// The welcome's step once a browser connected, by its name.
+  ///
+  /// In en, this message translates to:
+  /// **'{browser} is connected'**
+  String browserWelcomeConnected(String browser);
+
+  /// No description provided for @browserWelcomeTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try telling an agent: “Open caocode.dev and look at the download page.”'**
+  String get browserWelcomeTry;
+
+  /// No description provided for @browserWelcomeUnpacked.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer Mode Zip'**
+  String get browserWelcomeUnpacked;
+
+  /// No description provided for @browserWelcomeDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Got It'**
+  String get browserWelcomeDone;
+
+  /// No description provided for @cmdBrowserWelcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Your Browser...'**
+  String get cmdBrowserWelcome;
+
+  /// No description provided for @cmdStashWelcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Meet Stash...'**
+  String get cmdStashWelcome;
+
+  /// No description provided for @cmdModelWelcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Set Up a Model...'**
+  String get cmdModelWelcome;
+
+  /// No description provided for @modelWelcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a Model to Start'**
+  String get modelWelcomeTitle;
+
+  /// No description provided for @modelWelcomeLead.
+  ///
+  /// In en, this message translates to:
+  /// **'Caocode runs your agents on a model of your choosing. Add an upstream, a service with an API key, and its models are ready to use.'**
+  String get modelWelcomeLead;
+
+  /// No description provided for @modelWelcomeAnyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Any upstream'**
+  String get modelWelcomeAnyTitle;
+
+  /// No description provided for @modelWelcomeAny.
+  ///
+  /// In en, this message translates to:
+  /// **'Anthropic\'s API, OpenAI\'s Chat Completions or Responses, or a service that speaks one of them, such as OpenRouter or DeepSeek.'**
+  String get modelWelcomeAny;
+
+  /// No description provided for @modelWelcomeKeysTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your keys stay with you'**
+  String get modelWelcomeKeysTitle;
+
+  /// No description provided for @modelWelcomeKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'Keys are kept in the system keychain, and requests go from this computer straight to the upstream.'**
+  String get modelWelcomeKeys;
+
+  /// No description provided for @modelWelcomeSwitchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch any time'**
+  String get modelWelcomeSwitchTitle;
+
+  /// No description provided for @modelWelcomeSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Add more upstreams whenever you like, and pick the model for each conversation under its input.'**
+  String get modelWelcomeSwitch;
+
+  /// No description provided for @modelWelcomeStepTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first upstream'**
+  String get modelWelcomeStepTitle;
+
+  /// No description provided for @modelWelcomeStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Its address and key, then the models to use. Some services can also add theirs in one click from Settings → Models.'**
+  String get modelWelcomeStep;
+
+  /// No description provided for @modelWelcomeReadyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to go'**
+  String get modelWelcomeReadyTitle;
+
+  /// No description provided for @modelWelcomeReady.
+  ///
+  /// In en, this message translates to:
+  /// **'New conversations start on {model}. Pick another under the input any time.'**
+  String modelWelcomeReady(String model);
+
+  /// No description provided for @modelWelcomeLater.
+  ///
+  /// In en, this message translates to:
+  /// **'You can also add one later in Settings → Models.'**
+  String get modelWelcomeLater;
+
+  /// No description provided for @modelWelcomeSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get modelWelcomeSkip;
+
+  /// No description provided for @modelWelcomeStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Chatting'**
+  String get modelWelcomeStart;
+
+  /// No description provided for @healthNoModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a model to start: add an upstream and its models are ready to use.'**
+  String get healthNoModel;
+
+  /// No description provided for @modelSetUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Set Up a Model'**
+  String get modelSetUp;
+
+  /// No description provided for @remoteAddServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Add SSH Server...'**
+  String get remoteAddServer;
+
+  /// No description provided for @remoteEditServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get remoteEditServer;
+
+  /// No description provided for @settingsSectionSsh.
+  ///
+  /// In en, this message translates to:
+  /// **'SSH Servers'**
+  String get settingsSectionSsh;
+
+  /// No description provided for @settingsSshKeywords.
+  ///
+  /// In en, this message translates to:
+  /// **'ssh remote server host jump bastion key password core'**
+  String get settingsSshKeywords;
+
+  /// No description provided for @sshSettingsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The servers remote projects connect to: their address, how they sign in, a jump host, and the core each runs.'**
+  String get sshSettingsDescription;
+
+  /// No description provided for @sshSettingsServers.
+  ///
+  /// In en, this message translates to:
+  /// **'Servers'**
+  String get sshSettingsServers;
+
+  /// No description provided for @sshSettingsServersDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Those added in the app, and the hosts the sidebar has.'**
+  String get sshSettingsServersDescription;
+
+  /// No description provided for @sshSettingsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No servers yet'**
+  String get sshSettingsNone;
+
+  /// No description provided for @sshSettingsAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Server…'**
+  String get sshSettingsAdd;
+
+  /// No description provided for @sshSettingsEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit…'**
+  String get sshSettingsEdit;
+
+  /// No description provided for @sshSettingsConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get sshSettingsConnect;
+
+  /// No description provided for @sshSettingsDisconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get sshSettingsDisconnect;
+
+  /// No description provided for @sshSettingsDisconnectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect from {host}?'**
+  String sshSettingsDisconnectTitle(String host);
+
+  /// No description provided for @sshSettingsDisconnectDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'The conversations and terminals running there end.'**
+  String get sshSettingsDisconnectDetail;
+
+  /// No description provided for @sshSettingsCore.
+  ///
+  /// In en, this message translates to:
+  /// **'Core: {core}'**
+  String sshSettingsCore(String core);
+
+  /// No description provided for @sshSettingsVia.
+  ///
+  /// In en, this message translates to:
+  /// **'through {host}'**
+  String sshSettingsVia(String host);
+
+  /// No description provided for @sshSettingsTyped.
+  ///
+  /// In en, this message translates to:
+  /// **'As typed'**
+  String get sshSettingsTyped;
+
+  /// No description provided for @sshSettingsConfigHosts.
+  ///
+  /// In en, this message translates to:
+  /// **'Hosts of ~/.ssh/config'**
+  String get sshSettingsConfigHosts;
+
+  /// No description provided for @sshSettingsConfigHostsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Changed in that file; their core is Automatic.'**
+  String get sshSettingsConfigHostsDescription;
+
+  /// No description provided for @sshSettingsOpenConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'Open File'**
+  String get sshSettingsOpenConfig;
+
+  /// No description provided for @sshServerAddTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add SSH Server'**
+  String get sshServerAddTitle;
+
+  /// No description provided for @sshServerAddSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to the remote list: connect to it in one click.'**
+  String get sshServerAddSubtitle;
+
+  /// No description provided for @sshServerEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit {name}'**
+  String sshServerEditTitle(String name);
+
+  /// No description provided for @sshServerHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Host'**
+  String get sshServerHost;
+
+  /// No description provided for @sshServerHostPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Domain or IP; user@host:port is split up'**
+  String get sshServerHostPlaceholder;
+
+  /// No description provided for @sshServerPort.
+  ///
+  /// In en, this message translates to:
+  /// **'Port'**
+  String get sshServerPort;
+
+  /// No description provided for @sshServerUser.
+  ///
+  /// In en, this message translates to:
+  /// **'User'**
+  String get sshServerUser;
+
+  /// No description provided for @sshServerName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name (optional)'**
+  String get sshServerName;
+
+  /// No description provided for @sshServerNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Production'**
+  String get sshServerNamePlaceholder;
+
+  /// No description provided for @sshServerAuth.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with'**
+  String get sshServerAuth;
+
+  /// No description provided for @sshServerAuthPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get sshServerAuthPassword;
+
+  /// No description provided for @sshServerAuthKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Private Key'**
+  String get sshServerAuthKey;
+
+  /// No description provided for @sshServerAuthAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get sshServerAuthAuto;
+
+  /// No description provided for @sshServerAuthAutoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'As ssh does in a terminal: ssh-agent, the keys in ~/.ssh, ~/.ssh/config. A password is asked for if the server wants one.'**
+  String get sshServerAuthAutoHint;
+
+  /// No description provided for @sshServerPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept in the system keychain. Leave it empty to be asked when connecting.'**
+  String get sshServerPasswordHint;
+
+  /// No description provided for @sshServerPasswordKept.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved: leave empty to keep it'**
+  String get sshServerPasswordKept;
+
+  /// No description provided for @sshServerKeyPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Path of the private key, e.g. ~/.ssh/id_ed25519'**
+  String get sshServerKeyPlaceholder;
+
+  /// No description provided for @sshServerKeyBrowse.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse...'**
+  String get sshServerKeyBrowse;
+
+  /// No description provided for @sshServerKeysFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Keys in ~/.ssh'**
+  String get sshServerKeysFound;
+
+  /// No description provided for @sshServerKeyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'If the key has a passphrase, it is asked for when connecting.'**
+  String get sshServerKeyHint;
+
+  /// No description provided for @sshServerCore.
+  ///
+  /// In en, this message translates to:
+  /// **'Core'**
+  String get sshServerCore;
+
+  /// No description provided for @sshServerCoreAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get sshServerCoreAuto;
+
+  /// No description provided for @sshServerCoreAutoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The server\'s Claude Code CLI if it has one, else the built-in core.'**
+  String get sshServerCoreAutoHint;
+
+  /// No description provided for @sshServerCoreBuiltinHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Caocode\'s own core: it runs on the upstreams of Settings → Models.'**
+  String get sshServerCoreBuiltinHint;
+
+  /// No description provided for @sshServerCoreCliHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The server\'s Claude Code CLI, installed there if it has none.'**
+  String get sshServerCoreCliHint;
+
+  /// No description provided for @sshServerJump.
+  ///
+  /// In en, this message translates to:
+  /// **'Jump Host (optional)'**
+  String get sshServerJump;
+
+  /// No description provided for @sshServerNoJump.
+  ///
+  /// In en, this message translates to:
+  /// **'None: connect directly'**
+  String get sshServerNoJump;
+
+  /// No description provided for @sshServerSaveConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Save and Connect'**
+  String get sshServerSaveConnect;
+
+  /// No description provided for @sshServerSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get sshServerSave;
+
+  /// No description provided for @sshServerHostRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the server\'s domain or IP'**
+  String get sshServerHostRequired;
+
+  /// No description provided for @sshServerHostInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'No spaces, and not starting with \'-\''**
+  String get sshServerHostInvalid;
+
+  /// No description provided for @sshServerPortInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'A port is from 1 to 65535'**
+  String get sshServerPortInvalid;
+
+  /// No description provided for @sshServerKeyRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the private key file'**
+  String get sshServerKeyRequired;
+
+  /// No description provided for @sshServerKeyMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'There is no such file'**
+  String get sshServerKeyMissing;
+
+  /// No description provided for @remoteForgetHostKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the Old Key and Connect'**
+  String get remoteForgetHostKey;
+
+  /// No description provided for @remoteForgetHostKeyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the old key of {host}?'**
+  String remoteForgetHostKeyTitle(String host);
+
+  /// No description provided for @remoteForgetHostKeyDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Only if you know the server was reinstalled or its key changed: otherwise someone may be between you and it. The key it has now is accepted at the next connection.'**
+  String get remoteForgetHostKeyDetail;
+
+  /// No description provided for @remoteForgetHostKeyButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove and Connect'**
+  String get remoteForgetHostKeyButton;
+
+  /// No description provided for @remoteFailNoSsh.
+  ///
+  /// In en, this message translates to:
+  /// **'There is no ssh on this computer: install the OpenSSH client.'**
+  String get remoteFailNoSsh;
+
+  /// No description provided for @remoteFailAuth.
+  ///
+  /// In en, this message translates to:
+  /// **'The server refused to sign in: check the user, password or key.'**
+  String get remoteFailAuth;
+
+  /// No description provided for @remoteFailCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing in was cancelled.'**
+  String get remoteFailCancelled;
+
+  /// No description provided for @remoteFailHostKey.
+  ///
+  /// In en, this message translates to:
+  /// **'The server\'s key is not known, and your ssh config says not to accept new ones (StrictHostKeyChecking).'**
+  String get remoteFailHostKey;
+
+  /// No description provided for @remoteFailHostKeyChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The server\'s key changed since the last connection: it was reinstalled, or someone is in between.'**
+  String get remoteFailHostKeyChanged;
+
+  /// No description provided for @remoteFailUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'The server could not be reached: check the address, port and network.'**
+  String get remoteFailUnreachable;
+
+  /// No description provided for @channelSetupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Caocode'**
+  String get channelSetupTitle;
+
+  /// No description provided for @channelSetupLead.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish your first-time setup on caocode.dev. It takes about 10 seconds.'**
+  String get channelSetupLead;
+
+  /// No description provided for @channelSetupStepTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish setup in your browser'**
+  String get channelSetupStepTitle;
+
+  /// No description provided for @channelSetupStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Caocode opens caocode.dev in your browser. Once the page says it\'s done, Caocode continues on its own.'**
+  String get channelSetupStep;
+
+  /// No description provided for @channelSetupWaitingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for your browser…'**
+  String get channelSetupWaitingTitle;
+
+  /// No description provided for @channelSetupWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Once the page says it\'s done, Caocode continues on its own. Closed the page by mistake? Open it again.'**
+  String get channelSetupWaiting;
+
+  /// No description provided for @channelSetupOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t reach caocode.dev. You need to be online to finish setup.'**
+  String get channelSetupOffline;
+
+  /// No description provided for @channelSetupRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get channelSetupRetry;
+
+  /// No description provided for @channelSetupDoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup complete'**
+  String get channelSetupDoneTitle;
+
+  /// No description provided for @channelSetupOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish Setup in Browser'**
+  String get channelSetupOpen;
+
+  /// No description provided for @channelSetupOpenAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the Page Again'**
+  String get channelSetupOpenAgain;
+
+  /// No description provided for @channelSetupNoResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'Browser not responding?'**
+  String get channelSetupNoResponse;
+
+  /// No description provided for @channelSetupPasteLead.
+  ///
+  /// In en, this message translates to:
+  /// **'If the page shows a link, copy it and paste it here:'**
+  String get channelSetupPasteLead;
+
+  /// No description provided for @channelSetupPasteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get channelSetupPasteConfirm;
+
+  /// No description provided for @channelSetupLinkInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That isn\'t the link from the page. Copy the whole link shown there.'**
+  String get channelSetupLinkInvalid;
+
+  /// No description provided for @channelSetupLinkOther.
+  ///
+  /// In en, this message translates to:
+  /// **'That link is for another Caocode install. Use the page this Caocode opened.'**
+  String get channelSetupLinkOther;
+
+  /// No description provided for @channelSetupTrouble.
+  ///
+  /// In en, this message translates to:
+  /// **'Having trouble?'**
+  String get channelSetupTrouble;
+
+  /// No description provided for @channelSetupOnceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Only once'**
+  String get channelSetupOnceTitle;
+
+  /// No description provided for @channelSetupOnce.
+  ///
+  /// In en, this message translates to:
+  /// **'Once it\'s done, this won\'t show again, not even after an update.'**
+  String get channelSetupOnce;
+
+  /// No description provided for @channelSetupPrivateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing personal'**
+  String get channelSetupPrivateTitle;
+
+  /// No description provided for @channelSetupPrivate.
+  ///
+  /// In en, this message translates to:
+  /// **'The page only tells Caocode where you heard of it, like a video or a website.'**
+  String get channelSetupPrivate;
+
+  /// No description provided for @channelSetupFindingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting your channel ready…'**
+  String get channelSetupFindingTitle;
+
+  /// No description provided for @channelSetupFinding.
+  ///
+  /// In en, this message translates to:
+  /// **'Just a moment.'**
+  String get channelSetupFinding;
+
+  /// No description provided for @channelSetupSiteOfflineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t reach caocode.dev'**
+  String get channelSetupSiteOfflineTitle;
+
+  /// No description provided for @channelSetupSiteOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Caocode needs to be online to read your channel. Check your connection and retry.'**
+  String get channelSetupSiteOffline;
+
+  /// No description provided for @channelSetupUnavailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This channel isn\'t available'**
+  String get channelSetupUnavailableTitle;
+
+  /// No description provided for @channelSetupUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The channel this installer came from doesn\'t have accounts set up yet. If you downloaded it through another channel, confirm where you came from in your browser; otherwise contact whoever gave you the installer, or download the standard edition from caocode.dev.'**
+  String get channelSetupUnavailable;
+
+  /// No description provided for @channelSetupConfirmAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm in Browser'**
+  String get channelSetupConfirmAgain;
+
+  /// A channel's welcome's title when its channels.json entry has none, by its name.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to {channel}'**
+  String channelWelcomeTitle(String channel);
+
+  /// A channel's welcome's text when its entry has none.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to your {channel} account to get started.'**
+  String channelWelcomeText(String channel);
+
+  /// No description provided for @channelWelcomeSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign In'**
+  String get channelWelcomeSignIn;
+
+  /// No description provided for @channelWelcomeSigningIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in in the window that opened…'**
+  String get channelWelcomeSigningIn;
+
+  /// No description provided for @channelWelcomePreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting ready…'**
+  String get channelWelcomePreparing;
+
+  /// Signing in to the channel's account site failed; the site's or the network's error.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t finish signing in: {error}'**
+  String channelWelcomeFailed(String error);
+
+  /// No description provided for @channelAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get channelAccountTitle;
+
+  /// No description provided for @channelAccountBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance'**
+  String get channelAccountBalance;
+
+  /// No description provided for @channelAccountRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get channelAccountRefresh;
+
+  /// No description provided for @channelAccountSignOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Out'**
+  String get channelAccountSignOut;
+
+  /// No description provided for @channelAccountSignOutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out?'**
+  String get channelAccountSignOutTitle;
+
+  /// No description provided for @channelAccountSignOutDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll need to sign in to {channel} again to keep using Caocode.'**
+  String channelAccountSignOutDetail(String channel);
+
+  /// No description provided for @channelAccountOpenSite.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Website'**
+  String get channelAccountOpenSite;
+
+  /// No description provided for @channelAccountDefaultModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Default model for new chats'**
+  String get channelAccountDefaultModel;
+
+  /// No description provided for @channelAccountNoModels.
+  ///
+  /// In en, this message translates to:
+  /// **'The key in use doesn\'t reach any models.'**
+  String get channelAccountNoModels;
+
+  /// No description provided for @channelAccountKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'My API Keys'**
+  String get channelAccountKeys;
+
+  /// No description provided for @channelAccountCreateKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Key'**
+  String get channelAccountCreateKey;
+
+  /// No description provided for @channelAccountKeyName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get channelAccountKeyName;
+
+  /// No description provided for @channelAccountKeyGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Group'**
+  String get channelAccountKeyGroup;
+
+  /// No description provided for @channelAccountUseKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Use This Key'**
+  String get channelAccountUseKey;
+
+  /// No description provided for @channelAccountInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'In Use'**
+  String get channelAccountInUse;
+
+  /// No description provided for @channelAccountNoKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'No API keys yet.'**
+  String get channelAccountNoKeys;
+
+  /// No description provided for @channelAccountSignedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re not signed in.'**
+  String get channelAccountSignedOut;
+
+  /// No description provided for @channelAccountUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This channel isn\'t available. Contact whoever gave you the installer.'**
+  String get channelAccountUnavailable;
+
+  /// No description provided for @channelAccountFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong: {error}'**
+  String channelAccountFailed(String error);
+
+  /// The channel's account site's firewall (e.g. Cloudflare) refused the app's requests; not a sign-out.
+  ///
+  /// In en, this message translates to:
+  /// **'{site} refused this computer\'s connection ({request}); its firewall may be blocking the IP of your network or proxy. Try another network, or reach {site} without the proxy.'**
+  String channelAccountBlocked(String site, String request);
+
+  /// No description provided for @settingsSectionAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get settingsSectionAbout;
+
+  /// No description provided for @aboutTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'An awesome, easy-to-use desktop UI for Claude Code, with a millisecond-fast IDE built in.'**
+  String get aboutTagline;
+
+  /// No description provided for @aboutVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version} ({build})'**
+  String aboutVersion(String version, int build);
+
+  /// No description provided for @aboutRepository.
+  ///
+  /// In en, this message translates to:
+  /// **'{repository} · free and open source, under the GPL-3.0'**
+  String aboutRepository(String repository);
+
+  /// No description provided for @aboutWebsite.
+  ///
+  /// In en, this message translates to:
+  /// **'Website'**
+  String get aboutWebsite;
+
+  /// No description provided for @aboutChangelog.
+  ///
+  /// In en, this message translates to:
+  /// **'Changelog'**
+  String get aboutChangelog;
+
+  /// No description provided for @aboutChangelogDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'What each version changed'**
+  String get aboutChangelogDetail;
+
+  /// No description provided for @aboutFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Report an Issue'**
+  String get aboutFeedback;
+
+  /// No description provided for @aboutFeedbackDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Open an issue on GitHub, or see those others opened'**
+  String get aboutFeedbackDetail;
+
+  /// No description provided for @aboutOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get aboutOpen;
 }
 
 class _AppLocalizationsDelegate

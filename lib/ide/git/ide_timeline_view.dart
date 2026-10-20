@@ -22,6 +22,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 
+import '../../base/smooth_scroll.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/codicons.dart';
 import '../../theme/workbench_theme.dart';
@@ -102,7 +103,7 @@ class IdeTimelineView extends StatefulWidget {
 class _IdeTimelineViewState extends State<IdeTimelineView>
     with IdeKeyboardList<IdeTimelineView> {
   final _focus = FocusNode(debugLabel: 'timeline');
-  final _scroll = ScrollController();
+  final _scroll = SmoothScrollController();
 
   /// [_selected] on Load more.
   static const _loadMoreId = 'more';

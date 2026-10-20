@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../browser/browser_steps.dart';
+import '../../images/image_steps.dart';
 import '../../l10n/l10n.dart';
 import '../chat_models.dart';
 import 'activity_row.dart';
@@ -64,6 +66,16 @@ class ChatItemView extends StatelessWidget {
         onEdit: onEdit,
       ),
       AssistantTextItem(:final text) => AssistantText(text),
+      final ToolCallItem tool when tool.kind == ToolKind.browser => BrowserStep(
+        item: tool,
+        expanded: expanded,
+        onToggle: onToggle,
+      ),
+      final ToolCallItem tool when tool.kind == ToolKind.image => ImageStep(
+        item: tool,
+        expanded: expanded,
+        onToggle: onToggle,
+      ),
       ThinkingItem(
         :final text,
         :final seconds,
@@ -89,6 +101,8 @@ class ChatItemView extends StatelessWidget {
         :final label,
         :final status,
         :final output,
+        :final images,
+        :final imageFiles,
       ) =>
         ToolCallRow(
           kind: kind,
@@ -99,6 +113,8 @@ class ChatItemView extends StatelessWidget {
           label: label,
           status: status,
           output: output,
+          images: images,
+          imageFiles: imageFiles,
           expanded: expanded,
           onToggle: onToggle,
           onSetGoal: onSetGoal,
@@ -133,8 +149,18 @@ class ChatItemView extends StatelessWidget {
         expanded: expanded,
         onToggle: onToggle,
       ),
-      LiveStatusItem(:final label, :final whimsical, :final visible) =>
-        ActivityRow(label: label, whimsical: whimsical, visible: visible),
+      LiveStatusItem(
+        :final label,
+        :final whimsical,
+        :final visible,
+        :final cue,
+      ) =>
+        ActivityRow(
+          label: label,
+          whimsical: whimsical,
+          visible: visible,
+          cue: cue,
+        ),
     };
   }
 }
@@ -191,10 +217,15 @@ String chatItemPlainText(
       :final status,
       :final results,
       :final output,
+      :final tool,
+      :final input,
     ) =>
       [
         StepHeader.text(
-          label ?? toolVerb(kind, status: status, l10n: strings),
+          label ??
+              (kind == ToolKind.browser
+                  ? browserVerb(tool, input, status: status, l10n: strings)
+                  : toolVerb(kind, status: status, l10n: strings)),
           target,
           detail,
         ),
@@ -261,7 +292,7 @@ bool isStep(ChatItem item) => switch (item) {
 
 /// Whether a step is open unless opened or closed by hand: a thought while
 /// it streams. Tool calls stay closed (opening and closing as they start
-/// and end would flicker).
+/// and end would flicker): a picture's shows small after its line.
 bool defaultExpanded(ChatItem item) => switch (item) {
   ThinkingItem(:final streaming) => streaming,
   _ => false,

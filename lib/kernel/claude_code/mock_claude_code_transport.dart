@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../mock/mock_script.dart';
+import 'claude_code_translator.dart';
 import 'claude_code_transport.dart';
 
 /// Plays [MockScript] as Claude Code prints it, for tests and demos: the
@@ -586,31 +587,19 @@ class MockClaudeCodeTransport implements ClaudeCodeTransport {
       return;
     }
     if (_permissionMode == 'plan') {
-      final verdict = await _tool(
-        run,
-        'ExitPlanMode',
-        {'plan': MockScript.plan},
-        result: 'User has approved your plan. You can now start coding.',
-        permission: true,
-      );
+      // Put to the user, who starts it with a message of their own: the
+      // turn ends here.
+      final verdict = await _tool(run, 'ExitPlanMode', {
+        'plan': MockScript.plan,
+        'planFilePath': MockScript.planPath,
+      }, permission: true);
       if (verdict == null) return;
-      if (verdict['behavior'] != 'allow') {
-        if (!await _text(run, MockScript.keepPlanning)) return;
-        _finish(run);
-        return;
-      }
-      for (final rule in verdict['updatedPermissions'] as List? ?? const []) {
-        if (rule is Map && rule['type'] == 'setMode') {
-          _permissionMode = '${rule['mode']}';
-          _emit({
-            'type': 'system',
-            'subtype': 'status',
-            'status': null,
-            'permissionMode': _permissionMode,
-          });
-        }
-      }
-    } else {
+      if (!await _text(run, MockScript.planReady)) return;
+      _finish(run);
+      return;
+    }
+    // A plan started goes straight to the work.
+    if (!ClaudeTranslator.startsPlan(prompt)) {
       if (!await _text(run, MockScript.beforeQuestion)) return;
       final questions = [
         for (final q in MockScript.questions)

@@ -12,3 +12,8 @@ tags:
   # `flutter test --run-skipped -t exthost`.
   exthost:
     skip: "Runs a real VS Code extension host"
+  # Connects for real, with the system's ssh, to sshd containers
+  # (tool/ssh_e2e.sh starts them and runs these): opt in with
+  # `flutter test --run-skipped -t ssh-e2e`.
+  ssh-e2e:
+    skip: "Connects to sshd containers"

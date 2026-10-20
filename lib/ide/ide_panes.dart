@@ -486,18 +486,33 @@ class IdePaneAction extends StatelessWidget {
 }
 
 /// A view container's 35px title (Modern UI: 12px semibold, as cased,
-/// inset 12px) and its [actions].
+/// inset 12px) and its [actions]. Beside an editor's tabs (the chat
+/// window's side panel), a line under it in [border], as under theirs.
 class IdeViewTitle extends StatelessWidget {
-  const IdeViewTitle(this.title, {super.key, this.actions = const []});
+  const IdeViewTitle(
+    this.title, {
+    super.key,
+    this.actions = const [],
+    this.border,
+  });
 
   final String title;
   final List<Widget> actions;
+  final Color? border;
+
+  static const height = 35.0;
 
   static Color get foreground => themeColors['sideBarTitle.foreground'];
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 35,
+  Widget build(BuildContext context) => Container(
+    height: height,
+    decoration: switch (border) {
+      final color? => BoxDecoration(
+        border: Border(bottom: BorderSide(color: color)),
+      ),
+      null => null,
+    },
     child: Padding(
       padding: const EdgeInsets.only(left: 12, right: 4),
       child: Row(

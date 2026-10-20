@@ -9,8 +9,8 @@ import 'package:caocode/chat/review/review_store_io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
-/// Runs local Git (no network) on a project in a temporary folder, its
-/// snapshots in another.
+/// A project in a temporary folder, its checkpoints in another; Git only
+/// for the merges of Undo.
 void main() {
   final hasGit = () {
     try {
@@ -34,12 +34,31 @@ void main() {
 
   String read(String relative) => File(path(relative)).readAsStringSync();
 
-  Future<ChangeReview> open({String? session}) async {
-    final store = await GitReviewStore.open(root, checkpoints: checkpoints);
-    final review = ChangeReview(store!);
+  bool exists(String relative) => File(path(relative)).existsSync();
+
+  Future<LocalReviewStore> store() async =>
+      (await LocalReviewStore.open(root, checkpoints: checkpoints))!;
+
+  Future<ChangeReview> open({String session = 's'}) async {
+    final review = ChangeReview(await store())..session = session;
     addTearDown(review.dispose);
-    if (session != null) review.session = session;
     return review;
+  }
+
+  /// The agent writes [text] to [relative] (null deletes it), and reports
+  /// it with what was there.
+  Future<void> edit(ChangeReview review, String relative, String? text) async {
+    final before = exists(relative) ? read(relative) : null;
+    if (text == null) {
+      File(path(relative)).deleteSync();
+    } else {
+      write(relative, text);
+    }
+    review.report(
+      FileChange(path: path(relative), added: 1, removed: 1),
+      original: OriginalText(before),
+    );
+    await review.refresh();
   }
 
   /// The pending changes, by path relative to the project.
@@ -47,6 +66,18 @@ void main() {
     for (final change in review.changes)
       p.split(p.relative(change.path, from: root)).join('/'): change,
   };
+
+  /// What the sessions keep, by session.
+  List<String> sessionsKept() {
+    final project = Directory(p.join(checkpoints))
+        .listSync()
+        .whereType<Directory>();
+    return [
+      for (final folder in project)
+        for (final session in folder.listSync().whereType<Directory>())
+          p.basename(session.path),
+    ]..sort();
+  }
 
   setUp(() async {
     temp = await Directory.systemTemp.createTemp('caocode_review_');
@@ -59,69 +90,51 @@ void main() {
 
   tearDown(() => temp.delete(recursive: true));
 
-  test(
-    'lists what the agent changed in a turn, not what changed before',
-    () async {
-      final review = await open();
-      await review.begin();
-      // Before the turn: not the agent's.
-      write('notes.txt', 'mine\n');
-      await review.begin();
+  test('lists the edits the agent reports, not what else changed', () async {
+    final review = await open();
+    await edit(review, 'a.txt', 'one\n2\n3\n4\n5\n6\n');
+    await edit(review, 'lib/c.txt', 'c\nc\n');
+    await edit(review, 'lib/b.txt', null);
+    // A command's, or the user's: not reported.
+    write('notes.txt', 'mine\n');
 
-      write('a.txt', 'one\n2\n3\n4\n5\n6\n');
-      write('lib/c.txt', 'c\nc\n');
-      File(path('lib/b.txt')).deleteSync();
-      await review.observe();
+    final changes = changesOf(review);
+    expect(changes.keys, unorderedEquals(['a.txt', 'lib/b.txt', 'lib/c.txt']));
+    expect(changes['a.txt']!.kind, FileChangeKind.modified);
+    expect((changes['a.txt']!.added, changes['a.txt']!.removed), (2, 1));
+    expect(changes['lib/c.txt']!.kind, FileChangeKind.added);
+    expect(changes['lib/c.txt']!.added, 2);
+    expect(changes['lib/b.txt']!.kind, FileChangeKind.deleted);
+    expect(changes['lib/b.txt']!.removed, 1);
 
-      final changes = changesOf(review);
-      expect(
-        changes.keys,
-        unorderedEquals(['a.txt', 'lib/b.txt', 'lib/c.txt']),
-      );
-      expect(changes['a.txt']!.kind, FileChangeKind.modified);
-      expect((changes['a.txt']!.added, changes['a.txt']!.removed), (2, 1));
-      expect(changes['lib/c.txt']!.kind, FileChangeKind.added);
-      expect(changes['lib/c.txt']!.added, 2);
-      expect(changes['lib/b.txt']!.kind, FileChangeKind.deleted);
-      expect(changes['lib/b.txt']!.removed, 1);
-
-      // Changed back by the agent: nothing pending.
-      write('lib/c.txt', 'c\n');
-      File(path('lib/c.txt')).deleteSync();
-      await review.observe();
-      expect(changesOf(review).keys, unorderedEquals(['a.txt', 'lib/b.txt']));
-    },
-    skip: !hasGit,
-  );
+    // Changed back by the agent: nothing pending.
+    await edit(review, 'lib/c.txt', null);
+    expect(changesOf(review).keys, unorderedEquals(['a.txt', 'lib/b.txt']));
+  });
 
   test('keeps a change without touching the file', () async {
     final review = await open();
-    await review.begin();
-    write('a.txt', 'one\n');
-    write('lib/b.txt', 'bee\n');
-    await review.observe();
+    await edit(review, 'a.txt', 'one\n');
+    await edit(review, 'lib/b.txt', 'bee\n');
 
     await review.keep([path('a.txt')]);
     expect(changesOf(review).keys, ['lib/b.txt']);
     expect(read('a.txt'), 'one\n');
 
     // Changed again by the agent: listed against what was kept.
-    write('a.txt', 'one\ntwo\n');
-    await review.observe();
+    await edit(review, 'a.txt', 'one\ntwo\n');
     expect(changesOf(review)['a.txt']!.added, 1);
     expect(changesOf(review)['a.txt']!.removed, 0);
 
     await review.keepAll();
     expect(review.changes, isEmpty);
-  }, skip: !hasGit);
+  });
 
   test('undoes edits, creations and deletions', () async {
     final review = await open();
-    await review.begin();
-    write('a.txt', 'one\n');
-    write('new/deep/c.txt', 'c\n');
-    File(path('lib/b.txt')).deleteSync();
-    await review.observe();
+    await edit(review, 'a.txt', 'one\n');
+    await edit(review, 'new/deep/c.txt', 'c\n');
+    await edit(review, 'lib/b.txt', null);
     expect(review.changes, hasLength(3));
 
     await review.undoAll();
@@ -130,23 +143,17 @@ void main() {
     expect(read('lib/b.txt'), 'b\n');
     // The folders it made go with the file.
     expect(Directory(path('new')).existsSync(), isFalse);
-
-    // Undone, it is not the agent's change.
-    await review.observe();
-    expect(review.changes, isEmpty);
-  }, skip: !hasGit);
+  });
 
   test('undo keeps what changed since the agent, or leaves the file', () async {
     final review = await open();
-    await review.begin();
-    write('a.txt', 'one\n2\n3\n4\n5\n');
-    write('lib/b.txt', 'bee\n');
-    await review.observe();
+    await edit(review, 'a.txt', 'one\n2\n3\n4\n5\n');
+    await edit(review, 'lib/b.txt', 'bee\n');
 
     // The user, after the turn.
     write('a.txt', 'one\n2\n3\n4\nfive\n');
     write('lib/b.txt', 'B\n');
-    await review.begin();
+    await review.refresh();
 
     await review.undo([path('a.txt')]);
     expect(read('a.txt'), '1\n2\n3\n4\nfive\n');
@@ -158,250 +165,162 @@ void main() {
     expect(changesOf(review)['lib/b.txt']!.conflict, isTrue);
   }, skip: !hasGit);
 
-  test('puts back line endings and bytes as they were', () async {
-    write('.gitattributes', '* text=auto\n');
+  test('a file put back since is no longer pending', () async {
+    final review = await open();
+    await edit(review, 'a.txt', 'one\n');
+    write('a.txt', '1\n2\n3\n4\n5\n');
+    await review.refresh();
+    expect(review.changes, isEmpty);
+  });
+
+  test('keeps and undoes a change part by part', () async {
+    final review = await open();
+    await edit(review, 'a.txt', 'one\n2\n3\n4\nfive\n');
+    final a = path('a.txt');
+    final created = review.baseOf(a);
+    expect(created, isNotNull);
+    expect(await review.original(a)!(), '1\n2\n3\n4\n5\n');
+
+    // The first line kept: held against what was there with it in.
+    await review.keepPart(a, 'one\n2\n3\n4\n5\n');
+    expect(review.baseOf(a), isNot(created));
+    expect(await review.original(a)!(), 'one\n2\n3\n4\n5\n');
+    expect(
+      (changesOf(review)['a.txt']!.added, changesOf(review)['a.txt']!.removed),
+      (1, 1),
+    );
+    expect(read('a.txt'), 'one\n2\n3\n4\nfive\n');
+
+    // The last undone in the file, as the editor does it: nothing left.
+    write('a.txt', 'one\n2\n3\n4\n5\n');
+    await review.settle([a]);
+    expect(review.changes, isEmpty);
+    expect(review.baseOf(a), isNull);
+  });
+
+  test('keeping every part of a change keeps it', () async {
+    final review = await open();
+    await edit(review, 'a.txt', '1\n2\nthree\n4\n5\n');
+    await review.keepPart(path('a.txt'), '1\n2\nthree\n4\n5\n');
+    expect(review.changes, isEmpty);
+    expect(read('a.txt'), '1\n2\nthree\n4\n5\n');
+  });
+
+  test('puts back line endings as they were', () async {
     File(path('crlf.txt')).writeAsBytesSync('x\r\ny\r\n'.codeUnits);
     final review = await open();
-    await review.begin();
-    File(path('crlf.txt')).writeAsBytesSync('x\r\nz\r\n'.codeUnits);
-    await review.observe();
+    await edit(review, 'crlf.txt', 'x\r\nz\r\n');
     await review.undoAll();
     expect(File(path('crlf.txt')).readAsBytesSync(), 'x\r\ny\r\n'.codeUnits);
-  }, skip: !hasGit);
+  });
 
-  test('lists reported edits it cannot see, to keep and not undo', () async {
-    write('.gitignore', 'out/\n');
+  test('takes a patch back out of the file for what it was', () async {
     final review = await open();
-    await review.begin();
-    write('out/gen.txt', 'g\n');
-    review.report(FileChange(path: path('out/gen.txt'), added: 1, removed: 0));
+    write('a.txt', '1\nTWO\n3\n4\n5\nsix\n');
     review.report(
-      FileChange(
-        path: p.join(temp.path, 'elsewhere.txt'),
-        added: 2,
-        removed: 0,
+      FileChange(path: path('a.txt'), added: 2, removed: 1),
+      original: const OriginalByPatch(
+        '@@ -1,3 +1,3 @@\n 1\n-2\n+TWO\n 3\n@@ -5 +5,2 @@\n 5\n+six\n',
       ),
     );
-    await review.observe(full: false);
+    await review.refresh();
+    expect(changesOf(review)['a.txt']!.tracked, isTrue);
+    expect(await review.original(path('a.txt'))!(), '1\n2\n3\n4\n5\n');
 
-    final changes = changesOf(review);
-    expect(changes.keys, contains('out/gen.txt'));
-    expect(changes['out/gen.txt']!.tracked, isFalse);
+    // One that does not fit: listed, not undone.
+    write('lib/b.txt', 'other\n');
+    review.report(
+      FileChange(path: path('lib/b.txt'), added: 1, removed: 1),
+      original: const OriginalByPatch('@@ -1 +1 @@\n-b\n+bee\n'),
+    );
+    await review.refresh();
+    expect(changesOf(review)['lib/b.txt']!.tracked, isFalse);
+  });
+
+  test('lists the edits it cannot undo, to keep', () async {
+    final review = await open();
+    // What it was not told.
+    write('out/gen.txt', 'g\n');
+    review.report(FileChange(path: path('out/gen.txt'), added: 1, removed: 0));
+    // Outside the project.
+    final elsewhere = File(p.join(temp.path, 'elsewhere.txt'))
+      ..writeAsStringSync('e\ne\n');
+    review.report(FileChange(path: elsewhere.path, added: 2, removed: 0));
+    await review.refresh();
+
+    expect(changesOf(review)['out/gen.txt']!.tracked, isFalse);
     expect(review.changes.where((c) => !c.tracked), hasLength(2));
-
     await review.undoAll();
-    expect(File(path('out/gen.txt')).existsSync(), isTrue);
+    expect(exists('out/gen.txt'), isTrue);
+
+    // Gone since: nothing left of it to keep.
+    elsewhere.deleteSync();
+    await review.refresh();
+    expect(changesOf(review).keys, ['out/gen.txt']);
     await review.keepAll();
     expect(review.changes, isEmpty);
-  }, skip: !hasGit);
-
-  test('reported edits are looked at alone until the turn ends', () async {
-    final review = await open();
-    await review.begin();
-    write('a.txt', 'one\n');
-    write('lib/b.txt', 'bee\n');
-    review.report(FileChange(path: path('a.txt'), added: 1, removed: 1));
-    await review.observe(full: false);
-    expect(changesOf(review).keys, ['a.txt']);
-    await review.observe();
-    expect(changesOf(review).keys, unorderedEquals(['a.txt', 'lib/b.txt']));
-  }, skip: !hasGit);
-
-  test('marks what changed while another agent worked there', () async {
-    final mine = await open();
-    final theirs = await open();
-    await mine.begin();
-    mine.working = true;
-    theirs.working = true;
-    write('a.txt', 'one\n');
-    write('lib/b.txt', 'bee\n');
-    mine.report(FileChange(path: path('a.txt'), added: 1, removed: 1));
-    await mine.observe();
-    final changes = changesOf(mine);
-    expect(changes['a.txt']!.shared, isFalse);
-    expect(changes['lib/b.txt']!.shared, isTrue);
-  }, skip: !hasGit);
+  });
 
   test('carries on where the session left off', () async {
     final review = await open(session: 'session-1');
-    await review.begin();
-    write('a.txt', 'one\n');
-    await review.observe();
+    await edit(review, 'a.txt', 'one\n');
 
-    final reopened = await ChangeReview.resume(
-      (await GitReviewStore.open(root, checkpoints: checkpoints))!,
-      'session-1',
-    );
+    final reopened = await ChangeReview.resume(await store(), 'session-1');
     addTearDown(reopened.dispose);
     expect(changesOf(reopened).keys, ['a.txt']);
     await reopened.undoAll();
     expect(read('a.txt'), '1\n2\n3\n4\n5\n');
-  }, skip: !hasGit);
+  });
 
-  test('leaves out its checkpoints where the project holds them', () async {
-    // A home folder opened as the project, the data folder in it.
-    checkpoints = path('.caocode-server/data/checkpoints');
+  test(
+    'each session keeps its own, and nothing once none is pending',
+    () async {
+      final mine = await open(session: 'mine');
+      final theirs = await open(session: 'theirs');
+      await edit(mine, 'a.txt', 'one\n');
+      await edit(theirs, 'lib/b.txt', 'bee\n');
+      expect(changesOf(mine).keys, ['a.txt']);
+      expect(changesOf(theirs).keys, ['lib/b.txt']);
+      expect(sessionsKept(), ['mine', 'theirs']);
+
+      await mine.keepAll();
+      expect(sessionsKept(), ['theirs']);
+      await theirs.undoAll();
+      expect(sessionsKept(), isEmpty);
+      // Nor the project's folder.
+      expect(Directory(checkpoints).listSync().whereType<Directory>(), isEmpty);
+    },
+  );
+
+  test('keeps only what it still needs', () async {
     final review = await open();
-    await review.begin();
-    await review.begin();
-    write('a.txt', 'one\n');
-    await review.observe();
-    expect(changesOf(review).keys, ['a.txt']);
+    await edit(review, 'a.txt', 'one\n');
+    await edit(review, 'a.txt', 'one\ntwo\n');
+    await edit(review, 'lib/b.txt', 'bee\n');
+    final blobs = Directory(p.join((await store()).folder, 's', 'blobs'));
+    // What a.txt and b.txt were, and are.
+    expect(blobs.listSync(), hasLength(4));
+    await review.keep([path('lib/b.txt')]);
+    expect(blobs.listSync(), hasLength(2));
+  });
 
-    // Snapshots of an earlier build that took them in are let go.
-    final store = (await GitReviewStore.open(root, checkpoints: checkpoints))!;
-    final repository = p.relative(store.gitDir, from: root);
-    await Process.run('git', [
-      '--git-dir=${store.gitDir}',
-      '--work-tree=$root',
-      'add',
-      '-f',
-      '--',
-      repository,
-    ], workingDirectory: root);
-    final reopened = (await GitReviewStore.open(
-      root,
-      checkpoints: checkpoints,
-    ))!;
-    final before = await reopened.snapshot();
-    write('lib/b.txt', 'two\n');
-    final after = await reopened.snapshot();
-    expect((await reopened.diff(before, after)).map((change) => change.path), [
-      'lib/b.txt',
-    ]);
-  }, skip: !hasGit);
-
-  test("leaves the project's own repository alone", () async {
-    Future<String> git(List<String> arguments) async {
-      final result = await Process.run(
-        'git',
-        arguments,
-        workingDirectory: root,
-      );
-      expect(result.exitCode, 0, reason: '${result.stderr}');
-      return '${result.stdout}';
-    }
-
-    await git(['init', '-q']);
-    await git(['add', '-A']);
-    final status = await git(['status', '--porcelain']);
-    final review = await open(session: 's');
-    await review.begin();
-    write('a.txt', 'one\n');
-    await review.observe();
+  test('a session named anew takes what it kept along', () async {
+    final review = await open(session: 'first');
+    await edit(review, 'a.txt', 'one\n');
+    review.session = 'second';
+    await review.refresh();
+    expect(sessionsKept(), ['second']);
     await review.undoAll();
+    expect(read('a.txt'), '1\n2\n3\n4\n5\n');
+  });
 
-    expect(await git(['status', '--porcelain']), status);
-    expect(await git(['for-each-ref']), isEmpty);
-    expect(await git(['stash', 'list']), isEmpty);
-  }, skip: !hasGit);
-
-  test(
-    'looks into repositories inside the project, leaving them alone',
-    () async {
-      // A folder of projects opened as one, each its own repository; one in
-      // another.
-      write('web/pages/a.vue', 'one\n');
-      write('web/.gitignore', 'dist/\n');
-      write('web/vendor/lib/c.js', 'c\n');
-      Future<String> git(String repo, List<String> arguments) async {
-        final result = await Process.run(
-          'git',
-          arguments,
-          workingDirectory: path(repo),
-        );
-        expect(result.exitCode, 0, reason: '${result.stderr}');
-        return '${result.stdout}';
-      }
-
-      for (final repo in ['web/vendor/lib', 'web']) {
-        await git(repo, ['init', '-q']);
-        await git(repo, ['add', '-A']);
-        await git(repo, [
-          '-c',
-          'user.name=t',
-          '-c',
-          'user.email=t@t',
-          'commit',
-          '-qm',
-          'i',
-        ]);
-      }
-      final status = await git('web', ['status', '--porcelain']);
-
-      final review = await open();
-      await review.begin();
-      write('a.txt', 'one\n');
-      write('web/pages/a.vue', 'one\ntwo\n');
-      write('web/vendor/lib/c.js', 'see\n');
-      write('web/dist/out.js', 'built\n');
-      for (final file in ['a.txt', 'web/pages/a.vue', 'web/vendor/lib/c.js']) {
-        review.report(FileChange(path: path(file), added: 1, removed: 0));
-      }
-      // Only the files reported, then all.
-      await review.observe(full: false);
-      expect(review.failure, isNull);
-      expect(
-        changesOf(review).keys,
-        unorderedEquals(['a.txt', 'web/pages/a.vue', 'web/vendor/lib/c.js']),
-      );
-      await review.observe();
-      expect(review.failure, isNull);
-      final changes = changesOf(review);
-      expect(
-        changes.keys,
-        unorderedEquals(['a.txt', 'web/pages/a.vue', 'web/vendor/lib/c.js']),
-      );
-      expect(changes['web/pages/a.vue']!.tracked, isTrue);
-      expect(
-        (
-          changes['web/pages/a.vue']!.added,
-          changes['web/pages/a.vue']!.removed,
-        ),
-        (1, 0),
-      );
-      expect(await review.original(path('web/pages/a.vue'))!(), 'one\n');
-      expect(await review.original(path('web/vendor/lib/c.js'))!(), 'c\n');
-
-      await review.undo([path('web/pages/a.vue'), path('web/vendor/lib/c.js')]);
-      expect(read('web/pages/a.vue'), 'one\n');
-      expect(read('web/vendor/lib/c.js'), 'c\n');
-      expect(changesOf(review).keys, ['a.txt']);
-      File(path('web/dist/out.js')).deleteSync();
-      expect(await git('web', ['status', '--porcelain']), status);
-    },
-    skip: !hasGit,
-  );
-
-  test(
-    'leaves large files out of a whole snapshot, in repositories inside too',
-    () async {
-      final limit = GitReviewStore.maxFileBytes;
-      GitReviewStore.maxFileBytes = 20;
-      addTearDown(() => GitReviewStore.maxFileBytes = limit);
-      write('big.bin', 'x' * 21);
-      write('web/small.txt', 's\n');
-      write('web/big.bin', 'x' * 21);
-      for (final arguments in [
-        ['init', '-q'],
-        ['add', 'small.txt'],
-        ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'i'],
-      ]) {
-        final result = await Process.run(
-          'git',
-          arguments,
-          workingDirectory: path('web'),
-        );
-        expect(result.exitCode, 0, reason: '${result.stderr}');
-      }
-
-      final store = await GitReviewStore.open(root, checkpoints: checkpoints);
-      final tree = await store!.snapshot();
-      expect(await store.contains(tree, 'a.txt'), isTrue);
-      expect(await store.contains(tree, 'web/small.txt'), isTrue);
-      expect(await store.contains(tree, 'big.bin'), isFalse);
-      expect(await store.contains(tree, 'web/big.bin'), isFalse);
-    },
-    skip: !hasGit,
-  );
+  test("drops an earlier build's repository of snapshots", () async {
+    final repository = Directory(
+      p.join(checkpoints, p.basename((await store()).folder)),
+    )..createSync(recursive: true);
+    File(p.join(repository.path, 'HEAD')).writeAsStringSync('ref: x\n');
+    File(p.join(repository.path, 'index')).writeAsStringSync('big');
+    await store();
+    expect(File(p.join(repository.path, 'HEAD')).existsSync(), isFalse);
+  });
 }

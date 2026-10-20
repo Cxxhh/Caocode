@@ -130,9 +130,9 @@ class UpdateManifest {
   /// The platform keys with a usable download.
   Iterable<String> get platforms => _platforms.keys;
 
-  /// [platform]'s download (`windows-x64`, `macos-arm64`, `macos-x64`); null when
-  /// the release has none for it. Throws an [UpdateManifestException] when
-  /// its entry is there but wrong.
+  /// [platform]'s download (`windows-x64`, `macos-arm64`, `macos-x64`,
+  /// `linux-x64`, `linux-arm64`); null when the release has none for it.
+  /// Throws an [UpdateManifestException] when its entry is there but wrong.
   UpdateAsset? assetFor(String platform) {
     if (_invalidPlatforms[platform] case final error?) {
       throw UpdateManifestException('platforms.$platform: $error');

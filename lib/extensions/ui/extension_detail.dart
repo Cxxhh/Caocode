@@ -23,6 +23,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../base/smooth_scroll.dart';
 import '../../chat/widgets/markdown_view.dart';
 import '../../ide/ide_menu.dart';
 import '../../l10n/l10n.dart';
@@ -666,17 +667,20 @@ class _ExtensionDetailPageState extends State<ExtensionDetailPage> {
       ),
       ExtensionDetailTab.features => _features(context),
     };
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          content,
-          if (withSidebar) ...[
-            const SizedBox(height: 24),
-            _sidebarContent(context),
+    return SmoothScrolling(
+      builder: (context, controller) => SingleChildScrollView(
+        controller: controller,
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            content,
+            if (withSidebar) ...[
+              const SizedBox(height: 24),
+              _sidebarContent(context),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -798,9 +802,12 @@ class _ExtensionDetailPageState extends State<ExtensionDetailPage> {
         ),
       ),
     ),
-    child: SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      child: _sidebarContent(context),
+    child: SmoothScrolling(
+      builder: (context, controller) => SingleChildScrollView(
+        controller: controller,
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        child: _sidebarContent(context),
+      ),
     ),
   );
 

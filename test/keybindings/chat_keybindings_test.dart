@@ -101,6 +101,9 @@ void main() {
     expect(mac(ChatCommandIds.openModelPicker), '⌥⌘.');
     expect(windows(ChatCommandIds.openModelPicker), 'Ctrl+Alt+.');
     expect(mac(ChatCommandIds.attachContext), '⌘/');
+    expect(mac(ChatCommandIds.pasteRaw), '⇧⌘V');
+    expect(windows(ChatCommandIds.pasteRaw), 'Ctrl+Shift+V');
+    expect(linux(ChatCommandIds.pasteRaw), 'Ctrl+Shift+V');
     expect(linux(ChatCommandIds.acceptSelectedSuggestion), 'Tab');
     expect(linux(ChatCommandIds.hideSuggestWidget), 'Escape');
     expect(linux(ChatCommandIds.interactionToggle), 'Space');

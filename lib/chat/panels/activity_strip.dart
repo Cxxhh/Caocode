@@ -80,7 +80,12 @@ class _ActivityStripState extends State<ActivityStrip> {
   /// Past this many rows, tasks scroll within the strip.
   static const _maxTaskRows = 4;
 
+  /// Past this many tasks, they fold under a line counting them, as the
+  /// files changed do.
+  static const _maxUnfoldedTasks = 3;
+
   bool _filesExpanded = false;
+  bool _tasksExpanded = false;
   Timer? _ticker;
 
   @override
@@ -134,7 +139,14 @@ class _ActivityStripState extends State<ActivityStrip> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (widget.tasks.isNotEmpty)
+          if (widget.tasks.length > _maxUnfoldedTasks)
+            _TasksHeader(
+              tasks: widget.tasks,
+              expanded: _tasksExpanded,
+              onToggle: () => setState(() => _tasksExpanded = !_tasksExpanded),
+            ),
+          if (widget.tasks.isNotEmpty &&
+              (widget.tasks.length <= _maxUnfoldedTasks || _tasksExpanded))
             ConstrainedBox(
               constraints: const BoxConstraints(
                 maxHeight: _StripRow.height * _maxTaskRows,
@@ -356,6 +368,56 @@ class _IconAction extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The line over the tasks once there are many: how many run, folding
+/// them away or showing them.
+class _TasksHeader extends StatelessWidget {
+  const _TasksHeader({
+    required this.tasks,
+    required this.expanded,
+    required this.onToggle,
+  });
+
+  final List<KernelTask> tasks;
+  final bool expanded;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final agents = tasks.every((task) => task.kind == KernelTaskKind.agent);
+    return _StripRow(
+      onTap: onToggle,
+      children: [
+        AnimatedRotation(
+          turns: expanded ? 0.25 : 0,
+          duration: const Duration(milliseconds: 150),
+          child: Icon(
+            Icons.chevron_right_rounded,
+            size: 16,
+            color: AppColors.textMuted,
+          ),
+        ),
+        const SizedBox(width: 4),
+        if (agents) ...[
+          const SizedBox.square(dimension: 14, child: PixelLoader.subagent()),
+          const SizedBox(width: 6),
+        ],
+        Expanded(
+          child: Text(
+            agents
+                ? l10n.stripAgentsRunning(tasks.length)
+                : l10n.stripTasksRunning(tasks.length),
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: AppColors.text, fontSize: 12),
+          ),
+        ),
+      ],
     );
   }
 }

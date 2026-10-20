@@ -7,6 +7,12 @@
 # The mark in black and in white, lossless WebP, by height: 12, 18 and 24px
 # shown (4:3, so 16, 24 and 32 wide), at 1x, 2x and 3x. The app icon, PNG,
 # square, from 16 to 512.
+#
+#   /tmp/brand/bin/python tool/make_brand_assets.py --extension
+#
+# writes the browser extension's instead: its icons (browser_extension/icons,
+# the 128 one with the margin the Chrome Web Store asks for) and the store's
+# small promo tile (docs/browser-extension-store/).
 import os
 import sys
 
@@ -61,5 +67,25 @@ def main(out):
         icon(s).save(f'{out}/caocode-icon-{s}.png', optimize=True)
 
 
+def extension():
+    out = 'browser_extension/icons'
+    os.makedirs(out, exist_ok=True)
+    # The toolbar's, full bleed; the store's and the extensions page's 96
+    # of 128, as Chrome's guidelines have it.
+    for s in (16, 32, 48):
+        icon(s).save(f'{out}/icon-{s}.png', optimize=True)
+    framed = Image.new('RGBA', (128, 128), (0, 0, 0, 0))
+    framed.alpha_composite(icon(96), (16, 16))
+    framed.save(f'{out}/icon-128.png', optimize=True)
+    store = 'docs/browser-extension-store'
+    os.makedirs(store, exist_ok=True)
+    tile = Image.new('RGBA', (440, 280), ICON_BG + (255,))
+    tile.alpha_composite(mark(GOLD, 96), (220 - 64, 140 - 48))
+    tile.convert('RGB').save(f'{store}/promo-small-440x280.png', optimize=True)
+
+
 if __name__ == '__main__':
-    main(sys.argv[1])
+    if sys.argv[1] == '--extension':
+        extension()
+    else:
+        main(sys.argv[1])

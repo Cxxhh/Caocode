@@ -1,3 +1,5 @@
+import 'package:bao_remote/claude.dart' show ClaudeHistoryPage;
+
 import '../agent_kernel.dart';
 
 /// No local sessions on the web.
@@ -24,4 +26,10 @@ class ClaudeStorage implements SessionCatalog {
 
   static Future<List<Map<String, Object?>>> read(SessionRecord session) async =>
       const [];
+
+  static Future<ClaudeHistoryPage> readPage(
+    SessionRecord session, {
+    required int turns,
+    String? before,
+  }) async => const ClaudeHistoryPage([]);
 }

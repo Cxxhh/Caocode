@@ -5,14 +5,14 @@
 
 // The Git commands the workbench runs, as VS Code's Git extension runs
 // them (extensions/git/src/git.ts at 6a598d4a13031703d483d103c1d934a36ad27971):
-// status with the branch and ignored paths, add, restore, checkout, clean,
-// commit, log for the graph and the timeline, show for the texts a diff
-// editor compares (`buffer`), blame for the editor's blame (`blame2`),
-// pull and push for Sync Changes and Publish Branch, and for-each-ref,
-// checkout and checkout -b for Checkout to… (`getRefs`,
-// `findTrackingBranches`, `checkout`, `branch`).
+// status with the branch and ignored paths, add, restore (or the older
+// reset, see `unstage`), checkout, clean, commit, log for the graph and the
+// timeline, show for the texts a diff editor compares (`buffer`), blame for
+// the editor's blame (`blame2`), fetch (one remote or all), pull and push
+// for the actions, and for-each-ref, checkout and checkout -b for Checkout
+// to… (`getRefs`, `findTrackingBranches`, `checkout`, `branch`).
 //
-// Deviations: no fetch, no stash, and no credential prompts
+// Deviations: no stash, and no credential prompts
 // (`GIT_TERMINAL_PROMPT=0`: a remote that asks for a password fails).
 
 import 'package:bao_remote/git.dart';
@@ -35,6 +35,16 @@ typedef IdeGitRunner = Future<IdeGitOutput> Function(
 
 /// Changes under the repository at [repositoryRoot].
 typedef IdeGitWatcher = Stream<void> Function(String repositoryRoot);
+
+/// `git --version`'s output (`git version 2.23.0.windows.1`, `git version
+/// 2.39.2 (Apple Git-143)`) as (major, minor); null when it cannot be read
+/// (an unexpected spelling).
+(int, int)? parseGitVersion(String output) {
+  final match = RegExp(r'(\d+)\.(\d+)').firstMatch(output);
+  return match == null
+      ? null
+      : (int.parse(match[1]!), int.parse(match[2]!));
+}
 
 /// A file a commit changed.
 class IdeGitCommitChange {
@@ -97,6 +107,40 @@ class IdeGitService {
     final top = output.stdout.trim();
     if (top.isEmpty) return null;
     return _repositoryRoot = pathContext.normalize(top);
+  }
+
+  /// The folders of the submodules of the repository [root] is in, as its
+  /// `.gitmodules` names them (upstream's `git.detectSubmodules` reads the
+  /// same); none where it has none, or Git cannot say.
+  Future<List<String>> submodulePaths() async {
+    try {
+      // The top level from [root] as [root] is spelled (`--show-toplevel`
+      // resolves links, which [root] may go through).
+      final cdup = await _git(['rev-parse', '--show-cdup'], cwd: root);
+      if (cdup.exitCode != 0) return const [];
+      final up = cdup.stdout.trim();
+      final top = pathContext.normalize(pathContext.join(root, up));
+      final output = await _git([
+        'config',
+        '-z',
+        '--file',
+        up.isEmpty ? '.gitmodules' : '$up.gitmodules',
+        '--get-regexp',
+        r'^submodule\..*\.path$',
+      ], cwd: root);
+      if (output.exitCode != 0) return const [];
+      // `-z`: each `key` newline `value`, then a NUL.
+      return [
+        for (final entry in output.stdout.split('\x00'))
+          if (entry.indexOf('\n') case final newline when newline >= 0)
+            pathContext.joinAll([
+              top,
+              ...entry.substring(newline + 1).split('/'),
+            ]),
+      ];
+    } catch (_) {
+      return const [];
+    }
   }
 
   /// Whether [root] is a working tree's top level, not a folder in one
@@ -188,20 +232,48 @@ class IdeGitService {
     );
   }
 
-  /// Unstages [paths] (all when null): `git restore --staged`, or `git rm
-  /// --cached` before the first commit.
+  /// Unstages [paths] (all when null): `git restore --staged` where Git has
+  /// it (2.23+), else `git reset -q HEAD --` (2.0+); before the first
+  /// commit, `git rm --cached -r -q --` either way (there is no HEAD to
+  /// reset against).
+  ///
+  /// Older Gits (before 2.23, e.g. the 2.17 shipped on some systems) have no
+  /// `restore`; asking for it fails outright, so the version is read once
+  /// and `reset` used instead.
   Future<void> unstage(Iterable<String>? paths, {bool unborn = false}) async {
     final top = await _requireRoot();
     final relative = _pathspec(top, paths);
-    _check(
-      await _git(
-        unborn
-            ? ['rm', '--cached', '-r', '-q', '--', ...relative]
-            : ['restore', '--staged', '--', ...relative],
-      ),
-      'Cannot unstage the changes.',
-    );
+    final command = unborn
+        ? ['rm', '--cached', '-r', '-q', '--', ...relative]
+        : await _supportsRestore()
+        ? ['restore', '--staged', '--', ...relative]
+        : ['reset', '-q', 'HEAD', '--', ...relative];
+    _check(await _git(command), 'Cannot unstage the changes.');
   }
+
+  /// Whether this Git has `git restore` (added in 2.23), read once from
+  /// `git --version`. A Git whose version cannot be read is taken to have
+  /// it: the newer commands are the ones a modern Git expects.
+  Future<bool> _supportsRestore() async =>
+      _restoreSupport ??= switch (await _gitVersion()) {
+        final version? => _atLeast(version, 2, 23),
+        null => true,
+      };
+
+  /// The Git version, or null when Git is missing or its version cannot be
+  /// read. Kept: it does not change while the service runs.
+  Future<(int, int)?>? _gitVersionCache;
+  Future<(int, int)?> _gitVersion() => _gitVersionCache ??= () async {
+    final output = await _git(['--version']);
+    if (output.exitCode != 0) return null;
+    return parseGitVersion(output.stdout);
+  }();
+
+  bool? _restoreSupport;
+
+  /// Whether [version] (major, minor) is [major].[minor] or newer.
+  static bool _atLeast((int, int) version, int major, int minor) =>
+      version.$1 != major ? version.$1 > major : version.$2 >= minor;
 
   /// Discards working-tree changes: tracked files are checked out from the
   /// index, untracked ones deleted (`git clean -f -q`).
@@ -345,6 +417,16 @@ class IdeGitService {
       for (final line in output.stdout.split('\n'))
         if (line.trim().isNotEmpty) line.trim(),
     ];
+  }
+
+  /// `git fetch <remote> --tags` for one remote, or `git fetch --all
+  /// --tags` for every remote (`git.fetch`/`git.fetchAll`).
+  Future<void> fetch({String? remote}) async {
+    await _requireRoot();
+    _check(
+      await _git(['fetch', ?remote, if (remote == null) '--all', '--tags']),
+      remote == null ? 'Cannot fetch from all remotes.' : 'Cannot fetch.',
+    );
   }
 
   /// `git pull --tags remote branch` (`pull` with `git.pullTags`, without

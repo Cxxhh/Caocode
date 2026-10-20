@@ -65,6 +65,7 @@ Future<void> showSearchPalette(
   required List<PaletteAction> actions,
   required List<PaletteAction> settings,
   required ValueChanged<AgentThread> onOpenAgent,
+  void Function(AgentThread thread, String query)? onFindInAgent,
   required ValueChanged<String> onOpenFile,
   required ValueChanged<PaletteAction> onRunAction,
   List<String> recentActions = const [],
@@ -94,6 +95,7 @@ Future<void> showSearchPalette(
         Navigator.of(context).pop();
       },
       onOpenAgent: onOpenAgent,
+      onFindInAgent: onFindInAgent,
       onOpenFile: onOpenFile,
       onRunAction: onRunAction,
     ),
@@ -110,6 +112,7 @@ class SearchPalette extends StatefulWidget {
     required this.settings,
     required this.onPick,
     required this.onOpenAgent,
+    this.onFindInAgent,
     required this.onOpenFile,
     required this.onRunAction,
     this.recentActions = const [],
@@ -133,6 +136,10 @@ class SearchPalette extends StatefulWidget {
   /// What was picked, to run once the palette has closed.
   final ValueChanged<VoidCallback> onPick;
   final ValueChanged<AgentThread> onOpenAgent;
+
+  /// Opens an agent where its conversation says what was searched for (a
+  /// hit in what was said): [onOpenAgent] when null.
+  final void Function(AgentThread thread, String query)? onFindInAgent;
   final ValueChanged<String> onOpenFile;
   final ValueChanged<PaletteAction> onRunAction;
 
@@ -385,6 +392,7 @@ class _SearchPaletteState extends State<SearchPalette> {
     AppLocalizations l10n, {
     List<int> matches = const [],
     ConversationHit? snippet,
+    String? find,
   }) => _Entry(
     title: thread.localizedTitle(l10n),
     titleMatches: matches,
@@ -407,7 +415,10 @@ class _SearchPaletteState extends State<SearchPalette> {
     trailing:
         '${thread.project.name}   '
         '${relativeTime(thread.updatedAt, DateTime.now(), l10n)}',
-    run: () => widget.onOpenAgent(thread),
+    run: switch ((find, widget.onFindInAgent)) {
+      (final query?, final open?) => () => open(thread, query),
+      _ => () => widget.onOpenAgent(thread),
+    },
   );
 
   /// Agents whose title matches (fuzzily), else whose project's name does;
@@ -455,7 +466,7 @@ class _SearchPaletteState extends State<SearchPalette> {
     return [
       for (final hit in _hits)
         if (byId[hit.sessionId] case final thread?)
-          _agentEntry(thread, l10n, snippet: hit),
+          _agentEntry(thread, l10n, snippet: hit, find: _hitsFor),
     ].take(_filter == SearchFilter.all ? _fewHits : _many).toList();
   }
 

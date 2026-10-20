@@ -1,0 +1,220 @@
+# Packs BaoCode's browser extension (browser_extension/) and publishes it:
+# the zip to load unpacked on dl.baocode.dev, where baocode.dev/download
+# links to it (/dl/browser-extension), and the store's to the Chrome Web
+# Store. docs/release.md, 11.
+#
+#   git tag extension-v0.1.0 && git push origin extension-v0.1.0
+#                           publish 0.1.0 (manifest.json's version)
+#   git tag extension-test-foo && git push origin extension-test-foo
+#                           pack, and put both zips at dl.baocode.dev/test/…
+#   a pull request that changes the extension
+#                           pack it, to see that it does
+name: Extension
+
+on:
+  push:
+    tags: ['extension-*']
+  pull_request:
+    paths:
+      - 'browser_extension/**'
+      - 'tool/pack_browser_extension.sh'
+      - '.github/workflows/extension.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ startsWith(github.ref, 'refs/tags/extension-v') && 'extension-release' || format('extension-build-{0}', github.run_id) }}
+  cancel-in-progress: false
+
+env:
+  # The extension's id: the store's, which the zip to load unpacked has too
+  # (its manifest's "key"), and BaoCode lets in (BrowserBridge.extensionIds).
+  EXTENSION_ID: jfjagocghaaheooicmdnhcholmgdkngk
+
+jobs:
+  pack:
+    name: Pack
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      publish: ${{ steps.version.outputs.publish }}
+      share: ${{ steps.version.outputs.share }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: version
+        name: Read the version, and match the tag against it
+        run: |
+          version=$(jq -r .version browser_extension/manifest.json)
+          echo "manifest.json: $version"
+          publish=false share=false
+          case $GITHUB_REF_NAME in
+            extension-v*)
+              if [ "$GITHUB_REF_NAME" != "extension-v$version" ]; then
+                echo "::error::Tag $GITHUB_REF_NAME, but the extension is $version: the tag has to be extension-v$version"
+                exit 1
+              fi
+              publish=true ;;
+            extension-test-*) share=true ;;
+          esac
+          {
+            echo "version=$version"
+            echo "publish=$publish"
+            echo "share=$share"
+          } >> "$GITHUB_OUTPUT"
+      - name: Check the extension
+        run: |
+          node --check browser_extension/background.js
+          # The id BaoCode lets in is the manifest key's.
+          id=$(jq -r .key browser_extension/manifest.json | base64 -d | sha256sum | head -c 32 | tr 0-9a-f a-p)
+          [ "$id" = "$EXTENSION_ID" ] || { echo "::error::manifest.json's key is extension $id, not $EXTENSION_ID"; exit 1; }
+          grep -q "'$EXTENSION_ID'" lib/browser/browser_bridge.dart \
+            || { echo "::error::lib/browser/browser_bridge.dart does not let $EXTENSION_ID in"; exit 1; }
+          # Each file the manifest names is there.
+          jq -r '[.icons[], .action.default_icon[], .background.service_worker] | .[]' browser_extension/manifest.json \
+            | while read -r file; do
+                [ -f "browser_extension/$file" ] || { echo "::error::manifest.json names $file, not there"; exit 1; }
+              done
+      - name: Pack
+        run: tool/pack_browser_extension.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: extension
+          if-no-files-found: error
+          path: build/browser_extension/BaoCode-browser-*.zip
+
+  share:
+    name: Put it at dl.baocode.dev/test/ for testers
+    needs: pack
+    if: github.repository == 'baocode-dev/baocode' && needs.pack.outputs.share == 'true'
+    runs-on: ubuntu-latest
+    environment: release
+    env:
+      VERSION: ${{ needs.pack.outputs.version }}
+      R2_BUCKET: ${{ vars.R2_BUCKET }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      AWS_ENDPOINT_URL: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension
+          path: dist
+      - name: Upload
+        run: |
+          name=$(printf '%s' "${GITHUB_REF_NAME#extension-test-}" | tr -c 'A-Za-z0-9.-' '-' | sed 's/-*$//')
+          dir="test/extension-$VERSION-$name-$GITHUB_RUN_NUMBER"
+          {
+            echo "## For testers: the browser extension $VERSION, \`$GITHUB_REF_NAME\`"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+          for file in dist/BaoCode-browser-*.zip; do
+            name=$(basename "$file")
+            aws s3 cp "$file" "s3://$R2_BUCKET/$dir/$name" --cache-control 'public, max-age=86400' \
+              --content-type application/zip
+            url="https://dl.baocode.dev/$dir/$name"
+            served=$(curl -fsSI "$url" | tr -d '\r' | awk 'tolower($1) == "content-length:" { print $2 }')
+            [ "$served" = "$(stat -c %s "$file")" ] || { echo "::error::$url is not served as uploaded"; exit 1; }
+            echo "- [$name]($url)" >> "$GITHUB_STEP_SUMMARY"
+          done
+          cat "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    name: Publish to dl.baocode.dev
+    needs: pack
+    if: github.repository == 'baocode-dev/baocode' && needs.pack.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    environment: release
+    env:
+      VERSION: ${{ needs.pack.outputs.version }}
+      # The store's page (a variable of the release environment's, to give
+      # another than the one the id makes): /dl/chrome-web-store and the
+      # app (lib/browser/extension_store.dart) lead to it.
+      STORE_URL: ${{ vars.CHROME_WEB_STORE_URL }}
+      R2_BUCKET: ${{ vars.R2_BUCKET }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      AWS_ENDPOINT_URL: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension
+          path: dist
+      - name: Upload the zip to load unpacked
+        run: |
+          aws s3 cp "dist/BaoCode-browser-$VERSION.zip" \
+            "s3://$R2_BUCKET/releases/extension/$VERSION/BaoCode-browser-$VERSION.zip" \
+            --cache-control 'public, max-age=31536000, immutable' --content-type application/zip
+      - name: Write the manifest, and check the download is served
+        run: |
+          file="dist/BaoCode-browser-$VERSION.zip"
+          sha=$(sha256sum "$file" | cut -d' ' -f1)
+          size=$(stat -c %s "$file")
+          url="https://dl.baocode.dev/releases/extension/$VERSION/BaoCode-browser-$VERSION.zip?sha256=${sha:0:16}"
+          jq -n --arg version "$VERSION" --arg date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --arg id "$EXTENSION_ID" \
+            --arg store "${STORE_URL:-https://chromewebstore.google.com/detail/$EXTENSION_ID}" \
+            --arg url "$url" --arg sha "$sha" --argjson size "$size" \
+            '{version: $version, pubDate: $date, id: $id, store: $store,
+              downloads: {"browser-extension": {url: $url, size: $size, sha256: $sha}}}' > latest.json
+          cat latest.json
+          served=$(curl -fsSI "$url" | tr -d '\r' | awk 'tolower($1) == "content-length:" { print $2 }')
+          echo "$url: $served bytes (expected $size)"
+          [ "$served" = "$size" ] || { echo "::error::$url is not served as uploaded"; exit 1; }
+      - name: Upload latest.json, last
+        run: |
+          aws s3 cp latest.json "s3://$R2_BUCKET/releases/extension/latest.json" \
+            --cache-control 'public, max-age=300' --content-type application/json
+          curl -fsS "https://dl.baocode.dev/releases/extension/latest.json?$GITHUB_RUN_ID" | jq .
+
+  store:
+    name: Submit to the Chrome Web Store
+    needs: pack
+    if: github.repository == 'baocode-dev/baocode' && needs.pack.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    environment: release
+    env:
+      VERSION: ${{ needs.pack.outputs.version }}
+      # The Chrome Web Store API's (docs/release.md, 11): without them the
+      # zip is left to upload by hand, from this run's artifacts.
+      PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID }}
+      CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+      CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+      REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension
+          path: dist
+      - name: Upload, and submit for review
+        run: |
+          if [ -z "$PUBLISHER_ID" ] || [ -z "$CLIENT_ID" ] || [ -z "$CLIENT_SECRET" ] || [ -z "$REFRESH_TOKEN" ]; then
+            echo "::warning::No Chrome Web Store credentials: upload BaoCode-browser-$VERSION-store.zip from this run's artifacts by hand."
+            exit 0
+          fi
+          token=$(curl -fsS https://oauth2.googleapis.com/token \
+            -d client_id="$CLIENT_ID" -d client_secret="$CLIENT_SECRET" \
+            -d refresh_token="$REFRESH_TOKEN" -d grant_type=refresh_token | jq -r .access_token)
+          item="publishers/$PUBLISHER_ID/items/$EXTENSION_ID"
+          api=https://chromewebstore.googleapis.com
+          upload=$(curl -sS -X POST -H "Authorization: Bearer $token" \
+            -T "dist/BaoCode-browser-$VERSION-store.zip" "$api/upload/v2/$item:upload")
+          echo "$upload" | jq .
+          state=$(echo "$upload" | jq -r .uploadState)
+          # A big zip is taken in later: asked after till it is.
+          for _ in $(seq 30); do
+            [[ "$state" == *IN_PROGRESS ]] || break
+            sleep 10
+            state=$(curl -fsS -H "Authorization: Bearer $token" "$api/v2/$item:fetchStatus" \
+              | tee /dev/stderr | jq -r .lastAsyncUploadState)
+          done
+          [ "$state" = SUCCEEDED ] || { echo "::error::The store did not take the zip: $state"; exit 1; }
+          curl -fsS -X POST -H "Authorization: Bearer $token" -H 'Content-Type: application/json' \
+            -d '{}' "$api/v2/$item:publish" | jq .
+          echo "Submitted $VERSION for review: it is published once it passes." >> "$GITHUB_STEP_SUMMARY"

@@ -13,7 +13,20 @@ export 'ssh_askpass.dart' show SshPrompt, SshPrompter;
 /// A host to reach: an alias of `~/.ssh/config`, or `user@host`, with a
 /// port after a colon (`dev:2222`, `me@10.0.0.2:2222`).
 class SshTarget {
-  SshTarget._(this.text, this.destination, this.port);
+  SshTarget._(
+    this.text,
+    this.destination,
+    this.port, [
+    this.options = const [],
+  ]);
+
+  /// [text] reached by [destination], a `Host` of [configFile] (a server
+  /// the user saved in the app; see [sshServersConfig]).
+  SshTarget.configured(
+    String text, {
+    required String destination,
+    required String configFile,
+  }) : this._(text.trim(), destination, null, ['-F', configFile]);
 
   factory SshTarget.parse(String text) {
     text = text.trim();
@@ -34,6 +47,9 @@ class SshTarget {
   final String destination;
   final int? port;
 
+  /// `ssh`'s options for it (`-F` and its config).
+  final List<String> options;
+
   /// Whether [text] could name a host: no spaces, no option.
   static bool isValid(String text) {
     text = text.trim();
@@ -43,6 +59,7 @@ class SshTarget {
   }
 
   List<String> get arguments => [
+    ...options,
     if (port case final port?) ...['-p', '$port'],
     destination,
   ];
@@ -67,8 +84,13 @@ enum SshFailure {
   /// cancelled.
   authentication,
 
-  /// The host's key is unknown here, or changed.
+  /// The host's key is unknown here, and not to be learned (the user's
+  /// `StrictHostKeyChecking yes`).
   hostKey,
+
+  /// The host's key is not the one known for it: the server was installed
+  /// again, or someone is in between (see [SshLauncher.forgetHostKey]).
+  hostKeyChanged,
 
   /// No such host, or it does not answer.
   unreachable,
@@ -153,7 +175,9 @@ class SshConnection {
 /// ProxyJump, the agent and known_hosts are the user's own): asks the host
 /// what it is, puts the server there if this build of it is not yet (by
 /// stdin, written to a temporary file and moved into place), then starts it
-/// and talks to it over the connection.
+/// and talks to it over the connection. A host key not known yet is
+/// learned, as one accepts it in a terminal the first time (unless the
+/// user's config says otherwise); a changed one is refused.
 class SshLauncher {
   SshLauncher({
     required this.ssh,
@@ -174,7 +198,7 @@ class SshLauncher {
   /// Answers what `ssh` asks while signing in (a password, a key's
   /// passphrase); without one, or with an `ssh` older than OpenSSH 8.4 on
   /// Windows, nothing is asked and a host that wants a password refuses.
-  /// A host key `ssh` does not know is refused all the same.
+  /// Whether to accept a host key is not asked (see [connect]).
   final SshPrompter? prompter;
   final SshAskpass _askpass;
 
@@ -210,7 +234,7 @@ class SshLauncher {
     return major > 8 || (major == 8 && minor >= 4);
   }
 
-  /// No prompts (a password, an unknown host key fail instead), keepalives
+  /// No prompts (a password fails instead), keepalives
   /// that notice a dead connection, and no escape character on the binary
   /// stream. With a [prompter], `BatchMode` is off for it to be asked.
   static const defaultOptions = [
@@ -227,6 +251,9 @@ class SshLauncher {
     'none',
   ];
 
+  /// [SshConnectException.message] when the user cancelled signing in.
+  static const cancelledMessage = 'Signing in was cancelled.';
+
   /// Where the server's builds go on the host, from its home folder.
   static const serverRoot = '.caocode-server';
 
@@ -235,18 +262,149 @@ class SshLauncher {
   /// The server's path on the host, from the home folder.
   String get serverPath => '$_folder/caocode-server';
 
-  List<String> arguments(SshTarget target, String command) => [
+  /// `ssh`'s arguments to run [command] on [target], with [extra] options
+  /// (see [hostKeyOptions]).
+  List<String> arguments(
+    SshTarget target,
+    String command, {
+    List<String> extra = const [],
+  }) => [
     for (final option in options)
       option == 'BatchMode=yes' && _prompts ? 'BatchMode=no' : option,
+    ...extra,
     ...target.arguments,
     command,
   ];
 
-  /// Starts `ssh` for [target] running [command], what it asks answered
-  /// by [prompter] until [AskpassRun.close].
+  /// What `ssh -G` makes of [target]'s configuration: each keyword, in
+  /// lowercase, and its value; empty when it would not say.
+  Future<Map<String, String>> configOf(SshTarget target) async {
+    final Process process;
+    try {
+      process = await _start(ssh, ['-G', ...target.arguments]);
+    } on ProcessException {
+      return const {};
+    }
+    unawaited(process.stdin.close().catchError((Object _) {}));
+    final stdout = process.stdout
+        .transform(const Utf8Decoder(allowMalformed: true))
+        .join();
+    unawaited(process.stderr.drain<void>().catchError((Object _) {}));
+    final code = await process.exitCode.timeout(
+      const Duration(seconds: 10),
+      onTimeout: () {
+        process.kill();
+        return -1;
+      },
+    );
+    if (code != 0) return const {};
+    final config = <String, String>{};
+    for (final line in const LineSplitter().convert(await stdout)) {
+      final space = line.indexOf(' ');
+      if (space <= 0) continue;
+      config.putIfAbsent(
+        line.substring(0, space).toLowerCase(),
+        () => line.substring(space + 1).trim(),
+      );
+    }
+    return config;
+  }
+
+  /// The options [target] is reached with, its host key considered: one
+  /// not known yet is learned (`StrictHostKeyChecking=accept-new`), unless
+  /// the user's config says what to do with it; one changed is refused
+  /// all the same. `ask`, ssh's default, would ask in a terminal there is
+  /// none of here.
+  Future<List<String>> hostKeyOptions(SshTarget target) async {
+    final strict = (await configOf(target))['stricthostkeychecking'];
+    return strict == null || strict == 'ask'
+        ? const ['-o', 'StrictHostKeyChecking=accept-new']
+        : const [];
+  }
+
+  /// Forgets the key known for [target]'s host, in the user's known_hosts
+  /// files (`ssh-keygen -R`), for the next connection to learn the one it
+  /// has now: after the server was installed again
+  /// ([SshFailure.hostKeyChanged]).
+  Future<void> forgetHostKey(SshTarget target) async {
+    final config = await configOf(target);
+    final host = config['hostkeyalias'] ?? config['hostname'];
+    if (host == null) {
+      throw SshConnectException(
+        SshFailure.server,
+        'ssh did not say which host ${target.text} is',
+      );
+    }
+    final port = config['port'];
+    final name = port == null || port == '22' ? host : '[$host]:$port';
+    final keygen = _beside(ssh, 'ssh-keygen');
+    for (final file in knownHostsFiles(config['userknownhostsfile'] ?? '')) {
+      final Process process;
+      try {
+        process = await _start(keygen, ['-R', name, '-f', file]);
+      } on ProcessException catch (error) {
+        throw SshConnectException(
+          SshFailure.noSsh,
+          'ssh-keygen could not be started',
+          detail: error.message,
+        );
+      }
+      unawaited(process.stdin.close().catchError((Object _) {}));
+      unawaited(process.stdout.drain<void>().catchError((Object _) {}));
+      final stderr = process.stderr
+          .transform(const Utf8Decoder(allowMalformed: true))
+          .join();
+      // 0, or 1 when the file had no key for it.
+      if (await process.exitCode > 1) {
+        throw SshConnectException(
+          SshFailure.server,
+          'The old host key could not be removed from $file',
+          detail: _tail(await stderr),
+        );
+      }
+    }
+  }
+
+  /// The files of `ssh -G`'s [value] for known_hosts files that there
+  /// are: their paths joined by spaces, unquoted, so that one with a space
+  /// in it (`C:\Users\John Doe\.ssh\known_hosts`) is told by its file.
+  static List<String> knownHostsFiles(String value) {
+    final words = value.split(' ');
+    final files = <String>[];
+    var i = 0;
+    while (i < words.length) {
+      // The most words from here that make a file (`/tmp/a b/known_hosts`
+      // over a `/tmp/a` there may be); none, a word that starts no file.
+      var next = i + 1;
+      for (var j = words.length - 1; j >= i; j--) {
+        final path = words.sublist(i, j + 1).join(' ');
+        if (path.isNotEmpty && File(path).existsSync()) {
+          files.add(path);
+          next = j + 1;
+          break;
+        }
+      }
+      i = next;
+    }
+    return files;
+  }
+
+  /// The [tool] of OpenSSH's beside [ssh] (`ssh-keygen`), else on PATH.
+  static String _beside(String ssh, String tool) {
+    final windows = ssh.toLowerCase().endsWith('.exe');
+    final separator = ssh.lastIndexOf(RegExp(r'[/\\]'));
+    if (separator < 0) return tool;
+    final path =
+        '${ssh.substring(0, separator + 1)}$tool${windows ? '.exe' : ''}';
+    return File(path).existsSync() ? path : tool;
+  }
+
+  /// Starts `ssh` for [target] running [command] with [extra] options,
+  /// what it asks answered by [prompter] until [AskpassRun.close].
   Future<(Process, AskpassRun?)> _startSsh(
     SshTarget target,
     String command,
+    List<String> extra,
   ) async {
     final prompter = this.prompter;
     if (prompter != null && _askpass.windows) await _checkForced();
@@ -256,7 +414,7 @@ class SshLauncher {
     try {
       final process = await _start(
         ssh,
-        arguments(target, command),
+        arguments(target, command, extra: extra),
         environment: askpass?.environment,
       );
       // Cancelled: ended, lest it ask again (up to NumberOfPasswordPrompts
@@ -324,7 +482,13 @@ exit 0
   }) async {
     final progress = onProgress ?? (_) {};
     progress('Connecting to ${target.text}');
-    final probe = await _run(target, 'sh -s', stdin: utf8.encode(probeScript));
+    final extra = await hostKeyOptions(target);
+    final probe = await _run(
+      target,
+      'sh -s',
+      extra,
+      stdin: utf8.encode(probeScript),
+    );
     final lines = const LineSplitter().convert(probe.stdout);
     final header = lines.firstWhere(
       (line) => line.startsWith('CAOCODE-PROBE '),
@@ -360,6 +524,7 @@ exit 0
       final upload = await _run(
         target,
         uploadCommand(_nonce(), gzip: gzip),
+        extra,
         stdin: gzip ? GZipCodec(level: 6).encode(binary) : binary,
       );
       if (upload.exitCode != 0) {
@@ -371,11 +536,11 @@ exit 0
       }
     }
     progress('Starting the Caocode server on ${target.text}');
-    return _launch(target);
+    return _launch(target, extra);
   }
 
-  Future<SshConnection> _launch(SshTarget target) async {
-    final (process, askpass) = await _startSsh(target, serverPath);
+  Future<SshConnection> _launch(SshTarget target, List<String> extra) async {
+    final (process, askpass) = await _startSsh(target, serverPath, extra);
     final stderr = <String>[];
     process.stderr
         .transform(const Utf8Decoder(allowMalformed: true))
@@ -427,10 +592,11 @@ exit 0
 
   Future<({int exitCode, String stdout, String stderr})> _run(
     SshTarget target,
-    String command, {
+    String command,
+    List<String> extra, {
     List<int>? stdin,
   }) async {
-    final (process, askpass) = await _startSsh(target, command);
+    final (process, askpass) = await _startSsh(target, command, extra);
     final stdout = process.stdout
         .transform(const Utf8Decoder(allowMalformed: true))
         .join();
@@ -487,10 +653,13 @@ exit 0
     final failure = switch (stderr) {
       // Ended when cancelled, before ssh could say it was refused.
       _ when cancelled => SshFailure.authentication,
+      _
+          when stderr.contains('REMOTE HOST IDENTIFICATION HAS CHANGED') ||
+              RegExp(r'Host key for \S+ has changed').hasMatch(stderr) =>
+        SshFailure.hostKeyChanged,
       _ when stderr.contains('Permission denied') => SshFailure.authentication,
       _
           when stderr.contains('Host key verification failed') ||
-              stderr.contains('REMOTE HOST IDENTIFICATION HAS CHANGED') ||
               stderr.contains('No ED25519 host key is known') ||
               stderr.contains('host key is known') =>
         SshFailure.hostKey,
@@ -506,7 +675,7 @@ exit 0
       _ => code == 255 ? SshFailure.unreachable : SshFailure.server,
     };
     final message = switch (failure) {
-      SshFailure.authentication when cancelled => 'Signing in was cancelled.',
+      SshFailure.authentication when cancelled => cancelledMessage,
       SshFailure.authentication when _prompts =>
         'The host refused to sign in: the key, or the password given.',
       SshFailure.authentication when prompter != null && _version != null =>
@@ -517,8 +686,11 @@ exit 0
         'The host refused the key: no password is asked here. Set up a key '
             'or ssh-agent for it.',
       SshFailure.hostKey =>
-        'The host key is unknown or changed. Connect once with ssh in a '
-            'terminal to check and accept it.',
+        'The host key is unknown, and the ssh config says not to learn it. '
+            'Connect once with ssh in a terminal to check and accept it.',
+      SshFailure.hostKeyChanged =>
+        'The host key changed since the last connection: the server was '
+            'installed again, or someone is in between.',
       SshFailure.unreachable => 'The host could not be reached.',
       _ => fallback ?? 'ssh failed (exit $code).',
     };
@@ -527,6 +699,28 @@ exit 0
       message,
       detail: detail.isEmpty ? null : detail,
     );
+  }
+}
+
+/// The `ssh` to connect with: the system's ([findSsh]), but on Windows
+/// [bundled] (the app's own OpenSSH) where the system's is missing or too
+/// old to be asked for a password (before 8.4, as Windows 10's 8.1; see
+/// [SshLauncher.takesForcedAskpass]). Null when there is none.
+Future<String?> chooseSsh(
+  Map<String, String> environment, {
+  String? bundled,
+}) async {
+  final system = findSsh(environment);
+  if (!Platform.isWindows || bundled == null || !File(bundled).existsSync()) {
+    return system;
+  }
+  if (system == null) return bundled;
+  try {
+    final result = await Process.run(system, const ['-V']);
+    final version = '${result.stderr}${result.stdout}';
+    return SshLauncher.takesForcedAskpass(version) ? system : bundled;
+  } on ProcessException {
+    return bundled;
   }
 }
 

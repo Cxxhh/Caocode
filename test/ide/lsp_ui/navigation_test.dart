@@ -214,6 +214,41 @@ void main() {
     expect(workspace.active!.path, inRoot(_b));
   });
 
+  testWidgets('F12 centers a definition already in view', (tester) async {
+    const path = 'lib/long.dart';
+    final source = [
+      'void main() => target();',
+      for (var i = 1; i < 300; i++) 'int v$i = $i;',
+    ].join('\n');
+    var line = 0;
+    final languages = FakeLanguageFeatures()
+      ..onDefinition = (path, position) => [
+        LspLocation(uriOf('lib/long.dart'), lspRange(line, 4, 5)),
+      ];
+    await pumpLanguageWorkbench(
+      tester,
+      {path: source},
+      languages,
+      open: [path],
+    );
+    final view = surfaceView(tester);
+    final area = view.textArea!;
+    // Near the bottom of the viewport, in view.
+    line = (area.height / view.lineHeight).floor() - 2;
+    final target = surfaceController(tester).document.snapshot.lineStarts[line];
+    expect(view.caretRectAt(target)!.bottom, lessThanOrEqualTo(area.bottom));
+    await caretAt(tester, offsetOf(tester, 'target') + 1);
+
+    await press(tester, LogicalKeyboardKey.f12);
+    await settle(tester);
+    await settle(tester);
+    expect(surfaceController(tester).value.selection.extentOffset, target + 4);
+    expect(
+      view.caretRectAt(target)!.top,
+      closeTo(area.top + (area.height - view.lineHeight) / 2, 0.5),
+    );
+  });
+
   testWidgets('Ctrl/Cmd+click goes to the definition under the pointer and '
       'underlines it as a link while hovering', (tester) async {
     final languages = FakeLanguageFeatures()

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Finish setting up Caocode</title>
+<meta name="description" content="The last step of setting up Caocode.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/icon.png">
+<link rel="stylesheet" href="/style.css">
+<script src="/head.js"></script>
+</head>
+<body>
+<canvas class="grid" aria-hidden="true"></canvas>
+<svg class="sprite" aria-hidden="true">
+  <!-- Lucide (ISC), https://lucide.dev -->
+  <symbol id="ic-github" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5c.08-1.25-.27-2.48-1-3.5c.28-1.15.28-2.35 0-3.5c0 0-1 0-3 1.5c-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5c-.39.49-.68 1.05-.85 1.65S8.93 17.38 9 18v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></g></symbol>
+</svg>
+<header class="top">
+  <a class="brand" href="/"><img src="/icon.png" alt="">Caocode</a>
+  <a href="/download">Download</a>
+  <a href="/changelog">Changelog</a>
+  <a href="https://github.com/Cxxhh/Caocode"><svg class="ic" aria-hidden="true"><use href="#ic-github"/></svg>GitHub</a>
+  <a class="lang" href="/zh/activate" hreflang="zh" lang="zh-CN">中文</a>
+</header>
+
+<!-- activate.js tells stats.caocode.dev where this browser came to
+     the site from, for the install that opened the page; the words for it
+     are here. -->
+<main class="page" data-activate="en">
+  <h1>Finish setting up Caocode</h1>
+
+  <section data-state="sending" hidden>
+    <p class="subtitle">Finishing…</p>
+  </section>
+
+  <section data-state="done" hidden>
+    <p class="subtitle">All set. Go back to Caocode: it carries on by itself in a moment.</p>
+  </section>
+
+  <section data-state="failed" hidden>
+    <p class="subtitle">This page couldn’t reach our server. That’s fine: hand it to Caocode below.</p>
+  </section>
+
+  <section data-state="missing" hidden>
+    <p class="subtitle">This browser hasn’t been to caocode.dev before.</p>
+    <p>Did you download Caocode in another browser, or inside an app such as WeChat? Open this link there:</p>
+    <div class="copyable"><pre><code data-page-link></code></pre><button class="copy" type="button" data-copy data-done="Copied">Copy</button></div>
+    <div class="actions">
+      <button class="button" type="button" data-continue>Continue here</button>
+    </div>
+  </section>
+
+  <section data-state="invalid" hidden>
+    <p class="subtitle">This link can’t be used.</p>
+    <p>Open it from Caocode again: the window it shows on its first start has the button for it.</p>
+  </section>
+
+  <div data-handover hidden>
+    <div class="actions">
+      <a class="button primary" data-open href="/download">Back to Caocode</a>
+    </div>
+    <p class="note">Caocode still waiting? Click Back to Caocode, or copy this link and paste it into Caocode’s window (on Linux, the only way):</p>
+    <div class="copyable"><pre><code data-link></code></pre><button class="copy" type="button" data-copy data-done="Copied">Copy</button></div>
+  </div>
+
+  <noscript><p>This page needs JavaScript to finish setting up Caocode.</p></noscript>
+
+  <p class="note">Caocode notes once how you came to caocode.dev: the tag in the last link you came by with one, else the site you first came from, or neither. Nothing else about you or your browsing.</p>
+</main>
+
+<script src="/site.js"></script>
+<script src="/activate.js"></script>
+</body>
+</html>

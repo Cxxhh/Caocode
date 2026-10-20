@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../base/smooth_scroll.dart';
 import '../../chat/chat_width.dart';
 import '../../chat/widgets/scroll_edge_fade.dart';
+import '../../ide/ide_switch.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/workbench_theme.dart' show themeColors;
 
@@ -160,11 +162,18 @@ class SettingsColumn extends StatelessWidget {
         // lines of a description.
         return ScrollEdgeFade(
           fadeLength: 56,
-          child: ListView(
-            // Under the window's draggable strip already: the title near the
-            // nav's back button.
-            padding: EdgeInsets.fromLTRB(side, 16, side, 48),
-            children: children,
+          child: SmoothScrolling(
+            builder: (context, controller) => ListView(
+              controller: controller,
+              // Under the window's draggable strip already: the title near
+              // the nav's back button.
+              padding: EdgeInsets.fromLTRB(side, 16, side, 48),
+              // A section expanded or collapsed fades as it now ends.
+              children: [
+                for (final child in children)
+                  ScrollEdgeFadeContent(child: child),
+              ],
+            ),
           ),
         );
       },
@@ -328,8 +337,8 @@ class SettingsRow extends StatelessWidget {
   }
 }
 
-/// A setting that is on or off, as a row's control: a switch, in the
-/// theme's button colors when on.
+/// A setting that is on or off, as a row's control: [IdeSwitch], as tall as
+/// the row's label (see [SettingsText.label]).
 class SettingsSwitch extends StatelessWidget {
   const SettingsSwitch({
     super.key,
@@ -345,63 +354,15 @@ class SettingsSwitch extends StatelessWidget {
   final bool enabled;
 
   @override
-  Widget build(BuildContext context) {
-    final colors = themeColors;
-    // On: `button.background` under a `button.foreground` knob. Off: a faint
-    // track under a knob in the descriptions' color.
-    final track = value
-        ? colors['button.background']
-        : AppColors.textFaint.withValues(alpha: 0.45);
-    final knob = value
-        ? colors['button.foreground']
-        : SettingsColors.textSecondary;
-    // As tall as its label's letters, with the interface's font size.
-    final height = MediaQuery.textScalerOf(context)
-        .scale(SettingsText.label.fontSize! * 1.2)
-        .roundToDouble();
-    final knobSize = height - 4;
-    return Semantics(
-      toggled: value,
-      enabled: enabled,
-      label: semanticLabel,
-      excludeSemantics: true,
-      onTap: enabled ? () => onChanged(!value) : null,
-      child: MouseRegion(
-        cursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
-        child: GestureDetector(
-          onTap: enabled ? () => onChanged(!value) : null,
-          child: Opacity(
-            opacity: enabled ? 1 : 0.5,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 140),
-              curve: Curves.easeOut,
-              width: (height * 1.75).roundToDouble(),
-              height: height,
-              padding: const EdgeInsets.all(2),
-              alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-              decoration: BoxDecoration(
-                color: track,
-                borderRadius: BorderRadius.circular(height / 2),
-              ),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 140),
-                curve: Curves.easeOut,
-                width: knobSize,
-                height: knobSize,
-                decoration: BoxDecoration(
-                  color: knob,
-                  shape: BoxShape.circle,
-                  boxShadow: const [
-                    BoxShadow(color: Color(0x33000000), blurRadius: 2),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => IdeSwitch(
+    value: value,
+    onChanged: onChanged,
+    semanticLabel: semanticLabel,
+    enabled: enabled,
+    height: MediaQuery.textScalerOf(
+      context,
+    ).scale(SettingsText.label.fontSize! * 1.2).roundToDouble(),
+  );
 }
 
 /// A [SettingsRow] with a [SettingsSwitch]: a click on the row toggles it.

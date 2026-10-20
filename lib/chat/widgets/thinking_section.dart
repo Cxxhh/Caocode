@@ -3,8 +3,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../base/smooth_scroll.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/app_theme.dart';
+import 'agent_step.dart' show AgentStep;
 import 'edge_fade_mask.dart';
 import 'live_selectable_text.dart';
 import 'step_header.dart';
@@ -35,20 +37,19 @@ String thinkingTitle({
 }) {
   final strings = l10n ?? englishLocalizations;
   if (streaming == false && seconds == null) return (strings.stepThought, '');
+  String took(int seconds) =>
+      AgentStep.formatDuration(Duration(seconds: seconds), l10n: strings);
   return switch ((seconds, elapsed)) {
     (null, final elapsed?) => (
       strings.stepThinking,
-      strings.durationSeconds(math.max(1, elapsed.inSeconds)),
+      took(math.max(1, elapsed.inSeconds)),
     ),
     (null, null) => (strings.stepThinking, ''),
     (final int seconds, _) when seconds < 1 => (
       strings.stepThought,
       strings.stepBriefly,
     ),
-    (final int seconds, _) => (
-      strings.stepThought,
-      strings.durationSeconds(seconds),
-    ),
+    (final int seconds, _) => (strings.stepThought, took(seconds)),
   };
 }
 
@@ -61,7 +62,8 @@ String thinkingTitle({
   String text, {
   bool plainText = false,
 }) {
-  final match = _summaryTitle.firstMatch(text.trimLeft());
+  final trimmed = text.trimLeft();
+  final match = _summaryTitle.firstMatch(trimmed);
   if (match == null) {
     if (!plainText || text.trim().isEmpty) return null;
     final lines = text.trim().split(RegExp(r'\r?\n'));
@@ -72,8 +74,18 @@ String thinkingTitle({
   final title = match[1]!.trim();
   if (title.isEmpty) return null;
   final body = match[2]?.trim() ?? '';
-  // A later part's title reads as a line of the body.
-  return (title: title, body: body.replaceAllMapped(_partTitle, (m) => m[1]!));
+  if (plainText) {
+    return (
+      title: title,
+      body: body.replaceAllMapped(_partTitle, (match) => match[1]!),
+    );
+  }
+  final later = _partTitle.allMatches(body).lastOrNull;
+  if (later == null) return (title: title, body: body);
+  return (
+    title: later[1]!.trim(),
+    body: trimmed.trim().replaceAllMapped(_partTitle, (m) => m[1]!),
+  );
 }
 
 final _summaryTitle = RegExp(
@@ -117,7 +129,7 @@ class _ThinkingSectionState extends State<ThinkingSection> {
   /// Seven lines of text.
   static const _liveMaxHeight = 13 * 1.6 * 7;
 
-  final ScrollController _scrollController = ScrollController();
+  final _scrollController = SmoothScrollController();
   bool _contentAbove = false;
 
   bool get _streaming => widget.streaming ?? widget.seconds == null;
@@ -153,9 +165,10 @@ class _ThinkingSectionState extends State<ThinkingSection> {
     super.didUpdateWidget(oldWidget);
     _syncClock();
     if (widget.text == oldWidget.text || !_scrollController.hasClients) return;
-    // Follow new lines, unless scrolled up to read earlier ones.
+    // Follow new lines, unless scrolled up to read earlier ones (or a wheel
+    // is taking it there).
     final position = _scrollController.position;
-    if (position.pixels < position.maxScrollExtent - 2) return;
+    if (_scrollController.headedTo < position.maxScrollExtent - 2) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_scrollController.hasClients) return;
       final position = _scrollController.position;

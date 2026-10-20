@@ -43,9 +43,29 @@ constexpr unsigned int kMinClientHeight = 540;
 // logical pixels.
 constexpr int kCascade = 30;
 
+// The stash's panel's size, and the least it may be, in logical pixels (as
+// StashPanel.swift's).
+constexpr int kStashWidth = 560;
+constexpr int kStashHeight = 420;
+constexpr unsigned int kStashMinWidth = 380;
+constexpr unsigned int kStashMinHeight = 220;
+
 // Where the main window's word on showing at launch is kept.
 constexpr wchar_t kSettingsKey[] = L"Software\\Caocode";
 constexpr wchar_t kMainShownValue[] = L"MainShownAtLaunch";
+// Where the stash's panel was left, and how big (a RECT, in physical
+// pixels of the virtual screen).
+constexpr wchar_t kStashFrameValue[] = L"StashFrame";
+// Where the main window was left, and how big, for the next launch (a
+// KeptFrame).
+constexpr wchar_t kMainFrameValue[] = L"MainFrame";
+
+// A window's normal place and size (physical pixels of the virtual screen),
+// and whether it was maximized.
+struct KeptFrame {
+  RECT bounds;
+  DWORD maximized;
+};
 
 // How long the main window, held back at launch, waits for Flutter's
 // windows before it shows after all.
@@ -135,6 +155,36 @@ RECT Within(RECT bounds, const RECT& work) {
   left = (std::max)(left, work.left);
   top = (std::max)(top, work.top);
   return {left, top, left + width, top + height};
+}
+
+// |window|'s normal place and size, in the screen's coordinates: where it
+// goes back to, maximized or minimized. |maximized|: whether it is (or goes
+// back to being, minimized).
+bool NormalBounds(HWND window, RECT* bounds, bool* maximized) {
+  WINDOWPLACEMENT placement = {};
+  placement.length = sizeof(placement);
+  if (!::GetWindowPlacement(window, &placement)) {
+    return false;
+  }
+  const bool zoomed = ::IsZoomed(window) != 0;
+  const bool iconic = ::IsIconic(window) != 0;
+  if (zoomed || iconic) {
+    // The placement keeps it in the work area's coordinates: to the
+    // screen's.
+    *bounds = placement.rcNormalPosition;
+    MONITORINFO info = {};
+    info.cbSize = sizeof(info);
+    if (::GetMonitorInfoW(::MonitorFromRect(bounds, MONITOR_DEFAULTTONEAREST),
+                          &info)) {
+      ::OffsetRect(bounds, info.rcWork.left - info.rcMonitor.left,
+                   info.rcWork.top - info.rcMonitor.top);
+    }
+  } else if (!::GetWindowRect(window, bounds)) {
+    return false;
+  }
+  *maximized =
+      zoomed || (iconic && (placement.flags & WPF_RESTORETOMAXIMIZED) != 0);
+  return true;
 }
 
 }  // namespace
@@ -249,6 +299,7 @@ AppWindows::~AppWindows() {
   ::KillTimer(main_, kHoldBackTimer);
   // The views go while the engine is still there (see FlutterWindow).
   windows_.clear();
+  stash_ = nullptr;
   if (g_app_windows == this) {
     g_app_windows = nullptr;
   }
@@ -265,6 +316,13 @@ std::wstring AppWindows::NewWindowLabel() const {
   const auto found = labels_.find("newWindow");
   return found == labels_.end() || found->second.empty() ? L"New Window"
                                                          : found->second;
+}
+
+HWND AppWindows::StashHandle() {
+  AppWindows* windows = g_app_windows;
+  return windows == nullptr || windows->stash_ == nullptr
+             ? nullptr
+             : windows->stash_->GetHandle();
 }
 
 HWND AppWindows::HandleOf(int64_t view_id) const {
@@ -307,7 +365,7 @@ HWND AppWindows::FrontWindow() const {
 
 void AppWindows::Focus(int64_t view_id) {
   if (view_id == 0) {
-    BringToFront(main_);
+    BringToFront(main_, MainShowCommand(SW_SHOW));
     return;
   }
   const auto found = windows_.find(view_id);
@@ -354,8 +412,55 @@ void CALLBACK AppWindows::HoldBackTimer(HWND window, UINT message,
   // Flutter never started its windows, or none of them showed: the main
   // window is what the user has.
   if (!windows->started_ || windows->ShownWindows().empty()) {
-    BringToFront(windows->main_, SW_SHOWNORMAL);
+    BringToFront(windows->main_, windows->MainShowCommand(SW_SHOWNORMAL));
   }
+}
+
+void AppWindows::PlaceMain() {
+  KeptFrame kept = {};
+  DWORD size = sizeof(kept);
+  if (::RegGetValueW(HKEY_CURRENT_USER, kSettingsKey, kMainFrameValue,
+                     RRF_RT_REG_BINARY, nullptr, &kept,
+                     &size) != ERROR_SUCCESS ||
+      size != sizeof(kept) || kept.bounds.right <= kept.bounds.left ||
+      kept.bounds.bottom <= kept.bounds.top) {
+    return;
+  }
+  // On a monitor still, inside its work area as far as it fits (the
+  // monitors may have changed since).
+  const HMONITOR monitor =
+      ::MonitorFromRect(&kept.bounds, MONITOR_DEFAULTTONULL);
+  MONITORINFO info = {};
+  info.cbSize = sizeof(info);
+  if (monitor == nullptr || !::GetMonitorInfoW(monitor, &info)) {
+    return;
+  }
+  const RECT bounds = Within(kept.bounds, info.rcWork);
+  // Twice: moved onto a monitor of another DPI, the window is scaled for
+  // it (WM_DPICHANGED), and the size kept is already that monitor's.
+  for (int i = 0; i < 2; ++i) {
+    ::SetWindowPos(main_, nullptr, bounds.left, bounds.top,
+                   bounds.right - bounds.left, bounds.bottom - bounds.top,
+                   SWP_NOZORDER | SWP_NOACTIVATE);
+  }
+  maximize_main_on_show_ = kept.maximized != 0;
+}
+
+int AppWindows::MainShowCommand(int show) {
+  const bool maximize = std::exchange(maximize_main_on_show_, false);
+  return maximize && !::IsWindowVisible(main_) ? SW_SHOWMAXIMIZED : show;
+}
+
+void AppWindows::KeepMainFrame() {
+  KeptFrame kept = {};
+  bool maximized = false;
+  if (!::IsWindowVisible(main_) ||
+      !NormalBounds(main_, &kept.bounds, &maximized)) {
+    return;
+  }
+  kept.maximized = maximized ? 1 : 0;
+  ::RegSetKeyValueW(HKEY_CURRENT_USER, kSettingsKey, kMainFrameValue,
+                    REG_BINARY, &kept, sizeof(kept));
 }
 
 void AppWindows::WindowActivated(int64_t view_id) {
@@ -365,6 +470,9 @@ void AppWindows::WindowActivated(int64_t view_id) {
 }
 
 void AppWindows::WindowFrameChanged(int64_t view_id) {
+  if (view_id == 0) {
+    KeepMainFrame();
+  }
   const HWND window = HandleOf(view_id);
   if (!started_ || window == nullptr || !::IsWindowVisible(window)) {
     return;
@@ -408,6 +516,22 @@ void AppWindows::HandleMethodCall(
     const std::optional<int64_t> created = Create(arguments);
     result->Success(created ? flutter::EncodableValue(*created)
                             : flutter::EncodableValue());
+    return;
+  }
+  if (method == "createStash") {
+    const std::optional<int64_t> created = CreateStash(arguments);
+    result->Success(created ? flutter::EncodableValue(*created)
+                            : flutter::EncodableValue());
+    return;
+  }
+  if (method == "showStash") {
+    ShowStash();
+    result->Success();
+    return;
+  }
+  if (method == "hideStash") {
+    HideStash();
+    result->Success();
     return;
   }
   if (method == "quit") {
@@ -594,6 +718,122 @@ std::optional<int64_t> AppWindows::Create(
   return view_id;
 }
 
+std::optional<int64_t> AppWindows::CreateStash(
+    const flutter::EncodableMap& arguments) {
+  if (stash_ != nullptr) {
+    return stash_->view_id();
+  }
+  const std::optional<int64_t> engine_id = IntOf(Find(arguments, "engineId"));
+  const FlutterDesktopEngineRef engine =
+      engine_id ? FlutterDesktopEngineForId(*engine_id) : nullptr;
+  if (engine == nullptr) {
+    return std::nullopt;
+  }
+  auto window = std::make_unique<IdeWindow>(engine, messenger_);
+  if (!window->Create(L"Stash", Win32Window::Point(10, 10),
+                      Win32Window::Size(kStashWidth, kStashHeight))) {
+    return std::nullopt;
+  }
+  const HWND handle = window->GetHandle();
+  window->SetMinimumSize(Win32Window::Size(kStashMinWidth, kStashMinHeight));
+  // Not one of the app's windows: no taskbar button, out of Alt+Tab, never
+  // minimized or maximized. Over every other window only while pinned (its
+  // top bar's pin: setAlwaysOnTop, see window_channel.cpp).
+  ::SetWindowLongPtrW(
+      handle, GWL_STYLE,
+      ::GetWindowLongPtrW(handle, GWL_STYLE) & ~(WS_MINIMIZEBOX | WS_MAXIMIZEBOX));
+  ::SetWindowLongPtrW(handle, GWL_EXSTYLE,
+                      (::GetWindowLongPtrW(handle, GWL_EXSTYLE) |
+                       WS_EX_TOOLWINDOW) &
+                          ~WS_EX_APPWINDOW);
+  ::SetWindowPos(handle, nullptr, 0, 0, 0, 0,
+                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE |
+                     SWP_FRAMECHANGED);
+  // Where the user left it, as big as they made it, if that is on a
+  // monitor still.
+  RECT kept = {};
+  DWORD size = sizeof(kept);
+  if (::RegGetValueW(HKEY_CURRENT_USER, kSettingsKey, kStashFrameValue,
+                     RRF_RT_REG_BINARY, nullptr, &kept,
+                     &size) == ERROR_SUCCESS &&
+      size == sizeof(kept) && kept.right > kept.left &&
+      kept.bottom > kept.top &&
+      ::MonitorFromRect(&kept, MONITOR_DEFAULTTONULL) != nullptr) {
+    ::SetWindowPos(handle, nullptr, kept.left, kept.top,
+                   kept.right - kept.left, kept.bottom - kept.top,
+                   SWP_NOZORDER | SWP_NOACTIVATE);
+    stash_placed_ = true;
+  }
+  const int64_t view_id = window->view_id();
+  window->SetObserver(this, view_id);
+  stash_ = std::move(window);
+  return view_id;
+}
+
+void AppWindows::ShowStash() {
+  const HWND panel = stash_ == nullptr ? nullptr : stash_->GetHandle();
+  if (panel == nullptr) {
+    return;
+  }
+  const HWND front = ::GetForegroundWindow();
+  if (front != panel) {
+    before_stash_ = front;
+  }
+  // In front as it shows; kept over the others only while pinned.
+  const HWND order =
+      (::GetWindowLongPtrW(panel, GWL_EXSTYLE) & WS_EX_TOPMOST) != 0
+          ? HWND_TOPMOST
+          : HWND_TOP;
+  // Where it was left; in the middle of the monitor the pointer is on the
+  // first time, or when where it was is on no monitor now.
+  RECT bounds = {};
+  if (::GetWindowRect(panel, &bounds) &&
+      (!stash_placed_ ||
+       ::MonitorFromRect(&bounds, MONITOR_DEFAULTTONULL) == nullptr)) {
+    POINT pointer = {};
+    ::GetCursorPos(&pointer);
+    const HMONITOR monitor =
+        ::MonitorFromPoint(pointer, MONITOR_DEFAULTTONEAREST);
+    MONITORINFO info = {};
+    info.cbSize = sizeof(info);
+    if (::GetMonitorInfoW(monitor, &info)) {
+      const RECT& work = info.rcWork;
+      const LONG width = bounds.right - bounds.left;
+      const LONG height = bounds.bottom - bounds.top;
+      const LONG left = (work.left + work.right - width) / 2;
+      const LONG top = (work.top + work.bottom - height) / 2;
+      const RECT centered =
+          Within({left, top, left + width, top + height}, work);
+      ::SetWindowPos(panel, order, centered.left, centered.top, 0, 0,
+                     SWP_NOSIZE | SWP_NOACTIVATE);
+      stash_placed_ = true;
+    }
+  }
+  ::ShowWindow(panel, SW_SHOW);
+  ::SetWindowPos(panel, order, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+  ::SetForegroundWindow(panel);
+}
+
+void AppWindows::HideStash() {
+  const HWND panel = stash_ == nullptr ? nullptr : stash_->GetHandle();
+  if (panel == nullptr) {
+    return;
+  }
+  const bool had_keyboard = ::GetForegroundWindow() == panel;
+  // Kept for the next launch: where it is, and how big.
+  RECT bounds = {};
+  if (::IsWindowVisible(panel) && ::GetWindowRect(panel, &bounds)) {
+    ::RegSetKeyValueW(HKEY_CURRENT_USER, kSettingsKey, kStashFrameValue,
+                      REG_BINARY, &bounds, sizeof(bounds));
+  }
+  ::ShowWindow(panel, SW_HIDE);
+  const HWND before = std::exchange(before_stash_, nullptr);
+  if (had_keyboard && before != nullptr && ::IsWindow(before) &&
+      ::IsWindowVisible(before)) {
+    ::SetForegroundWindow(before);
+  }
+}
+
 void AppWindows::Close(int64_t view_id) {
   if (view_id == 0) {
     Hide(0);
@@ -625,36 +865,17 @@ void AppWindows::Hide(int64_t view_id) {
 }
 
 flutter::EncodableValue AppWindows::FrameOf(HWND window) const {
-  WINDOWPLACEMENT placement = {};
-  placement.length = sizeof(placement);
-  if (!::GetWindowPlacement(window, &placement)) {
+  RECT bounds = {};
+  bool maximized = false;
+  if (!NormalBounds(window, &bounds, &maximized)) {
     return flutter::EncodableValue();
   }
-  const bool zoomed = ::IsZoomed(window) != 0;
-  const bool iconic = ::IsIconic(window) != 0;
-  RECT bounds = {};
   // The screen it is on; minimized, the one it goes back to (its own rect
   // is then off every screen, nearest the primary).
-  HMONITOR monitor = ::MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST);
-  if (zoomed || iconic) {
-    // Its normal place, which the placement keeps in the work area's
-    // coordinates: to the screen's.
-    bounds = placement.rcNormalPosition;
-    if (iconic) {
-      monitor = ::MonitorFromRect(&bounds, MONITOR_DEFAULTTONEAREST);
-    }
-    MONITORINFO info = {};
-    info.cbSize = sizeof(info);
-    if (::GetMonitorInfoW(::MonitorFromRect(&bounds, MONITOR_DEFAULTTONEAREST),
-                          &info)) {
-      ::OffsetRect(&bounds, info.rcWork.left - info.rcMonitor.left,
-                   info.rcWork.top - info.rcMonitor.top);
-    }
-  } else if (!::GetWindowRect(window, &bounds)) {
-    return flutter::EncodableValue();
-  }
-  const bool maximized =
-      zoomed || (iconic && (placement.flags & WPF_RESTORETOMAXIMIZED) != 0);
+  const HMONITOR monitor =
+      ::IsIconic(window)
+          ? ::MonitorFromRect(&bounds, MONITOR_DEFAULTTONEAREST)
+          : ::MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST);
   return flutter::EncodableValue(flutter::EncodableMap{
       {flutter::EncodableValue("x"),
        flutter::EncodableValue(static_cast<double>(bounds.left))},

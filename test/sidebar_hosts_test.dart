@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:caocode/icons/project_icon.dart';
 import 'package:caocode/main.dart';
+import 'package:caocode/models/secret_store.dart';
+import 'package:caocode/remote/remote_files.dart';
 import 'package:caocode/sidebar/sidebar.dart';
 import 'package:caocode/workspace/preference_store.dart';
 import 'package:caocode/workspace/workspace.dart';
@@ -86,6 +88,75 @@ void main() {
     await tester.pump();
     expect(workspace.sidebarHost, 'box');
     expect(inSidebar(find.text('No projects on box yet.')), findsOneWidget);
+  });
+
+  testWidgets("a host's connection edited from its menu, kept between "
+      "runs; not one of ~/.ssh/config's", (tester) async {
+    final configHosts = defaultRemoteConfigHosts;
+    final secrets = SecretStore.instance;
+    defaultRemoteConfigHosts = () async => ['dev'];
+    SecretStore.instance = MemorySecretStore();
+    addTearDown(() {
+      defaultRemoteConfigHosts = configHosts;
+      SecretStore.instance = secrets;
+    });
+    final store = MemoryPreferenceStore();
+    var workspace = await pumpLoaded(tester, preferences: store);
+    workspace.addSshHost('dev');
+    workspace.addSshHost('root@box');
+    workspace.sidebarHost = 'dev';
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    await tester.pump();
+    await tester.tap(inSidebar(find.text('dev')));
+    await tester.pump();
+    expect(find.text('Edit Connection...'), findsNothing);
+    await tester.tap(find.text('root@box').last);
+    await tester.pump();
+
+    // The heading's.
+    await tester.tap(inSidebar(find.text('root@box')).first);
+    await tester.pump();
+    await tester.tap(find.text('Edit Connection...'));
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit root@box'), findsOneWidget);
+    await tester.enterText(find.text('box'), '10.0.0.7');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect(workspace.sshServers['root@box']?.address, 'root@10.0.0.7');
+
+    await tester.pumpWidget(const SizedBox());
+    workspace = await pumpLoaded(tester, preferences: store);
+    expect(workspace.sshServers['root@box']?.hostName, '10.0.0.7');
+  });
+
+  testWidgets('All lists every host\'s projects together, and is kept '
+      'between runs', (tester) async {
+    final store = MemoryPreferenceStore();
+    var workspace = await pumpLoaded(tester, preferences: store);
+    await workspace.openFolder('ssh://dev/srv/app');
+    await tester.pump();
+    expect(inSidebar(find.text('project')), findsNothing);
+
+    await tester.tap(inSidebar(find.text('dev')));
+    await tester.pump();
+    await tester.tap(find.text('All'));
+    await tester.pump();
+    expect(workspace.sidebarAllHosts, isTrue);
+    expect(workspace.sidebarHost, isNull);
+    expect(inSidebar(find.text('All')), findsWidgets);
+    expect(inSidebar(find.text('project')), findsOneWidget);
+    expect(inSidebar(find.text('app · dev')), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    workspace = await pumpLoaded(tester, preferences: store);
+    expect(workspace.sidebarAllHosts, isTrue);
+
+    // A host picked: that one alone again.
+    workspace.sidebarHost = 'dev';
+    await tester.pump();
+    expect(workspace.sidebarAllHosts, isFalse);
+    expect(inSidebar(find.text('project')), findsNothing);
   });
 
   testWidgets('hosts and the one switched to are kept between runs; a host '

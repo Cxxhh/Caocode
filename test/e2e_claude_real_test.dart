@@ -70,7 +70,6 @@ void main() {
             ApprovalRequest() => const ApprovalAnswer(
               ApprovalDecision.allowOnce,
             ),
-            PlanReviewRequest() => const PlanAnswer(PlanDecision.approve),
           }),
         );
       }

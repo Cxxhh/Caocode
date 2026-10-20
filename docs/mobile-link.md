@@ -89,6 +89,7 @@ Codex 工作区屏蔽 Claude 专有的扩展列表，原实现保留；手机客
 
 - 配对相关：`hello`、`confirm`、`unpair`
 - 状态与订阅：`state`、`open`、`close`
+- 翻更早的消息：`earlier`（见「会话增量」）
 - 操作会话：`send`、`stop`、`answer`、`choose`、`rename`、`pin`、`archive`、`keep`、`undo`
 - 后台任务：`stopTask`（停任务或子代理）、`output`（命令输出的最后 64K 字符；手机打开终端页时每秒读一次）
 - 文件：`files`（列出项目文件，最多 2 万个，跳过 node_modules 等；附带各会话还没保留的改动）、`read`（读文件，最大 512KB，二进制和过大文件不传；被改过的文件附带改动前的原文，手机据此显示改动）
@@ -102,6 +103,17 @@ Codex 工作区屏蔽 Claude 专有的扩展列表，原实现保留；手机客
 
 **会话增量**：`open` 时先返回整个会话，之后只发从第一个变化的条目开始的部分（`start` + 之后的条目）。判断“变没变”时，先看是不是同一个对象；对象不同再比较 JSON。条目的 JSON 格式见 `lib/link/chat_codec.dart`；手机端 `lib/link/chat_codec.dart` 是同一份文件，只改了头部注释。工具输出、命令输出超过 64KB 的部分会截掉。
 
+**分页（`window`，手机可选）**：`open` 可以带 `window`（整数 N）：`{"session", "window": N}`。带了之后桌面端只跟踪这个会话的最后 N 条，`session` 事件和 `open` 应答里的 `start`、`count` 都从手机拿到的第一条算起（第 0 条是手机的第一条，不是会话的第一条），`count` 是手机现在有的条数。应答和每个增量里多一个 `earlier`（bool）：手机的第一条之前是否还有更早的。不带 `window` 的 `open` 和以前完全一样：整个（桌面端已加载的）会话，`start` 从会话第一条算起，也没有 `earlier` 字段。
+
+`earlier` 请求：`{"session", "count"?}`（`count` 默认 50）→ `{"items": [...], "earlier": bool}`。`items` 是手机第一条之前的最多 `count` 条，从旧到新排；桌面端内存里没有更早的时，会先从历史记录里读（可能要一会儿，请求会等到读完）。`earlier` 同样表示再往前是否还有。会话要是用 `window` 打开的才能用，否则返回错误；没有 `open` 过的会话也返回错误。
+
+手机的做法：
+- 可选。判断桌面端支不支持：带 `window` 打开，应答里有 `earlier` 字段才是支持；旧版桌面端会忽略 `window`，应答没有 `earlier`，这时按老办法处理（拿到整个会话，不要发 `earlier` 请求）。
+- 手机本地的列表是「第一条 … 最后一条」。`earlier` 请求返回的 `items` 整个放到本地列表最前面，之后的 `start`、`count` 就从新的第一条算起（比如本来有 40 条，翻回 50 条，本地变成 90 条，后面增量的 `start` 对应这 90 条）。
+- 列表顶部在 `earlier` 为 true 时显示「加载更早的消息」，点击或滚到顶时发 `earlier` 请求，请求没回来之前不要重复发；`earlier` 变成 false 就不再显示。每次增量和 `earlier` 应答里的 `earlier` 都以最近一次为准。
+- `earlier` 应答的 `items` 为空但 `earlier` 仍是 true（桌面端读历史失败）时，不要自动重试，等用户再点。
+- 桌面端自己加载更早的消息，不会改变手机拿到的条目，只可能让 `earlier` 变化。
+
 应答请求（工具权限审批、提问、计划审批）的格式见 `lib/link/interaction_codec.dart`。手机端的模型在 `../mobile/lib/models/interaction.dart`。
 
 ## 5. 中转（预留，未实现）
@@ -112,6 +124,8 @@ Codex 工作区屏蔽 Claude 专有的扩展列表，原实现保留；手机客
 - `LinkConnector.connect` 会先同时尝试所有直连地址；全部失败且有 `relay` 时抛 `LinkRelayUnavailableException`，手机提示“只能经中转连接，中转服务暂不可用”。
 - 桌面端设置页有一行「中转：暂不可用」。
 
+在那之前，想临时从外网连，可以用 Cloudflare Tunnel 把 47100 暴露成一个固定域名（靠 80 端口绕过 `ws://` 的限制），做法见 [`cloudflare-tunnel.md`](./cloudflare-tunnel.md)。
+
 以后实现时：
 
 1. 中转服务（`../relay`，Cloudflare）只转发 `LinkSocket` 的二进制消息：两端各连一条 WebSocket 到 `url`，按 `room`（建议用桌面端 id）配对，原样转发。它看不到内容，也看不到是哪台手机（手机公钥在 hello 里是加密的）。
@@ -120,7 +134,7 @@ Codex 工作区屏蔽 Claude 专有的扩展列表，原实现保留；手机客
 
 ## 6. 已知限制
 
-- 首次打开很长的会话会一次性传完整历史（未分页）。
+- 桌面端打开很长的会话时先只读最近 10 轮，滚到顶再加载更早的；手机用 `window` 打开时同样分页，旧版手机（不带 `window`）拿到的是桌面端已加载的部分。
 - 局域网发现只在同一局域网（同一组播域）内有效。跨网段、访客 Wi-Fi 隔离的环境下，要在手机上手动填写地址。
 - 手机在 iOS 上第一次使用时会弹出「本地网络」授权，拒绝后既发现不了电脑，也连不上局域网地址。
 - 定时任务页在手机端仍是演示数据，没有接到桌面端。

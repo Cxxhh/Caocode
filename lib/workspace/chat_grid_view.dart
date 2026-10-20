@@ -636,7 +636,9 @@ class ChatDragLayer extends StatelessWidget {
             Positioned(
               left: at.dx + 12,
               top: at.dy + 10,
-              child: IgnorePointer(child: _DragChip(thread: thread)),
+              child: IgnorePointer(
+                child: _DragChip(thread: thread, count: drag.threads.length),
+              ),
             ),
           ],
         );
@@ -647,9 +649,10 @@ class ChatDragLayer extends StatelessWidget {
 
 /// The agent being dragged: its status and title, as its row has them.
 class _DragChip extends StatelessWidget {
-  const _DragChip({required this.thread});
+  const _DragChip({required this.thread, required this.count});
 
   final AgentThread thread;
+  final int count;
 
   @override
   Widget build(BuildContext context) {
@@ -680,6 +683,13 @@ class _DragChip extends StatelessWidget {
               style: TextStyle(color: AppColors.textPrimary, fontSize: 12.5),
             ),
           ),
+          if (count > 1) ...[
+            const SizedBox(width: 6),
+            Text(
+              '+${count - 1}',
+              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+            ),
+          ],
         ],
       ),
     );

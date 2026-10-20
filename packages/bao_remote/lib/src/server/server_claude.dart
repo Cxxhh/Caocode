@@ -4,6 +4,7 @@ import 'dart:io';
 import '../claude/claude_environment.dart';
 import '../claude/claude_release.dart';
 import '../claude/claude_runtime.dart';
+import '../claude/claude_settings_file.dart';
 import '../claude/claude_unavailable.dart';
 import '../claude/cli_locator.dart';
 import '../protocol.dart';
@@ -51,6 +52,64 @@ class ServerClaude {
         ),
         _ => null,
       };
+
+  /// The server's argument that has it run Caocode's own core instead
+  /// (bin/caocode_server.dart): `agent`, then the CLI's arguments.
+  static const agentCommand = 'agent';
+
+  /// How this server is run again, as the core: its executable (and its
+  /// script, when run from source). Another under test.
+  static List<String> Function() selfCommand = () => [
+    Platform.resolvedExecutable,
+    if (Platform.script.path.endsWith('.dart')) Platform.script.toFilePath(),
+  ];
+
+  /// Claude Code as Caocode's own core: this server run as [agentCommand]
+  /// with the CLI's [arguments], in [cwd], with the user's environment
+  /// there, [cleared] emptied and [environment] over it, and flag
+  /// [settings] in a file only the user reads. Without a key it says how
+  /// to set one up, as its first turn's error.
+  static Future<Process> startBuiltin({
+    required String cwd,
+    required List<String> arguments,
+    Map<String, Object?>? settings,
+    List<String> cleared = const [],
+    Map<String, String> environment = const {},
+  }) async {
+    final user = await ClaudeEnvironment.of();
+    final env = {
+      ...user,
+      for (final name in cleared) name: '',
+      ...environment,
+      ...ClaudeEnvironment.stateDirectory(user),
+    };
+    final file = settings == null
+        ? null
+        : await ClaudeSettingsFile.write(settings);
+    final [executable, ...self] = selfCommand();
+    final Process process;
+    try {
+      process = await Process.start(
+        executable,
+        [
+          ...self,
+          agentCommand,
+          ...arguments,
+          if (file != null) ...['--settings', file],
+        ],
+        workingDirectory: cwd,
+        environment: env,
+        includeParentEnvironment: false,
+      );
+    } on Object {
+      if (file != null) await ClaudeSettingsFile.delete(file);
+      rethrow;
+    }
+    if (file != null) {
+      unawaited(process.exitCode.then((_) => ClaudeSettingsFile.delete(file)));
+    }
+    return process;
+  }
 
   /// The CLI to run: the newest of the user's and the one installed here
   /// (see [ClaudeRuntime]). None is installed by this: the app asks for

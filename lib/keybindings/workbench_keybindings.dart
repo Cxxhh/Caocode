@@ -533,6 +533,14 @@ final List<CommandInfo> workbenchExtraCommands = [
   // package.json).
   const CommandInfo('git.commit', 'Commit', category: _gitCategory),
   const CommandInfo('git.checkout', 'Checkout to...', category: _gitCategory),
+  const CommandInfo('git.fetch', 'Fetch', category: _gitCategory),
+  const CommandInfo(
+    'git.fetchAll',
+    'Fetch From All Remotes',
+    category: _gitCategory,
+  ),
+  const CommandInfo('git.pull', 'Pull', category: _gitCategory),
+  const CommandInfo('git.push', 'Push', category: _gitCategory),
   const CommandInfo(
     'git.blame.toggleEditorDecoration',
     'Toggle Git Blame Editor Decoration',

@@ -24,15 +24,21 @@ enum OpenInNewWindow {
 }
 
 /// `window.ideWindows`: where the IDE (the Fast Ide) shows.
+///
+/// The default was [separate], and only [mainWindow] was ever written (the
+/// default's choice removed the key): with the default now [mainWindow],
+/// those who had separate windows have the main window's until they pick
+/// separate windows again, which is written then.
 enum IdeWindows {
-  /// In windows of its own, one per folder, as VS Code's (the default).
-  separate,
+  /// In the main window, in the chat's place: one folder at a time (the
+  /// default).
+  mainWindow,
 
-  /// In the main window, in the chat's place: one folder at a time.
-  mainWindow;
+  /// In windows of its own, one per folder, as VS Code's.
+  separate;
 
   static IdeWindows parse(Object? value) =>
-      values.where((mode) => mode.name == value).firstOrNull ?? separate;
+      values.where((mode) => mode.name == value).firstOrNull ?? mainWindow;
 }
 
 /// `window.restoreWindows`: the IDE windows that open again at launch.
@@ -104,7 +110,7 @@ enum TerminalConfirmOnExit {
 /// are wanted (they apply from the next window opened or closed).
 class WindowSettings {
   const WindowSettings({
-    this.ideWindows = IdeWindows.separate,
+    this.ideWindows = IdeWindows.mainWindow,
     this.openFoldersInNewWindow = OpenInNewWindow.off,
     this.openFilesInNewWindow = OpenInNewWindow.off,
     this.restoreWindows = RestoreWindows.one,

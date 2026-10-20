@@ -53,8 +53,10 @@ import 'package:bao_editor/monaco/vs/editor/contrib/gotoError/browser/marker_nav
 
 import 'extensions/ide_extensions.dart';
 import 'extensions/ide_extensions_view.dart';
+import 'explorer_excludes.dart';
 import 'explorer_history.dart'
     show explorerRedoCommandId, explorerUndoCommandId;
+import 'file_views.dart';
 import 'file_service.dart'
     show IdeFileListing, IdeHostFiles, localizedFileError, readFileBytes;
 import 'git/commit_message.dart';
@@ -64,6 +66,7 @@ import 'git/git_model.dart';
 import 'git/git_repository.dart';
 import 'git/ide_scm_view.dart';
 import 'git/ide_timeline_view.dart';
+import 'ide_agent_edits.dart';
 import 'ide_breadcrumbs.dart';
 import 'ide_button.dart';
 import 'ide_color_theme_picker.dart';
@@ -98,6 +101,7 @@ import 'lsp_ui/language_status.dart';
 import 'lsp_ui/lsp_convert.dart';
 import 'lsp_ui/problems_panel.dart';
 import 'lsp_ui/workspace_edit.dart';
+import 'language_mode.dart';
 import 'project_tools.dart';
 import 'save_copy.dart';
 import 'search/ide_search_view.dart';
@@ -106,6 +110,7 @@ import 'tab_strip_scroll.dart';
 import 'terminal/links/terminal_links.dart';
 import 'terminal/terminal_instance.dart';
 import 'terminal/terminal_panel.dart';
+import 'terminal/terminal_tasks.dart';
 import 'terminal/terminal_profile_service.dart';
 import 'terminal/terminal_profiles.dart';
 import 'terminal/terminal_service.dart';
@@ -121,6 +126,7 @@ class IdeWorkbench extends StatefulWidget {
     required this.project,
     required this.visible,
     required this.chat,
+    this.onAddToChat,
     required this.onBack,
     this.backLabel,
     this.editorBuilder,
@@ -139,6 +145,7 @@ class IdeWorkbench extends StatefulWidget {
     this.pinned = false,
     this.onPinnedChanged,
     this.terminalBackend = const TerminalBackend(),
+    this.terminalTasks,
     this.colorThemes,
     this.recentFolders = const [],
     this.onOpenRecent,
@@ -149,6 +156,7 @@ class IdeWorkbench extends StatefulWidget {
     this.onAddFolder,
     this.onRemoveFolder,
     this.recentWorkspaceOf,
+    this.agentEdits,
   });
 
   final IdeWorkspace workspace;
@@ -182,6 +190,10 @@ class IdeWorkbench extends StatefulWidget {
   final Project project;
   final bool visible;
   final Widget chat;
+
+  /// Puts files and folders in [chat]'s composer (Source Control's Add to
+  /// Chat); none offered when null.
+  final ValueChanged<List<ComposerFile>>? onAddToChat;
   final VoidCallback onBack;
 
   /// The title bar's way back's label: Back to Chat, by default; in a
@@ -221,6 +233,10 @@ class IdeWorkbench extends StatefulWidget {
   /// fake in widget tests).
   final IdeCommitMessageModel commitMessage;
 
+  /// The agents' changes pending in its files, shown in the editor with
+  /// Undo and Keep by each change, and over its tabs for the file's.
+  final IdeAgentEdits? agentEdits;
+
   /// Whether the window is kept on top of other apps; [onPinnedChanged]
   /// toggles it from the title bar, as the chat's pin does.
   final bool pinned;
@@ -230,6 +246,10 @@ class IdeWorkbench extends StatefulWidget {
   /// terminal; fakes in widget tests. Without one (the web), there is no
   /// TERMINAL tab.
   final TerminalBackend terminalBackend;
+
+  /// The background commands of the agent in its chat, listed with the
+  /// terminals (see [IdeWorkbenchState.showTerminalTask]).
+  final TerminalTasks? terminalTasks;
 
   /// The color themes Preferences: Color Theme (⌘K ⌘T) picks from; the
   /// command is disabled without them.
@@ -412,10 +432,15 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
 
   /// Servers whose install was recommended in this session.
   final Set<String> _recommended = {};
-  String _lspStatus = 'Language services';
-  Position _caretPosition = const Position(1, 1);
-  int _statusColumn = 1;
-  int _selectionLength = 0;
+
+  /// Where the caret is (its column as the status bar counts it) and how
+  /// much is selected: the status bar alone is built again as it moves.
+  final _caret = ValueNotifier<({Position position, int column, int selected})>(
+    (position: const Position(1, 1), column: 1, selected: 0),
+  );
+  Position get _caretPosition => _caret.value.position;
+  int get _statusColumn => _caret.value.column;
+  int get _selectionLength => _caret.value.selected;
   bool _busy = false;
   String? _branch;
   String? _activeKey;
@@ -639,6 +664,12 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
     );
   }
 
+  /// The file and folder patterns the explorer leaves out
+  /// (`explorer.exclude` in settings.json; see [IdeExplorerExcludes]).
+  IdeExplorerExcludes get _excludes => IdeExplorerExcludes.parse(
+    widget.settings?[IdeExplorerExcludes.settingKey],
+  );
+
   /// Whether the editors kept are being opened again: until they are, the
   /// window is not kept, lest those not open yet be forgotten.
   bool _restoring = false;
@@ -726,6 +757,9 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
   /// settings.json read again: what it says now, written here or not.
   void _settingsChanged() {
     _settingsSet.clear();
+    // The explorer's exclusions follow the file (a pattern added elsewhere
+    // shows at once).
+    _explorer.excludes = _excludes;
     // Auto save turned on (or its delay changed) saves what is unsaved.
     _scheduleAutoSave();
     setState(() {});
@@ -792,9 +826,13 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
     }
   }
 
-  void _revealRange(LspRange range, {bool select = false}) {
+  void _revealRange(
+    LspRange range, {
+    bool select = false,
+    bool center = false,
+  }) {
     if (_editor case final editor?) {
-      editor.revealRange(range, select: select);
+      editor.revealRange(range, select: select, center: center);
     } else {
       _preview?.revealLine(range.start.line + 1);
     }
@@ -1015,6 +1053,7 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
     FocusManager.instance.addLateKeyEventHandler(_onLateKey);
     KeybindingService.instance.addListener(_keybindingsChanged);
     _registerCommandKeybindings();
+    widget.agentEdits?.open = _openAgentChange;
     widget.settings?.addListener(_settingsChanged);
     widget.remote?.addListener(_remoteChanged);
     if (widget.terminalBackend.supported) {
@@ -1072,6 +1111,7 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
       root: workspace.root,
       roots: workspace.roots,
       paths: workspace.paths,
+      excludes: _excludes,
       // Without a folder, no tree to keep current.
       watch: workspace.hasFolder
           ? workspace.watchFolder
@@ -1093,6 +1133,10 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
     final languages = _languages = workspace.languages;
     _symbols = languages == null ? null : IdeDocumentSymbols(languages)
       ?..addListener(_symbolsChanged);
+    // A remote project's listed at once, for Quick Open not to wait on it.
+    if (workspace.hasFolder && workspace.files is IdeHostFiles) {
+      unawaited(_fileIndex.refresh());
+    }
     _quickRefresh = Listenable.merge([_fileIndex, ?_symbols]);
     languages?.addListener(_languagesChanged);
     _editRequests = languages?.workspaceEdits.listen(_applyEditRequest);
@@ -1106,6 +1150,7 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
     _referencesList.clear();
     _lastEdit = null;
     workspace.addListener(_workspaceChanged);
+    workspace.edits.addListener(_documentEdited);
     workspace.layout.addListener(_layoutChanged);
     _shownPanel = workspace.layout.panel;
     _activeKey = null;
@@ -1213,6 +1258,7 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
     workspace.notifications.removeListener(_notificationsChanged);
     _detachDebug(workspace);
     workspace.removeListener(_workspaceChanged);
+    workspace.edits.removeListener(_documentEdited);
     _autoSaveTimer?.cancel();
     _autoSaveTimer = null;
     _autoSaveFailed.clear();
@@ -1222,6 +1268,10 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
     _editWatches.clear();
     workspace.layout.removeListener(_layoutChanged);
     _git?.removeListener(_gitChanged);
+    for (final git in _watchedRepositories) {
+      git.removeListener(_repositoryChanged);
+    }
+    _watchedRepositories.clear();
     _git = null;
     _gitState = null;
     for (final session in _scmSessions.values) {
@@ -1260,12 +1310,54 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
       _gitState = state;
       if (state != null) unawaited(widget.workspace.reloadRevisions());
     }
-    final count = state?.count ?? 0;
+    // The activity bar's badge counts every repository's changes (#68); the
+    // status bar's branch, the one shown.
+    _listenToRepositories();
+    final count = _changesInAllRepositories;
     final branch = state?.head.branch;
     if (count == _gitCount && branch == _gitBranch && !loaded) return;
     _gitCount = count;
     _gitBranch = branch;
     if (mounted) setState(() {});
+  }
+
+  /// Every repository's changes, or the shown one's where the workspace is
+  /// one ([_gitCount]).
+  int get _changesInAllRepositories {
+    final repositories = widget.workspace.repositories;
+    if (repositories.length <= 1) return _git?.state?.count ?? 0;
+    return repositories.fold(
+      0,
+      (sum, repository) => sum + (repository.$2.state?.count ?? 0),
+    );
+  }
+
+  /// Follows every repository of the workspace, so a change in any of them
+  /// updates the badge (#68). The shown one is followed by [_gitChanged]'s
+  /// own listener.
+  void _listenToRepositories() {
+    final repositories = widget.workspace.repositories;
+    final current = {for (final (_, git) in repositories) git};
+    for (final git in _watchedRepositories.toList()) {
+      if (current.contains(git)) continue;
+      git.removeListener(_repositoryChanged);
+      _watchedRepositories.remove(git);
+    }
+    for (final git in current) {
+      if (_watchedRepositories.add(git)) {
+        git.addListener(_repositoryChanged);
+      }
+    }
+  }
+
+  final Set<IdeGitRepository> _watchedRepositories = {};
+
+  void _repositoryChanged() {
+    if (!mounted) return;
+    final count = _changesInAllRepositories;
+    if (count == _gitCount) return;
+    _gitCount = count;
+    setState(() {});
   }
 
   /// The status bar's bell follows them.
@@ -1324,6 +1416,12 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
   @override
   void didUpdateWidget(IdeWorkbench oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.agentEdits, widget.agentEdits)) {
+      if (oldWidget.agentEdits?.open == _openAgentChange) {
+        oldWidget.agentEdits?.open = null;
+      }
+      widget.agentEdits?.open = _openAgentChange;
+    }
     if (!identical(oldWidget.commands, widget.commands)) {
       _registerCommandKeybindings();
     }
@@ -1351,6 +1449,9 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
 
   @override
   void dispose() {
+    if (widget.agentEdits?.open == _openAgentChange) {
+      widget.agentEdits?.open = null;
+    }
     FocusManager.instance.removeEarlyKeyEventHandler(_onChordKey);
     FocusManager.instance.removeLateKeyEventHandler(_onLateKey);
     KeybindingService.instance.removeListener(_keybindingsChanged);
@@ -1366,6 +1467,7 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
     _quickModel?.onDidHide?.call();
     _detach(widget.workspace);
     _extensions?.dispose();
+    _caret.dispose();
     _workbenchFocus.dispose();
     _explorerFocus.dispose();
     _timeline.dispose();
@@ -1394,6 +1496,13 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
         }
       }),
     );
+  }
+
+  /// An edit typed in the editor, which the workspace's own listeners
+  /// hear of only when it makes the document dirty or clean again.
+  void _documentEdited() {
+    _symbols?.update(widget.workspace.active);
+    _scheduleAutoSave();
   }
 
   /// Follows the active editor: remembers it for Quick Open and reveals it
@@ -1494,12 +1603,16 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
 
   // --- Editors ---------------------------------------------------------------
 
+  /// The next file with an agent's change pending, once one is done.
+  void _openAgentChange(String path) => unawaited(_open(path));
+
   Future<void> _open(
     String path, {
     int? line,
     int? column,
     LspRange? range,
     bool select = false,
+    bool center = false,
     bool focusEditor = false,
     VoidCallback? afterReveal,
   }) async {
@@ -1518,7 +1631,7 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           if (range != null) {
-            _revealRange(range, select: select);
+            _revealRange(range, select: select, center: center);
             afterReveal?.call();
           } else if (line != null) {
             _revealLine(line, column ?? 1);
@@ -1955,12 +2068,13 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
   Future<void> _openLocation(
     IdeLocation location, {
     bool select = false,
+    bool center = false,
     bool record = true,
     VoidCallback? afterReveal,
   }) async {
     if (record) _recordNavigation(_here());
     if (widget.workspace.active?.path == location.path) {
-      _revealRange(location.range, select: select);
+      _revealRange(location.range, select: select, center: center);
       afterReveal?.call();
       if (mounted) setState(() {});
       return;
@@ -1969,6 +2083,7 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
       location.path,
       range: location.range,
       select: select,
+      center: center,
       focusEditor: true,
       afterReveal: afterReveal,
     );
@@ -2053,6 +2168,15 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
     _showTerminal();
   }
 
+  /// Open in Terminal (the explorer's context menu): a terminal started in
+  /// [folder], shown and focused. As VS Code's `openInTerminal`.
+  void _openInTerminal(String folder) {
+    final terminals = _terminals;
+    if (terminals == null) return;
+    terminals.create(cwd: folder);
+    _showTerminal();
+  }
+
   /// Create New Terminal (With Profile): the profile [args] names
   /// (`{"profileName": "bash"}`, upstream's keybinding argument), else the
   /// one picked.
@@ -2101,7 +2225,10 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
   /// terminal focused, as VS Code's `showPanel(true)`.
   void _showTerminal() {
     if (_terminals == null) return;
-    setState(() => _panel = IdePanelTab.terminal);
+    setState(() {
+      _panel = IdePanelTab.terminal;
+      _terminalTask = null;
+    });
     _focusTerminalSoon();
   }
 
@@ -2207,24 +2334,6 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
     }
   }
 
-  /// The status bar's missing server: why it cannot be installed, or its
-  /// recommendation again.
-  void _installServer(LanguageServerStatus status) {
-    final path = widget.workspace.active?.path;
-    if (path == null) return;
-    if (status.installable && status.missingRuntime == null) {
-      _recommendServer(status, path);
-      return;
-    }
-    final runtime = status.missingRuntime;
-    _notifications.notify(
-      IdeSeverity.warning,
-      runtime != null
-          ? context.l10n.extMissingRuntime(status.serverId, runtime)
-          : (status.message ?? context.l10n.extUnavailable(status.serverId)),
-    );
-  }
-
   // --- Layout ------------------------------------------------------------
 
   void _showView(IdeSideView view) {
@@ -2271,13 +2380,22 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
   /// a modifier of those chords accepts, and the input is hidden unless a
   /// quick input shows already; [itemActivation] is the row active first
   /// (the second by default with [quickNavigate]).
+  /// How old a remote project's listing is before Quick Open lists it again.
+  static const _remoteListingAge = Duration(seconds: 30);
+
   void _showQuickInput(
     String prefix, {
     IdeQuickPickFocus? itemActivation,
     List<KeyChord>? quickNavigate,
   }) {
     if (_quickAccessOf(prefix).$1 == _QuickAccess.files) {
-      unawaited(_fileIndex.refresh());
+      // A remote project's files come over the connection, all of them:
+      // listed again once a while old, not each time.
+      unawaited(
+        _local
+            ? _fileIndex.refresh()
+            : _fileIndex.refreshIfOlder(_remoteListingAge),
+      );
     }
     final shown = _quickInput != null || _quickModel != null;
     if (_quickInput != null &&
@@ -2307,6 +2425,17 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
 
   /// Shows the chat, if hidden (e.g. for an agent a notification opens).
   void showChat() => _layout.showChat();
+
+  /// The id of the background command (see [IdeWorkbench.terminalTasks])
+  /// whose output shows in the terminal's place; null for the terminal.
+  String? _terminalTask;
+
+  /// Shows the output of the background command [id] (one of its chat's)
+  /// on the panel's TERMINAL tab.
+  void showTerminalTask(String id) => setState(() {
+    _terminalTask = id;
+    _panel = IdePanelTab.terminal;
+  });
 
   /// Has the editor's last keys in its document, for what is unsaved to be
   /// all of it (before its window closes, or the app quits).
@@ -2347,6 +2476,19 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
 
   /// VS Code's Change End of Line Sequence (`ChangeEOLAction`): LF or CRLF
   /// for every line of the active document, the current one active.
+  /// Change Language Mode for the active editor's file (see
+  /// [languageModePick]).
+  Future<void> _changeLanguageMode() async {
+    final active = widget.workspace.active;
+    if (active == null || active.isMedia || active.openError != null) return;
+    final l10n = context.l10n;
+    await IdeLanguageNames.load();
+    if (!mounted || !identical(widget.workspace.active, active)) return;
+    _showQuickModel(
+      languageModePick(l10n, active.path, onPicked: _focusEditor),
+    );
+  }
+
   void _changeEndOfLine() {
     final active = widget.workspace.active;
     if (active == null || active.isMedia || active.openError != null) return;
@@ -2851,6 +2993,12 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
         id: 'workbench.action.gotoLine',
         label: 'Go to Line/Column…',
         run: () => _showQuickInput(':'),
+      ),
+      IdeCommand(
+        id: 'workbench.action.editor.changeLanguageMode',
+        label: 'Change Language Mode',
+        enabled: active != null && !active.isMedia && active.openError == null,
+        run: () => unawaited(_changeLanguageMode()),
       ),
       IdeCommand(
         id: 'workbench.action.editor.changeEOL',
@@ -3463,22 +3611,33 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
     IdeSideView.search => IdeSearchView(
       key: _searchKey,
       session: _search,
-      workspace: widget.workspace,
+      root: widget.workspace.root,
+      // The workspace's own: replacing writes into its documents.
+      replaceBackend: widget.workspace,
       onOpen: (path, range, {required focusEditor}) =>
           _open(path, range: range, select: true, focusEditor: focusEditor),
       onError: _report,
     ),
     IdeSideView.sourceControl => IdeScmView(
       key: _scmKey,
-      workspace: widget.workspace,
+      host: widget.workspace,
       session: _scm,
+      sessionOf: (git) => identical(git, _git)
+          ? _scm
+          : _scmSessions.putIfAbsent(
+              git,
+              () => IdeScmSession(settings: widget.settings),
+            ),
       notifications: _notifications,
       onOpen: (path, {focusEditor = false}) =>
           _open(path, focusEditor: focusEditor),
       onOpenChange: _openChange,
       onRevealInExplorer: _revealInExplorer,
+      onOpenInTerminal: _terminals == null ? null : _openInTerminal,
+      onAddToChat: widget.onAddToChat,
       trash: WindowControls.canMoveToTrash ? WindowControls.moveToTrash : null,
       commitMessage: widget.commitMessage,
+      onCheckout: _gitCheckoutOf,
     ),
     IdeSideView.debug => switch (_debug) {
       final debug? => DebugView(
@@ -3654,16 +3813,22 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
                               );
                               _showView(IdeSideView.search);
                             },
+                            onOpenInTerminal: _terminals == null
+                                ? null
+                                : _openInTerminal,
                           ),
                   ),
                 IdePane(
                   id: 'outline',
                   title: context.l10n.wbOutline,
-                  body: IdeOutlineView(
-                    symbols: _symbols,
-                    caret: workspace.active == null ? null : _caretLsp,
-                    onReveal: _revealSymbol,
-                    showHeader: false,
+                  body: ListenableBuilder(
+                    listenable: _caret,
+                    builder: (context, _) => IdeOutlineView(
+                      symbols: _symbols,
+                      caret: workspace.active == null ? null : _caretLsp,
+                      onReveal: _revealSymbol,
+                      showHeader: false,
+                    ),
                   ),
                 ),
                 IdePane(
@@ -3736,14 +3901,32 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
               onMarkdownPreview: (preview) =>
                   unawaited(_setMarkdownPreview(preview)),
               page: page == null ? null : _extensionPageTab(page),
+              actions: switch (widget.agentEdits) {
+                final edits? when !pageShown && active != null =>
+                  ListenableBuilder(
+                    listenable: edits,
+                    builder: (context, _) => switch (edits.of(active.path)) {
+                      final edit? when active.diff == null =>
+                        IdeAgentEditActions(
+                          edit: edit,
+                          hunks: edits.hunksOf(active.path),
+                        ),
+                      _ => const SizedBox.shrink(),
+                    },
+                  ),
+                _ => null,
+              },
             ),
             if (!pageShown && active != null && !active.isUntitled)
-              IdeBreadcrumbs(
-                root: widget.workspace.root,
-                path: active.path,
-                onReveal: _revealInExplorer,
-                symbols: _symbolPath,
-                onSymbol: _revealSymbol,
+              ListenableBuilder(
+                listenable: _caret,
+                builder: (context, _) => IdeBreadcrumbs(
+                  root: widget.workspace.root,
+                  path: active.path,
+                  onReveal: _revealInExplorer,
+                  symbols: _symbolPath,
+                  onSymbol: _revealSymbol,
+                ),
               ),
           ],
           Expanded(
@@ -3798,6 +3981,13 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
                                 ),
                             ],
                           )
+                        : active.view != null &&
+                              FileViews.byId(active.view!) != null
+                        ? KeyedSubtree(
+                            key: ValueKey(active),
+                            child: FileViews.byId(active.view!)!
+                                .build(context, active.path),
+                          )
                         : active.isMedia
                         ? IdeImagePreview(
                             key: ValueKey(active),
@@ -3841,13 +4031,12 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
                                 workspace: widget.workspace,
                                 active: active,
                                 onError: _report,
-                                onLspStatus: (status) {
-                                  if (mounted) {
-                                    setState(() => _lspStatus = status);
-                                  }
-                                },
+                                onLspStatus: (_) {},
                                 onPositionChanged: _positionChanged,
-                                onOpenLocation: _openLocation,
+                                // Go to Definition's target (F12),
+                                // centered even when already in view.
+                                onOpenLocation: (location) =>
+                                    _openLocation(location, center: true),
                                 onShowReferences: _showReferences,
                                 onShowCommands: () => _showQuickInput('>'),
                                 gitBlame: _gitBlame,
@@ -3855,6 +4044,7 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
                                 onPaste: _pasteInEditor,
                                 formatOnSave: _formatOnSave,
                                 debug: _debug,
+                                agentEdits: widget.agentEdits,
                               ),
                   ),
                 ),
@@ -3878,11 +4068,11 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
         (!_caretPosition.equals(selection.position) ||
             _statusColumn != selection.statusColumn ||
             _selectionLength != selection.selectionLength)) {
-      setState(() {
-        _caretPosition = selection.position;
-        _statusColumn = selection.statusColumn;
-        _selectionLength = selection.selectionLength;
-      });
+      _caret.value = (
+        position: selection.position,
+        column: selection.statusColumn,
+        selected: selection.selectionLength,
+      );
     }
   }
 
@@ -4258,6 +4448,10 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
                     terminal: switch (_terminals) {
                       final terminals? => TerminalPanel(
                         terminals: terminals,
+                        tasks: widget.terminalTasks,
+                        files: widget.workspace.files,
+                        shownTask: _terminalTask,
+                        onShowTask: (id) => setState(() => _terminalTask = id),
                         onNew: _newTerminal,
                         onOpenLink: _openTerminalLink,
                         shouldSkipShell: _terminalSkipsShell,
@@ -4426,19 +4620,6 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
             ),
             onTap: () => _showView(IdeSideView.sourceControl),
           ),
-      IdeStatusBarItem(
-        switch (_lspStatus) {
-          'Language services' => l10n.wbLanguageServices,
-          'Monaco editor' => l10n.wbMonacoEditor,
-          'Text editor' => l10n.wbTextEditor,
-          final status => status,
-        },
-        tooltip: keys.titleWithKeybinding(
-          l10n.wbRetryLanguageServices,
-          'caocode.ide.retryLanguageServices',
-        ),
-        onTap: () => unawaited(_editor?.retryLanguageServer()),
-      ),
       if (_languages case final languages?) ...[
         () {
           final counts = ideDiagnosticCounts(languages.allDiagnostics);
@@ -4461,12 +4642,7 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
           );
         }(),
         if (widget.workspace.active case final doc?)
-          ...ideLanguageStatusItems(
-            languages,
-            doc.path,
-            onInstall: _installServer,
-            l10n: l10n,
-          ),
+          ...ideLanguageStatusItems(languages, doc.path, l10n: l10n),
       ],
       if (_statusMessage case final message?) IdeStatusBarItem(message),
     ];
@@ -4511,7 +4687,11 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
         ),
         IdeStatusBarItem(
           IdeLanguageNames.forPath(active.path),
-          tooltip: l10n.wbLanguageMode,
+          tooltip: keys.titleWithKeybinding(
+            l10n.languageModePlaceholder,
+            'workbench.action.editor.changeLanguageMode',
+          ),
+          onTap: () => unawaited(_changeLanguageMode()),
         ),
         bell,
       ],
@@ -4544,7 +4724,15 @@ class IdeWorkbenchState extends State<IdeWorkbench> {
                               _split(constraints.biggest, commands),
                         ),
                       ),
-                      _statusBar(),
+                      // Typing moves the caret and edits the document, and
+                      // the status bar is all that shows either.
+                      ListenableBuilder(
+                        listenable: Listenable.merge([
+                          _caret,
+                          widget.workspace.edits,
+                        ]),
+                        builder: (context, _) => _statusBar(),
+                      ),
                     ],
                   ),
                   // VS Code's toasts and center: 8px from the right, 36px

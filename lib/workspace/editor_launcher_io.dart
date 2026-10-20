@@ -10,7 +10,30 @@ Future<bool> openPath(String path, {Editor? editor}) async {
   path = AppPaths.expandHome(path);
   if (Platform.isMacOS) return _onMacOS(path, editor?.macApp);
   if (Platform.isWindows) return _onWindows(path, editor);
+  if (Platform.isLinux) return _onLinux(path, editor);
   return false;
+}
+
+/// `xdg-open` for a file or folder, the editor's command when it has one
+/// (`code`, `cursor`), or a terminal in that directory.
+Future<bool> _onLinux(String path, Editor? editor) async {
+  try {
+    if (editor == Editor.terminal) {
+      final result = await Process.run(
+        'x-terminal-emulator',
+        const [],
+        workingDirectory: path,
+      );
+      return result.exitCode == 0;
+    }
+    final command = editor?.command;
+    final result = command == null
+        ? await Process.run('xdg-open', [path])
+        : await Process.run(command, [path]);
+    return result.exitCode == 0;
+  } on ProcessException {
+    return false;
+  }
 }
 
 /// `open [-a app] path`, on macOS.

@@ -273,7 +273,12 @@ void main() {
       'writePasteboardImage',
     ]);
     final items = (calls.first.arguments as Map)['items'] as List;
-    expect(items.map((item) => (item as Map)['label']), ['Copy Image']);
+    expect(items.map((item) => (item as Map)['label']), [
+      'Copy Image',
+      null,
+      'Open in Default App',
+      'Reveal in Finder',
+    ]);
     expect((calls.last.arguments as Map)['bytes'], bytes);
     expect((calls.last.arguments as Map)['type'], 'image/png');
 

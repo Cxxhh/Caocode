@@ -384,6 +384,31 @@ void main() {
       expect(plan.bins['jdtls']!.runtime, 'python3');
     });
 
+    test('jdtls runs with java, not mason\'s Python script', () {
+      final plan = MasonInstallPlan.of(
+        MasonPackage.fromJson({
+          'name': 'jdtls',
+          'source': {
+            'id': 'pkg:generic/eclipse/eclipse.jdt.ls@v1.61.0',
+            'download': [
+              {
+                'target': 'win',
+                'files': {
+                  'jdtls.tar.gz': 'https://download.eclipse.org/jdtls.tar.gz',
+                },
+              },
+            ],
+          },
+          'bin': {'jdtls': 'python:bin/jdtls'},
+        }),
+        windows,
+      );
+      final bin = plan.bins['jdtls']!;
+      expect(bin.runtime, 'java');
+      expect(bin.launcher, 'jdtls');
+      expect(plan.runtimes, ['java']);
+    });
+
     test('unsupported sources and platforms say why', () {
       void rejects(
         Map<String, Object?> json,

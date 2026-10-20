@@ -2,6 +2,7 @@
 /// without `dart:io`.
 library;
 
+export 'src/lsp/install/jdtls_launcher.dart';
 export 'src/lsp/install/mason_install_plan.dart';
 export 'src/lsp/install/mason_platform.dart';
 export 'src/lsp/install/mason_purl.dart';

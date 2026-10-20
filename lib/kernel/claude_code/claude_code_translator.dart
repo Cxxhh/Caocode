@@ -4,7 +4,10 @@ import 'dart:math' as math;
 import '../../chat/chat_models.dart';
 import '../kernel_event.dart';
 import '../kernel_types.dart';
+import '../output_meter.dart';
 import 'claude_goal.dart';
+import 'claude_sdk_tools.dart';
+import 'turn_stats.dart';
 
 /// Translates Claude Code's conversation messages (stream-json output, or
 /// the lines of a kept session) into [KernelEvent]s: text, thoughts, tool
@@ -55,6 +58,10 @@ class ClaudeTranslator {
   /// Replaying a kept session: nothing is pending or running any more.
   bool replaying = false;
 
+  /// What the kept session's turns took and spent, as their footers showed
+  /// it, by prompt: given to a turn replayed instead of its time guessed.
+  Map<String, TurnRecord> keptTurns = const {};
+
   // Streamed blocks of the current message.
   String? _messageId;
   final Map<int, String> _streamed = {};
@@ -63,20 +70,26 @@ class ClaudeTranslator {
   /// else the last block's end.
   DateTime? _blockSince;
 
-  /// The current message's usage, as its start and its last delta said.
+  /// The current message's usage, as its start and its last delta said;
+  /// whether its delta counted what it wrote, and its thought's tokens;
+  /// whether it thought.
   Map<String, Object?> _messageUsage = {};
-
-  /// When it streamed its first block, and its last delta.
-  DateTime? _firstOut;
-  DateTime? _lastOut;
+  bool _messageCounted = false;
+  int? _messageThinking;
+  bool _messageThought = false;
 
   /// The turn's requests so far (the agent's own, not its subagents'):
-  /// tokens read and written, and, for how fast it wrote, the tokens of
-  /// those that streamed and how long they took.
+  /// tokens read and written.
   int _turnInput = 0;
   int _turnOutput = 0;
-  int _streamedTokens = 0;
-  Duration _streaming = Duration.zero;
+
+  /// What the agent's own requests write as they stream, and when that was
+  /// last reported.
+  final OutputMeter _meter = OutputMeter();
+  DateTime? _outputReported;
+
+  /// How often what is written is reported, at most, while it streams.
+  static const _outputEvery = Duration(milliseconds: 250);
 
   /// Streamed text and thought blocks, per message and kind, in order,
   /// until the whole message claims them.
@@ -92,6 +105,11 @@ class ClaudeTranslator {
 
   final Map<String, _Tool> _tools = {};
   final Map<String, _Agent> _agents = {};
+
+  /// The call that started each subagent, by the CLI's id of it (its
+  /// task's): one continued (`SendMessage`) runs again on a call of its
+  /// own, and goes on in the card of the first.
+  final Map<String, String> _agentCalls = {};
   final Set<String> _denied = {};
 
   /// Calls made and not answered yet: those of a stopped turn never are.
@@ -108,7 +126,6 @@ class ClaudeTranslator {
   final List<Map<String, Object?>> _goalRecords = [];
 
   /// The plan file the agent last wrote, in plan mode (see [isPlanPath]).
-  String? get planPath => _planPath;
   String? _planPath;
 
   /// Whether [path] is a plan file: one in a `plans` folder, where Claude
@@ -117,12 +134,40 @@ class ClaudeTranslator {
       path.split(RegExp(r'[/\\]')).contains('plans');
 
   /// The round of planning under way: the id its card is at. Over once
-  /// the plan put to the user is answered.
+  /// the plan is put to the user.
   String? _planRound;
   int _planRounds = 0;
 
   /// Each round's card, by its id.
   final Map<String, PlanItem> _plans = {};
+
+  /// The card of the plan put to the user and not yet started nor sent
+  /// back: the next message does one or the other.
+  String? _awaitingPlan;
+
+  /// The plan put to the user, for them to start; null when none is.
+  PlanItem? get awaitingPlan => _plans[_awaitingPlan];
+
+  /// What the CLI is told when the model puts its plan to the user (by
+  /// `ClaudeCodeKernel`, at once): the user starts it, or says what should
+  /// change, in a message of their own.
+  static const planPresented =
+      'Your plan is now shown to the user, who will start it or say what '
+      'should change in their next message. End your turn here without '
+      'repeating the plan: do not start implementing it, and do not call '
+      'ExitPlanMode again.';
+
+  /// Marks the note sent with the message that starts a plan.
+  static const _planStarted = 'The user has started your plan';
+
+  /// The note sent with the message that starts the plan in [path]: not
+  /// shown, it tells the model planning is over.
+  static String planStartedNote(String path) =>
+      '<system-reminder>$_planStarted: plan mode is over. Carry out the '
+      'plan in $path now.</system-reminder>';
+
+  /// Whether [text] says the plan is started (see [planStartedNote]).
+  static bool startsPlan(String text) => text.contains(_planStarted);
 
   /// The card each call that wrote the plan or put it to the user is on.
   final Map<String, String> _planCalls = {};
@@ -133,7 +178,8 @@ class ClaudeTranslator {
     'Edit' ||
     'MultiEdit' ||
     'Write' => isPlanPath(_string(input['file_path']) ?? ''),
-    'ExitPlanMode' => _planPath != null,
+    'ExitPlanMode' =>
+      _planPath != null || _string(input['planFilePath']) != null,
     _ => false,
   };
 
@@ -146,7 +192,11 @@ class ClaudeTranslator {
     var plan =
         _plans[card] ??
         PlanItem(
-          path: _string(input['file_path']) ?? _planPath!,
+          // Put to the user, the CLI names its file.
+          path:
+              _string(input['file_path']) ??
+              _string(input['planFilePath']) ??
+              _planPath!,
           round: ++_planRounds,
         );
     // An edit changes the text once; written whole, it is the text.
@@ -162,13 +212,13 @@ class ClaudeTranslator {
       if (card != id) emit(ItemRemoved(nextSeq(), id));
     }
     if (text != null) _planText = text;
+    final putToUser = proposes && plan.status == PlanStatus.drafting;
     plan = plan.copyWith(
       title: PlanItem.titleOf(text),
       text: text,
-      status: proposes && plan.status == PlanStatus.drafting
-          ? PlanStatus.awaiting
-          : null,
+      status: putToUser ? PlanStatus.awaiting : null,
     );
+    if (putToUser) _awaitingPlan = card;
     _plans[card] = plan;
     _put(card, plan);
   }
@@ -197,18 +247,23 @@ class ClaudeTranslator {
   }
 
   /// What a call of a round of planning on [card] returned: the plan
-  /// written, or the user's answer to it.
+  /// written, or put to the user. (A session kept from before plans were
+  /// put to the user without waiting has their answer here.)
   void _planResult(String card, _Tool tool, _Outcome outcome, String text) {
     final plan = _plans[card]!;
     if (tool.name == 'ExitPlanMode') {
-      _plans[card] = outcome == _Outcome.done
-          ? plan.copyWith(status: PlanStatus.approved)
-          : plan.copyWith(
-              status: PlanStatus.sentBack,
-              feedback: _planFeedback(text),
-            );
       if (_planRound == card) _planRound = null;
-      _put(card, _plans[card]!);
+      // Put to the user: it awaits their next message.
+      if (text.contains(planPresented)) return;
+      _resolvePlan(
+        card,
+        outcome == _Outcome.done
+            ? plan.copyWith(status: PlanStatus.approved)
+            : plan.copyWith(
+                status: PlanStatus.sentBack,
+                feedback: _planFeedback(text),
+              ),
+      );
       return;
     }
     if (outcome != _Outcome.done) return;
@@ -217,8 +272,29 @@ class ClaudeTranslator {
     if (!replaying) emit(PlanWritten(nextSeq(), path));
   }
 
+  /// [card] as [plan], its round over.
+  void _resolvePlan(String card, PlanItem plan) {
+    if (_awaitingPlan == card) _awaitingPlan = null;
+    _plans[card] = plan;
+    _put(card, plan);
+  }
+
+  /// The plan awaiting the user, started ([feedback] null) or sent back
+  /// with what they said.
+  void _answerPlan({String? feedback}) {
+    final card = _awaitingPlan;
+    if (card == null) return;
+    final plan = _plans[card]!;
+    _resolvePlan(
+      card,
+      feedback == null
+          ? plan.copyWith(status: PlanStatus.approved)
+          : plan.copyWith(status: PlanStatus.sentBack, feedback: feedback),
+    );
+  }
+
   /// What the user said should change in a plan sent back, as the kernel
-  /// tells the CLI (see `ClaudeCodeKernel.answer`).
+  /// told the CLI when it waited on them.
   static String? _planFeedback(String text) {
     const said = 'keep planning: ';
     final at = text.indexOf(said);
@@ -254,7 +330,7 @@ class ClaudeTranslator {
   // to the last thing it showed before the next one (or the end).
 
   /// The prompt whose turn is being replayed, and when it was sent.
-  ({String id, UserMessageItem item, DateTime at})? _replayed;
+  ({String id, UserMessageItem item, DateTime? at})? _replayed;
 
   /// When the replayed turn last showed anything.
   DateTime? _replayedUntil;
@@ -262,10 +338,14 @@ class ClaudeTranslator {
   /// The user stopped the replayed turn: it is not timed.
   bool _replayedStopped = false;
 
+  /// A page of the kept session is replayed, not all of it: times its last
+  /// turn, nothing else.
+  void endPage() => _timeReplayed();
+
   /// The kept session is all replayed: times its last turn, and has its
   /// goal as it stood (one met or given up on, nothing to show any more).
   void endReplay() {
-    _timeReplayed();
+    endPage();
     reportGoal(keptGoal(_goalRecords, seen: _goalRecords.length));
     _goalRecords.clear();
   }
@@ -285,9 +365,11 @@ class ClaudeTranslator {
     Map<String, Object?> message,
   ) {
     _timeReplayed();
-    if (DateTime.tryParse('${message['timestamp']}') case final at?) {
-      _replayed = (id: id, item: item, at: at);
-    }
+    _replayed = (
+      id: id,
+      item: item,
+      at: DateTime.tryParse('${message['timestamp']}'),
+    );
   }
 
   void _timeReplayed() {
@@ -297,8 +379,15 @@ class ClaudeTranslator {
     _replayed = null;
     _replayedUntil = null;
     _replayedStopped = false;
-    if (turn == null || until == null || stopped) return;
-    final worked = until.difference(turn.at);
+    if (turn == null || stopped) return;
+    // As its footer showed it when it ended, where that was kept.
+    if (keptTurns[turn.id] case (:final worked, :final usage)) {
+      _put(turn.id, turn.item.copyWith(worked: worked, usage: usage));
+      return;
+    }
+    final at = turn.at;
+    if (until == null || at == null) return;
+    final worked = until.difference(at);
     if (worked > Duration.zero) {
       _put(turn.id, turn.item.copyWith(worked: worked));
     }
@@ -369,20 +458,29 @@ class ClaudeTranslator {
         _streamed.clear();
         _blockSince = DateTime.now();
         _messageUsage = {..._map(message['usage'])};
-        _firstOut = _lastOut = null;
+        _messageCounted = false;
+        _messageThinking = null;
+        _messageThought = false;
+        _meter.startMessage();
       case 'message_delta':
-        for (final MapEntry(:key, :value) in _map(event['usage']).entries) {
+        final usage = _map(event['usage']);
+        for (final MapEntry(:key, :value) in usage.entries) {
           if (value is num) _messageUsage[key] = value;
+        }
+        if (usage['output_tokens'] is num) _messageCounted = true;
+        if (_map(usage['output_tokens_details'])['thinking_tokens']
+            case final num tokens) {
+          _messageThinking = tokens.toInt();
         }
       case 'message_stop':
         _endMessage();
       case 'content_block_start':
-        _firstOut ??= DateTime.now();
         final index = event['index'] as int;
         final block = _map(event['content_block']);
         final id = '$_messageId:$index';
         switch (block['type']) {
           case 'thinking' || 'redacted_thinking':
+            _messageThought = true;
             _streamed[index] = id;
             (_unclaimed['$_messageId:thinking'] ??= []).add(id);
             _thoughts[id] = StringBuffer();
@@ -398,11 +496,14 @@ class ClaudeTranslator {
               streaming: true,
             );
           case 'text':
+            if (!replaying) _meter.startBlock();
             _streamed[index] = id;
             (_unclaimed['$_messageId:text'] ??= []).add(id);
             _textLength[id] = 0;
             _put(id, const AssistantTextItem(''), streaming: true);
           case 'tool_use':
+            // Its input may come all at once as it ends: timed from here.
+            if (!replaying) _meter.startBlock();
             final toolId = block['id'] as String;
             final name = block['name'] as String;
             if (!_tools.containsKey(toolId)) {
@@ -416,10 +517,10 @@ class ClaudeTranslator {
         // block (holding back a thought until it is done).
         _report(null);
       case 'content_block_delta':
-        _lastOut = DateTime.now();
+        final delta = _map(event['delta']);
+        _meterDelta(delta);
         final id = _streamed[event['index']];
         if (id == null) return;
-        final delta = _map(event['delta']);
         switch (delta['type']) {
           case 'thinking_delta':
             final thought = _thoughts[id];
@@ -455,6 +556,32 @@ class ClaudeTranslator {
     }
   }
 
+  /// Meters [delta]'s text, and reports what is written now and then.
+  void _meterDelta(Map<String, Object?> delta) {
+    if (replaying) return;
+    switch (delta) {
+      case {'type': 'text_delta', 'text': final String text}:
+        _meter.streamed(text);
+      case {'type': 'input_json_delta', 'partial_json': final String json}:
+        _meter.streamed(json);
+      case {'type': 'thinking_delta', 'thinking': final String thought}:
+        _meter.streamed(thought, timed: false);
+      default:
+        return;
+    }
+    final now = DateTime.now();
+    if (_outputReported case final at? when now.difference(at) < _outputEvery) {
+      return;
+    }
+    _reportOutput(now);
+  }
+
+  void _reportOutput([DateTime? now]) {
+    if (replaying) return;
+    _outputReported = now ?? DateTime.now();
+    emit(OutputReported(nextSeq(), _meter.output));
+  }
+
   /// Adds the message ended to the turn's usage.
   void _endMessage() {
     int count(String key) => (_messageUsage[key] as num?)?.toInt() ?? 0;
@@ -464,32 +591,41 @@ class ClaudeTranslator {
         count('cache_creation_input_tokens') +
         count('cache_read_input_tokens');
     _turnOutput += output;
-    // One that came all at once says nothing of the speed.
-    if ((_firstOut, _lastOut) case (final first?, final last?)
-        when last.isAfter(first)) {
-      _streamedTokens += output;
-      _streaming += last.difference(first);
-    }
+    _meter.endMessage(
+      // Cut off before its count: as guessed.
+      tokens: _messageCounted ? output : null,
+      // Its text's and calls', told apart from its thoughts'.
+      written: switch (_messageThinking) {
+        final thinking? => output - thinking,
+        null when !_messageThought => output,
+        null => null,
+      },
+    );
     _messageUsage = {};
-    _firstOut = _lastOut = null;
+    _messageCounted = false;
+    _messageThinking = null;
+    _messageThought = false;
+    _reportOutput();
   }
 
   void _resetUsage() {
     _messageUsage = {};
-    _firstOut = _lastOut = null;
-    _turnInput = _turnOutput = _streamedTokens = 0;
-    _streaming = Duration.zero;
+    _messageCounted = false;
+    _messageThinking = null;
+    _messageThought = false;
+    _turnInput = _turnOutput = 0;
+    _meter.begin();
+    _outputReported = null;
   }
 
   /// What the turn's requests spent, as streamed; null when none streamed.
+  /// Its speed the average of that shown while it wrote.
   TurnUsage? get turnUsage => _turnInput == 0 && _turnOutput == 0
       ? null
       : TurnUsage(
           inputTokens: _turnInput,
           outputTokens: _turnOutput,
-          tokensPerSecond: _streaming > Duration.zero && _streamedTokens > 0
-              ? _streamedTokens / (_streaming.inMicroseconds / 1000000)
-              : null,
+          tokensPerSecond: _meter.averageSpeed,
         );
 
   void _completeThought(String id, String? whole) {
@@ -580,6 +716,7 @@ class ClaudeTranslator {
     final pasted = _list(message['imagePasteIds']);
     int? label;
     var pictures = 0;
+    var startsPlan = false;
     for (final (index, block) in blocks.indexed) {
       switch (block['type']) {
         case 'tool_result':
@@ -587,7 +724,10 @@ class ClaudeTranslator {
         case 'text':
           final text = block['text'] as String? ?? '';
           // A note for the model sent along (e.g. by the host), not typed.
-          if (text.trimLeft().startsWith('<system-reminder>')) continue;
+          if (text.trimLeft().startsWith('<system-reminder>')) {
+            if (ClaudeTranslator.startsPlan(text)) startsPlan = true;
+            continue;
+          }
           // An image's name before it (as this client sends them).
           if (imageReferencePattern.matchAsPrefix(text.trim()) case final match?
               when match.end == text.trim().length &&
@@ -611,6 +751,7 @@ class ClaudeTranslator {
           }
       }
     }
+    if (startsPlan && parent == null) _answerPlan();
     if (texts.isNotEmpty || images.isNotEmpty) {
       _prompt(message, texts.join('\n'), parent, images: images);
     }
@@ -675,6 +816,7 @@ class ClaudeTranslator {
         text: args.isEmpty ? command : '$command $args',
         images: images,
       );
+      _answerPlan(feedback: item.text);
       _put(id, item);
       if (replaying) _replayPrompt(id, item, message);
       return;
@@ -692,6 +834,8 @@ class ClaudeTranslator {
       return;
     }
     final item = UserMessageItem(text: trimmed, images: images);
+    // Said with a plan awaiting: what should change in it.
+    _answerPlan(feedback: trimmed);
     _put(id, item);
     if (replaying) _replayPrompt(id, item, message);
   }
@@ -706,7 +850,13 @@ class ClaudeTranslator {
   ) {
     final known = _tools[id];
     // The streamed start has no input yet; the whole message fills it in.
-    final tool = _Tool(name, input, known?.parent ?? parent, known?.startedAt);
+    final tool = _Tool(
+      id,
+      name,
+      input,
+      known?.parent ?? parent,
+      known?.startedAt,
+    );
     _tools[id] = tool;
     if (tool.parent == null && _isPlanCall(name, input)) {
       return _planCall(id, name, input);
@@ -781,7 +931,13 @@ class ClaudeTranslator {
     );
   }
 
-  ChatItem _toolItem(_Tool tool, _Outcome outcome, {String? output}) {
+  ChatItem _toolItem(
+    _Tool tool,
+    _Outcome outcome, {
+    String? output,
+    List<ImageAttachment> images = const [],
+    List<String> imageFiles = const [],
+  }) {
     final input = tool.input;
     final status = switch (outcome) {
       _Outcome.running => ToolStatus.running,
@@ -795,6 +951,31 @@ class ClaudeTranslator {
     String? path(String key) => _string(input[key]);
     String base(String? path) => path == null ? '' : path.split('/').last;
     final name = tool.name;
+    // The app's own, shown as it says.
+    if (ClaudeSdkTools.called(name) case ClaudeSdkTool(
+      :final name,
+      :final kind?,
+      :final summary,
+      :final files,
+    )) {
+      final said = _string(input['description'])?.trim() ?? '';
+      return ToolCallItem(
+        kind: kind,
+        tool: name,
+        callId: tool.id,
+        input: input,
+        // Said by the agent, it is the line, whole.
+        label: said.isEmpty ? null : '',
+        target: said.isNotEmpty ? said : summary?.call(input, output) ?? '',
+        status: status,
+        output: output,
+        images: images,
+        imageFiles: switch ((files, output)) {
+          (final files?, final output?) => files(output),
+          _ => imageFiles,
+        },
+      );
+    }
     if (name.startsWith('mcp__')) {
       final parts = name.split('__');
       return ToolCallItem(
@@ -805,6 +986,8 @@ class ClaudeTranslator {
         target: _summary(input),
         status: status,
         output: output,
+        images: images,
+        imageFiles: imageFiles,
       );
     }
     return switch (name) {
@@ -818,6 +1001,9 @@ class ClaudeTranslator {
         },
         status: status,
         output: outcome == _Outcome.done ? null : output,
+        // An image file, as the agent saw it.
+        images: images,
+        imageFiles: imageFiles,
       ),
       'Grep' => ToolCallItem(
         kind: ToolKind.grep,
@@ -965,6 +1151,8 @@ class ClaudeTranslator {
         target: _summary(input),
         status: status,
         output: output,
+        images: images,
+        imageFiles: imageFiles,
       ),
     };
   }
@@ -991,6 +1179,9 @@ class ClaudeTranslator {
       case 'Agent' || 'Task':
         final agent = _agents[id];
         if (agent == null) return;
+        if (_string(structured?['agentId']) case final agentId?) {
+          _agentCalls[agentId] = id;
+        }
         if (structured?['status'] == 'async_launched') {
           // Launched in the background: what it says is for the agent (its
           // id, where its output goes). It reports in a notification.
@@ -1097,6 +1288,8 @@ class ClaudeTranslator {
         tool,
         outcome,
         output: outcome == _Outcome.done ? _short(text) : _tail(text),
+        images: _resultImages(block['content']),
+        imageFiles: _savedImages(block['content']),
       ),
       parent: tool.parent,
     );
@@ -1184,16 +1377,32 @@ class ClaudeTranslator {
       ),
       parent: tool.parent,
     );
-    if (!replaying && tool.parent == null) {
+    // A subagent's too: what it edits is in the review as the agent's.
+    if (!replaying) {
       emit(
         FileEdited(
           nextSeq(),
           FileChange(path: path, added: added, removed: removed),
           turnId: turnId,
+          original: _original(result),
         ),
       );
     }
     return true;
+  }
+
+  /// What an edit's file was before, as its result tells: a file written
+  /// anew was not there, one edited is in `originalFile`.
+  static FileOriginal? _original(Map<String, Object?> result) {
+    if (result['type'] == 'create') return const OriginalText(null);
+    if (_string(result['originalFile']) case final text?) {
+      return OriginalText(text);
+    }
+    // An Edit that made the file.
+    if (result.containsKey('originalFile') && result['oldString'] == '') {
+      return const OriginalText(null);
+    }
+    return null;
   }
 
   static const _maxDiffLines = 400;
@@ -1241,6 +1450,12 @@ class ClaudeTranslator {
   }
 
   // --- Runtime messages ------------------------------------------------------------
+
+  /// Whether the CLI's [content] is a notice not shown: the one on auto
+  /// mode's classifier billing, which it gives each session whose requests
+  /// go through a gateway (ours, on this machine), nothing the user can do.
+  static bool _unshownNotice(String content) =>
+      content.contains('auto-mode-classifier-billing');
 
   void _system(Map<String, Object?> message) {
     final uuid = message['uuid'] as String? ?? '${nextSeq()}';
@@ -1294,6 +1509,7 @@ class ClaudeTranslator {
         final level = message['level'];
         final content = _string(message['content']);
         if (level == 'info' || content == null || content.isEmpty) return;
+        if (_unshownNotice(content)) return;
         _put(
           uuid,
           NoticeItem(
@@ -1340,6 +1556,10 @@ class ClaudeTranslator {
       case 'task_started' when !replaying:
         final taskId = message['task_id'] as String;
         final agent = message['task_type'] == 'local_agent';
+        final call = message['tool_use_id'] as String?;
+        // A subagent's task is its card's, continued or not.
+        final card = agent ? _agentCard(taskId, call) : null;
+        if (card != null) _agentCalls[taskId] = card;
         _tasks[taskId] = KernelTask(
           id: taskId,
           description: _string(message['description']) ?? '',
@@ -1350,13 +1570,20 @@ class ClaudeTranslator {
               : KernelTaskKind.other,
           status: CommandStatus.running,
           startedAt: DateTime.now(),
-          toolUseId: message['tool_use_id'] as String?,
+          toolUseId: card ?? call,
           background: message['is_backgrounded'] == true,
           outputFile: _string(message['output_file']) ?? _taskOutputs[taskId],
         );
         _reportTasks();
+        // Continued: at work again, in its card.
+        if (_agents[card] case final continued? when card != call) {
+          continued.item = continued.item.copyWith(
+            status: CommandStatus.running,
+          );
+          _putAgent(card!);
+        }
         if (message['is_backgrounded'] == true) {
-          _agentToBackground(message['tool_use_id'] as String?);
+          _agentToBackground(card ?? call);
         }
       case 'task_progress' when !replaying:
         final taskId = message['task_id'] as String;
@@ -1367,7 +1594,7 @@ class ClaudeTranslator {
           _tasks[taskId] = task.copyWith(summary: summary);
           _reportTasks();
         }
-        final toolUseId = message['tool_use_id'] as String?;
+        final toolUseId = _agentCard(taskId, message['tool_use_id'] as String?);
         final agent = toolUseId == null ? null : _agents[toolUseId];
         if (agent != null) {
           agent.item = agent.item.copyWith(
@@ -1420,6 +1647,11 @@ class ClaudeTranslator {
     }
   }
 
+  /// The card of the subagent the task [taskId] runs, started or continued
+  /// by the call [toolUseId]; null when it runs none we know of.
+  String? _agentCard(String? taskId, String? toolUseId) =>
+      _agents.containsKey(toolUseId) ? toolUseId : _agentCalls[taskId];
+
   /// The subagent [toolUseId] started, if one did, now runs on its own.
   void _agentToBackground(String? toolUseId) {
     final agent = toolUseId == null ? null : _agents[toolUseId];
@@ -1467,7 +1699,8 @@ class ClaudeTranslator {
     // subagent's card (its report comes in the notification to the agent,
     // see _agentNotified).
     final tool = toolUseId == null ? null : _tools[toolUseId];
-    if (_agents[toolUseId] case final agent?) {
+    final card = _agentCard(taskId, toolUseId);
+    if (_agents[card] case final agent?) {
       agent.item = agent.item.copyWith(
         status: status,
         tokens: usage['total_tokens'] as int?,
@@ -1477,7 +1710,7 @@ class ClaudeTranslator {
           _ => null,
         },
       );
-      _putAgent(toolUseId!);
+      _putAgent(card!);
     }
     if (tool != null && tool.name == 'Bash') {
       _put(
@@ -1512,7 +1745,10 @@ class ClaudeTranslator {
   /// A background subagent stopped, as the CLI tells its agent: how, and
   /// its report.
   void _agentNotified(String notification) {
-    final id = _tag(notification, 'tool-use-id');
+    final id = _agentCard(
+      _tag(notification, 'task-id'),
+      _tag(notification, 'tool-use-id'),
+    );
     final agent = id == null ? null : _agents[id];
     if (agent == null) return;
     final status = _taskStatus(_tag(notification, 'status'));
@@ -1568,10 +1804,51 @@ class ClaudeTranslator {
     final String text => text,
     final List<Object?> blocks => [
       for (final block in blocks)
-        if (_map(block)['text'] case final String text) text,
+        if (_map(block)['text'] case final String text)
+          ?_withoutImageSaved(text),
     ].join('\n'),
     _ => '',
   };
+
+  /// [text] without the lines where the CLI says it saved a picture a tool
+  /// returned (`[Image: source: /…/tool-results/….png]`, for the agent):
+  /// the picture shows. Null when that is all it says.
+  static String? _withoutImageSaved(String text) {
+    if (!text.contains('[Image: source: ')) return text;
+    final lines = text.split('\n').where((line) => !_imageSaved.hasMatch(line));
+    return lines.isEmpty ? null : lines.join('\n');
+  }
+
+  static final _imageSaved = RegExp(r'^\s*\[Image: source: ([^\]\n]*)\]\s*$');
+
+  /// Where the CLI saved the pictures in a tool's result (see
+  /// [_withoutImageSaved]).
+  static List<String> _savedImages(Object? content) => [
+    if (content is List)
+      for (final block in content.map(_map))
+        if (block['text'] case final String text
+            when text.contains('[Image: source: '))
+          for (final line in text.split('\n'))
+            if (_imageSaved.firstMatch(line)?[1]?.trim() case final path?
+                when path.isNotEmpty)
+              path,
+  ];
+
+  /// The pictures in a tool's result: as the CLI has them (an MCP tool's
+  /// made image blocks), or as the tool gave them.
+  static List<ImageAttachment> _resultImages(Object? content) => [
+    if (content is List)
+      for (final block in content.map(_map))
+        if (block['type'] == 'image')
+          ?_image(switch (block['source']) {
+            final Map<Object?, Object?> source => source.cast(),
+            _ => {
+              'type': 'base64',
+              'data': block['data'],
+              'media_type': block['mimeType'],
+            },
+          }),
+  ];
 
   static String _summary(Map<String, Object?> input) {
     for (final value in input.values) {
@@ -1647,9 +1924,11 @@ class ClaudeTranslator {
 enum _Outcome { running, done, failed, denied }
 
 class _Tool {
-  _Tool(this.name, this.input, this.parent, DateTime? startedAt)
+  _Tool(this.id, this.name, this.input, this.parent, DateTime? startedAt)
     : startedAt = startedAt ?? DateTime.now();
 
+  /// Its tool use's.
+  final String id;
   final String name;
   final Map<String, Object?> input;
 

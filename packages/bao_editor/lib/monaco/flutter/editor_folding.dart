@@ -42,18 +42,7 @@ typedef LineShift = ({int firstChangedLine, int firstShiftedLine, int delta});
 
 LineShift computeLineShift(DocumentSnapshot before, DocumentSnapshot after) {
   final a = before.text;
-  final b = after.text;
-  final common = a.length < b.length ? a.length : b.length;
-  var prefix = 0;
-  while (prefix < common && a.codeUnitAt(prefix) == b.codeUnitAt(prefix)) {
-    prefix++;
-  }
-  var suffix = 0;
-  while (suffix < common - prefix &&
-      a.codeUnitAt(a.length - 1 - suffix) ==
-          b.codeUnitAt(b.length - 1 - suffix)) {
-    suffix++;
-  }
+  final (prefix, suffix) = DocumentSnapshot.sharedEnds(before, after);
   // Number of old lines whose start is strictly below [offset].
   int linesStartingBefore(int offset) {
     final starts = before.lineStarts;

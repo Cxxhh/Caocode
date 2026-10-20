@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:bao_remote/claude.dart' show ClaudeHistoryPage;
 import 'package:bao_remote/client.dart';
 import 'package:bao_remote/files.dart';
 import 'package:bao_remote/git.dart';
@@ -150,6 +151,28 @@ void main() {
         client().delete(root, root),
         throwsA(isA<RemoteException>()),
       );
+    });
+
+    test('a file read a stretch at a time, and what files take', () async {
+      File(at('big.bin')).writeAsBytesSync(List.generate(10, (i) => i));
+      Directory(at('sub')).createSync();
+      File(at('sub/a.txt')).writeAsStringSync('abc');
+
+      final first = await client().readRange(at('big.bin'), 0, 4);
+      expect(first.bytes, [0, 1, 2, 3]);
+      expect(first.size, 10);
+      final last = await client().readRange(at('big.bin'), 8, 4);
+      expect(last.bytes, [8, 9]);
+      final past = await client().readRange(at('big.bin'), 12, 4);
+      expect(past.bytes, isEmpty);
+      await expectLater(
+        client().readRange(at('none'), 0, 4),
+        throwsA(isA<IdeFileNotFoundException>()),
+      );
+
+      expect(await client().sizeOf([at('big.bin'), at('sub')]), 13);
+      // Counting stops once over the limit.
+      expect(await client().sizeOf([at('big.bin'), at('sub')], limit: 5), 10);
     });
 
     test('bytes, walks, stats, entries and real paths', () async {
@@ -500,34 +523,363 @@ printf '%s\n' "$line"
       await client().claudeDelete('abc');
       expect(await client().claudeProjects(), isEmpty);
     });
+
+    test(
+      'a long session is read from its end, a page of turns at a time',
+      () async {
+        final sessions = Directory(
+          p.join(home.path, '.claude', 'projects', '-x'),
+        )..createSync(recursive: true);
+        final lines = <Map<String, Object?>>[];
+        String? last;
+        void add(String uuid, Map<String, Object?> entry) {
+          lines.add({'uuid': uuid, 'parentUuid': ?last, ...entry});
+          last = uuid;
+        }
+
+        void goal(String uuid) => add(uuid, {
+          'type': 'attachment',
+          'attachment': {
+            'type': 'goal_status',
+            'condition': 'tests pass',
+            'met': false,
+            'sentinel': true,
+          },
+        });
+
+        for (var turn = 1; turn <= 5; turn++) {
+          add('u$turn', {
+            'type': 'user',
+            'cwd': root,
+            'timestamp': '2026-10-01T10:0$turn:00Z',
+            'message': {'role': 'user', 'content': 'Turn $turn'},
+          });
+          // A call and its result belong to the turn, not begin another.
+          add('c$turn', {
+            'type': 'assistant',
+            'message': {
+              'role': 'assistant',
+              'content': [
+                {
+                  'type': 'tool_use',
+                  'id': 't$turn',
+                  'name': 'Bash',
+                  'input': {},
+                },
+              ],
+            },
+          });
+          add('r$turn', {
+            'type': 'user',
+            'message': {
+              'role': 'user',
+              'content': [
+                {
+                  'type': 'tool_result',
+                  'tool_use_id': 't$turn',
+                  'content': 'ok',
+                },
+              ],
+            },
+          });
+          add('a$turn', {
+            'type': 'assistant',
+            'message': {'role': 'assistant', 'content': 'Done $turn'},
+          });
+          if (turn == 1) goal('g1');
+          if (turn == 3) goal('g2');
+        }
+        File(p.join(sessions.path, 'long.jsonl'))
+            .writeAsStringSync(lines.map(jsonEncode).join('\n'));
+        final projects = await client().claudeProjects();
+        final path = projects.single.sessions.single.path;
+        List<Object?> ids(ClaudeHistoryPage page) => [
+          for (final entry in page.entries) entry['uuid'],
+        ];
+
+        // The last turns, cut at the user's prompts; the goal as it stood all
+        // along comes with the first page.
+        final last2 = await client().claudeHistoryPage(path, turns: 2);
+        expect(ids(last2), [
+          'g1', 'g2', //
+          for (final turn in [4, 5]) ...[
+            'u$turn',
+            'c$turn',
+            'r$turn',
+            'a$turn',
+          ],
+        ]);
+        expect(last2.earlier, 'u4');
+
+        // Those before: goal records are not sent again.
+        final before = await client().claudeHistoryPage(
+          path,
+          turns: 2,
+          before: last2.earlier,
+        );
+        expect(ids(before), [
+          for (final turn in [2, 3]) ...[
+            'u$turn',
+            'c$turn',
+            'r$turn',
+            'a$turn',
+          ],
+        ]);
+        expect(before.earlier, 'u2');
+
+        // The start of it: nothing more before.
+        final start = await client().claudeHistoryPage(
+          path,
+          turns: 2,
+          before: before.earlier,
+        );
+        expect(ids(start), ['u1', 'c1', 'r1', 'a1']);
+        expect(start.earlier, isNull);
+
+        // Shorter than a page: all of it.
+        final whole = await client().claudeHistoryPage(path, turns: 10);
+        expect(whole.entries, await client().claudeHistory(path));
+        expect(whole.earlier, isNull);
+
+        // A line that is gone (rewound meanwhile): nothing before it.
+        final gone = await client().claudeHistoryPage(
+          path,
+          turns: 2,
+          before: 'nope',
+        );
+        expect(gone.entries, isEmpty);
+        expect(gone.earlier, isNull);
+      },
+    );
+
+    test('a page leaves out what is not shown: a file read whole, the '
+        "CLI's copy of a picture, a file before an edit", () async {
+      final sessions = Directory(p.join(home.path, '.claude', 'projects', '-x'))
+        ..createSync(recursive: true);
+      final lines = [
+        {
+          'uuid': 'u1',
+          'type': 'user',
+          'cwd': root,
+          'message': {'role': 'user', 'content': 'Go'},
+        },
+        {
+          'uuid': 'r1',
+          'parentUuid': 'u1',
+          'type': 'user',
+          'message': {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'tool_result',
+                'tool_use_id': 't1',
+                'content': 'a' * 10000,
+              },
+            ],
+          },
+          'toolUseResult': {
+            'type': 'text',
+            'file': {'filePath': '/x/a.txt', 'content': 'a' * 10000},
+          },
+        },
+        {
+          'uuid': 'r2',
+          'parentUuid': 'r1',
+          'type': 'user',
+          'message': {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'tool_result',
+                'tool_use_id': 't2',
+                'content': [
+                  {'type': 'text', 'text': 'shot'},
+                  {
+                    'type': 'image',
+                    'source': {'type': 'base64', 'data': 'b' * 10000},
+                  },
+                ],
+              },
+            ],
+          },
+          'toolUseResult': [
+            {'type': 'text', 'text': 'shot'},
+            {
+              'type': 'image',
+              'source': {'type': 'base64', 'data': 'b' * 10000},
+            },
+          ],
+        },
+        {
+          'uuid': 'r3',
+          'parentUuid': 'r2',
+          'type': 'user',
+          'message': {
+            'role': 'user',
+            'content': [
+              {'type': 'tool_result', 'tool_use_id': 't3', 'content': 'ok'},
+            ],
+          },
+          'toolUseResult': {
+            'filePath': '/x/a.txt',
+            'originalFile': 'c' * 10000,
+            'structuredPatch': <Object?>[],
+          },
+        },
+      ];
+      File(p.join(sessions.path, 'slim.jsonl'))
+          .writeAsStringSync(lines.map(jsonEncode).join('\n'));
+      final projects = await client().claudeProjects();
+      final path = projects.single.sessions.single.path;
+      final page = await client().claudeHistoryPage(path, turns: 10);
+      final [_, read, shot, edit] = page.entries;
+      Object? content(Map<String, Object?> entry) =>
+          ((entry['message']! as Map)['content'] as List).single['content'];
+
+      expect(content(read), '${'a' * 4000}…');
+      expect(read['toolUseResult'], {
+        'type': 'text',
+        'file': {'filePath': '/x/a.txt'},
+      });
+      // The picture is shown, from the call's result.
+      expect(content(shot), [
+        {'type': 'text', 'text': 'shot'},
+        {
+          'type': 'image',
+          'source': {'type': 'base64', 'data': 'b' * 10000},
+        },
+      ]);
+      expect(shot['toolUseResult'], [
+        {'type': 'text', 'text': 'shot'},
+      ]);
+      expect(edit['toolUseResult'], {
+        'filePath': '/x/a.txt',
+        'structuredPatch': <Object?>[],
+      });
+    });
+
+    test('a turn the agent worked long at is cut within it, its calls '
+        'with their results', () async {
+      final sessions = Directory(p.join(home.path, '.claude', 'projects', '-x'))
+        ..createSync(recursive: true);
+      final lines = <Map<String, Object?>>[];
+      String? last;
+      void add(String uuid, Map<String, Object?> entry) {
+        lines.add({'uuid': uuid, 'parentUuid': ?last, ...entry});
+        last = uuid;
+      }
+
+      Map<String, Object?> said(String message, Map<String, Object?> block) => {
+        'type': 'assistant',
+        'message': {
+          'id': message,
+          'role': 'assistant',
+          'content': [block],
+        },
+      };
+      Map<String, Object?> result(String call) => {
+        'type': 'user',
+        'message': {
+          'role': 'user',
+          'content': [
+            {'type': 'tool_result', 'tool_use_id': call, 'content': 'x' * 400},
+          ],
+        },
+      };
+
+      add('u1', {
+        'type': 'user',
+        'cwd': root,
+        'message': {'role': 'user', 'content': 'Go'},
+      });
+      for (var step = 1; step <= 4; step++) {
+        // Two calls at once, a line each, the first answered before the
+        // second is kept.
+        add(
+          'a${step}a',
+          said('m$step', {'type': 'tool_use', 'id': 't${step}a'}),
+        );
+        add('r${step}a', result('t${step}a'));
+        add(
+          'a${step}b',
+          said('m$step', {'type': 'tool_use', 'id': 't${step}b'}),
+        );
+        add('r${step}b', result('t${step}b'));
+      }
+      File(p.join(sessions.path, 'long.jsonl'))
+          .writeAsStringSync(lines.map(jsonEncode).join('\n'));
+      final projects = await client().claudeProjects();
+      final path = projects.single.sessions.single.path;
+      List<Object?> ids(ClaudeHistoryPage page) => [
+        for (final entry in page.entries) entry['uuid'],
+      ];
+
+      // Past the size, at the first line of a message: not between a
+      // message's lines.
+      final last2 = await client().claudeHistoryPage(
+        path,
+        turns: 10,
+        bytes: 2000,
+      );
+      expect(ids(last2), [
+        'a3a',
+        'r3a',
+        'a3b',
+        'r3b',
+        'a4a',
+        'r4a',
+        'a4b',
+        'r4b',
+      ]);
+      expect(last2.earlier, 'a3a');
+
+      final rest = await client().claudeHistoryPage(
+        path,
+        turns: 10,
+        before: last2.earlier,
+        bytes: 1 << 20,
+      );
+      expect(ids(rest), [
+        'u1',
+        'a1a',
+        'r1a',
+        'a1b',
+        'r1b',
+        'a2a',
+        'r2a',
+        'a2b',
+        'r2b',
+      ]);
+      expect(rest.earlier, isNull);
+    });
   });
 
   group('review', () {
-    test('snapshots, diffs and restores a project there', () async {
+    test('keeps, counts and restores what a session kept there', () async {
       File(at('a.txt')).writeAsStringSync('one\n');
       final store = (await client().openReview(root))!;
       expect(store.root, root);
-      final before = await store.snapshot();
+      final old = (await store.take('s1', 'a.txt'))!;
       File(at('a.txt')).writeAsStringSync('one\ntwo\n');
       File(at('b.txt')).writeAsStringSync('new\n');
-      final after = await store.snapshot();
-      final changes = await store.diff(before, after);
-      expect([for (final c in changes) c.path], ['a.txt', 'b.txt']);
-      final counts = await store.lineCounts(before, after);
+      expect(await store.current('a.txt'), isNot(old));
+      final counts = await store.lineCounts('s1', {
+        'a.txt': old,
+        'b.txt': null,
+      });
       expect(counts['a.txt'], (added: 1, removed: 0));
-      final old = changes.first.before!;
-      expect(utf8.decode(await store.read(old)), 'one\n');
-      await store.restore('a.txt', old);
+      expect(counts['b.txt'], (added: 1, removed: 0));
+      expect(utf8.decode(await store.read('s1', old)), 'one\n');
+      await store.restore('s1', 'a.txt', old);
       expect(File(at('a.txt')).readAsStringSync(), 'one\n');
-      await store.restore('b.txt', null);
+      await store.restore('s1', 'b.txt', null);
       expect(File(at('b.txt')).existsSync(), isFalse);
       expect(await store.exists('a.txt'), isTrue);
-      expect(await store.contains(after, 'b.txt'), isTrue);
-      await store.save('s1', 'data', trees: [before], blobs: [old]);
+      await store.save('s1', 'data', blobs: [old]);
       expect(await store.load('s1'), 'data');
       await store.forget('s1');
       expect(await store.load('s1'), isNull);
-      // Its repository is the server's, not the project's.
+      // Kept in the server's data folder, not the project.
       expect(Directory(at('.git')).existsSync(), isFalse);
       expect(
         Directory(p.join(remote.dataDir.path, 'checkpoints')).existsSync(),

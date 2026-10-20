@@ -31,6 +31,10 @@ class FakeGit {
   /// `git remote` output.
   String remotes = 'origin\n';
 
+  /// `git --version` output (the service reads it to pick `restore` or the
+  /// older `reset` for unstaging).
+  String version = 'git version 2.39.0';
+
   /// `git blame --incremental` output, by relative path (which, not there,
   /// fails as an untracked path does).
   final Map<String, String> blame = {};
@@ -118,6 +122,8 @@ class FakeGit {
           return IdeGitOutput(128, '', "fatal: no such path '$path' in HEAD");
         }
         return IdeGitOutput(0, output);
+      case ['--version']:
+        return IdeGitOutput(0, '$version\n');
       case ['init']:
         isRepository = true;
         return const IdeGitOutput(0, '');

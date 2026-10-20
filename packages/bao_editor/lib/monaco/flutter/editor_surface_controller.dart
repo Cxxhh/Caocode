@@ -544,13 +544,7 @@ class EditorSurfaceController extends ValueNotifier<TextEditingValue> {
     if (_disposed) return;
     final prev = super.value;
     if (next.text == prev.text) {
-      if (next.selection == prev.selection) {
-        if (next != prev) super.value = next;
-        return;
-      }
-      // A platform selection change replaces every cursor.
-      _setSelections([next.selection], composing: next.composing);
-      if (super.value != next) super.value = next;
+      _applyPlatformSelection(next.selection, next.composing);
       return;
     }
     final wasComposing = _isComposing(prev.composing, prev.text.length);
@@ -565,12 +559,92 @@ class EditorSurfaceController extends ValueNotifier<TextEditingValue> {
         return;
       }
     }
-    _applyRawValue(
+    final before = prev.text;
+    var prefix = 0;
+    while (prefix < before.length &&
+        prefix < next.text.length &&
+        before.codeUnitAt(prefix) == next.text.codeUnitAt(prefix)) {
+      prefix++;
+    }
+    var suffix = 0;
+    while (suffix < before.length - prefix &&
+        suffix < next.text.length - prefix &&
+        before.codeUnitAt(before.length - suffix - 1) ==
+            next.text.codeUnitAt(next.text.length - suffix - 1)) {
+      suffix++;
+    }
+    _applyRawEdit(
       prev,
-      next,
+      prefix,
+      before.length - suffix,
+      next.text.substring(prefix, next.text.length - suffix),
+      next.selection,
+      next.composing,
       wasComposing: wasComposing,
       isComposing: isComposing,
     );
+  }
+
+  /// What assigning [value] the text with `[start, end)` replaced by
+  /// [text], [selection] and [composing] (offsets into that text) does, the
+  /// edit as the platform's text input made it: no whole text is built or
+  /// compared. An edit of no text is a selection (or composing) change.
+  void applyPlatformEdit(
+    int start,
+    int end,
+    String text, {
+    required TextSelection selection,
+    TextRange composing = TextRange.empty,
+  }) {
+    if (_disposed) return;
+    final prev = super.value;
+    final before = prev.text;
+    start = start.clamp(0, before.length);
+    end = end.clamp(start, before.length);
+    if (start == end && text.isEmpty) {
+      _applyPlatformSelection(selection, composing);
+      return;
+    }
+    final length = before.length - (end - start) + text.length;
+    final wasComposing = _isComposing(prev.composing, before.length);
+    final isComposing = _isComposing(composing, length);
+    if (!wasComposing && !isComposing) {
+      // The selection replaced and the caret after what replaced it: typed.
+      final s = prev.selection;
+      if (s.isValid &&
+          s.start == start &&
+          s.end == end &&
+          selection.isValid &&
+          selection.isCollapsed &&
+          selection.extentOffset == start + text.length &&
+          // Multi-line platform text (e.g. semantics setText) stays raw.
+          (text == '\n' || (!text.contains('\n') && !text.contains('\r')))) {
+        type(text);
+        return;
+      }
+    }
+    _applyRawEdit(
+      prev,
+      start,
+      end,
+      text,
+      selection,
+      composing,
+      wasComposing: wasComposing,
+      isComposing: isComposing,
+    );
+  }
+
+  void _applyPlatformSelection(TextSelection selection, TextRange composing) {
+    final prev = super.value;
+    final next = prev.copyWith(selection: selection, composing: composing);
+    if (selection == prev.selection) {
+      if (next != prev) super.value = next;
+      return;
+    }
+    // A platform selection change replaces every cursor.
+    _setSelections([selection], composing: composing);
+    if (super.value != next) super.value = next;
   }
 
   static bool _isComposing(TextRange composing, int length) =>
@@ -598,49 +672,64 @@ class EditorSurfaceController extends ValueNotifier<TextEditingValue> {
     return inserted.isEmpty && start == end ? null : inserted;
   }
 
-  void _applyRawValue(
+  static bool _isHighSurrogate(int unit) => unit >= 0xD800 && unit <= 0xDBFF;
+  static bool _isLowSurrogate(int unit) => unit >= 0xDC00 && unit <= 0xDFFF;
+
+  void _applyRawEdit(
     TextEditingValue prev,
-    TextEditingValue next, {
+    int prefix,
+    int end,
+    String inserted,
+    TextSelection selection,
+    TextRange composing, {
     required bool wasComposing,
     required bool isComposing,
   }) {
     final before = prev.text;
-    var prefix = 0;
-    while (prefix < before.length &&
-        prefix < next.text.length &&
-        before.codeUnitAt(prefix) == next.text.codeUnitAt(prefix)) {
-      prefix++;
-    }
-    var suffix = 0;
-    while (suffix < before.length - prefix &&
-        suffix < next.text.length - prefix &&
-        before.codeUnitAt(before.length - suffix - 1) ==
-            next.text.codeUnitAt(next.text.length - suffix - 1)) {
-      suffix++;
-    }
     // Replacing the whole document avoids splitting a surrogate across edit
     // pieces; CRLF interiors are fine for raw offset edits.
-    bool splitsPair(String text, int offset) =>
-        offset > 0 &&
-        offset < text.length &&
-        text.codeUnitAt(offset - 1) >= 0xD800 &&
-        text.codeUnitAt(offset - 1) <= 0xDBFF &&
-        text.codeUnitAt(offset) >= 0xDC00 &&
-        text.codeUnitAt(offset) <= 0xDFFF;
-    var end = before.length - suffix;
-    if (splitsPair(before, prefix) ||
-        splitsPair(before, end) ||
-        splitsPair(next.text, prefix) ||
-        splitsPair(next.text, next.text.length - suffix)) {
+    int? unitBefore(int offset) =>
+        offset > 0 ? before.codeUnitAt(offset - 1) : null;
+    int? unitAt(int offset) =>
+        offset < before.length ? before.codeUnitAt(offset) : null;
+    bool splits(int? first, int? second) =>
+        first != null &&
+        second != null &&
+        _isHighSurrogate(first) &&
+        _isLowSurrogate(second);
+    if (splits(unitBefore(prefix), unitAt(prefix)) ||
+        splits(unitBefore(end), unitAt(end)) ||
+        splits(
+          unitBefore(prefix),
+          inserted.isEmpty ? unitAt(end) : inserted.codeUnitAt(0),
+        ) ||
+        splits(
+          inserted.isEmpty
+              ? unitBefore(prefix)
+              : inserted.codeUnitAt(inserted.length - 1),
+          unitAt(end),
+        )) {
+      inserted =
+          before.substring(0, prefix) + inserted + before.substring(end);
       prefix = 0;
       end = before.length;
-      suffix = 0;
     }
-    final inserted = next.text.substring(prefix, next.text.length - suffix);
     final composition = wasComposing || isComposing;
     final canCoalesce =
         wasComposing && document.version == _compositionEditVersion;
-    _eolCache = null;
+    // Only line breaks put in or taken out can change the dominant one.
+    bool hasBreak(String text, int from, int to) {
+      for (var i = from; i < to; i++) {
+        final unit = text.codeUnitAt(i);
+        if (unit == 0x0A || unit == 0x0D) return true;
+      }
+      return false;
+    }
+
+    if (hasBreak(inserted, 0, inserted.length) ||
+        hasBreak(before, prefix, end)) {
+      _eolCache = null;
+    }
     if (!canCoalesce) document.closeUndoGroup();
     final beforeSelections = selections;
     document.applyOffsetEdits(
@@ -648,7 +737,6 @@ class EditorSurfaceController extends ValueNotifier<TextEditingValue> {
       selectionsBefore: beforeSelections,
       coalesce: canCoalesce,
     );
-    assert(document.text == next.text);
     _lastEditVersion = document.version;
     _compositionEditVersion = isComposing ? document.version : -1;
     _prevEditType = composition
@@ -669,8 +757,13 @@ class EditorSurfaceController extends ValueNotifier<TextEditingValue> {
       }
     }
     _secondary = secondary;
-    _updateSnippetState([next.selection, ...secondary]);
+    _updateSnippetState([selection, ...secondary]);
     // Keep the raw platform value (selection/composing) exactly.
+    final next = TextEditingValue(
+      text: document.text,
+      selection: selection,
+      composing: composing,
+    );
     super.value = next;
     document.setUndoSelectionsAfter(selections);
     if (!composition) document.closeUndoGroup();

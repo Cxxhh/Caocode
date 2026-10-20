@@ -4,6 +4,7 @@ import 'package:path/path.dart' as p;
 
 import '../chat/composer/composer_files.dart';
 import '../chat/composer/file_drag.dart';
+import '../chat/widgets/inline_rename_field.dart';
 import '../keybindings/keybinding_service.dart';
 import '../l10n/l10n.dart';
 import '../theme/codicons.dart';
@@ -99,6 +100,7 @@ class IdeTabBar extends StatefulWidget {
     this.markdownPreview,
     this.onMarkdownPreview,
     this.page,
+    this.actions,
   });
 
   final List<IdeDocument> documents;
@@ -122,6 +124,10 @@ class IdeTabBar extends StatefulWidget {
 
   /// Shows the active markdown file's preview (true) or source (false).
   final ValueChanged<bool>? onMarkdownPreview;
+
+  /// After the tabs, before the active tab's switch and More Actions (an
+  /// agent's change to its file: Undo and Keep).
+  final Widget? actions;
 
   static const height = IdeTabStrip.height;
 
@@ -315,6 +321,7 @@ class _IdeTabBarState extends State<IdeTabBar> {
               ),
             ),
           ),
+          ?widget.actions,
           if ((widget.markdownPreview, widget.onMarkdownPreview) case (
             final preview?,
             final onChanged?,
@@ -528,10 +535,23 @@ class IdeEditorTab extends StatefulWidget {
     this.closeTooltip,
     this.onClose,
     this.onMenu,
+    this.onDoubleTap,
+    this.renaming = false,
+    this.onRenamed,
     this.tooltip,
     this.minWidth = 80,
     this.borderTop = true,
   });
+
+  /// A double click (pins a preview tab); none: a click selects at once.
+  final VoidCallback? onDoubleTap;
+
+  /// The label is edited in place (the IDE's chat tab, renamed): an input
+  /// in its place, over [label].
+  final bool renaming;
+
+  /// The new label, or null when the rename was cancelled.
+  final ValueChanged<String?>? onRenamed;
 
   /// In 16px, in the tab's color unless it has its own.
   final Widget icon;
@@ -614,6 +634,7 @@ class _IdeEditorTabState extends State<IdeEditorTab> {
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: widget.onSelect,
+          onDoubleTap: widget.onDoubleTap,
           onSecondaryTapUp: switch (widget.onMenu) {
             final onMenu? => (details) => onMenu(details.globalPosition),
             null => null,
@@ -669,31 +690,40 @@ class _IdeEditorTabState extends State<IdeEditorTab> {
                 if (label != null) ...[
                   const SizedBox(width: IdeEditorTab.gap),
                   Flexible(
-                    child: Text.rich(
-                      TextSpan(
-                        text: label,
-                        style: widget.labelStyle,
-                        children: [
-                          if (widget.description case final description?)
-                            TextSpan(
-                              text: '  $description',
-                              // `.label-description`: 70% opaque.
-                              style: TextStyle(
-                                color: foreground.withValues(
-                                  alpha: foreground.a * .7,
-                                ),
-                                fontSize: 11,
-                                decoration: TextDecoration.none,
-                              ),
+                    child: widget.renaming && widget.onRenamed != null
+                        ? InlineRenameField(
+                            initial: label,
+                            style: IdeEditorTab.labelStyleBase.copyWith(
+                              color: foreground,
                             ),
-                        ],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: IdeEditorTab.labelStyleBase.copyWith(
-                        color: foreground,
-                      ),
-                    ),
+                            onDone: widget.onRenamed!,
+                          )
+                        : Text.rich(
+                            TextSpan(
+                              text: label,
+                              style: widget.labelStyle,
+                              children: [
+                                if (widget.description
+                                    case final description?)
+                                  TextSpan(
+                                    text: '  $description',
+                                    // `.label-description`: 70% opaque.
+                                    style: TextStyle(
+                                      color: foreground.withValues(
+                                        alpha: foreground.a * .7,
+                                      ),
+                                      fontSize: 11,
+                                      decoration: TextDecoration.none,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: IdeEditorTab.labelStyleBase.copyWith(
+                              color: foreground,
+                            ),
+                          ),
                   ),
                 ],
                 if (widget.trailing case final trailing?) ...[

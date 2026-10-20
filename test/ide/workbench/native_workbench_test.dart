@@ -86,6 +86,70 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
   });
 
+  testWidgets('typing rebuilds the editor and the status bar, not the '
+      'workbench; the tab shows the document dirty and clean again', (
+    tester,
+  ) async {
+    final workspace = await pumpWorkbench(
+      tester,
+      {'a.txt': 'one\ntwo\n'},
+      open: ['a.txt'],
+      nativeEditor: true,
+    );
+    await settleAssets(tester);
+    await tester.tap(find.byType(EditorSurface));
+    await tester.pump();
+    final controller = tester
+        .widget<EditorSurface>(find.byType(EditorSurface))
+        .controller;
+    controller.select(3, 3);
+    await tester.pump();
+    expect(find.text('Ln 1, Col 4'), findsOneWidget);
+    final dirty = find.byKey(const ValueKey('dirty'));
+    expect(dirty, findsNothing);
+
+    Future<void> typeV() async {
+      final value = controller.value;
+      final caret = value.selection.extentOffset;
+      tester.testTextInput.updateEditingValue(
+        TextEditingValue(
+          text: value.text.replaceRange(caret, caret, 'v'),
+          selection: TextSelection.collapsed(offset: caret + 1),
+        ),
+      );
+      await tester.pump();
+    }
+
+    // The first edit makes the document dirty: the tab shows it.
+    await typeV();
+    expect(dirty, findsOneWidget);
+    expect(find.text('Ln 1, Col 5'), findsOneWidget);
+
+    final rebuilt = <String>{};
+    debugOnRebuildDirtyWidget = (element, _) =>
+        rebuilt.add('${element.widget.runtimeType}');
+    addTearDown(() => debugOnRebuildDirtyWidget = null);
+    for (var i = 0; i < 3; i++) {
+      await typeV();
+    }
+    debugOnRebuildDirtyWidget = null;
+    expect(workspace.active!.text, 'onevvvv\ntwo\n');
+    // The status bar follows in the frame the edit is drawn in.
+    expect(find.text('Ln 1, Col 8'), findsOneWidget);
+    expect(rebuilt, containsAll(['EditorSurface', 'IdeStatusBar']));
+    // The rest of the workbench (its tabs among them) stays as it was.
+    expect(rebuilt, isNot(contains('IdeTabBar')));
+
+    // Saved, it is clean; edited again, dirty again.
+    await tester.runAsync(() => workspace.save(workspace.active!));
+    await tester.pump();
+    expect(dirty, findsNothing);
+    await typeV();
+    expect(dirty, findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump(const Duration(milliseconds: 50));
+  });
+
   testWidgets('find matches are painted as surface decorations', (
     tester,
   ) async {

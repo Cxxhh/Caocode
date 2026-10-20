@@ -4,13 +4,14 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
+import '../channel/channel_setup.dart' show ChannelSetup;
 import 'update_io.dart';
 import 'update_manifest.dart';
 import 'update_service.dart';
 import 'version.dart';
 
 /// What updates the app where it runs: the platform's download, and what
-/// installs it. Null where there are none: not macOS or Windows, or a
+/// installs it. Null where there are none: not macOS, Windows or Linux, or a
 /// debug build (which would replace the build folder's app), unless
 /// [manifestUrlVariable] points at a manifest to try.
 PlatformUpdates? platformUpdates({required String updatesDirectory}) {
@@ -42,19 +43,38 @@ PlatformUpdates? platformUpdates({required String updatesDirectory}) {
       environment: environment,
       updatesDirectory: updatesDirectory,
     );
+  } else if (Platform.isLinux) {
+    platform = linuxUpdatePlatform(arm64: Abi.current() == Abi.linuxArm64);
+    installer = LinuxUpdateInstaller(
+      executable: executable,
+      pid: pid,
+      updatesDirectory: updatesDirectory,
+    );
   } else {
     return null;
   }
+  final edition = editionUpdatePlatform(
+    platform,
+    channel: ChannelSetup.channelBuild,
+  );
   return PlatformUpdates(
-    platform: platform,
+    platform: edition,
     manifestUrl: manifestUrl,
     backend: IoUpdateBackend(
       directory: updatesDirectory,
-      userAgent: 'Caocode/$currentAppVersion ($platform)',
+      userAgent: 'Caocode/$currentAppVersion ($edition)',
     ),
     installer: installer,
   );
 }
+
+/// [platform]'s download for the build's edition: the channel build's
+/// (`windows-x64-channel`…) for it, which a release has beside the standard
+/// one's, signed for it alone; the standard build's otherwise. Each edition
+/// updates to itself.
+@visibleForTesting
+String editionUpdatePlatform(String platform, {required bool channel}) =>
+    channel ? '$platform-channel' : platform;
 
 /// The Mac build an app updates to: the one for the processor. An Intel
 /// build run by Rosetta on Apple silicon (the wrong download) takes the
@@ -433,6 +453,121 @@ fi
 rm -rf "\$new" "\$staging"
 /usr/bin/xattr -dr com.apple.quarantine "\$target" 2>/dev/null
 /usr/bin/open "\$target"
+rm -f "\$0"
+''';
+
+// --- Linux -------------------------------------------------------------------
+
+/// Where the package (tool/package_linux_deb.sh) installs the app.
+const linuxInstallDirectory = '/opt/caocode';
+
+/// The Linux build an app updates to: the one for the processor.
+@visibleForTesting
+String linuxUpdatePlatform({required bool arm64}) =>
+    arm64 ? 'linux-arm64' : 'linux-x64';
+
+/// Installs the new version's package over this one (`dpkg -i`, as root:
+/// pkexec asks for the password while the app is still in front), then,
+/// once the app has quit, opens it again.
+///
+/// Only an app the package installed updates itself: one from the tarball
+/// or a build folder, or with no pkexec to ask with, sends the user to the
+/// download page instead.
+class LinuxUpdateInstaller implements UpdateInstaller {
+  LinuxUpdateInstaller({
+    required this.executable,
+    required this.pid,
+    required this.updatesDirectory,
+    this.processes = const IoUpdateProcesses(),
+    this.pkexec = '/usr/bin/pkexec',
+  });
+
+  /// `/opt/caocode/caocode`, where the package put it.
+  final String executable;
+  final int pid;
+
+  /// Where the script's log goes.
+  final String updatesDirectory;
+  final UpdateProcesses processes;
+
+  /// What asks for the password to install with.
+  final String pkexec;
+
+  /// The script's log, the updates' one after another.
+  @override
+  String get log => p.join(updatesDirectory, 'install.log');
+
+  @override
+  Future<PreparedUpdate> prepare(String file, UpdateRelease release) async {
+    if (p.dirname(executable) != linuxInstallDirectory || !await _packaged()) {
+      throw const ManualUpdateRequired(
+        'Caocode was not installed by its package',
+      );
+    }
+    if (!await File(pkexec).exists()) {
+      throw const ManualUpdateRequired('No pkexec to install the package with');
+    }
+    final script = File(p.join(p.dirname(file), 'install.sh'));
+    final text = linuxUpdateScript(
+      pid: pid,
+      package: file,
+      executable: executable,
+      pkexec: pkexec,
+      log: log,
+    );
+    return _LaunchedUpdate(() async {
+      await script.writeAsString(text, flush: true);
+      await processes.startDetached('/bin/bash', [script.path]);
+    });
+  }
+
+  /// Whether dpkg has the package installed.
+  Future<bool> _packaged() async {
+    try {
+      final result = await processes.run('dpkg-query', [
+        '-W',
+        r'-f=${Status}',
+        'caocode',
+      ]);
+      return result.exitCode == 0 &&
+          '${result.stdout}'.contains('install ok installed');
+    } on ProcessException {
+      return false;
+    }
+  }
+}
+
+/// The script that installs [package] with dpkg as root (through
+/// [pkexec]; the old version kept if that is turned down or fails), waits
+/// (two minutes at most) for the app, process [pid], to quit, and opens
+/// [executable]; written to [log]. dpkg puts the new files in place of
+/// those the running app holds open, which it keeps until it quits.
+String linuxUpdateScript({
+  required int pid,
+  required String package,
+  required String executable,
+  required String pkexec,
+  required String log,
+}) =>
+    '''
+#!/bin/bash
+# Installs a Caocode update, then opens it again once the app has quit
+# (lib/update/installer_io.dart).
+pid=$pid
+package=${_shQuote(package)}
+executable=${_shQuote(executable)}
+exec >>${_shQuote(log)} 2>&1
+echo "\$(date): installing \$package"
+if ${_shQuote(pkexec)} /usr/bin/dpkg -i "\$package"; then
+  echo "Installed"
+else
+  echo "Not installed (turned down, or dpkg failed): the old version kept"
+fi
+for _ in \$(seq 1 1200); do
+  kill -0 "\$pid" 2>/dev/null || break
+  sleep 0.1
+done
+setsid "\$executable" </dev/null >/dev/null 2>&1 &
 rm -f "\$0"
 ''';
 

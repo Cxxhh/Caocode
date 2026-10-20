@@ -5,6 +5,9 @@ import '../kernel_types.dart';
 
 /// Efforts come from the CLI's model catalog and are remembered per model.
 class CodexEffort implements ModelSetting {
+  @override
+  bool get toggle => false;
+
   CodexEffort(this.model, Map<String, String> settings, this.onChanged) {
     const prefix = 'effort@';
     for (final entry in settings.entries) {

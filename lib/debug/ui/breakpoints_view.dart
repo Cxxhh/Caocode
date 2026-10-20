@@ -14,6 +14,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../base/smooth_scroll.dart';
 import '../../ide/ide_hover.dart';
 import '../../ide/ide_list.dart';
 import '../../ide/ide_menu.dart';
@@ -116,6 +117,7 @@ class BreakpointsViewState extends State<BreakpointsView> {
   final DisposableStore _listeners = DisposableStore();
   ({String id, BreakpointEditKind kind})? _editing;
   String? _selectedId;
+  final _scroll = SmoothScrollController();
 
   DebugService get _service => widget.service;
 
@@ -133,6 +135,7 @@ class BreakpointsViewState extends State<BreakpointsView> {
   void dispose() {
     widget.controller?.removeListener(_onController);
     _listeners.dispose();
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -270,6 +273,7 @@ class BreakpointsViewState extends State<BreakpointsView> {
     final state = _service.state;
     final activated = _service.model.areBreakpointsActivated();
     return ListView.builder(
+      controller: _scroll,
       padding: EdgeInsets.zero,
       itemCount: elements.length,
       itemExtent: IdeListColors.rowHeight,

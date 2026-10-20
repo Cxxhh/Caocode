@@ -24,6 +24,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../base/smooth_scroll.dart';
 import '../../ide/ide_input.dart';
 import '../../ide/ide_list.dart';
 import '../../ide/ide_menu.dart';
@@ -333,40 +334,44 @@ class _ExtensionsViewState extends State<ExtensionsView> {
 
   Widget _list(List<ExtensionEntry> entries, {bool more = false}) {
     if (entries.isEmpty) return _message(context.l10n.extNoneFound);
-    return ListView.builder(
-      itemExtent: ExtensionRow.height,
-      itemCount: entries.length + (more ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index == entries.length) {
-          return Center(
-            child: ExtensionActionButton(
-              label: context.l10n.extsLoadMore,
-              prominent: false,
-              large: true,
-              onPressed: _model.searching
-                  ? null
-                  : () => unawaited(_model.search(more: true)),
-            ),
+    // Each list its own (installed and popular show at once).
+    return SmoothScrolling(
+      builder: (context, controller) => ListView.builder(
+        controller: controller,
+        itemExtent: ExtensionRow.height,
+        itemCount: entries.length + (more ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index == entries.length) {
+            return Center(
+              child: ExtensionActionButton(
+                label: context.l10n.extsLoadMore,
+                prominent: false,
+                large: true,
+                onPressed: _model.searching
+                    ? null
+                    : () => unawaited(_model.search(more: true)),
+              ),
+            );
+          }
+          final entry = entries[index];
+          return ExtensionRow(
+            entry: entry,
+            model: _model,
+            selected: _model.selected == entry.key,
+            focused: _listFocus.hasFocus,
+            onTap: () {
+              _model.select(entry.key);
+              _listFocus.requestFocus();
+              widget.onOpen?.call(entry);
+            },
+            onInstall: () =>
+                unawaited(_guard(entry.id, () => _model.install(entry.id))),
+            onUpdate: () =>
+                unawaited(_guard(entry.id, () => _model.update(entry.id))),
+            menu: () => _menu(entry),
           );
-        }
-        final entry = entries[index];
-        return ExtensionRow(
-          entry: entry,
-          model: _model,
-          selected: _model.selected == entry.key,
-          focused: _listFocus.hasFocus,
-          onTap: () {
-            _model.select(entry.key);
-            _listFocus.requestFocus();
-            widget.onOpen?.call(entry);
-          },
-          onInstall: () =>
-              unawaited(_guard(entry.id, () => _model.install(entry.id))),
-          onUpdate: () =>
-              unawaited(_guard(entry.id, () => _model.update(entry.id))),
-          menu: () => _menu(entry),
-        );
-      },
+        },
+      ),
     );
   }
 }

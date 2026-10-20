@@ -143,6 +143,7 @@
   "cmdChatOpenIde": "Open in Fast Ide",
   "cmdChatFocusInput": "Focus Chat Input",
   "cmdChatFocusList": "Focus Chat List",
+  "cmdChatFind": "Find in Chat",
   "cmdChatCancel": "Cancel",
   "cmdChatAcceptTool": "Accept",
   "cmdChatSkipTool": "Skip",
@@ -158,6 +159,7 @@
   "cmdChatNextMode": "Switch to Next Mode",
   "cmdChatOpenModelPicker": "Open Model Picker",
   "cmdChatAttachContext": "Add Context…",
+  "cmdChatPasteRaw": "Paste as Plain Text",
   "cmdChatSelectNextSuggestion": "Select Next Suggestion",
   "cmdChatSelectPrevSuggestion": "Select Previous Suggestion",
   "cmdChatAcceptSelectedSuggestion": "Accept Selected Suggestion",
@@ -543,6 +545,7 @@
     "description": "Quick Open group label."
   },
   "quickOpenLoadingFiles": "Loading files…",
+  "quickOpenSearchingFiles": "Searching files…",
   "quickOpenNoFiles": "No files in this project",
   "quickOpenNoMatchingResults": "No matching results",
   "quickOpenRecentlyUsed": "recently used",
@@ -633,6 +636,7 @@
     "description": "Tooltip of the chat window's terminal panel close button."
   },
   "cmdToggleSidePanel": "Toggle Side Panel",
+  "cmdToggleSidePanelPosition": "Toggle Side Panel Position",
   "@cmdToggleSidePanel": {
     "description": "Command title: shows or hides the agent window's side panel."
   },
@@ -642,6 +646,44 @@
   "cmdSidePanelCloseTab": "Close Side Panel Tab",
   "sidePanelFiles": "Files",
   "sidePanelTerminal": "Terminal",
+  "sidePanelBrowser": "Browser",
+  "@sidePanelBrowser": {"description": "The side panel's browser page, there once the browser plugin is installed."},
+  "browserNotConnected": "No browser is connected. Add Caocode's extension to Chrome (or Edge, Brave, Arc) and agents can use the tabs you share with them.",
+  "browserNoSharedTab": "No tab is shared yet. Ask an agent to open a page, or click Caocode in the browser toolbar to share the tab in front.",
+  "browserOtherApp": "Another Caocode is connected to the browser.",
+  "browserSharedTabs": "Shared Tabs",
+  "browserReload": "Reload",
+  "browserShowInBrowser": "Show in Browser",
+  "browserDetached": "The browser stopped letting Caocode see this tab.",
+  "browserReconnect": "Reconnect",
+  "browserShowInPanel": "Show in Side Panel",
+  "browserWatchTitle": "Watching you in the browser",
+  "@browserWatchTitle": {"description": "The card in the conversation while an agent watches the user do something in their browser (browser_watch), recording it."},
+  "browserWatchHint": "Do it in the Caocode tab of your browser. When you're done, click Done here or the Caocode button in the browser's toolbar.",
+  "browserWatchSteps": "{count, plural, =0{Nothing recorded yet} =1{1 step recorded} other{{count} steps recorded}}",
+  "@browserWatchSteps": {"placeholders": {"count": {"type": "int"}}},
+  "browserWatchCancel": "Cancel",
+  "browserWatchDone": "Done",
+  "browserWatchedStep": "{kind, select, click{Clicked} input{Set} key{Pressed} submit{Submitted} navigate{Went to} closed{Closed the tab} other{Did}}",
+  "@browserWatchedStep": {
+    "description": "A step the user took while watched, by its kind; what it was on follows (an element, a URL).",
+    "placeholders": {"kind": {"type": "String"}}
+  },
+  "browserTraceReveal": "Show the trace in {app} (drop it into DevTools' Performance panel to look closer)",
+  "@browserTraceReveal": {
+    "description": "{app} is the system's file manager, as the system names it (Finder, File Explorer).",
+    "placeholders": {"app": {"type": "String", "example": "Finder"}}
+  },
+  "browserStepDone": "{action, select, tabs{Listed tabs} open{Opened} navigate{Went to} back{Went back} forward{Went forward} reload{Reloaded} snapshot{Read the page} screenshot{Took a screenshot} click{Clicked} type{Typed} press{Pressed} scroll{Scrolled} evaluate{Ran} close{Closed the tab} console{Read the console} network{Listed requests} request{Read the request} performance{Profiled} recordStart{Started profiling} recordStop{Profiled} emulate{Emulated} watch{Watched you} act{Acted} inspect{Inspected} sources{Read the sources} breakpoints{Set breakpoints} debugger{Debugged} intercept{Intercepted requests} storage{Read site data} dialog{Answered the dialog} coverage{Measured coverage} memory{Measured memory} history{Read the debugging history} other{Used the browser}}",
+  "@browserStepDone": {
+    "description": "A browser step's verb once done, by the browser tool it called; what it did it on follows (a URL, an element's name).",
+    "placeholders": {"action": {"type": "String"}}
+  },
+  "browserStepRunning": "{action, select, tabs{Listing tabs} open{Opening} navigate{Going to} back{Going back} forward{Going forward} reload{Reloading} snapshot{Reading the page} screenshot{Taking a screenshot} click{Clicking} type{Typing} press{Pressing} scroll{Scrolling} evaluate{Running} close{Closing the tab} console{Reading the console} network{Listing requests} request{Reading the request} performance{Profiling} recordStart{Starting to profile} recordStop{Profiling} emulate{Emulating} watch{Watching you} act{Acting} inspect{Inspecting} sources{Reading the sources} breakpoints{Setting breakpoints} debugger{Debugging} intercept{Intercepting requests} storage{Reading site data} dialog{Answering the dialog} coverage{Measuring coverage} memory{Measuring memory} history{Reading the debugging history} other{Using the browser}}",
+  "@browserStepRunning": {
+    "description": "A browser step's verb while it runs (see browserStepDone).",
+    "placeholders": {"action": {"type": "String"}}
+  },
   "sidePanelPlan": "Plan",
   "@sidePanelPlan": {
     "description": "The side panel's plan page: the plan the agent wrote in plan mode, shown while there is one."
@@ -660,6 +702,8 @@
     "description": "Tooltip of the title bar button that shows the side panel."
   },
   "sidePanelHide": "Hide side panel",
+  "sidePanelMoveLeft": "Move to the Left of the Conversation",
+  "sidePanelMoveRight": "Move to the Right of the Conversation",
   "@sidePanelHide": {
     "description": "Tooltip of the button that hides the side panel."
   },
@@ -698,6 +742,10 @@
   "sidePanelSource": "Source",
   "@sidePanelSource": {
     "description": "Shows a markdown file's text."
+  },
+  "sidePanelEdit": "Edit",
+  "@sidePanelEdit": {
+    "description": "Shows a markdown file's text in the side panel, to edit."
   },
   "sidePanelNoOriginal": "The file before the agent's changes is not known: showing it as it is.",
   "@sidePanelNoOriginal": {
@@ -742,6 +790,14 @@
   "sidePanelNoFolder": "This conversation has no project folder",
   "@sidePanelNoFolder": {
     "description": "The side panel's files page for a conversation without a folder."
+  },
+  "sidePanelSearchFiles": "Search the project's files",
+  "@sidePanelSearchFiles": {
+    "description": "The files page's header button that shows the text search in place of the tree."
+  },
+  "sidePanelCloseSearch": "Close the search",
+  "@sidePanelCloseSearch": {
+    "description": "The files page's header button that brings the tree back."
   },
   "sidePanelShowList": "Show List",
   "@sidePanelShowList": {
@@ -874,6 +930,15 @@
       }
     }
   },
+  "sidebarDeleteAgentsTitle": "Delete agents?",
+  "sidebarDeleteAgentsMessage": "{count, plural, =1{The agent and its conversation will be deleted} other{The {count} agents and their conversations will be deleted}}, from their kernels too. This cannot be undone.",
+  "@sidebarDeleteAgentsMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "sidebarDeleteAgentMessageKernel": "“{title}” and its conversation will be deleted, from {kernel} too. This cannot be undone.",
   "@sidebarDeleteAgentMessageKernel": {
     "placeholders": {
@@ -890,6 +955,7 @@
   "@ideChatHistory": {
     "description": "Button over the IDE's chat that lists the project's agents to switch to."
   },
+  "ideChatShowArchived": "Show archived agents",
   "ideChatNoAgents": "No agents in this project",
   "sidebarNewAgentIn": "New chat in {project}",
   "@sidebarNewAgentIn": {
@@ -927,7 +993,55 @@
   "sidebarUnpin": "Unpin",
   "sidebarArchive": "Archive",
   "sidebarUnarchive": "Unarchive",
+  "sidebarPinCount": "Pin {count} Agents",
+  "@sidebarPinCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sidebarUnpinCount": "Unpin {count} Agents",
+  "@sidebarUnpinCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sidebarArchiveCount": "Archive {count} Agents",
+  "@sidebarArchiveCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sidebarUnarchiveCount": "Unarchive {count} Agents",
+  "@sidebarUnarchiveCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sidebarDeleteCount": "Delete {count} Agents…",
+  "@sidebarDeleteCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "sidebarCopySessionId": "Copy session ID",
+  "sidebarOpenStash": "Open Stash #{id}",
+  "@sidebarOpenStash": {
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  },
   "@sidebarCopySessionId": {
     "description": "An agent's menu in the sidebar: copies the id of its session, which Claude Code finds the conversation by."
   },
@@ -1044,6 +1158,10 @@
   "@workspaceFileExplorer": {
     "description": "The Windows file manager, as Windows names it."
   },
+  "workspaceFileManager": "File Manager",
+  "@workspaceFileManager": {
+    "description": "The Linux desktop's file manager, which has no one name."
+  },
   "workspaceTerminalApp": "Terminal",
   "@workspaceTerminalApp": {
     "description": "The macOS Terminal app, as macOS names it."
@@ -1137,6 +1255,7 @@
     }
   },
   "chatOpensItsConversation": "Opens its conversation",
+  "chatLoadEarlier": "Load earlier messages",
   "chatStop": "Stop",
   "chatKeepRunningHint": "Keep it running and let the agent go on",
   "chatBackground": "Background",
@@ -1182,6 +1301,15 @@
   },
   "toolUsing": "Using",
   "toolUsed": "Used",
+  "toolGeneratingImage": "Generating image",
+  "toolGeneratedImage": "Generated image",
+  "toolImageFailed": "Image not generated",
+  "toolImageWaiting": "Generate image",
+  "imagePickTitle": "Pick the model to generate it with",
+  "imagePickGenerate": "Generate",
+  "imagePickDecline": "Skip",
+  "imageSetDefault": "Set as default",
+  "imageDefaultSet": "Set as default image model",
   "toolProposingGoal": "Proposing a goal",
   "toolProposedGoal": "Proposed a goal",
   "goalAdopt": "Set as goal",
@@ -1247,6 +1375,15 @@
       }
     }
   },
+  "pastedTextGone": "This paste is no longer at {path}.",
+  "@pastedTextGone": {
+    "description": "Shown in place of a long paste kept in a file that has since gone.",
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "pastedTextLines": "{count, plural, =1{+1 line} other{+{count} lines}}",
   "@pastedTextLines": {
     "description": "After a long paste's tag: how many lines it has past its first.",
@@ -1295,6 +1432,14 @@
   },
   "stepsRan": "{count, plural, =1{ran 1 command} other{ran {count} commands}}",
   "@stepsRan": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stepsBrowsed": "{count, plural, =1{took 1 step in the browser} other{took {count} steps in the browser}}",
+  "@stepsBrowsed": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -1356,7 +1501,9 @@
       }
     }
   },
-  "turnSpeedHint": "Output speed",
+  "turnSpeedHint": "Average output speed",
+  "turnOutputTokensHint": "Written so far this turn",
+  "turnSpeedLiveHint": "Output speed, sampled over the last 2 seconds",
   "turnDurationHint": "Time this turn took",
   "turnCostHint": "Cost of this turn",
   "turnWorked": "Worked for {duration}",
@@ -1382,9 +1529,18 @@
     }
   },
   "planDrafting": "Drafting",
-  "planAwaiting": "Awaiting approval",
+  "planAwaiting": "Ready to start",
   "planApproved": "Approved",
   "planSentBack": "Sent back",
+  "planStart": "Start",
+  "@planStart": {
+    "description": "On a plan put to the user: leaves Plan mode and has the agent carry the plan out, with the model picked beside it."
+  },
+  "planStartHint": "Leave Plan mode and carry out this plan",
+  "planStartMessage": "Carry out the plan",
+  "@planStartMessage": {
+    "description": "The message sent, as the user's, when they start a plan."
+  },
   "turnFiles": "{count, plural, =1{1 file} other{{count} files}}",
   "@turnFiles": {
     "description": "How many files a folded turn edited.",
@@ -1416,11 +1572,108 @@
   "@chatSubagent": {
     "description": "Breadcrumb for a subagent without a description."
   },
+  "chatLoadingHistory": "Loading conversation…",
+  "@chatLoadingHistory": {
+    "description": "Shown in an earlier conversation while it is read, e.g. from a remote project's host."
+  },
   "activityCompacting": "Compacting conversation",
   "activityPlanning": "Planning next move",
-  "activityMusings": "Pondering\nNoodling\nPercolating\nCogitating\nSimmering\nMarinating\nTinkering\nGrokking\nMulling it over\nConnecting the dots\nChasing a hunch\nBrewing a plan\nHatching a plan\nWeighing the options\nUntangling threads\nHerding tokens\nSummoning context\nReticulating splines\nAsking the rubber duck\nReading the tea leaves\nSketching on a napkin\nDoodling in the margins\nSquinting at the diff\nCounting parentheses\nBefriending the compiler\nNegotiating with types\nWrangling edge cases\nTracing the stack\nFlipping through the docs\nSpelunking the codebase\nLining up the ducks\nShaking the magic 8-ball\nWarming up the neurons\nFolding thoughts\nTuning the vibes\nBinding the monad\nLifting into the monad\nAsking the oracle\nStirring the pot\nPolishing the plan",
+  "activityMusings": "Pondering\nNoodling\nPercolating\nCogitating\nSimmering\nMarinating\nTinkering\nGrokking\nMulling it over\nConnecting the dots\nChasing a hunch\nBrewing a plan\nHatching a plan\nWeighing the options\nUntangling threads\nHerding tokens\nSummoning context\nAsking the rubber duck\nReading the tea leaves\nSketching on a napkin\nDoodling in the margins\nSquinting at the diff\nCounting parentheses\nBefriending the compiler\nNegotiating with types\nWrangling edge cases\nTracing the stack\nFlipping through the docs\nSpelunking the codebase\nLining up the ducks\nShaking the magic 8-ball\nWarming up the neurons\nFolding thoughts\nBinding the monad\nAsking the oracle\nStirring the pot\nPolishing the plan",
   "@activityMusings": {
     "description": "What the agent 'does' while the model has yet to answer: whimsical phrases, one per line, shown one at a time with dots after them. Any number of lines."
+  },
+  "activityMusingsCommand": "Squinting at {name}'s output\nDigesting what {name} said\nPicking through {name}'s output\nNodding along to {name}",
+  "@activityMusingsCommand": {
+    "description": "Musings, as activityMusings, after a command it ran: {name} is the command, e.g. \"flutter test\". One per line, any number of lines.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "activityMusingsCommandFailed": "Staring down {name}'s error\nAsking {name} what went wrong\nUntangling {name}'s complaint\nConsoling {name}",
+  "@activityMusingsCommandFailed": {
+    "description": "Musings, as activityMusings, after a command it ran that failed: {name} is the command, e.g. \"flutter test\". One per line, any number of lines.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "activityMusingsRead": "Leafing through {name}\nGetting to know {name}\nPulling threads in {name}\nReading between the lines of {name}",
+  "@activityMusingsRead": {
+    "description": "Musings, as activityMusings, after a file it read: {name} is the file name. One per line, any number of lines.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "activityMusingsEdit": "Admiring the new {name}\nDouble-checking {name}\nHoping {name} still compiles\nGiving {name} a once-over",
+  "@activityMusingsEdit": {
+    "description": "Musings, as activityMusings, after a file it changed: {name} is the file name. One per line, any number of lines.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "activityMusingsSearch": "Panning {name} results for gold\nSifting through {name} matches\nFollowing {name} leads",
+  "@activityMusingsSearch": {
+    "description": "Musings, as activityMusings, after a search it made: {name} is how many matches, e.g. \"12\". One per line, any number of lines.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "activityMusingsFolder": "Poking around {name}\nTaking roll call in {name}\nSizing up {name}",
+  "@activityMusingsFolder": {
+    "description": "Musings, as activityMusings, after a folder it listed: {name} is the folder name. One per line, any number of lines.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "activityMusingsWeb": "Taking notes from {name}\nDigesting {name}",
+  "@activityMusingsWeb": {
+    "description": "Musings, as activityMusings, after a page it fetched: {name} is the site, e.g. \"dart.dev\". One per line, any number of lines.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "activityMusingsAgent": "Debriefing {name}\nGrading {name}'s homework\nGoing over {name}'s findings",
+  "@activityMusingsAgent": {
+    "description": "Musings, as activityMusings, after a subagent that reported back: {name} is the subagent's type, e.g. \"Explore\". One per line, any number of lines.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "activityMusingsMcp": "Unwrapping {name}'s reply\nSeeing what {name} sent back",
+  "@activityMusingsMcp": {
+    "description": "Musings, as activityMusings, after an MCP tool it called: {name} is the MCP tool's name. One per line, any number of lines.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "activityMusingsBrowser": "Peering at the page\nSquinting at the screenshot",
+  "@activityMusingsBrowser": {
+    "description": "Musings, as activityMusings, after something it did in the browser. One per line, any number of lines."
+  },
+  "activityMusingsImage": "Admiring the fresh picture\nNitpicking the new image",
+  "@activityMusingsImage": {
+    "description": "Musings, as activityMusings, after a picture it generated. One per line, any number of lines."
+  },
+  "activityMusingsDenied": "Finding another way\nTaking the scenic route",
+  "@activityMusingsDenied": {
+    "description": "Musings, as activityMusings, after a tool call the user denied. One per line, any number of lines."
   },
   "composerCommands": "Commands",
   "@composerCommands": {
@@ -1510,19 +1763,42 @@
       }
     }
   },
+  "stripAgentsRunning": "{count, plural, =1{1 subagent running} other{{count} subagents running}}",
+  "@stripAgentsRunning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stripTasksRunning": "{count, plural, =1{1 background task running} other{{count} background tasks running}}",
+  "@stripTasksRunning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "stripUndoAll": "Undo all",
   "stripKeepAll": "Keep all",
   "stripKeep": "Keep",
   "stripUndo": "Undo",
+  "agentKeepFile": "Keep file",
+  "@agentKeepFile": {
+    "description": "Over the editor's tabs while its file has an agent's change pending: keeps the whole change to this file."
+  },
+  "agentUndoFile": "Undo file",
+  "@agentUndoFile": {
+    "description": "Over the editor's tabs while its file has an agent's change pending: puts the whole file back as it was before the agent changed it."
+  },
+  "agentPreviousChange": "Previous change",
+  "agentNextChange": "Next change",
+  "agentMoreActions": "More actions",
   "stripChangeAdded": "Added",
   "stripChangeModified": "Modified",
   "stripChangeDeleted": "Deleted",
   "stripChangeConflict": "Changed again since the agent left it, so Undo could not take the agent's change out. Undo it by hand, then keep it.",
-  "stripChangeShared": "Another agent was working in this project at the same time: some of this change may be its.",
-  "@stripChangeShared": {
-    "description": "Tooltip of a changed file seen while another agent worked in the same project."
-  },
-  "stripChangeUntracked": "Not in the project's snapshots (ignored, too large, or outside the project): it can be kept, not undone.",
+  "stripChangeUntracked": "What it was before is not known (the agent did not tell, it is too large, or outside the project): it can be kept, not undone.",
   "stripChangesDiff": "Agent Changes",
   "@stripChangesDiff": {
     "description": "Label of the diff editor comparing a file before the agent changed it with the file now."
@@ -1657,7 +1933,19 @@
       }
     }
   },
+  "healthFolderGone": "The project folder is gone: {folder}",
+  "@healthFolderGone": {
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
   "healthHideDetails": "Hide details",
+  "markdownDetails": "Details",
+  "@markdownDetails": {
+    "description": "The title of a folding section in a chat's markdown (HTML's <details>) that gives none."
+  },
   "healthDetails": "Details",
   "healthRetry": "Retry",
   "interactionOther": "Other",
@@ -1665,24 +1953,6 @@
   "interactionAllowOnce": "Allow once",
   "interactionDeny": "Deny",
   "interactionDenyHint": "Tell the agent what to do instead",
-  "interactionPlanTitle": "Ready to code?",
-  "interactionStartBuilding": "Yes, start building",
-  "interactionStartWith": "Yes, start · {approvals}",
-  "@interactionStartWith": {
-    "description": "Approves a plan, to be carried out with the approvals named (e.g. Accept edits).",
-    "placeholders": {
-      "approvals": {
-        "type": "String"
-      }
-    }
-  },
-  "interactionKeepPlanningOption": "No, keep planning",
-  "interactionWhatShouldChange": "What should change?",
-  "interactionSayWhatToChange": "Or say what should change in the message box",
-  "@interactionSayWhatToChange": {
-    "description": "Under 'No, keep planning' when the plan shows in the side panel: a message sent now goes to the agent as what to change."
-  },
-  "interactionViewPlan": "View plan",
   "interactionStepOf": "{step} / {total}",
   "@interactionStepOf": {
     "placeholders": {
@@ -1695,7 +1965,6 @@
     }
   },
   "interactionSkip": "Skip",
-  "interactionKeepPlanning": "Keep planning",
   "interactionSubmit": "Submit",
   "interactionNext": "Next",
   "interactionBack": "Back",
@@ -1790,6 +2059,16 @@
   "tabCloseToTheRight": "Close to the Right",
   "tabCloseSaved": "Close Saved",
   "tabCloseAll": "Close All",
+  "fileLinkOpen": "Open",
+  "fileLinkOpenInPanel": "Open in Side Panel",
+  "fileLinkPreview": "Preview",
+  "@fileLinkPreview": {
+    "description": "Context menu item of an image the chat names: shows it enlarged over the window."
+  },
+  "fileLinkOpenInBrowser": "Open in Browser",
+  "@fileLinkOpenInBrowser": {
+    "description": "Context menu item of an HTML file the chat names: opens it in the default web browser."
+  },
   "tabCopyPath": "Copy Path",
   "tabCopyRelativePath": "Copy Relative Path",
   "tabRevealInExplorerView": "Reveal in Explorer View",
@@ -2069,10 +2348,18 @@
     }
   },
   "explorerPreparingTransfer": "Preparing files...",
+  "composerCopyToHostFailed": "Couldn't copy the files to the remote host: {error}",
+  "@composerCopyToHostFailed": {
+    "description": "Files of this computer put in a remote project's composer could not be copied to its host, for its agent to read.",
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
   "explorerNewFile": "New File...",
   "explorerNewFolder": "New Folder...",
   "explorerRevealInFinder": "Reveal in Finder",
   "explorerFindInFolder": "Find in Folder...",
+  "explorerOpenInTerminal": "Open in Terminal",
   "explorerRename": "Rename...",
   "findNoResults": "No results",
   "findMatchOf": "{current} of {total}",
@@ -2108,8 +2395,34 @@
   "generalSettingsTitle": "General",
   "generalSettingsCommitAttribution": "Commit Attribution",
   "generalSettingsCommitAttributionDescription": "Who the commits and pull requests an agent writes credit. Applies to agents started after a change; Claude Code only for now.",
-  "generalSettingsTelemetry": "Send Usage Data",
-  "generalSettingsTelemetryDescription": "Once a day Caocode is used, it sends a random install ID, its version, and your system and processor type, so we can tell how many people use it and come back. Nothing about you, your code, or what you do in Caocode (telemetry.telemetryLevel).",
+  "generalSettingsClaudeCore": "Core",
+  "@generalSettingsClaudeCore": {
+    "description": "Settings → General → Claude Code row: what runs Claude Code sessions, Caocode's built-in core (written in Dart) or the Claude Code CLI."
+  },
+  "generalSettingsClaudeCoreDescription": "Claude Code CLI: Anthropic's own program, with this machine's sign-in and setup; pick it to use a Claude subscription. Built-in: comes with Caocode, and uses only the models added in Settings → Models. The CLI is the default when Claude Code is installed here, the built-in core otherwise. Changes apply to new sessions.",
+  "generalSettingsClaudeCoreBuiltin": "Built-in",
+  "@generalSettingsClaudeCoreBuiltin": {
+    "description": "Claude Code core choice: Caocode's own agent core, written in Dart and run inside the app."
+  },
+  "generalSettingsClaudeCoreCli": "Claude Code CLI",
+  "@generalSettingsClaudeCoreCli": {
+    "description": "Claude Code core choice: Anthropic's Claude Code command-line program, run as a process."
+  },
+  "generalSettingsQueuedMessages": "Messages Sent While Working",
+  "generalSettingsQueuedMessagesDescription": "When a message sent while the agent is still working is taken up. Applies to messages sent after a change; Claude Code only for now.",
+  "generalSettingsQueuedAfterTurn": "After the Current Task",
+  "@generalSettingsQueuedAfterTurn": {
+    "description": "Queued messages choice: each waits for the turn running to end, then they run one after another."
+  },
+  "generalSettingsQueuedDuringTurn": "Join the Current Task",
+  "@generalSettingsQueuedDuringTurn": {
+    "description": "Queued messages choice: the agent reads it in the turn running, between its tool calls, as Claude Code does in its own terminal."
+  },
+  "generalSettingsPromptSuggestions": "Suggest Next Prompt",
+  "@generalSettingsPromptSuggestions": {
+    "description": "Settings → General switch: whether Claude Code suggests the next prompt in the composer after each turn."
+  },
+  "generalSettingsPromptSuggestionsDescription": "After each turn, a greyed-out suggestion for your next message, taken with Tab. Each one is an extra request with the whole conversation; turn it off to save tokens. Applies from the next message; Claude Code only.",
   "generalSettingsCommitAttributionLabel": "Commit Attribution: {name}",
   "@generalSettingsCommitAttributionLabel": {
     "description": "The commit attribution dropdown, as read out: its setting and the choice in effect.",
@@ -2477,6 +2790,9 @@
   "scmCommitStagedAmend": "Commit Staged (Amend)",
   "scmCommitAllAmend": "Commit All (Amend)",
   "scmUndoLastCommit": "Undo Last Commit",
+  "scmGraphBranches": "Branches Shown",
+  "scmGraphCurrentBranch": "Current Branch",
+  "scmGraphAllBranches": "All Branches",
   "scmGoToCurrent": "Go to Current History Item",
   "scmViewAndSort": "View & Sort",
   "scmViewAsList": "View as List",
@@ -2538,6 +2854,10 @@
   "scmSyncChanges": "Sync Changes",
   "scmSynchronizeChanges": "Synchronize Changes",
   "scmSynchronizingChanges": "Synchronizing Changes...",
+  "scmFetch": "Fetch",
+  "scmFetchFromAllRemotes": "Fetch From All Remotes",
+  "scmPull": "Pull",
+  "scmPush": "Push",
   "scmPullCommits": "Pull {count} commits from {upstream}",
   "@scmPullCommits": {
     "placeholders": {
@@ -3045,41 +3365,6 @@
     }
   },
   "langClickToRetry": "Click to retry",
-  "langNotInstalled": "{id} not installed",
-  "@langNotInstalled": {
-    "placeholders": {
-      "id": {
-        "type": "String"
-      }
-    }
-  },
-  "langNeedsRuntime": "Installing {id} needs {runtime}, which was not found",
-  "@langNeedsRuntime": {
-    "placeholders": {
-      "id": {
-        "type": "String"
-      },
-      "runtime": {
-        "type": "String"
-      }
-    }
-  },
-  "langClickToInstall": "Click to install {id}",
-  "@langClickToInstall": {
-    "placeholders": {
-      "id": {
-        "type": "String"
-      }
-    }
-  },
-  "langNotOnPath": "{id} was not found on PATH",
-  "@langNotOnPath": {
-    "placeholders": {
-      "id": {
-        "type": "String"
-      }
-    }
-  },
   "langInstallingItem": "Installing {id}…",
   "@langInstallingItem": {
     "placeholders": {
@@ -3143,6 +3428,17 @@
   "langRenameNotApplied": "Rename couldn't be applied.",
   "langNoSelectionFormatter": "No formatter for selections in this file.",
   "langNoFormatter": "No formatter for this file.",
+  "langNoFormatterInstall": "No formatter for this file. Install the '{id}' language server to format {language} files.",
+  "@langNoFormatterInstall": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
+  },
   "langNoRefactorings": "No refactorings available",
   "langNoSourceActions": "No source actions available",
   "langNoCodeActions": "No code actions available",
@@ -3328,10 +3624,6 @@
   "wbTimeline": "Timeline",
   "wbPinTimeline": "Pin the Current Timeline",
   "wbUnpinTimeline": "Unpin the Current Timeline",
-  "wbLanguageServices": "Language services",
-  "wbMonacoEditor": "Monaco editor",
-  "wbTextEditor": "Text editor",
-  "wbRetryLanguageServices": "Retry language services",
   "wbNoProblems": "No Problems",
   "wbProblemCounts": "Errors: {errors}, Warnings: {warnings}",
   "@wbProblemCounts": {
@@ -3389,6 +3681,11 @@
   "wbSelectEol": "Select End of Line Sequence",
   "wbEditorReadOnly": "The active code editor is read-only.",
   "wbLanguageMode": "Language Mode",
+  "shownImage": "Image",
+  "shownReadOnly": "Read-only",
+  "languageModeAuto": "Auto Detect",
+  "languageModePlaceholder": "Select Language Mode",
+  "languageModeChange": "Change Language Mode",
   "editorCommandPalette": "Command Palette...",
   "editorStartTyping": "Start typing…",
   "editorEditLanguage": "Edit {language}…",
@@ -3544,6 +3841,7 @@
     }
   },
   "dataDirRevealInFileExplorer": "Reveal in File Explorer",
+  "dataDirRevealInFileManager": "Reveal in File Manager",
   "dataDirChecking": "Checking the folder…",
   "dataDirAlreadyHolds": "The folder already holds Caocode data",
   "dataDirMoveBack": "Move Caocode's data back to the default folder?",
@@ -3961,8 +4259,14 @@
   "generalSettingsMainWindowIde": "Always IDE",
   "generalSettingsMainWindowLast": "Where you left off",
   "generalSettingsWindows": "Windows",
+  "generalSettingsIde": "Fast IDE",
+  "generalSettingsAutoOpenChanges": "Show agent changes as diffs",
+  "generalSettingsAutoOpenChangesDescription": "While the IDE shows, a file the agent changes opens as a diff of it against its text before, as the agent edits it.",
+  "explorerExcludeSetting": "Hidden files and folders",
+  "explorerExcludeSettingDescription": "Files and folders the explorer does not show, comma separated: a name (`node_modules`, `*.log`) matches anywhere, a path (`build/**`, `src/generated`) matches within the folder.",
+  "explorerExcludeSettingPlaceholder": "e.g. .git, node_modules, *.log",
   "claudePathSetting": "Path",
-  "claudePathSettingDescription": "Empty: the newest of the Claude Code installed on this machine and the one Caocode downloaded (downloaded the first time there is none). A path: that one, always, e.g. one you built. (claudeCode.path)",
+  "claudePathSettingDescription": "Empty: the newest Claude Code on this machine, downloaded if there is none. A path: always that one, e.g. one you built. (claudeCode.path)",
   "claudePathSettingHint": "Automatic",
   "claudePathChecking": "Checking…",
   "claudePathInUse": "In use: {path} ({version})",
@@ -3996,7 +4300,7 @@
   },
   "claudePathMissing": "None found yet: Claude Code is downloaded as the first conversation starts.",
   "generalSettingsIdeWindows": "Fast Ide Windows",
-  "generalSettingsIdeWindowsDescription": "Where the Fast Ide opens: in windows of its own, one per folder (New Window, ⇧⌘N / Ctrl+Shift+N, opens an empty one), or in the main window in place of the chat, one folder at a time. Applies at once. (window.ideWindows)",
+  "generalSettingsIdeWindowsDescription": "Where the Fast Ide opens: in the main window in place of the chat, one folder at a time, or in windows of its own, one per folder (New Window, ⇧⌘N / Ctrl+Shift+N, opens an empty one). Applies at once. (window.ideWindows)",
   "generalSettingsIdeWindowsSeparate": "Separate windows",
   "generalSettingsIdeWindowsMain": "In the main window",
   "generalSettingsWindowLabel": "{setting}: {name}",
@@ -4527,6 +4831,9 @@
   "modelsCodexVersionDescription": "The Codex CLI version requests are made as. The backend only lists models that version supports, so if new models are missing, enter a newer version and refresh the model list. Leave empty to use the app's default.",
   "modelsEnv": "Extra Environment",
   "modelsEnvDescription": "One KEY=VALUE a line, given to Claude Code after the settings above.",
+  "modelsHeaders": "Custom Headers",
+  "modelsHeadersDescription": "One Name: Value a line, sent on every request to this upstream. Values may use the CLAUDE_SESSION_ID variable (this conversation's session) and ANTHROPIC_MODEL (the model asked for), each between double braces; over the direct Anthropic protocol those two go as written, so only fixed values work there. Auth headers (Authorization, x-api-key) are ignored here: the key is set above.",
+  "modelsHeadersPlaceholder": "x-session-id: my-session",
   "modelsDelete": "Delete Upstream",
   "modelsDeleteDescription": "Removes it, and its key from the keychain.",
   "modelsDeleteConfirm": "Delete “{name}”?",
@@ -4601,6 +4908,16 @@
   "modelsOptionsReset": "Reset to Default",
   "modelsOptionsNone": "None: not offered.",
   "modelsNoImages": "Does not take images",
+  "modelsKind": "Used for",
+  "modelsKindChat": "Conversations",
+  "modelsKindImage": "Image generation (Images API)",
+  "modelsKindImageChat": "Image generation (in a conversation)",
+  "modelsKindDescription": "Image models are not offered in the model picker: agents make pictures with them through the generate_image tool.",
+  "modelsImageBadge": "Image",
+  "modelsImage": "Image model",
+  "modelsImageDescription": "What agents make pictures with (the generate_image tool), unless you ask them for another; asked each time, you pick it in the conversation. Turn on image models in an upstream's list.",
+  "modelsImageFirst": "Ask each time",
+  "modelsImageNone": "None turned on",
   "modelsSave": "Save",
   "modelsManage": "Manage Models…",
   "modelsSwitchTitle": "Switch to {name}?",
@@ -4611,7 +4928,7 @@
       }
     }
   },
-  "modelsSwitchDetail": "Claude Code restarts on the other upstream and resumes this conversation (--resume). Its history is sent to the new model as it is; some upstreams take it slower the first time.",
+  "modelsSwitchDetail": "Claude Code restarts on the other upstream and resumes this conversation (--resume). Its history is sent to the new model as it is; some upstreams take it slower the first time. A reply still running stops when you send the next message.",
   "modelsSwitchConfirm": "Switch",
   "modelsAuxiliary": "Auxiliary Model",
   "modelsAuxiliaryDescription": "Used for auxiliary work, such as generating conversation titles and commit messages. Automatic: the session's model (for commit messages, new sessions' default); an upstream's by its Haiku tier.",
@@ -4921,8 +5238,22 @@
       }
     }
   },
+  "appearanceSettingsReplyScroll": "As a Reply Comes",
+  "appearanceSettingsReplyScrollDescription": "Where the conversation stays as the reply to your message is written: at its end, following it; or at its start, your message at the top, for you to read on from there. Scrolled to the end, it follows again.",
+  "appearanceSettingsReplyScrollFollow": "Automatic",
+  "appearanceSettingsReplyScrollStart": "Stay at its start",
+  "appearanceSettingsReplyScrollLabel": "As a reply comes: {choice}",
+  "@appearanceSettingsReplyScrollLabel": {
+    "placeholders": {
+      "choice": {
+        "type": "String"
+      }
+    }
+  },
   "appearanceSettingsMinimap": "Conversation Minimap",
   "appearanceSettingsMinimapDescription": "A minimap of the whole conversation at the left of its column, where you are in it shown as you scroll; click or drag it to get somewhere. It stands in for the scrollbar, and is not shown in a window too narrow for it. Off: the scrollbar.",
+  "appearanceSettingsSidebarTimes": "Times in the Sidebar",
+  "appearanceSettingsSidebarTimesDescription": "Each agent in the sidebar ends with when it last did something. Off: only its hover tells it.",
   "appearanceSettingsMinimapGlass": "Glass Opacity",
   "appearanceSettingsMinimapGlassDescription": "How much the liquid glass over where you are in the minimap shows: its tint, shadow and light. At 0% only the part in view stands out.",
   "appearanceSettingsMinimapGlassLabel": "Minimap glass opacity: {opacity}",
@@ -4960,7 +5291,7 @@
     }
   },
   "appearanceSettingsCodeSize": "Code Size",
-  "appearanceSettingsCodeSizeDescription": "The size of code in the IDE editor and the side panel's file and changes views. Code in the chat follows the interface text size; the terminal has its own size.",
+  "appearanceSettingsCodeSizeDescription": "The size of code in the IDE editor and the side panel's file and changes views. Code in the chat follows the interface size; the terminal has its own size.",
   "appearanceSettingsCodeSizeLabel": "Code size: {size}",
   "@appearanceSettingsCodeSizeLabel": {
     "placeholders": {
@@ -4971,9 +5302,9 @@
   },
   "appearanceSettingsLigatures": "Font Ligatures",
   "appearanceSettingsLigaturesDescription": "Draws sequences such as => and != as one glyph where the font has one. The terminal does not.",
-  "appearanceSettingsUiScale": "Interface Text Size",
-  "appearanceSettingsUiScaleDescription": "The size of interface text, code in the chat, and terminal text while the terminal size follows it. Code in the IDE editor and side panel files and changes keeps its own size.",
-  "appearanceSettingsUiScaleLabel": "Interface text size: {percent}%",
+  "appearanceSettingsUiScale": "Interface Size",
+  "appearanceSettingsUiScaleDescription": "Zooms the whole interface (its text, icons and spacing), code in the chat, and terminal text while the terminal size follows it. Code in the IDE editor and side panel files and changes keeps its own size.",
+  "appearanceSettingsUiScaleLabel": "Interface size: {percent}%",
   "@appearanceSettingsUiScaleLabel": {
     "placeholders": {
       "percent": {
@@ -4982,8 +5313,8 @@
     }
   },
   "appearanceSettingsTerminalSize": "Terminal Font Size",
-  "appearanceSettingsTerminalSizeDescription": "The size of terminal text. By default it follows the interface text size; it can be set on its own.",
-  "appearanceSettingsTerminalSizeFollow": "Follow Interface Text Size",
+  "appearanceSettingsTerminalSizeDescription": "The size of terminal text. By default it follows the interface size; it can be set on its own.",
+  "appearanceSettingsTerminalSizeFollow": "Follow Interface Size",
   "appearanceSettingsTerminalSizeCustom": "Custom",
   "appearanceSettingsTerminalSizeValue": "Custom Size",
   "appearanceSettingsTerminalSizeLabel": "Terminal font size: {size}",
@@ -4995,7 +5326,7 @@
     }
   },
   "generalSettingsContextMenuFinder": "Finder Context Menu",
-  "generalSettingsContextMenuExplorer": "Explorer Context Menu",
+  "generalSettingsContextMenuExplorer": "File Explorer Context Menu",
   "generalSettingsContextMenuDescription": "Adds \"Open with Caocode\" (a new agent) and \"Open with Fast Ide\" (a new IDE window) to the context menu of files, folders and a folder's background.",
   "generalSettingsContextMenuMacNote": "Finder's own setting is in System Settings' extensions, where the Caocode extension can also be turned on and off.",
   "generalSettingsContextMenuOn": "On",
@@ -5021,7 +5352,8 @@
     }
   },
   "cmdOpenRemoteFolder": "Open Remote Project...",
-  "remoteHostPlaceholder": "Select a host of ~/.ssh/config, or type user@host[:port]",
+  "cmdOpenRemoteFile": "Open Remote File...",
+  "remoteHostPlaceholder": "Select a host, add one, or type user@host[:port]",
   "remoteConnectTo": "Connect to {host}",
   "@remoteConnectTo": {
     "placeholders": {
@@ -5030,7 +5362,7 @@
       }
     }
   },
-  "remoteNoHosts": "No hosts in ~/.ssh/config: type one",
+  "remoteNoHosts": "No hosts yet: add one, or type user@host",
   "remoteInvalidHost": "Not a host: no spaces, and not starting with '-'",
   "remoteConnecting": "Connecting to {host}...",
   "@remoteConnecting": {
@@ -5082,6 +5414,48 @@
   "@remoteListFailed": {
     "placeholders": {
       "path": {
+        "type": "String"
+      }
+    }
+  },
+  "remoteFileHostPlaceholder": "Select a host, to browse its files",
+  "remoteFilePlaceholder": "A file on {host}: pick one, or type a path",
+  "@remoteFilePlaceholder": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "remoteOpenFile": "Open {path}",
+  "@remoteOpenFile": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "remoteOpenFailed": "Could not open {path}",
+  "@remoteOpenFailed": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "remoteRecentFiles": "Recent Remote Files",
+  "remoteOpenFileOn": "Open File on {host}...",
+  "@remoteOpenFileOn": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "remoteStatusActions": "Click for the hosts and {host}'s actions",
+  "@remoteStatusActions": {
+    "placeholders": {
+      "host": {
         "type": "String"
       }
     }
@@ -5687,6 +6061,7 @@
   "extsPopularThemes": "Popular Themes",
   "extsTabThemes": "Themes",
   "extsTabLanguageServers": "Language Servers",
+  "sidebarAllHosts": "All",
   "sidebarThisMachine": "This Computer",
   "sidebarSwitchHost": "Switch between this computer and SSH hosts",
   "sidebarAddSshHost": "Add SSH Host...",
@@ -5731,6 +6106,7 @@
     }
   },
   "sidebarRenameHost": "Rename Host",
+  "sidebarEditHost": "Edit Connection...",
   "explorerNoPermission": "No permission to read this folder",
   "fileErrorAccessDenied": "Permission denied: {path}",
   "@fileErrorAccessDenied": {
@@ -5788,7 +6164,7 @@
     }
   },
   "mobilePublicAddress": "Public Address",
-  "mobilePublicAddressDescription": "A domain or IP this computer can be reached at from the internet (with the port forwarded), put in the QR code; several separated by commas. Public IPv6 addresses are found by themselves.",
+  "mobilePublicAddressDescription": "A domain or IP this computer can be reached at from the internet (with the port forwarded), put in the QR code; several separated by commas. Behind a proxy that only takes HTTPS (such as a Cloudflare Tunnel), write it as wss://domain. Public IPv6 addresses are found by themselves.",
   "mobileRelay": "Relay",
   "mobileRelayDescription": "Reach this computer through Caocode's relay when none of its addresses can be reached. Coming later.",
   "mobileRelayUnavailable": "Not Available Yet",
@@ -5852,5 +6228,897 @@
     }
   },
   "mobilePairRequestBody": "It found this computer nearby. Allow it only if the phone shows the same code.",
-  "mobilePairAllow": "Allow"
+  "mobilePairAllow": "Allow",
+  "settingsSectionStash": "Stash",
+  "settingsSectionCustomize": "Customize",
+  "settingsCustomizeKeywords": "skills subagents rules commands agents claude memory hooks mcp plugins",
+  "stashTitle": "Stash",
+  "stashHeading": "Stash",
+  "stashNew": "New stash",
+  "stashLinkOpen": "Open link",
+  "stashLinkEdit": "Edit link",
+  "stashDraft": "Draft",
+  "stashCodeChip": "Code",
+  "stashTableChip": "Table",
+  "stashLines": "{count} lines",
+  "@stashLines": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stashNewButton": "New",
+  "stashNewTooltip": "New stash",
+  "stashPlaceholder": "Jot it down…",
+  "stashHintNew": "New",
+  "stashProjectTooltip": "Project it is about",
+  "stashNoProject": "No project",
+  "stashFormatBold": "Bold",
+  "stashFormatItalic": "Italic",
+  "stashFormatStrike": "Strikethrough",
+  "stashFormatUnderline": "Underline",
+  "stashFormatCode": "Code",
+  "stashFormatLink": "Link",
+  "stashFormatColor": "Text and background color",
+  "stashFormatHeading1": "Heading 1",
+  "stashFormatHeading2": "Heading 2",
+  "stashFormatHeading3": "Heading 3",
+  "stashFormatBullets": "Bulleted list",
+  "stashFormatNumbers": "Numbered list",
+  "stashFormatTasks": "Task list",
+  "stashFormatQuote": "Quote",
+  "stashFormatCodeBlock": "Code block",
+  "@stashFormatCodeBlock": {
+    "description": "Selection bar menu: makes the lines a code block, typed in in place."
+  },
+  "stashFormatClear": "Clear formatting",
+  "stashPolish": "Polish",
+  "stashPolishing": "Polishing…",
+  "stashPolishHint": "Has AI make the selection clearer, in your words, without adding structure",
+  "composerPolish": "Polish",
+  "composerPolishing": "Polishing…",
+  "composerPolishHint": "Polish: the auxiliary model makes the message clearer, in your words; pictures, files, code and links stay as they are; Undo takes it back",
+  "composerPolishFailed": "Could not polish: {error}",
+  "@composerPolishFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "generalSettingsComposerPolish": "Polish button",
+  "generalSettingsComposerPolishDescription": "A button in the message box that has the auxiliary model make what you wrote clearer before you send it",
+  "generalSettingsLiveTurnStats": "Live Speed and Time",
+  "generalSettingsLiveTurnStatsDescription": "While the agent works, a line under the reply with how long the turn has taken, how fast the model writes and the tokens so far, changing as it goes. The figures under a finished turn always show.",
+  "stashPolishFailed": "Could not polish: {error}",
+  "@stashPolishFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "stashLinkTitle": "Link",
+  "stashRemove": "Remove",
+  "stashEdit": "Edit",
+  "stashFormulaTitle": "Formula (TeX)",
+  "stashTableTitle": "Table (Markdown)",
+  "stashCodeTitle": "Code block",
+  "stashBigFileTitle": "“{name}” is over 200 MB",
+  "@stashBigFileTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "stashBigFileDetail": "Link to it where it is, or copy it into the stash anyway?",
+  "stashBigFileLink": "Link",
+  "stashBigFileCopy": "Copy",
+  "stashSearchPlaceholder": "Search stashes, and the text in their pictures",
+  "stashAiSearch": "AI search",
+  "stashAiSearchHint": "Finds stashes by what they mean, not only their words. Asks the model: it costs.",
+  "stashAiResults": "{count, plural, =0{AI found nothing} =1{AI found 1} other{AI found {count}}}",
+  "@stashAiResults": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stashAiClear": "Clear",
+  "stashAiSearchFailed": "AI search failed: {error}",
+  "@stashAiSearchFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "stashAiNoAnswer": "The model gave no usable answer.",
+  "aiModelAuxiliary": "Same as Auxiliary Model",
+  "aiModelFirst": "Pick a model first: AI actions use it from then on",
+  "aiModelNone": "none picked yet",
+  "aiModelTooltip": "Model for AI actions: {model}",
+  "@aiModelTooltip": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "stashFilterAnyTime": "Any time",
+  "stashFilterAnyProject": "Any project",
+  "stashFilterAnyStatus": "Any status",
+  "stashFilterOpen": "Not done",
+  "stashGroupPinned": "Pinned",
+  "stashGroupToday": "Today",
+  "stashGroupYesterday": "Yesterday",
+  "stashGroupWeek": "Past 7 days",
+  "stashGroupMonth": "Past 30 days",
+  "stashGroupEarlier": "Earlier",
+  "stashGroupDone": "Done",
+  "stashStatus": "Status",
+  "stashStatusCollected": "Collected",
+  "stashStatusRequirement": "Requirement",
+  "stashStatusImplementing": "Implementing",
+  "stashStatusDone": "Done",
+  "stashEmpty": "Nothing stashed yet.\nPress {hotkey} in any app to jot something down.",
+  "@stashEmpty": {
+    "placeholders": {
+      "hotkey": {
+        "type": "String"
+      }
+    }
+  },
+  "stashEmptyNoHotkey": "Nothing stashed yet.\nClick + to write one; set a shortcut in Settings to jot one down from any app.",
+  "stashNoMatch": "No stash matches.",
+  "stashPin": "Pin",
+  "stashUnpin": "Unpin",
+  "stashOpenInPanel": "Open in Floating Panel",
+  "stashLinkProject": "Link to Project",
+  "stashMerge": "Merge",
+  "stashMergeTitle": "Merge {stashes}?",
+  "@stashMergeTitle": {
+    "placeholders": {
+      "stashes": {
+        "type": "String"
+      }
+    }
+  },
+  "stashMergeDetail": "Their text goes into {target}, one after another; the others go, their numbers leading to it.",
+  "@stashMergeDetail": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "stashMergeSuggestion": "{stashes} look like the same thing.",
+  "@stashMergeSuggestion": {
+    "placeholders": {
+      "stashes": {
+        "type": "String"
+      }
+    }
+  },
+  "stashDismiss": "Dismiss",
+  "stashDelete": "Delete",
+  "stashDeleteOne": "Delete {stash}?",
+  "@stashDeleteOne": {
+    "placeholders": {
+      "stash": {
+        "type": "String"
+      }
+    }
+  },
+  "stashDeleteMany": "Delete {count} stashes?",
+  "@stashDeleteMany": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stashDeleteDetail": "Their pictures and files go with them. This cannot be undone.",
+  "stashPicked": "{count} selected",
+  "@stashPicked": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stashMarkDone": "Mark Done",
+  "stashReopen": "Reopen",
+  "stashClearPicked": "Clear selection",
+  "stashClose": "Close Stash",
+  "stashCloseDetail": "Close",
+  "stashMore": "More",
+  "stashExpand": "Clarify",
+  "stashExpandHint": "AI says your note clearly, filling in what its pictures and files show, adding no structure; it replaces the text, and Undo takes it back",
+  "stashClarifying": "Clarifying…",
+  "stashCancelClarify": "Stop Clarifying",
+  "stashClarifyFailedShort": "Not clarified",
+  "stashClarifyChanged": "The note changed while it was being clarified, so nothing was replaced. Try again.",
+  "stashRetry": "Retry",
+  "stashExpandFailed": "The note could not be clarified: {error}",
+  "@stashExpandFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "stashImplement": "Implement in Caocode",
+  "stashImplementHow": "How should the agent work on it?",
+  "stashImplementHowDetail": "In a new git worktree (a branch of its own, your working copy untouched), or directly in the project as it is.",
+  "stashImplementWorktree": "New Worktree",
+  "stashImplementDirect": "Directly",
+  "stashImplementStarter": "Please implement what {stash} asks for.",
+  "@stashImplementStarter": {
+    "placeholders": {
+      "stash": {
+        "type": "String"
+      }
+    }
+  },
+  "stashImplementInWorktree": "First create a new git worktree on a new branch for this work and do it there; tell me the branch when done.",
+  "stashImplementInPlace": "Work directly in this project, on the current branch.",
+  "stashImplementComplete": "When it is finished, mark it done in the Stash.",
+  "stashThreads": "Conversations",
+  "stashThreadSource": "Noted in this conversation",
+  "stashThreadNoReply": "No reply yet",
+  "stashThreadGone": "No longer in the list",
+  "stashOpenThread": "Open",
+  "stashProjectSuggestion": "AI thinks this is about {project}.",
+  "@stashProjectSuggestion": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      }
+    }
+  },
+  "stashLinkIt": "Link",
+  "stashSettingsDescription": "A note jotted down from any app, in a floating panel, to turn into work later.",
+  "stashSettingsHotkey": "Shortcut",
+  "stashSettingsHotkeyCurrent": "{hotkey} shows the panel from any app.",
+  "@stashSettingsHotkeyCurrent": {
+    "placeholders": {
+      "hotkey": {
+        "type": "String"
+      }
+    }
+  },
+  "stashSettingsHotkeyNone": "No shortcut: the panel only shows from the Stash page.",
+  "stashSettingsHotkeyTaken": "Another app holds this shortcut; pick another.",
+  "stashSettingsHotkeyHelp": "Click, then press the new keys; Escape keeps it, Delete clears it.",
+  "stashHotkeyPress": "Press the keys…",
+  "stashHotkeyRefused": "Needs a modifier with a letter, digit or common key",
+  "stashHotkeyNone": "None",
+  "stashHotkeyClear": "Clear",
+  "stashHotkeySuggested": "Use {hotkey}",
+  "@stashHotkeySuggested": {
+    "placeholders": {
+      "hotkey": {
+        "type": "String"
+      }
+    }
+  },
+  "stashHotkeyGlobal": "Show the Stash panel",
+  "stashHotkeyGlobalHint": "A global shortcut: works from any app.",
+  "stashHotkeyTooltip": "The panel's shortcut; click to change",
+  "stashSettingsDirectory": "Location",
+  "stashSettingsDirectoryChange": "Change…",
+  "stashSettingsDirectoryReset": "Default",
+  "stashSettingsDirectoryRestart": "Takes effect after Caocode restarts.",
+  "stashAll": "All",
+  "@stashAll": {
+    "description": "Opens the list of every stash beside the one written in, in the stash panel."
+  },
+  "stashAllTooltip": "Show every stash",
+  "@stashAllTooltip": {
+    "description": "Tooltip of the stash panel's All button."
+  },
+  "stashHintSave": "Save",
+  "@stashHintSave": {
+    "description": "Key hint in the stash panel footer: the shortcut saves."
+  },
+  "stashHintClose": "Close",
+  "@stashHintClose": {
+    "description": "Key hint in the stash panel footer: the shortcut closes the panel."
+  },
+  "stashSaved": "Saved",
+  "@stashSaved": {
+    "description": "Shown briefly in the stash panel after saving."
+  },
+  "stashFilter": "Filter",
+  "@stashFilter": {
+    "description": "Tooltip of the filter button in the stash panel's list."
+  },
+  "stashSort": "Sort",
+  "@stashSort": {
+    "description": "Menu title in the stash panel's list for how the stashes are ordered."
+  },
+  "stashSortManual": "Custom (drag to order)",
+  "@stashSortManual": {
+    "description": "Sort option: the order the user dragged the stashes in."
+  },
+  "stashSortUpdated": "Last edited",
+  "@stashSortUpdated": {
+    "description": "Sort option: the last edited stash first."
+  },
+  "stashSortCreated": "Last created",
+  "@stashSortCreated": {
+    "description": "Sort option: the last created stash first."
+  },
+  "stashSortNumber": "Number",
+  "@stashSortNumber": {
+    "description": "Sort option: by stash number, highest first."
+  },
+  "stashOpen": "Open",
+  "@stashOpen": {
+    "description": "Context menu item of a stash in the panel's list: opens it in the panel."
+  },
+  "stashCount": "{count} stashes",
+  "@stashCount": {
+    "description": "What is dragged in the stash panel's list, when it is several stashes.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stashFormatMore": "More",
+  "@stashFormatMore": {
+    "description": "Tooltip of the stash editor selection toolbar button that opens the less used formats."
+  },
+  "branchBarSwitch": "Switch Branch",
+  "@branchBarSwitch": {
+    "description": "Tooltip and menu title of the branch picker under the chat input."
+  },
+  "branchBarSearch": "Search branches",
+  "@branchBarSearch": {
+    "description": "Placeholder of the branch picker's search line under the chat input."
+  },
+  "branchBarCreate": "Create Branch…",
+  "@branchBarCreate": {
+    "description": "Action of the branch picker under the chat input: names a new branch and checks it out."
+  },
+  "branchBarCreateFrom": "Create a branch from “{branch}”",
+  "@branchBarCreateFrom": {
+    "description": "Message of the dialog that names a new branch, made where the branch {branch} is.",
+    "placeholders": {
+      "branch": {
+        "type": "String"
+      }
+    }
+  },
+  "branchBarCreateIn": "Create a branch in “{folder}”",
+  "@branchBarCreateIn": {
+    "description": "Message of the dialog that names a new branch of the workspace folder {folder}, made where its current branch is.",
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "branchBarCreateButton": "Create",
+  "@branchBarCreateButton": {
+    "description": "Button of the dialog that names a new branch."
+  },
+  "branchBarDetached": "Detached HEAD",
+  "@branchBarDetached": {
+    "description": "What the branch picker under the chat input shows when no branch is checked out."
+  },
+  "branchBarRunning": "Branches can't be switched while the agent works",
+  "@branchBarRunning": {
+    "description": "Tooltip of the branch under the chat input while the agent is working."
+  },
+  "branchBarFailed": "Couldn't switch to “{branch}”",
+  "@branchBarFailed": {
+    "description": "Message of the dialog shown when Git refused to check out or create the branch {branch}; Git's own message is the detail.",
+    "placeholders": {
+      "branch": {
+        "type": "String"
+      }
+    }
+  },
+  "branchBarNotRepository": "Not a Git repository",
+  "@branchBarNotRepository": {
+    "description": "Under a workspace folder's name in the branch picker under the chat input: the folder has no Git repository."
+  },
+  "branchBarWorkspace": "Branches of the folders",
+  "@branchBarWorkspace": {
+    "description": "Tooltip and menu title of the branch picker under the chat input of a multi-folder workspace."
+  },
+  "settingsSectionAccounts": "Git Accounts",
+  "settingsAccountsKeywords": "GitHub GitLab sign in login token issue pull request merge request",
+  "accountsDescription": "Sign in to GitHub or GitLab to see the state of the issues and pull requests linked in Stash, import issues as stashes, and reply to them once you confirm.",
+  "accountsSignedIn": "Signed in",
+  "accountsAdd": "Add an account",
+  "accountsKeptLocally": "Tokens are kept in this computer's keychain and are sent only to the GitHub or GitLab they are for. Nothing is posted without your confirmation.",
+  "accountsGitHubHosts": "github.com, or your company's GitHub Enterprise",
+  "accountsGitLabHosts": "gitlab.com, or a self-managed GitLab",
+  "accountsSignInBrowser": "Sign in with Browser",
+  "accountsSignInToken": "Use a Token…",
+  "accountsViaBrowser": "signed in with browser",
+  "accountsViaToken": "signed in with token",
+  "accountsSignOut": "Sign Out",
+  "accountsSignOutTitle": "Sign out of {forge} account {login}?",
+  "@accountsSignOutTitle": {
+    "placeholders": {
+      "login": {
+        "type": "String"
+      },
+      "forge": {
+        "type": "String"
+      }
+    }
+  },
+  "accountsSignOutDetail": "The token is deleted from this computer. To revoke Caocode's access altogether, revoke it in your {forge} settings too.",
+  "@accountsSignOutDetail": {
+    "placeholders": {
+      "forge": {
+        "type": "String"
+      }
+    }
+  },
+  "accountsRevoke": "Sign Out and Open {forge} Settings",
+  "@accountsRevoke": {
+    "placeholders": {
+      "forge": {
+        "type": "String"
+      }
+    }
+  },
+  "accountsTokenTitle": "Sign in to {forge} with a Token",
+  "@accountsTokenTitle": {
+    "placeholders": {
+      "forge": {
+        "type": "String"
+      }
+    }
+  },
+  "accountsSignIn": "Sign In",
+  "accountsHost": "Host",
+  "accountsToken": "Token",
+  "accountsTokenGitHubScopes": "A classic token with the repo and read:user scopes, or a fine-grained token with read and write access to issues and pull requests.",
+  "accountsTokenGitLabScopes": "A personal access token with the api scope.",
+  "accountsTokenCreate": "Create a Token on {host}",
+  "@accountsTokenCreate": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "accountsTokenRefused": "The token was not accepted. Check that it is complete and has not expired.",
+  "accountsBrowserTitle": "Sign in to {forge}",
+  "@accountsBrowserTitle": {
+    "placeholders": {
+      "forge": {
+        "type": "String"
+      }
+    }
+  },
+  "accountsBrowserDetail": "Enter this code on {host} to let Caocode access your account:",
+  "@accountsBrowserDetail": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "accountsCopyAndOpen": "Copy Code and Open Browser",
+  "accountsOpenAgain": "Copied · Open Again",
+  "accountsBrowserStarting": "Getting a code…",
+  "accountsBrowserWaiting": "Waiting for you to authorize in the browser…",
+  "accountsRetry": "Try Again",
+  "forgeStateOpen": "Open",
+  "forgeStateDraft": "Draft",
+  "forgeStateClosed": "Closed",
+  "forgeStateMerged": "Merged",
+  "forgeChecksPassed": "Checks passed",
+  "forgeChecksFailed": "Checks failed",
+  "forgeChecksRunning": "Checks running",
+  "stashIssues": "Issues & pull requests",
+  "stashIssueClosedBanner": "{tag} was closed. Is this stash done too?",
+  "@stashIssueClosedBanner": {
+    "placeholders": {
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "stashIssueOpenBanner": "This stash is done, but {tag} is still open.",
+  "@stashIssueOpenBanner": {
+    "placeholders": {
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "stashIssueReplyClose": "Reply and close…",
+  "stashIssueNotSignedIn": "Sign in to {forge} to see its state",
+  "@stashIssueNotSignedIn": {
+    "placeholders": {
+      "forge": {
+        "type": "String"
+      }
+    }
+  },
+  "stashIssueSignIn": "Sign In…",
+  "stashIssueFailed": "Could not refresh",
+  "stashIssueOpen": "Open in Browser",
+  "stashIssueCopy": "Copy Link",
+  "stashIssueComment": "Comment…",
+  "stashIssueClose": "Close Issue…",
+  "stashIssueUnlink": "Unlink",
+  "stashWriteFixedIn": "Fixed in {pulls}.",
+  "@stashWriteFixedIn": {
+    "placeholders": {
+      "pulls": {
+        "type": "String"
+      }
+    }
+  },
+  "stashWriteTitle": "Comment on {tag}",
+  "@stashWriteTitle": {
+    "placeholders": {
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "stashWriteCloseTitle": "Close {tag}",
+  "@stashWriteCloseTitle": {
+    "placeholders": {
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "stashWriteSend": "Comment",
+  "stashWriteSendClose": "Comment and Close",
+  "stashWriteCloseOnly": "Close Issue",
+  "stashWriteSendAnyway": "Send Anyway",
+  "stashWritePlaceholder": "Write a comment (Markdown)",
+  "stashWriteAlsoClose": "Close the issue too",
+  "stashWriteSensitive": "This looks like it has paths on this computer or secrets, which everyone who can see the issue will see:",
+  "stashWriteAs": "Posted as {login} on {host}.",
+  "@stashWriteAs": {
+    "placeholders": {
+      "login": {
+        "type": "String"
+      },
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "stashWriteFailed": "Not sent: {error}",
+  "@stashWriteFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "stashImport": "Import from Issues…",
+  "stashImportTitle": "Import Issues",
+  "stashImportAction": "Import",
+  "stashImportCount": "Import {count}",
+  "@stashImportCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stashImportPaste": "Paste an issue or pull request link",
+  "stashImportAdd": "Add",
+  "stashImportNotALink": "Not a GitHub or GitLab issue or pull request link.",
+  "stashImportSignIn": "Sign in to {forge} in Settings → Accounts to list its issues.",
+  "@stashImportSignIn": {
+    "placeholders": {
+      "forge": {
+        "type": "String"
+      }
+    }
+  },
+  "stashImportRepo": "Repository",
+  "stashImportAssigned": "Assigned to me",
+  "stashImportCreated": "Created by me",
+  "stashImportAll": "All open",
+  "stashImportSearch": "Search",
+  "stashImportLoading": "Loading…",
+  "stashImportNoRepos": "No project has a GitHub or GitLab remote. Paste an issue link above.",
+  "stashImportNone": "No open issues here.",
+  "stashImportKnown": "in Stash #{id}",
+  "@stashImportKnown": {
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  },
+  "sidebarOpenPull": "Open {tag}",
+  "@sidebarOpenPull": {
+    "placeholders": {
+      "tag": {
+        "type": "String"
+      }
+    }
+  },
+  "stashGroupOthers": "Others",
+  "stashFilterProjects": "{count} projects",
+  "@stashFilterProjects": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stashFilterJoiner": ", ",
+  "stashWelcomeTitle": "Meet Stash",
+  "stashWelcomeLead": "Note things down the moment they come to you, hand them to an agent when you are ready, and see how each one is going.",
+  "stashWelcomeNoteTitle": "Note it down",
+  "stashWelcomeAgentTitle": "Hand it to an agent",
+  "stashWelcomeAgent": "Click Implement in Caocode, or mention it in a conversation; the conversation and the stash stay linked.",
+  "stashWelcomeTrackTitle": "See how it goes",
+  "stashWelcomeTrack": "Cards show their conversations live, and the GitHub and GitLab issues and pull requests they link to stay in sync.",
+  "stashWelcomeStart": "Get Started",
+  "stashWelcomeNoteBody": "Text, screenshots and links all go in, and each one gets a number of its own, like an issue.",
+  "stashWelcomeHotkeyTitle": "Set a shortcut to note things down",
+  "stashWelcomeHotkeySetTitle": "Shortcut set",
+  "stashWelcomeHotkey": "Press it in any app and the Stash panel comes up, ready to type. Click the box below and press the keys you want.",
+  "stashWelcomeHotkeySet": "Press {hotkey} in any app to note something down. Change it here or in Settings → Stash any time.",
+  "@stashWelcomeHotkeySet": {
+    "placeholders": {
+      "hotkey": {
+        "type": "String"
+      }
+    }
+  },
+  "stashWelcomeHotkeyLater": "You can also set it later in Settings → Stash.",
+  "settingsSectionBrowser": "Browser",
+  "settingsBrowserKeywords": "chrome extension edge brave arc web page tab agent",
+  "browserSettingsDescription": "Let agents use your own browser, signed in as you: open pages, read them, click and type in the tabs you share with them. You can watch every step in the side panel.",
+  "browserSettingsUnsupported": "The browser is available on macOS, Windows and Linux only.",
+  "browserSettingsEnabled": "Let Agents Use the Browser",
+  "browserSettingsEnabledDescription": "When off, agents have no browser tools and the extension disconnects.",
+  "browserSettingsStatus": "Status",
+  "browserSettingsNotInstalled": "No browser has connected yet",
+  "browserSettingsNotInstalledDescription": "Install the extension either way below, then open the browser: it connects automatically.",
+  "browserSettingsNotRunning": "No browser connected",
+  "browserSettingsNotRunningDescription": "Open a browser with Caocode's extension: it connects automatically.",
+  "browserSettingsSandboxed": "Snap and Flatpak browsers can't connect",
+  "browserSettingsSandboxedDescription": "Their sandbox keeps Caocode's helper from running. Install the browser from its own .deb or .rpm package instead, such as Google Chrome from google.com/chrome.",
+  "browserSettingsConnected": "{browser} connected",
+  "@browserSettingsConnected": {"description": "A browser connected, by its name (Google Chrome, Microsoft Edge…).", "placeholders": {"browser": {"type": "String"}}},
+  "browserSettingsIncompatible": "{browser}: extension version doesn't match",
+  "@browserSettingsIncompatible": {"description": "A browser connected whose extension Caocode cannot use: one too old, or newer than the app.", "placeholders": {"browser": {"type": "String"}}},
+  "browserSettingsExtensionVersion": "Extension {version}",
+  "@browserSettingsExtensionVersion": {"description": "The version of Caocode's extension in a connected browser.", "placeholders": {"version": {"type": "String"}}},
+  "browserSettingsExtensionOld": "The extension is out of date. From the store, it updates automatically, or click Update in chrome://extensions; installed manually, download the zip again, replace the folder's contents and click reload.",
+  "browserSettingsAppOld": "The extension is newer than this Caocode. Update Caocode.",
+  "browserSettingsInstall": "Get the Extension",
+  "browserSettingsStore": "Chrome Web Store",
+  "browserSettingsStoreDescription": "Recommended. Updates automatically; works in Chrome, Edge, Brave, Arc and other Chromium browsers.",
+  "browserSettingsStoreOpen": "Open Store",
+  "browserSettingsUnpacked": "Install Manually (Developer Mode)",
+  "browserSettingsUnpackedDescription": "Unzip it into a folder you'll keep. In chrome://extensions, turn on Developer mode at the top right, click Load unpacked and choose the folder. It doesn't update automatically.",
+  "browserSettingsUnpackedDownload": "Download Zip",
+  "browserSettingsOpen": "Browser Settings",
+  "browserHistoryTitle": "Debugging history",
+  "browserHistoryDescription": "What the tabs shared with Caocode do is kept as it happens, no recording needed: the pages, the requests, console errors and warnings. Agents look back at it when you ask (“it failed when I saved”). Kept on this computer; cookies and tokens are not.",
+  "browserHistoryDetailed": "Detailed history",
+  "browserHistoryDetailedDescription": "Also keeps the request and response bodies, what you do (clicks and typing, never passwords) and every console message. Takes more space.",
+  "browserHistorySize": "Using {size}",
+  "@browserHistorySize": {"placeholders": {"size": {"type": "String"}}},
+  "browserHistoryClear": "Clear",
+  "browserHistoryClearConfirm": "Clear the debugging history?",
+  "browserHistoryClearDetail": "The pages, requests and console messages kept are deleted. This cannot be undone.",
+  "browserHistoryTooLarge": "The browser's debugging history takes {size}",
+  "@browserHistoryTooLarge": {"placeholders": {"size": {"type": "String"}}},
+  "browserHistoryTooLargeDetail": "Clear it, or look at it in Settings → Browser.",
+  "browserHistoryOpenSettings": "Browser settings",
+  "browserWelcomeTitle": "Agents can use your browser now",
+  "browserWelcomeLead": "With Caocode's extension, agents open pages, read them, click and type in your own Chrome, signed in as you are.",
+  "browserWelcomeSharedTitle": "Only the tabs you share",
+  "browserWelcomeShared": "They work in the yellow Caocode tab group alone; your other tabs stay yours.",
+  "browserWelcomeWatchTitle": "Watch it work",
+  "browserWelcomeWatch": "The side panel shows the page live as the agent uses it. Take over any time.",
+  "browserWelcomeShowTitle": "Show it once",
+  "browserWelcomeShow": "Ask an agent to watch, do it yourself in the browser, and it sees each step you took.",
+  "browserWelcomeInstallTitle": "Add the extension",
+  "browserWelcomeInstall": "For Chrome, Edge, Brave and Arc. It connects by itself, and this turns green.",
+  "browserWelcomeTurnedOff": "The browser is turned off in Settings → Browser.",
+  "browserWelcomeConnected": "{browser} is connected",
+  "@browserWelcomeConnected": {"description": "The welcome's step once a browser connected, by its name.", "placeholders": {"browser": {"type": "String"}}},
+  "browserWelcomeTry": "Try telling an agent: “Open caocode.dev and look at the download page.”",
+  "browserWelcomeUnpacked": "Developer Mode Zip",
+  "browserWelcomeDone": "Got It",
+  "cmdBrowserWelcome": "Connect Your Browser...",
+  "cmdStashWelcome": "Meet Stash...",
+  "cmdModelWelcome": "Set Up a Model...",
+  "modelWelcomeTitle": "Pick a Model to Start",
+  "modelWelcomeLead": "Caocode runs your agents on a model of your choosing. Add an upstream, a service with an API key, and its models are ready to use.",
+  "modelWelcomeAnyTitle": "Any upstream",
+  "modelWelcomeAny": "Anthropic's API, OpenAI's Chat Completions or Responses, or a service that speaks one of them, such as OpenRouter or DeepSeek.",
+  "modelWelcomeKeysTitle": "Your keys stay with you",
+  "modelWelcomeKeys": "Keys are kept in the system keychain, and requests go from this computer straight to the upstream.",
+  "modelWelcomeSwitchTitle": "Switch any time",
+  "modelWelcomeSwitch": "Add more upstreams whenever you like, and pick the model for each conversation under its input.",
+  "modelWelcomeStepTitle": "Add your first upstream",
+  "modelWelcomeStep": "Its address and key, then the models to use. Some services can also add theirs in one click from Settings → Models.",
+  "modelWelcomeReadyTitle": "Ready to go",
+  "modelWelcomeReady": "New conversations start on {model}. Pick another under the input any time.",
+  "@modelWelcomeReady": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "modelWelcomeLater": "You can also add one later in Settings → Models.",
+  "modelWelcomeSkip": "Later",
+  "modelWelcomeStart": "Start Chatting",
+  "healthNoModel": "Pick a model to start: add an upstream and its models are ready to use.",
+  "modelSetUp": "Set Up a Model",
+  "remoteAddServer": "Add SSH Server...",
+  "remoteEditServer": "Edit",
+  "settingsSectionSsh": "SSH Servers",
+  "settingsSshKeywords": "ssh remote server host jump bastion key password core",
+  "sshSettingsDescription": "The servers remote projects connect to: their address, how they sign in, a jump host, and the core each runs.",
+  "sshSettingsServers": "Servers",
+  "sshSettingsServersDescription": "Those added in the app, and the hosts the sidebar has.",
+  "sshSettingsNone": "No servers yet",
+  "sshSettingsAdd": "Add Server…",
+  "sshSettingsEdit": "Edit…",
+  "sshSettingsConnect": "Connect",
+  "sshSettingsDisconnect": "Disconnect",
+  "sshSettingsDisconnectTitle": "Disconnect from {host}?",
+  "@sshSettingsDisconnectTitle": {"placeholders": {"host": {"type": "String"}}},
+  "sshSettingsDisconnectDetail": "The conversations and terminals running there end.",
+  "sshSettingsCore": "Core: {core}",
+  "@sshSettingsCore": {"placeholders": {"core": {"type": "String"}}},
+  "sshSettingsVia": "through {host}",
+  "@sshSettingsVia": {"placeholders": {"host": {"type": "String"}}},
+  "sshSettingsTyped": "As typed",
+  "sshSettingsConfigHosts": "Hosts of ~/.ssh/config",
+  "sshSettingsConfigHostsDescription": "Changed in that file; their core is Automatic.",
+  "sshSettingsOpenConfig": "Open File",
+  "sshServerAddTitle": "Add SSH Server",
+  "sshServerAddSubtitle": "Saved to the remote list: connect to it in one click.",
+  "sshServerEditTitle": "Edit {name}",
+  "@sshServerEditTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sshServerHost": "Host",
+  "sshServerHostPlaceholder": "Domain or IP; user@host:port is split up",
+  "sshServerPort": "Port",
+  "sshServerUser": "User",
+  "sshServerName": "Name (optional)",
+  "sshServerNamePlaceholder": "e.g. Production",
+  "sshServerAuth": "Sign in with",
+  "sshServerAuthPassword": "Password",
+  "sshServerAuthKey": "Private Key",
+  "sshServerAuthAuto": "Automatic",
+  "sshServerAuthAutoHint": "As ssh does in a terminal: ssh-agent, the keys in ~/.ssh, ~/.ssh/config. A password is asked for if the server wants one.",
+  "sshServerPasswordHint": "Kept in the system keychain. Leave it empty to be asked when connecting.",
+  "sshServerPasswordKept": "Saved: leave empty to keep it",
+  "sshServerKeyPlaceholder": "Path of the private key, e.g. ~/.ssh/id_ed25519",
+  "sshServerKeyBrowse": "Browse...",
+  "sshServerKeysFound": "Keys in ~/.ssh",
+  "sshServerKeyHint": "If the key has a passphrase, it is asked for when connecting.",
+  "sshServerCore": "Core",
+  "sshServerCoreAuto": "Automatic",
+  "sshServerCoreAutoHint": "The server's Claude Code CLI if it has one, else the built-in core.",
+  "sshServerCoreBuiltinHint": "Caocode's own core: it runs on the upstreams of Settings → Models.",
+  "sshServerCoreCliHint": "The server's Claude Code CLI, installed there if it has none.",
+  "sshServerJump": "Jump Host (optional)",
+  "sshServerNoJump": "None: connect directly",
+  "sshServerSaveConnect": "Save and Connect",
+  "sshServerSave": "Save",
+  "sshServerHostRequired": "Enter the server's domain or IP",
+  "sshServerHostInvalid": "No spaces, and not starting with '-'",
+  "sshServerPortInvalid": "A port is from 1 to 65535",
+  "sshServerKeyRequired": "Choose the private key file",
+  "sshServerKeyMissing": "There is no such file",
+  "remoteForgetHostKey": "Remove the Old Key and Connect",
+  "remoteForgetHostKeyTitle": "Remove the old key of {host}?",
+  "@remoteForgetHostKeyTitle": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "remoteForgetHostKeyDetail": "Only if you know the server was reinstalled or its key changed: otherwise someone may be between you and it. The key it has now is accepted at the next connection.",
+  "remoteForgetHostKeyButton": "Remove and Connect",
+  "remoteFailNoSsh": "There is no ssh on this computer: install the OpenSSH client.",
+  "remoteFailAuth": "The server refused to sign in: check the user, password or key.",
+  "remoteFailCancelled": "Signing in was cancelled.",
+  "remoteFailHostKey": "The server's key is not known, and your ssh config says not to accept new ones (StrictHostKeyChecking).",
+  "remoteFailHostKeyChanged": "The server's key changed since the last connection: it was reinstalled, or someone is in between.",
+  "remoteFailUnreachable": "The server could not be reached: check the address, port and network.",
+  "channelSetupTitle": "Welcome to Caocode",
+  "channelSetupLead": "Finish your first-time setup on caocode.dev. It takes about 10 seconds.",
+  "channelSetupStepTitle": "Finish setup in your browser",
+  "channelSetupStep": "Caocode opens caocode.dev in your browser. Once the page says it's done, Caocode continues on its own.",
+  "channelSetupWaitingTitle": "Waiting for your browser…",
+  "channelSetupWaiting": "Once the page says it's done, Caocode continues on its own. Closed the page by mistake? Open it again.",
+  "channelSetupOffline": "Can't reach caocode.dev. You need to be online to finish setup.",
+  "channelSetupRetry": "Retry",
+  "channelSetupDoneTitle": "Setup complete",
+  "channelSetupOpen": "Finish Setup in Browser",
+  "channelSetupOpenAgain": "Open the Page Again",
+  "channelSetupNoResponse": "Browser not responding?",
+  "channelSetupPasteLead": "If the page shows a link, copy it and paste it here:",
+  "channelSetupPasteConfirm": "OK",
+  "channelSetupLinkInvalid": "That isn't the link from the page. Copy the whole link shown there.",
+  "channelSetupLinkOther": "That link is for another Caocode install. Use the page this Caocode opened.",
+  "channelSetupTrouble": "Having trouble?",
+  "channelSetupOnceTitle": "Only once",
+  "channelSetupOnce": "Once it's done, this won't show again, not even after an update.",
+  "channelSetupPrivateTitle": "Nothing personal",
+  "channelSetupPrivate": "The page only tells Caocode where you heard of it, like a video or a website.",
+  "channelSetupFindingTitle": "Getting your channel ready…",
+  "channelSetupFinding": "Just a moment.",
+  "channelSetupSiteOfflineTitle": "Can't reach caocode.dev",
+  "channelSetupSiteOffline": "Caocode needs to be online to read your channel. Check your connection and retry.",
+  "channelSetupUnavailableTitle": "This channel isn't available",
+  "channelSetupUnavailable": "The channel this installer came from doesn't have accounts set up yet. If you downloaded it through another channel, confirm where you came from in your browser; otherwise contact whoever gave you the installer, or download the standard edition from caocode.dev.",
+  "channelSetupConfirmAgain": "Confirm in Browser",
+  "channelWelcomeTitle": "Welcome to {channel}",
+  "@channelWelcomeTitle": {"description": "A channel's welcome's title when its channels.json entry has none, by its name.", "placeholders": {"channel": {"type": "String"}}},
+  "channelWelcomeText": "Sign in to your {channel} account to get started.",
+  "@channelWelcomeText": {"description": "A channel's welcome's text when its entry has none.", "placeholders": {"channel": {"type": "String"}}},
+  "channelWelcomeSignIn": "Sign In",
+  "channelWelcomeSigningIn": "Sign in in the window that opened…",
+  "channelWelcomePreparing": "Getting ready…",
+  "channelWelcomeFailed": "Couldn't finish signing in: {error}",
+  "@channelWelcomeFailed": {"description": "Signing in to the channel's account site failed; the site's or the network's error.", "placeholders": {"error": {"type": "String"}}},
+  "channelAccountTitle": "Account",
+  "channelAccountBalance": "Balance",
+  "channelAccountRefresh": "Refresh",
+  "channelAccountSignOut": "Sign Out",
+  "channelAccountSignOutTitle": "Sign out?",
+  "channelAccountSignOutDetail": "You'll need to sign in to {channel} again to keep using Caocode.",
+  "@channelAccountSignOutDetail": {"placeholders": {"channel": {"type": "String"}}},
+  "channelAccountOpenSite": "Open Website",
+  "channelAccountDefaultModel": "Default model for new chats",
+  "channelAccountNoModels": "The key in use doesn't reach any models.",
+  "channelAccountKeys": "My API Keys",
+  "channelAccountCreateKey": "Create Key",
+  "channelAccountKeyName": "Name",
+  "channelAccountKeyGroup": "Group",
+  "channelAccountUseKey": "Use This Key",
+  "channelAccountInUse": "In Use",
+  "channelAccountNoKeys": "No API keys yet.",
+  "channelAccountSignedOut": "You're not signed in.",
+  "channelAccountUnavailable": "This channel isn't available. Contact whoever gave you the installer.",
+  "channelAccountFailed": "Something went wrong: {error}",
+  "@channelAccountFailed": {"placeholders": {"error": {"type": "String"}}},
+  "channelAccountBlocked": "{site} refused this computer's connection ({request}); its firewall may be blocking the IP of your network or proxy. Try another network, or reach {site} without the proxy.",
+  "@channelAccountBlocked": {"description": "The channel's account site's firewall (e.g. Cloudflare) refused the app's requests; not a sign-out.", "placeholders": {"site": {"type": "String"}, "request": {"type": "String", "example": "POST /api/v1/auth/refresh"}}},
+  "settingsSectionAbout": "About",
+  "aboutTagline": "An awesome, easy-to-use desktop UI for Claude Code, with a millisecond-fast IDE built in.",
+  "aboutVersion": "Version {version} ({build})",
+  "@aboutVersion": {"placeholders": {"version": {"type": "String"}, "build": {"type": "int"}}},
+  "aboutRepository": "{repository} · free and open source, under the GPL-3.0",
+  "@aboutRepository": {"placeholders": {"repository": {"type": "String"}}},
+  "aboutWebsite": "Website",
+  "aboutChangelog": "Changelog",
+  "aboutChangelogDetail": "What each version changed",
+  "aboutFeedback": "Report an Issue",
+  "aboutFeedbackDetail": "Open an issue on GitHub, or see those others opened",
+  "aboutOpen": "Open"
 }

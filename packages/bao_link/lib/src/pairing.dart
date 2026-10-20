@@ -11,11 +11,33 @@ sealed class LinkEndpoint {
 /// The desktop itself, at a host and port: an address on the LAN, or one
 /// on the internet (a public IPv6 address, a forwarded port, a domain).
 class DirectEndpoint extends LinkEndpoint {
-  const DirectEndpoint(this.host, this.port);
+  const DirectEndpoint(this.host, this.port, {this.secure = false});
 
-  /// `192.168.1.5:47100`, `[2408:8207::1]:47100`, `home.example.com:47100`.
-  factory DirectEndpoint.parse(String text) {
-    final value = text.trim();
+  /// `192.168.1.5:47100`, `[2408:8207::1]:47100`, `home.example.com:47100`;
+  /// [defaultPort] when no port is given.
+  ///
+  /// `wss://link.example.com` (or `https://`) is reached over TLS, on 443
+  /// unless a port is given: a desktop behind a proxy that only takes TLS,
+  /// as a Cloudflare Tunnel. `ws://` (or `http://`) is on 80 unless given.
+  factory DirectEndpoint.parse(
+    String text, {
+    int defaultPort = defaultLinkPort,
+  }) {
+    var value = text.trim();
+    var secure = false;
+    final scheme = RegExp(
+      r'^(wss|https|ws|http)://',
+      caseSensitive: false,
+    ).firstMatch(value);
+    if (scheme != null) {
+      final name = scheme[1]!.toLowerCase();
+      secure = name == 'wss' || name == 'https';
+      defaultPort = secure ? 443 : 80;
+      value = value.substring(scheme.end);
+      // A path after the host is the link's own: left out.
+      final slash = value.indexOf('/');
+      if (slash >= 0) value = value.substring(0, slash);
+    }
     final String host;
     final String rest;
     if (value.startsWith('[')) {
@@ -35,29 +57,40 @@ class DirectEndpoint extends LinkEndpoint {
       }
     }
     if (host.isEmpty) throw FormatException('Bad address', text);
-    if (rest.isEmpty) return DirectEndpoint(host, defaultLinkPort);
+    if (rest.isEmpty) return DirectEndpoint(host, defaultPort, secure: secure);
     if (!rest.startsWith(':')) throw FormatException('Bad address', text);
     final port = int.tryParse(rest.substring(1));
     if (port == null || port <= 0 || port > 65535) {
       throw FormatException('Bad port', text);
     }
-    return DirectEndpoint(host, port);
+    return DirectEndpoint(host, port, secure: secure);
   }
 
   final String host;
   final int port;
 
+  /// Reached over TLS (`wss://`).
+  final bool secure;
+
   bool get isIPv6 => host.contains(':');
 
+  /// The port is always written: phones from before [secure] then take
+  /// `wss://host:443` for a host they cannot reach, not for a bad code.
   @override
-  String toString() => isIPv6 ? '[$host]:$port' : '$host:$port';
+  String toString() {
+    final address = isIPv6 ? '[$host]:$port' : '$host:$port';
+    return secure ? 'wss://$address' : address;
+  }
 
   @override
   bool operator ==(Object other) =>
-      other is DirectEndpoint && other.host == host && other.port == port;
+      other is DirectEndpoint &&
+      other.host == host &&
+      other.port == port &&
+      other.secure == secure;
 
   @override
-  int get hashCode => Object.hash(host, port);
+  int get hashCode => Object.hash(host, port, secure);
 }
 
 /// A relay both ends reach out to, which passes along what they seal for

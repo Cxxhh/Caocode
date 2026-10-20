@@ -20,6 +20,7 @@ import 'package:flutter/services.dart';
 
 import '../monaco/flutter/document_snapshot.dart';
 import '../monaco/flutter/language_assets.dart';
+import '../monaco/flutter/language_overrides.dart';
 import '../monaco/vs/base/common/color.dart' as vs;
 import '../monaco/vs/editor/common/core/misc/eol_counter.dart';
 import '../monaco/vs/editor/common/encoded_token_attributes.dart'
@@ -491,9 +492,11 @@ class TextMateSyntax {
         monarch.assetId.startsWith(MonacoLanguageAssets.packAssetPrefix)) {
       return null;
     }
-    final languageId = runtime.resources.registry
-        .guessLanguageIdByFilepathOrFirstLine(Uri.file(path), firstLine)
-        .firstOrNull;
+    final languageId =
+        EditorLanguageOverrides.instance.of(path) ??
+        runtime.resources.registry
+            .guessLanguageIdByFilepathOrFirstLine(Uri.file(path), firstLine)
+            .firstOrNull;
     return languageId != null &&
             runtime.resources.grammarLanguages.contains(languageId)
         ? languageId
@@ -695,17 +698,7 @@ class TextMateDocument extends ChangeNotifier {
     // The edit as one replacement, as a model content change describes it.
     final a = old.text;
     final b = next.text;
-    final shortest = a.length < b.length ? a.length : b.length;
-    var prefix = 0;
-    while (prefix < shortest && a.codeUnitAt(prefix) == b.codeUnitAt(prefix)) {
-      prefix++;
-    }
-    var suffix = 0;
-    while (suffix < shortest - prefix &&
-        a.codeUnitAt(a.length - 1 - suffix) ==
-            b.codeUnitAt(b.length - 1 - suffix)) {
-      suffix++;
-    }
+    var (prefix, suffix) = DocumentSnapshot.sharedEnds(old, next);
     // Never between the CR and LF of a line break.
     if (prefix > 0 && a.codeUnitAt(prefix - 1) == 0x0D) prefix--;
     if (suffix > 0 && a.codeUnitAt(a.length - suffix) == 0x0A) suffix--;

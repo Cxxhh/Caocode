@@ -42,6 +42,9 @@ class LocalIdeFileService implements IdeFileService {
 Future<Uint8List> readFileBytes(String path) =>
     Future.error(UnsupportedError('Local editing requires the desktop app'));
 
+Future<int> fileByteSize(String path) =>
+    Future.error(UnsupportedError('Local editing requires the desktop app'));
+
 Future<void> uploadTo(
   IdeFileService files,
   List<({String from, String to})> items, {
@@ -52,6 +55,8 @@ Future<void> downloadFrom(
   IdeHostFiles files,
   List<({String from, String to, bool directory})> items, {
   TransferProgress? onProgress,
+  FileProgress? onFile,
+  Future<void>? cancel,
 }) => Future.error(UnsupportedError('Local editing requires the desktop app'));
 
 Future<String> newDownloadFolder() =>

@@ -12,3 +12,8 @@ PRODUCT_BUNDLE_IDENTIFIER = dev.caocode.desktop
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 Caocode. All rights reserved.
+
+// This machine's own settings, if it has them (not checked in): a debug
+// build signed with a developer's certificate, say, for macOS to keep the
+// permissions it was given across builds.
+#include? "Local.xcconfig"

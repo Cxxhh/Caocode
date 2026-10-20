@@ -209,7 +209,7 @@ void main() {
   testWidgets('the settings fill the window, find and switch pages', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(800, 500);
+    tester.view.physicalSize = const Size(800, 600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
@@ -227,7 +227,7 @@ void main() {
     );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
-    expect(tester.getSize(find.byType(SettingsDialog)), const Size(800, 500));
+    expect(tester.getSize(find.byType(SettingsDialog)), const Size(800, 600));
     expect(find.text('page general'), findsOneWidget);
     // The pages listed in their groups' order.
     expect(
@@ -339,7 +339,7 @@ void main() {
     _stillMotion(tester);
     // Appearance whole in the window: one cut off at the bottom sends a
     // semantics update the desktop engines reject.
-    await _pumpApp(tester, height: 1600);
+    await _pumpApp(tester, height: 2400);
     await _press(tester, LogicalKeyboardKey.comma, meta: true);
     expect(_section(tester), SettingsSection.general);
     await _press(tester, LogicalKeyboardKey.keyK, meta: true);
@@ -360,7 +360,7 @@ void main() {
     _stillMotion(tester);
     // Appearance whole in the window: one cut off at the bottom sends a
     // semantics update the desktop engines reject.
-    final workspace = await _pumpApp(tester, height: 1600);
+    final workspace = await _pumpApp(tester, height: 2400);
     workspace.layout = WorkspaceLayout.ide;
     await tester.pump();
     await tester.pump();

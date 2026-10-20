@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:caocode/ide/git/repository_scan.dart';
 import 'package:caocode/ide/ide_list.dart';
 import 'package:caocode/ide/ide_workspace.dart';
-import 'package:caocode/theme/codicons.dart';
 
 import '../git/fake_git.dart';
 import 'fake_files.dart';
@@ -125,38 +124,30 @@ void main() {
 
     await chord(tester, LogicalKeyboardKey.keyG, control: true, shift: true);
     await tester.pumpAndSettle();
-    expect(find.text('Repositories'), findsOneWidget);
+    // Every repository under its header in CHANGES (#76): its branch
+    // right after its name, marked with what changed, and its changes.
+    expect(find.text('Repositories'), findsNothing);
     expect(find.text('app'), findsWidgets);
-    expect(find.text('dev'), findsOneWidget);
+    expect(find.text('dev*'), findsOneWidget);
+    expect(find.text('main*'), findsOneWidget);
     expect(find.text('README.md'), findsWidgets);
-    expect(find.text('new.dart'), findsNothing);
-    // As upstream's rows: the branches at the right end, the one shown
-    // marked, and no count badge (`scm.providerCountBadge` is hidden).
-    final main = find
-        .descendant(of: find.byType(IdeListRow), matching: find.text('main'))
-        .first;
-    expect(
-      tester.getTopRight(find.text('dev')).dx,
-      tester.getTopRight(main).dx,
-    );
-    expect(
-      tester.getTopLeft(find.text('dev')).dx,
-      greaterThan(tester.getTopLeft(main).dx),
-    );
-    expect(find.byIcon(Codicons.repoSelected), findsOneWidget);
-    expect(find.byIcon(Codicons.repo), findsOneWidget);
-    for (final root in [testRoot, inRoot('app')]) {
-      expect(
-        find.descendant(
-          of: find.byKey(ValueKey(root)),
-          matching: find.byType(IdeCountBadge),
-        ),
-        findsNothing,
-      );
-    }
-
-    await tester.tap(find.text('dev'));
-    await tester.pumpAndSettle();
     expect(find.text('new.dart'), findsOneWidget);
+    final appHeader = find.byKey(ValueKey('repo:${inRoot('app')}')).first;
+    final name = find.descendant(of: appHeader, matching: find.text('app'));
+    expect(
+      tester.getTopLeft(find.text('dev*')).dx,
+      lessThan(tester.getTopRight(name).dx + 40),
+    );
+    // No count: the marks tell what changed (`scm.providerCountBadge`).
+    expect(
+      find.descendant(of: appHeader, matching: find.byType(IdeTitleBadge)),
+      findsNothing,
+    );
+
+    // The one clicked is the one shown (the status bar's branch).
+    expect(find.text('dev'), findsNothing);
+    await tester.tap(appHeader);
+    await tester.pumpAndSettle();
+    expect(find.text('dev'), findsOneWidget);
   });
 }

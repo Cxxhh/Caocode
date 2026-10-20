@@ -3,7 +3,8 @@ import 'dart:convert';
 import '../../models/launch_environment.dart';
 import '../commit_attribution.dart';
 
-export 'package:bao_remote/claude.dart' show ClaudeUnavailable;
+export 'package:bao_remote/claude.dart'
+    show ClaudeFolderGone, ClaudeNoModel, ClaudeUnavailable;
 
 /// Claude Code's side of the adapter (the Adaptee): the messages of
 /// `claude -p --input-format stream-json --output-format stream-json`, one
@@ -58,11 +59,26 @@ class ClaudeLaunch {
     this.env,
     this.settingsPath,
     this.directories = const [],
+    this.readable = const [],
     this.instructions,
     this.models = const [],
+    this.sdkServers = const [],
+    this.promptSuggestions = true,
   });
 
+  /// Whether it suggests the next prompt after each turn
+  /// (`--prompt-suggestions`), each a request of its own.
+  final bool promptSuggestions;
+
+  /// Folders it may read without asking, its tools' work outside them
+  /// aside: where the long pastes it is told of are kept (PasteStore).
+  final List<String> readable;
+
   final String cwd;
+
+  /// The app's own MCP servers (see claude_sdk_tools.dart), their tools
+  /// allowed without asking: they only do what the app does.
+  final List<String> sdkServers;
 
   /// Folders it works in besides [cwd] (a multi-folder workspace's): each
   /// an `--add-dir`, their `CLAUDE.md` read as [cwd]'s is.
@@ -91,6 +107,10 @@ class ClaudeLaunch {
   /// the CLI's own. Only taken at start: `apply_flag_settings` stores it,
   /// but the session goes on with the one it started with.
   final int? autocompact;
+
+  /// The most `--autocompact` takes (a decimal million): a window larger
+  /// still (a model of 1,048,576 tokens, say) is passed as this.
+  static const maxAutocompact = 1000000;
 
   /// Whether Plan's commands are left to the auto mode classifier, as
   /// Claude Code's `useAutoModeDuringPlan` setting; null for the user's
@@ -147,8 +167,10 @@ class ClaudeLaunch {
     env: env ?? this.env,
     settingsPath: settingsPath ?? this.settingsPath,
     directories: directories,
+    readable: readable,
     instructions: instructions,
     models: models,
+    promptSuggestions: promptSuggestions,
   );
 
   Map<String, String>? get _attribution => switch (attribution) {
@@ -171,6 +193,10 @@ class ClaudeLaunch {
           for (final model in models) {'model': model},
         ],
       },
+    if (readable.isNotEmpty)
+      'permissions': {
+        'allow': [for (final folder in readable) readRule(folder)],
+      },
     if ({
           ...?env,
           if (directories.isNotEmpty) ...additionalDirectoriesEnvironment,
@@ -179,11 +205,31 @@ class ClaudeLaunch {
       'env': env,
   };
 
+  /// The permission rule that lets it read what is in [folder] (absolute):
+  /// `Read(//Users/me/x/**)`, a Windows path as Claude Code matches it
+  /// (`C:\\x` as `/c/x`).
+  static String readRule(String folder) => folderRule('Read', folder);
+
+  /// The permission rule for [tool] (`Read`, `Edit`) on what is in
+  /// [folder] (absolute), as [readRule]'s.
+  static String folderRule(String tool, String folder) {
+    var path = folder.replaceAll(r'\', '/');
+    if (RegExp(r'^[A-Za-z]:').hasMatch(path)) {
+      path = '/${path[0].toLowerCase()}${path.substring(2)}';
+    }
+    if (path.endsWith('/')) path = path.substring(0, path.length - 1);
+    return '$tool(/$path/**)';
+  }
+
   /// Has Claude Code read the `CLAUDE.md` of the folders given with
   /// `--add-dir`, as it does its working directory's.
   static const additionalDirectoriesEnvironment = {
     'CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD': '1',
   };
+
+  /// How the model's thinking comes back: summarized, for the chat to
+  /// show (the newest models leave it out unless asked).
+  static const thinkingDisplay = 'summarized';
 
   List<String> get arguments => _arguments(withSettings: true);
 
@@ -203,13 +249,16 @@ class ClaudeLaunch {
     '--permission-prompt-tool',
     'stdio',
     '--thinking-display',
-    'summarized',
+    thinkingDisplay,
     // A prompt_suggestion message after each turn.
-    '--prompt-suggestions',
+    if (promptSuggestions) '--prompt-suggestions',
     if (permissionMode case final mode?) ...['--permission-mode', mode],
     if (model case final model? when model != 'default') ...['--model', model],
     if (effort case final effort?) ...['--effort', effort],
-    if (autocompact case final tokens?) ...['--autocompact', '$tokens'],
+    if (autocompact case final tokens?) ...[
+      '--autocompact',
+      '${tokens > maxAutocompact ? maxAutocompact : tokens}',
+    ],
     if (resume case final id?) ...['--resume', id],
     for (final directory in directories) ...['--add-dir', directory],
     if (!withSettings)
@@ -222,6 +271,16 @@ class ClaudeLaunch {
       jsonEncode(settings),
     ],
     if (!persist) '--no-session-persistence',
+    if (sdkServers.isNotEmpty) ...[
+      '--mcp-config',
+      jsonEncode({
+        'mcpServers': {
+          for (final name in sdkServers) name: {'type': 'sdk', 'name': name},
+        },
+      }),
+      '--allowedTools',
+      sdkServers.map((name) => 'mcp__$name').join(','),
+    ],
     '--append-system-prompt',
     switch (instructions) {
       final instructions? when instructions.isNotEmpty =>

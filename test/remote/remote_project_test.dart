@@ -9,19 +9,25 @@ import 'dart:typed_data';
 import 'package:bao_remote/client.dart';
 import 'package:bao_remote/files.dart' show IdeFileExistsException;
 import 'package:bao_remote/local.dart' show ClaudeEnvironment, CliLocator;
+import 'package:bao_agent/testing.dart';
 import 'package:bao_remote/server.dart' show ServerClaude;
 import 'package:caocode/chat/panels/health_banner.dart';
 import 'package:caocode/ide/git/git_model.dart' show IdeGitGroup;
 import 'package:caocode/ide/ide_quick_input.dart';
+import 'package:caocode/ide/ide_status_bar.dart';
 import 'package:caocode/ide/lsp/lsp_manager.dart';
 import 'package:caocode/ide/lsp/language_features.dart';
 import 'package:caocode/ide/lsp/lsp_server_definition.dart';
 import 'package:caocode/kernel/agent_kernel.dart';
 import 'package:caocode/kernel/claude_code/claude_code_transport.dart';
+import 'package:caocode/kernel/claude_code/claude_core_setting.dart';
 import 'package:caocode/kernel/mock/mock_kernels.dart';
 import 'package:caocode/l10n/l10n.dart';
+import 'package:caocode/models/launch_environment.dart';
+import 'package:caocode/models/model_provider.dart';
 import 'package:caocode/remote/open_remote.dart';
 import 'package:caocode/remote/project_host.dart';
+import 'package:caocode/remote/remote_files.dart';
 import 'package:caocode/remote/remote_claude.dart';
 import 'package:caocode/remote/remote_location.dart';
 import 'package:caocode/remote/remote_services.dart';
@@ -423,6 +429,9 @@ void main() {
     late Directory config;
 
     setUp(() {
+      // The CLI there, asked for.
+      ClaudeCore.current = () => ClaudeCore.cli;
+      addTearDown(() => ClaudeCore.current = () => ClaudeCore.fallback);
       home = Directory.systemTemp.createTempSync('caocode-remote-home-');
       config = Directory(p.join(home.path, '.claude'))..createSync();
       fake = File(p.join(home.path, 'fake-claude'))
@@ -590,6 +599,141 @@ printf '%s\n' "$line"
     });
   });
 
+  group('Claude Code on the built-in core', () {
+    late Directory home;
+    late FakeApi api;
+    final self = ServerClaude.selfCommand;
+
+    setUp(() async {
+      home = Directory.systemTemp.createTempSync('caocode-remote-core-');
+      api = await FakeApi.start(errands: (_) => Reply.text('A title'));
+      ClaudeCore.current = () => ClaudeCore.builtin;
+      // On the host, as its server saved in the app says.
+      hosts.savedServers = () => {
+        'dev': const SshServer(hostName: 'dev', core: SshCore.builtin),
+      };
+      // The server, from its source, run as the core.
+      ServerClaude.selfCommand = () => [
+        p.join(p.dirname(Platform.resolvedExecutable), 'dart'),
+        p.absolute('packages/bao_remote/bin/caocode_server.dart'),
+      ];
+      if (!File(ServerClaude.selfCommand().first).existsSync()) {
+        ServerClaude.selfCommand = () => [
+          'dart',
+          p.absolute('packages/bao_remote/bin/caocode_server.dart'),
+        ];
+      }
+    });
+    tearDown(() async {
+      ClaudeCore.current = () => ClaudeCore.fallback;
+      ServerClaude.selfCommand = self;
+      await api.close();
+      home.deleteSync(recursive: true);
+    });
+
+    Map<String, String> hostEnvironment({bool key = true}) => {
+      'PATH': Platform.environment['PATH'] ?? '/usr/bin:/bin',
+      'HOME': home.path,
+      'CAOCODE_CLAUDE_DATA_PATH': p.join(home.path, '.claude'),
+      if (key) ...{
+        'ANTHROPIC_API_KEY': 'sk-host',
+        'ANTHROPIC_BASE_URL': api.baseUrl,
+      },
+    };
+
+    test('runs there: the server run as the core, its session kept there '
+        'as the CLI keeps one', () async {
+      ClaudeEnvironment.use(hostEnvironment());
+      api.model.script.addAll([
+        Reply.tool('Write', {
+          'file_path': p.join(root, 'there.txt'),
+          'content': 'from the core\n',
+        }),
+        Reply.text('written there'),
+      ]);
+      final location = RemoteLocation.of('dev', root);
+      // On an upstream of this machine's Settings → Models, over the
+      // host's own key.
+      final transport = await startClaude(
+        ClaudeLaunch(
+          cwd: location,
+          permissionMode: 'acceptEdits',
+          model: 'claude-sonnet-4-5',
+          env: launchEnvironment(
+            provider: ModelProvider(
+              id: 'up',
+              name: 'Upstream',
+              baseUrl: api.baseUrl,
+              auth: ProviderAuth.apiKey,
+            ),
+            model: 'claude-sonnet-4-5',
+            key: 'sk-upstream',
+          ),
+        ),
+      );
+      expect(transport, isA<RemoteClaudeTransport>());
+      final messages = <Map<String, Object?>>[];
+      transport.messages.listen(messages.add);
+      transport
+        ..write({
+          'type': 'control_request',
+          'request_id': 'init',
+          'request': {'subtype': 'initialize'},
+        })
+        ..write({
+          'type': 'user',
+          'message': {'role': 'user', 'content': 'write there.txt'},
+        });
+      await until(
+        () => messages.any((m) => m['type'] == 'result'),
+        timeout: const Duration(seconds: 90),
+      );
+      final result = messages.firstWhere((m) => m['type'] == 'result');
+      expect(result['result'], 'written there');
+      expect(
+        File(p.join(root, 'there.txt')).readAsStringSync(),
+        'from the core\n',
+      );
+      expect(api.headers.map((h) => h['x-api-key']).toSet(), {'sk-upstream'});
+      expect(api.model.requests.map((r) => r.body['model']).toSet(), {
+        'claude-sonnet-4-5',
+      });
+      final init = messages.firstWhere(
+        (m) => m['type'] == 'system' && m['subtype'] == 'init',
+      );
+      expect(init['cwd'], root);
+      transport.close();
+      await transport.exited.timeout(const Duration(seconds: 20));
+      final sessions = await const ClaudeCatalog().sessionsIn(location);
+      expect([for (final s in sessions) s.id], [init['session_id']]);
+    }, timeout: const Timeout(Duration(minutes: 3)));
+
+    test('no upstream: not started there on the host\'s own setup, nor '
+        'its CLI', () async {
+      final fake = File(p.join(home.path, 'fake-claude'))
+        ..writeAsStringSync('#!/bin/sh\ntouch "${home.path}/cli-ran"\n');
+      Process.runSync('chmod', ['+x', fake.path]);
+      final environment = {
+        ...hostEnvironment(),
+        'CAOCODE_CLAUDE_PATH': fake.path,
+      };
+      CliLocator.use(environment);
+      ClaudeEnvironment.use(environment);
+      await expectLater(
+        startClaude(ClaudeLaunch(cwd: RemoteLocation.of('dev', root))),
+        throwsA(
+          isA<ClaudeUnavailable>().having(
+            (error) => error.message,
+            'message',
+            ClaudeCore.noModel,
+          ),
+        ),
+      );
+      expect(File(p.join(home.path, 'cli-ran')).existsSync(), isFalse);
+      expect(api.headers, isEmpty);
+    });
+  });
+
   group('Open Remote Project', () {
     test('a host, then a folder there, then opened', () async {
       Directory(p.join(root, 'app')).createSync();
@@ -689,6 +833,87 @@ printf '%s\n' "$line"
       expect(connected, 'dev');
     });
 
+    test('a server added, what was typed given; those added edited, '
+        "not ~/.ssh/config's", () async {
+      final shown = <IdeQuickPick>[];
+      final adding = <String?>[];
+      final editing = <String>[];
+      final flow = OpenRemoteFlow(
+        show: shown.add,
+        l10n: englishLocalizations,
+        onOpen: (_) {},
+        added: ['me@box:2222', 'dev'],
+        addressOf: (host) => host == 'me@box:2222' ? 'me@10.0.0.9' : host,
+        labelOf: (host) => host == 'me@box:2222' ? 'Ubuntu' : host,
+        onAdd: adding.add,
+        onEdit: editing.add,
+        hosts: hosts,
+        configHosts: () async => ['dev', 'prod'],
+      );
+      await flow.start();
+      final pick = shown.single;
+      final items = pick.itemsFor!('').whereType<IdeQuickPickItem>().toList();
+      expect(items.first.label, 'Add SSH Server...');
+      // Where it is now, as saved.
+      final ubuntu = items.firstWhere((item) => item.label == 'Ubuntu');
+      expect(ubuntu.description, 'me@10.0.0.9');
+      expect(ubuntu.buttons.single.tooltip, 'Edit');
+      ubuntu.buttons.single.onPressed();
+      expect(editing, ['me@box:2222']);
+      for (final label in ['dev', 'prod']) {
+        expect(
+          items.firstWhere((item) => item.label == label).buttons,
+          isEmpty,
+        );
+      }
+      pick.itemsFor!('').whereType<IdeQuickPickItem>().first.onAccept!();
+      final typed = pick.itemsFor!('me@new').whereType<IdeQuickPickItem>();
+      typed.firstWhere((item) => item.label == 'Add SSH Server...').onAccept!();
+      expect(adding, [null, 'me@new']);
+    });
+
+    test('a changed host key: forgotten when asked, then connected again; '
+        "a server refusing to sign in, edited", () async {
+      connector.failure = const SshConnectException(
+        SshFailure.hostKeyChanged,
+        'The host key changed.',
+      );
+      final shown = <IdeQuickPick>[];
+      final forgotten = <String>[];
+      final editing = <String>[];
+      final flow = OpenRemoteFlow(
+        show: shown.add,
+        l10n: englishLocalizations,
+        onOpen: (_) {},
+        onEdit: editing.add,
+        onForgetHostKey: (host) async {
+          forgotten.add(host);
+          connector.failure = const SshConnectException(
+            SshFailure.authentication,
+            'The host refused to sign in.',
+          );
+          return true;
+        },
+        hosts: hosts,
+        configHosts: () async => const [],
+      );
+      flow.startAt('me@moved');
+      await until(() => shown.length > 1);
+      final failed = shown.last.items.whereType<IdeQuickPickItem>().toList();
+      expect(failed.first.label, startsWith("The server's key changed"));
+      expect(failed.map((item) => item.label), isNot(contains('Retry')));
+      expect(failed.map((item) => item.label), isNot(contains('Edit')));
+      failed
+          .firstWhere((item) => item.label == 'Remove the Old Key and Connect')
+          .onAccept!();
+      await until(() => shown.length > 3);
+      expect(forgotten, ['me@moved']);
+      final refused = shown.last.items.whereType<IdeQuickPickItem>().toList();
+      expect(refused.first.label, startsWith('The server refused to sign in'));
+      refused.firstWhere((item) => item.label == 'Edit').onAccept!();
+      expect(editing, ['me@moved']);
+    });
+
     test('a host that cannot be reached: why, and Retry', () async {
       connector.failure = const SshConnectException(
         SshFailure.unreachable,
@@ -708,9 +933,178 @@ printf '%s\n' "$line"
       (items.first as IdeQuickPickItem).onAccept!();
       await until(() => shown.length >= 3);
       final failed = shown.last.items.whereType<IdeQuickPickItem>().toList();
-      expect(failed.first.label, 'The host could not be reached.');
+      expect(
+        failed.first.label,
+        'The server could not be reached: check the address, port and network.',
+      );
       expect(failed.first.detail, contains('nowhere'));
       expect(failed.last.label, englishLocalizations.remoteRetry);
+    });
+  });
+
+  group('Open Remote File', () {
+    test('a host, then a file there, then opened', () async {
+      Directory(p.join(root, 'lib')).createSync();
+      File(p.join(root, 'lib', 'a.dart')).writeAsStringSync('a');
+      File(p.join(root, 'lib', 'sub.dart')).writeAsStringSync('b');
+      final shown = <IdeQuickPick>[];
+      String? opened;
+      final flow = OpenRemoteFileFlow(
+        show: shown.add,
+        l10n: englishLocalizations,
+        onOpen: (location) => opened = location,
+        hosts: hosts,
+        configHosts: () async => ['dev', 'prod'],
+      );
+      await flow.start();
+      final hostsPick = shown.single;
+      final items = hostsPick.itemsFor!('').whereType<IdeQuickPickItem>();
+      expect(items.map((i) => i.label), ['dev', 'prod']);
+
+      items.first.onAccept!();
+      // Connecting, then the home folder there; a path typed goes to root.
+      Directory(p.join(root, 'app')).createSync();
+      await until(() => shown.length >= 3);
+      (shown.last.itemsFor!(root).first as IdeQuickPickItem).onAccept!();
+      await until(() => shown.length >= 4);
+      final inRoot = shown.last.itemsFor!('').whereType<IdeQuickPickItem>();
+      // Folders before files; a folder is walked into, a file opens.
+      expect(inRoot.first.label, '..');
+      expect(inRoot.map((i) => i.label), containsAll(['lib', 'app']));
+      inRoot.firstWhere((i) => i.label == 'lib').onAccept!();
+      await until(() => shown.length >= 5);
+      final inLib = shown.last.itemsFor!('').whereType<IdeQuickPickItem>();
+      expect(inLib.map((i) => i.label), containsAll(['a.dart', 'sub.dart']));
+      inLib.firstWhere((i) => i.label == 'a.dart').onAccept!();
+      expect(opened, RemoteLocation.of('dev', p.join(root, 'lib', 'a.dart')));
+    });
+
+    test('a path typed: a file opened, a folder walked into', () async {
+      Directory(p.join(root, 'lib')).createSync();
+      File(p.join(root, 'lib', 'a.dart')).writeAsStringSync('a');
+      final shown = <IdeQuickPick>[];
+      String? opened;
+      final flow = OpenRemoteFileFlow(
+        show: shown.add,
+        l10n: englishLocalizations,
+        onOpen: (location) => opened = location,
+        hosts: hosts,
+        configHosts: () async => const [],
+      );
+      await flow.open('dev');
+      await until(() => shown.length >= 2);
+      final file = p.join(root, 'lib', 'a.dart');
+      final typed = shown.last.itemsFor!(file);
+      (typed.first as IdeQuickPickItem).onAccept!();
+      await until(() => opened != null);
+      expect(opened, RemoteLocation.of('dev', file));
+
+      // A folder typed is browsed, not opened.
+      await flow.open('dev');
+      await until(() => shown.length >= 4);
+      final folder = shown.last.itemsFor!(p.join(root, 'lib'));
+      (folder.first as IdeQuickPickItem).onAccept!();
+      await until(
+        () => shown.last.itemsFor!('').whereType<IdeQuickPickItem>().any(
+          (i) => i.label == 'a.dart',
+        ),
+      );
+      expect(opened, RemoteLocation.of('dev', file));
+    });
+
+    test('a host that cannot be reached: why, and Retry', () async {
+      connector.failure = const SshConnectException(
+        SshFailure.unreachable,
+        'The host could not be reached.',
+        detail: 'ssh: Could not resolve hostname nowhere',
+      );
+      final shown = <IdeQuickPick>[];
+      final flow = OpenRemoteFileFlow(
+        show: shown.add,
+        l10n: englishLocalizations,
+        onOpen: (_) {},
+        hosts: hosts,
+        configHosts: () async => const [],
+      );
+      await flow.start();
+      final items = shown.single.itemsFor!('nowhere');
+      (items.first as IdeQuickPickItem).onAccept!();
+      await until(
+        () => shown.last.items.whereType<IdeQuickPickItem>().any(
+          (i) => i.label == 'The server could not be reached: check the address, port and network.',
+        ),
+      );
+      final failed = shown.last.items.whereType<IdeQuickPickItem>().toList();
+      expect(
+        failed.first.label,
+        'The server could not be reached: check the address, port and network.',
+      );
+      expect(failed.first.detail, contains('nowhere'));
+      expect(failed.last.label, englishLocalizations.remoteRetry);
+    });
+  });
+
+  group('the status bar\'s remote entry', () {
+    testWidgets('shows the state, and opens the remote menu when clicked', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const Scaffold(body: SizedBox()),
+        ),
+      );
+      final context = tester.element(find.byType(SizedBox));
+      // Idle (never asked for): the state alone, not clickable.
+      final plain = SshStatusIndicator(hosts['dev']).item(context);
+      expect(plain.text, 'SSH: dev (disconnected)');
+      expect(plain.onTapRect, isNull);
+      expect(plain.tooltip, isNot(contains('Click for')));
+
+      // With the menu: the same state, clickable, its tooltip saying so.
+      Rect? chosen;
+      final host = hosts['dev'];
+      final item = SshStatusIndicator(
+        host,
+        onChoose: (rect) => chosen = rect,
+      ).item(context);
+      expect(item.text, plain.text);
+      expect(item.tooltip, contains('Click for the hosts'));
+      expect(item.onTapRect, isNotNull);
+      final rect = Rect.fromLTWH(1, 2, 3, 4);
+      item.onTapRect!(rect);
+      expect(chosen, rect);
+    });
+
+    testWidgets('the entry clicked hands its rect to onTapRect', (
+      tester,
+    ) async {
+      Rect? tapped;
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.bottomLeft,
+              child: IdeStatusBar(
+                left: [
+                  IdeStatusBarItem(
+                    'SSH: dev',
+                    onTapRect: (rect) => tapped = rect,
+                  ),
+                ],
+                right: const [],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('SSH: dev'));
+      await tester.pump();
+      expect(tapped, isNotNull);
+      expect(tapped!.isEmpty, isFalse);
     });
   });
 }

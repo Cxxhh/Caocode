@@ -11,6 +11,9 @@
 //                                                remote server already in
 //                                                build/remote/ (CI builds
 //                                                it once, for both apps)
+//   dart run tool/build_macos.dart --channel      the channel build
+//                                                (CAOCODE_CHANNEL; lib/channel/),
+//                                                its files named -channel
 //   dart run tool/build_macos.dart --remote-release [VERSION]
 //                                                take the remote server
 //                                                published (the newest
@@ -19,7 +22,8 @@
 //                                                instead of building one
 //
 // They land in build/installers/: Caocode-<version>-<arch>.dmg and
-// Caocode-<version>-mac-<arch>.zip, arch arm64 or x64; beside them,
+// Caocode-<version>-mac-<arch>.zip, arch arm64 or x64 (the channel
+// build's ending in -channel: Caocode-<version>-<arch>-channel.dmg…); beside them,
 // remote/<VERSION>/, the remote server's gzipped builds, which the app
 // downloads instead of carrying them (tool/build_remote_server.dart), to
 // upload with the release.
@@ -67,6 +71,9 @@ const _remoteRelative = 'build/remote';
 /// Where one published is taken to (tool/fetch_remote_server.dart).
 const _remoteReleaseRelative = 'build/remote-release';
 
+/// The browser's native messaging host, beside the app's executable.
+const _browserHost = 'caocode-browser-host';
+
 /// What has to be in the .app for it to start. As on Windows, a build that
 /// failed late still leaves an .app behind that looks complete — these are
 /// what tell the difference.
@@ -81,6 +88,8 @@ const _required = [
   // Finder's context menu (macos/FinderExtension), which Settings → General
   // turns on.
   'Contents/PlugIns/FinderExtension.appex',
+  // What Chrome runs for Caocode's extension (macos/BrowserBridge).
+  'Contents/MacOS/$_browserHost',
   // The server remote projects run on their host (Linux and macOS, x64 and
   // arm64; tool/build_remote_server.dart): which build, and where it is
   // downloaded from.
@@ -96,6 +105,8 @@ Future<void> main(List<String> arguments) async {
     );
   }
   final skipBuild = arguments.contains('--skip-build');
+  final channel = arguments.contains('--channel');
+  final edition = channel ? '-channel' : '';
   final releaseAt = arguments.indexOf('--remote-release');
   final remoteRelease = releaseAt < 0
       ? null
@@ -118,8 +129,13 @@ Future<void> main(List<String> arguments) async {
   final version = _readVersion(File('${root.path}/pubspec.yaml'));
 
   if (!skipBuild) {
-    _step('Building the Release app');
-    await _run('flutter', ['build', 'macos', '--release'], root.path);
+    _step('Building the Release app${channel ? ' (the channel build)' : ''}');
+    await _run('flutter', [
+      'build',
+      'macos',
+      '--release',
+      if (channel) '--dart-define=CAOCODE_CHANNEL=true',
+    ], root.path);
   } else {
     _step('Using the app already built');
   }
@@ -199,7 +215,7 @@ Future<void> main(List<String> arguments) async {
 
     _step('Making the $arch disk image');
     final dmg = File(
-      '${installers.path}/Caocode-${version.marketing}-$arch.dmg',
+      '${installers.path}/Caocode-${version.marketing}-$arch$edition.dmg',
     );
     // A window with the app, an arrow and an Applications shortcut to drag
     // it onto, on the background tool/dmg_background.swift draws (the
@@ -252,7 +268,7 @@ Future<void> main(List<String> arguments) async {
     // permissions and extended attributes, which a framework's signature
     // depends on).
     final zip = File(
-      '${installers.path}/Caocode-${version.marketing}-mac-$arch.zip',
+      '${installers.path}/Caocode-${version.marketing}-mac-$arch$edition.zip',
     );
     if (zip.existsSync()) zip.deleteSync();
     await _run('ditto', [
@@ -307,9 +323,13 @@ Future<void> main(List<String> arguments) async {
     ..writeln('To publish it as an update, sign the zips into the manifest:')
     ..writeln('  dart run tool/release_manifest.dart \\')
     ..writeln(
-      '    --macos-arm64 $base-mac-arm64.zip --dmg-arm64 $base-arm64.dmg \\',
+      '    --macos-arm64$edition $base-mac-arm64$edition.zip '
+      '--dmg-arm64$edition $base-arm64$edition.dmg \\',
     )
-    ..writeln('    --macos-x64 $base-mac-x64.zip --dmg-x64 $base-x64.dmg');
+    ..writeln(
+      '    --macos-x64$edition $base-mac-x64$edition.zip '
+      '--dmg-x64$edition $base-x64$edition.dmg',
+    );
 }
 
 /// Signing with a Developer ID, and notarising, as the environment says
@@ -344,8 +364,9 @@ class _Signing {
 
   final ({String key, String keyId, String issuer})? notary;
 
-  /// Signs the .app inside out: its frameworks, then the Finder extension,
-  /// then the app around them ([sign] says with what).
+  /// Signs the .app inside out: its frameworks, the browser's host, then the
+  /// Finder extension, then the app around them ([sign] says with what). The
+  /// host's own signature, Xcode's ad hoc, would not be notarised.
   ///
   /// Not `codesign --deep`: it would give the Finder extension the app's
   /// entitlements, sandbox off, and the system refuses to load an extension
@@ -367,6 +388,7 @@ class _Signing {
         await sign(entry.path);
       }
     }
+    await sign('${app.path}/Contents/MacOS/$_browserHost');
     await sign(
       '${app.path}/Contents/PlugIns/FinderExtension.appex',
       entitlements: 'macos/FinderExtension/FinderExtension.entitlements',
@@ -472,10 +494,11 @@ String _bundleRemote(Directory remote, Directory target) {
   );
 }
 
-/// The executables in [app]: its own, the Finder extension's, and each
-/// framework's.
+/// The executables in [app]: its own, the browser's host, the Finder
+/// extension's, and each framework's.
 List<String> _executables(Directory app) => [
   '${app.path}/Contents/MacOS/Caocode',
+  '${app.path}/Contents/MacOS/$_browserHost',
   '${app.path}/Contents/PlugIns/FinderExtension.appex/Contents/MacOS/'
       'FinderExtension',
   // A framework's executable is named as the framework: X.framework/X.

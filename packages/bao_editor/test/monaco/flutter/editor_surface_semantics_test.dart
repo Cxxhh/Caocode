@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bao_editor/monaco/flutter/editor_surface.dart';
 import 'package:bao_editor/monaco/flutter/editor_surface_controller.dart';
+import 'package:bao_editor/monaco/flutter/text_input_window.dart';
 
 final _textSemanticsFinder = find.byWidgetPredicate(
   (widget) => widget is Semantics && widget.properties.textField == true,
@@ -83,10 +84,15 @@ void main() {
       final focus = _focusNode();
       await _mount(tester, controller, focus, direction: TextDirection.rtl);
       final id = _node(tester).id;
+      // The lines around the selection, as the platform's text input has.
+      TextEditingValue window() =>
+          TextInputWindow.around(controller.value).value;
+      expect(window().text, isNot(text));
+      expect(text, startsWith(window().text));
       expect(
         _node(tester),
         isSemantics(
-          value: text,
+          value: window().text,
           textDirection: TextDirection.rtl,
           isTextField: true,
           isMultiline: true,
@@ -102,7 +108,7 @@ void main() {
       );
       expect(
         _node(tester).getSemanticsData().textSelection,
-        editingValue.selection,
+        window().selection,
       );
       expect(controller.value, editingValue);
       expect(find.byType(TextField), findsNothing);
@@ -126,7 +132,7 @@ void main() {
       );
       await tester.pump();
       expect(_node(tester).id, id);
-      expect(_node(tester).getSemanticsData().value, text);
+      expect(_node(tester).getSemanticsData().value, window().text);
       expect(controller.value, editingValue);
 
       controller.value = editingValue.copyWith(
@@ -136,10 +142,10 @@ void main() {
       await tester.pump();
       await _mount(tester, controller, focus, wrap: true);
       expect(_node(tester).id, id);
-      expect(_node(tester).getSemanticsData().value, controller.value.text);
+      expect(_node(tester).getSemanticsData().value, window().text);
       expect(
         _node(tester).getSemanticsData().textSelection,
-        controller.value.selection,
+        window().selection,
       );
       final textNodes = <SemanticsNode>[];
       void collect(SemanticsNode node) {
@@ -188,6 +194,42 @@ void main() {
     expect(tester.testTextInput.editingState?['text'], replacement);
     expect(controller.undo(), isTrue);
     expect(controller.value.text, '漢');
+  });
+
+  testWidgets('setText and setSelection are of the lines exposed', (
+    tester,
+  ) async {
+    final text = List.generate(100, (i) => 'line $i').join('\n');
+    final controller = _controller(text);
+    final caret = text.indexOf('line 50');
+    controller.select(caret, caret);
+    final focus = _focusNode();
+    await _mount(tester, controller, focus);
+    _perform(tester, SemanticsAction.tap);
+    await tester.pump();
+    final exposed = 'line 48\nline 49\nline 50\nline 51\nline 52';
+    expect(_node(tester).getSemanticsData().value, exposed);
+    final start = text.indexOf(exposed);
+    _perform(tester, SemanticsAction.setSelection, {'base': 2, 'extent': 9});
+    await tester.pump();
+    expect(
+      controller.value.selection,
+      TextSelection(baseOffset: start + 2, extentOffset: start + 9),
+    );
+    // Exposed again around the new selection.
+    final around = _node(tester).getSemanticsData().value;
+    expect(around, 'line 46\nline 47\nline 48\nline 49\nline 50\nline 51');
+    final from = text.indexOf(around);
+    _perform(tester, SemanticsAction.setText, 'only');
+    await tester.pump();
+    expect(
+      controller.document.text,
+      text.replaceRange(from, from + around.length, 'only'),
+    );
+    expect(
+      controller.value.selection,
+      TextSelection.collapsed(offset: from + 4),
+    );
   });
 
   testWidgets('setSelection preserves raw base/extent without rewriting text', (

@@ -4,10 +4,15 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
+import '../channel/channel_setup.dart';
 import '../kernel/kernel_types.dart';
 import '../keybindings/chat_keybindings.dart';
 import '../l10n/l10n.dart';
+import '../models/model_welcome.dart';
+import '../remote/remote_location.dart';
 import '../remote/remote_status.dart' show ClaudeInstallBanner, SshHostBanner;
+import '../stash/stash_actions.dart';
+import '../stash/stash_store.dart';
 import '../theme/app_theme.dart';
 import '../workspace/title_bar_double_click.dart';
 import 'agent_view.dart';
@@ -36,6 +41,8 @@ import 'widgets/agent_step.dart';
 import 'widgets/chat_minimap.dart';
 import 'widgets/code_citation.dart';
 import 'widgets/inline_rename_field.dart';
+import 'widgets/pixel_loader.dart';
+import 'widgets/plan_start.dart';
 
 /// Layout, top to bottom:
 /// - history + live turn: a virtual list that yields height;
@@ -63,6 +70,7 @@ class ChatScreen extends StatefulWidget {
     this.colorizeCodeBlock,
     this.start,
     this.startHint,
+    this.below,
     this.sessions,
     this.fileMentions,
     this.openEditor,
@@ -136,6 +144,9 @@ class ChatScreen extends StatefulWidget {
   /// nothing to show.
   final Widget Function(BuildContext context, Widget hint)? startHint;
 
+  /// Under the composer, e.g. the branch it works on.
+  final Widget? below;
+
   /// The other conversations its messages may refer to, which `@` in the
   /// composer offers (see [ComposerVocabulary.sessions]).
   final List<Suggestion> Function()? sessions;
@@ -159,12 +170,23 @@ class ChatScreen extends StatefulWidget {
   /// by its keybinding).
   static void focusInput(GlobalKey key) =>
       (key.currentState as _ChatScreenState?)?._focusInput();
+
+  /// Finds [query] in the conversation of the chat [key] is on (a search's
+  /// hit there), its first match brought into view.
+  /// Whether there was a chat at [key] to find [query] in.
+  static bool find(GlobalKey key, String query) {
+    final state = key.currentState as _ChatScreenState?;
+    state?._findIn(query: query);
+    return state != null;
+  }
 }
 
 class _ChatScreenState extends State<ChatScreen>
     with TickerProviderStateMixin, ChatKeyTarget {
-  /// As wide as the setting lets the column grow (see [ChatWidth]).
-  double get _maxContentWidth => ChatWidth.current.value;
+  /// As wide as the setting lets the column grow (see [ChatWidth]); in the
+  /// IDE ([ChatScreen.embedded]) across its pane, not in its middle.
+  double get _maxContentWidth =>
+      widget.embedded ? double.infinity : ChatWidth.current.value;
 
   /// Whether the conversation has a minimap: in the agents' window, not a
   /// pane of the IDE's, unless turned off (see [ChatMinimap.enabled]).
@@ -235,11 +257,13 @@ class _ChatScreenState extends State<ChatScreen>
 
   void _setGoal(String condition) => _session.setGoal(condition);
 
-  void _openAgent(AgentItem agent) {
+  /// Opens [agent], a card in the conversation shown; or at [path] (see
+  /// [SubagentFeed.path]), wherever it is.
+  void _openAgent(AgentItem agent, {List<String>? path}) {
     final id = agent.id;
     if (id == null) return;
     final layer = _AgentLayer(
-      SubagentFeed(_session, [...?_agentShown?.feed.path, id]),
+      SubagentFeed(_session, path ?? [...?_agentShown?.feed.path, id]),
       AnimationController(vsync: this, duration: _layerDuration),
     );
     setState(() => _layers.add(layer));
@@ -286,8 +310,8 @@ class _ChatScreenState extends State<ChatScreen>
     _session.attach();
     _session.addListener(_checkStarting);
     _planShown = _session.plan?.seq;
-    _planReviewShown = _session.pendingInteraction;
     _session.addListener(_followPlan);
+    _session.addListener(_welcomeToModels);
     _restoreAgents();
     ChatWidth.current.addListener(_widthChanged);
     ChatMinimap.enabled.addListener(_widthChanged);
@@ -308,6 +332,7 @@ class _ChatScreenState extends State<ChatScreen>
   void dispose() {
     _session.removeListener(_checkStarting);
     _session.removeListener(_followPlan);
+    _session.removeListener(_welcomeToModels);
     ChatWidth.current.removeListener(_widthChanged);
     ChatMinimap.enabled.removeListener(_widthChanged);
     _existence?.dispose();
@@ -330,23 +355,43 @@ class _ChatScreenState extends State<ChatScreen>
     _composerKey.currentState?.focus();
   }
 
-  /// The sequence of the plan writing last shown, and the plan to approve.
+  /// The sequence of the plan writing last shown.
   int? _planShown;
-  InteractionRequest? _planReviewShown;
 
-  /// Shows the plan beside the chat as the agent writes it, and again as
-  /// it asks to go ahead with it: the file read anew each time.
+  /// Shows the plan beside the chat as the agent writes it: the file read
+  /// anew each time.
   void _followPlan() {
     if (_session.plan case final plan? when plan.seq != _planShown) {
       _planShown = plan.seq;
       _openFile(FileOpenRequest(plan.path, plan: true));
     }
-    final request = _session.pendingInteraction;
-    if (request == _planReviewShown) return;
-    _planReviewShown = request;
-    if (request case PlanReviewRequest(:final planPath?)) {
-      _openFile(FileOpenRequest(planPath, plan: true));
+  }
+
+  /// Whether the welcome to models waits for the channel build's setup.
+  bool _awaitingSetup = false;
+
+  /// No model to run on, the first time for the app: what setting one up
+  /// is, by itself; after that, from the banner and the model's pill. The
+  /// channel build's setup first (lib/channel/).
+  void _welcomeToModels() {
+    // The channel build's model is its account's: no setting one up.
+    if (ChannelSetup.channelBuild) return;
+    if (!_session.health.noModel || ModelWelcome.welcomed) return;
+    if (ChannelSetup.current case final setup? when !setup.done) {
+      if (_awaitingSetup) return;
+      _awaitingSetup = true;
+      // Once its welcome closed, with Get Started.
+      unawaited(
+        setup.started.then((_) {
+          if (mounted) _welcomeToModels();
+        }),
+      );
+      return;
     }
+    ModelWelcome.welcomed = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(showModelWelcome(context));
+    });
   }
 
   // --- Keys ------------------------------------------------------------------
@@ -364,6 +409,12 @@ class _ChatScreenState extends State<ChatScreen>
   void _focusList() =>
       ChatHistoryView.focus(_agentShown?.historyKey ?? _historyKey);
 
+  /// The find bar over the conversation shown.
+  void _findIn({String? query}) => ChatHistoryView.find(
+    _agentShown?.historyKey ?? _historyKey,
+    query: query,
+  );
+
   bool get _renames => widget.onRename != null && !widget.embedded;
 
   @override
@@ -380,6 +431,7 @@ class _ChatScreenState extends State<ChatScreen>
   Map<String, VoidCallback> get chatCommands => {
     ChatCommandIds.focusInput: _focusInput,
     ChatCommandIds.focusList: _focusList,
+    ChatCommandIds.find: _findIn,
     if (_session.isStreaming) ChatCommandIds.cancel: _session.stop,
     if (_session.pendingInteraction is ApprovalRequest) ...{
       ChatCommandIds.acceptTool: () =>
@@ -448,13 +500,14 @@ class _ChatScreenState extends State<ChatScreen>
                   // it: see window_header/).
                   child: Align(alignment: Alignment.centerLeft, child: title),
                 ),
-                if (widget.trailing case final trailing?) ...[
-                  const SizedBox(width: 8),
-                  TitleBarControls(child: trailing),
-                ],
               ],
             ),
           ),
+          if (widget.trailing case final trailing?)
+            LayoutId(
+              id: _TitleBarSlot.trailing,
+              child: TitleBarControls(child: trailing),
+            ),
         ],
       ),
     );
@@ -493,17 +546,18 @@ class _ChatScreenState extends State<ChatScreen>
       onStopTask: _session.stopTask,
       canOpenTask: (task) => task.kind == KernelTaskKind.command
           ? widget.onOpenTerminalTask != null
-          : _session.agentOf(task.toolUseId) != null,
+          : _session.agentOf(task) != null,
       onOpenTask: (task) {
         if (task.kind == KernelTaskKind.command) {
           widget.onOpenTerminalTask?.call(task);
-        } else if (_session.agentOf(task.toolUseId) case final agent?) {
-          _openAgent(agent);
+        } else if (_session.agentOf(task) case (:final agent, :final path)) {
+          // One a subagent started opens where it is, within that one's.
+          _openAgent(agent, path: path);
         }
       },
       // A subagent's last step, as its card has it.
-      detailOf: (task) => switch (_session.agentOf(task.toolUseId)) {
-        final agent? => AgentStep.latest(agent, l10n: context.l10n),
+      detailOf: (task) => switch (_session.agentOf(task)) {
+        (:final agent, path: _) => AgentStep.latest(agent, l10n: context.l10n),
         null => null,
       },
     );
@@ -590,6 +644,21 @@ class _ChatScreenState extends State<ChatScreen>
             commands: _commandSuggestions(),
             suggestFiles: _suggestFiles(root),
             sessions: widget.sessions,
+            // The stashes, after the files (see docs/stash.md).
+            stashes: switch (StashStore.current) {
+              final store? => () => stashSuggestions(
+                store,
+                context.l10n.stashHeading,
+              ),
+              null => null,
+            },
+            stash: switch (StashStore.current) {
+              final store? => (id) => switch (store.byId(id)) {
+                final note? => stashReferenceOf(store, note),
+                null => null,
+              },
+              null => null,
+            },
             child: child!,
           ),
         );
@@ -599,12 +668,21 @@ class _ChatScreenState extends State<ChatScreen>
             paths: links.paths,
             onOpen: _openFile,
             existence: _files,
+            readBytes: links.readBytes,
+            sizeOf: links.sizeOf,
+            inPanel: links.inPanel,
+            onOpenInIde: links.openInIde,
+            onShowBrowserTab: links.showBrowserTab,
             roots: links.roots?.call() ?? const [],
             seen: _session.filesSeen,
+            local: switch (_session.kernelContext.cwd) {
+              final cwd? => !RemoteLocation.isRemote(cwd),
+              null => true,
+            },
             child: scoped,
           );
         }
-        return scoped;
+        return PlanStartScope(session: _session, child: scoped);
       },
       child: _buildBody(),
     );
@@ -650,7 +728,9 @@ class _ChatScreenState extends State<ChatScreen>
                         minimap: _minimap,
                         onOpenAgent: _openAgent,
                         onSetGoal: _setGoal,
+                        onFindClosed: () => _composerKey.currentState?.focus(),
                       ),
+                      // The start hint, before the first message.
                       ListenableBuilder(
                         listenable: _session,
                         builder: (context, _) => switch (widget.startHint) {
@@ -669,6 +749,15 @@ class _ChatScreenState extends State<ChatScreen>
                           _ => const SizedBox.shrink(),
                         },
                       ),
+                      // An earlier conversation still being read (from a
+                      // remote host it may take a while).
+                      ListenableBuilder(
+                        listenable: _session,
+                        builder: (context, _) =>
+                            _session.loadingHistory && _session.itemCount == 0
+                            ? const _HistoryLoading()
+                            : const SizedBox.shrink(),
+                      ),
                     ],
                   ),
                 ),
@@ -685,11 +774,13 @@ class _ChatScreenState extends State<ChatScreen>
           ),
           ListenableBuilder(
             listenable: _session,
-            // Level with the history's text, laid out (not built) for the
-            // width: a pane being resized does not build the composer anew.
+            // In the middle as the history's text is, laid out (not built)
+            // for the width: a pane being resized does not build the
+            // composer anew. The minimap stays beside the history, over
+            // it: no room left for it here.
             builder: (context, _) => _ConversationColumn(
               maxWidth: _maxContentWidth,
-              minimap: _minimap,
+              minimap: false,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -700,6 +791,8 @@ class _ChatScreenState extends State<ChatScreen>
                             health: _session.health,
                             kernelName: _session.kernel.label,
                             onRetry: _session.restart,
+                            onSetUpModel: () =>
+                                unawaited(showModelWelcome(context)),
                           )
                         : null,
                   ),
@@ -716,15 +809,6 @@ class _ChatScreenState extends State<ChatScreen>
                         key: ObjectKey(request),
                         request: request,
                         onAnswer: _answer,
-                        kernel: _session.kernel.id,
-                        onOpenPlan: switch (request) {
-                          PlanReviewRequest(:final planPath?)
-                              when widget.fileLinks != null =>
-                            () => _openFile(
-                              FileOpenRequest(planPath, plan: true),
-                            ),
-                          _ => null,
-                        },
                       ),
                       null => null,
                     },
@@ -777,6 +861,7 @@ class _ChatScreenState extends State<ChatScreen>
             minimap: _minimap,
             onOpenAgent: _openAgent,
             onSetGoal: _setGoal,
+            onFindClosed: layer.backFocus.requestFocus,
           ),
         ),
       ],
@@ -840,15 +925,22 @@ class _ChatScreenState extends State<ChatScreen>
           session: _session,
           draft: _session.draft,
           openEditor: widget.openEditor,
+          // A remote project's: this machine's files are copied there.
+          hostFiles: switch (_session.kernelContext.cwd) {
+            final cwd? when RemoteLocation.isRemote(cwd) =>
+              widget.fileMentions?.files,
+            _ => null,
+          },
           contextPanelOpen: _contextPanelOpen,
           onToggleContextPanel: _toggleContextPanel,
         ),
+        ?widget.below,
       ],
     );
   }
 }
 
-enum _TitleBarSlot { leading, title }
+enum _TitleBarSlot { leading, title, trailing }
 
 /// The width of the conversation's column (the history's text, the
 /// composer) in a screen [width] wide: [chatGutter] in from either side, and
@@ -869,8 +961,9 @@ double _columnWidth(double width, double maxWidth, {required bool minimap}) =>
     );
 
 /// The title bar's [_TitleBarSlot.leading] at [inset], clear of the traffic
-/// lights; the title and the buttons after it across the conversation's
-/// column, clear of the leading.
+/// lights; the title across the conversation's column, clear of the
+/// leading; the buttons ([_TitleBarSlot.trailing]) at the bar's right end,
+/// the window's as the IDE's title bar has them, not the column's.
 class _TitleBarLayout extends MultiChildLayoutDelegate {
   _TitleBarLayout({
     required this.inset,
@@ -906,13 +999,25 @@ class _TitleBarLayout extends MultiChildLayoutDelegate {
       );
       start += leading.width + _gap;
     }
+    var end = _endInset;
+    if (hasChild(_TitleBarSlot.trailing)) {
+      final trailing = layoutChild(
+        _TitleBarSlot.trailing,
+        BoxConstraints.loose(size),
+      );
+      positionChild(
+        _TitleBarSlot.trailing,
+        Offset(
+          size.width - _endInset - trailing.width,
+          (size.height - trailing.height) / 2,
+        ),
+      );
+      end += trailing.width + _gap;
+    }
     final column =
         (size.width - _columnWidth(size.width, maxWidth, minimap: minimap)) / 2;
     final left = math.max(start, column);
-    final width = math.max(
-      0.0,
-      size.width - left - math.max(_endInset, column),
-    );
+    final width = math.max(0.0, size.width - left - math.max(end, column));
     layoutChild(
       _TitleBarSlot.title,
       BoxConstraints.tightFor(width: width, height: size.height),
@@ -1092,6 +1197,56 @@ class _FadeIn extends StatelessWidget {
         ),
       ),
       child: child,
+    );
+  }
+}
+
+/// The conversation being read, in the middle of where it will show. Only
+/// after [delay]: read at once (from this machine, most often), it would
+/// only flash.
+class _HistoryLoading extends StatefulWidget {
+  const _HistoryLoading();
+
+  static const delay = Duration(milliseconds: 300);
+
+  @override
+  State<_HistoryLoading> createState() => _HistoryLoadingState();
+}
+
+class _HistoryLoadingState extends State<_HistoryLoading> {
+  late final Timer _timer;
+  bool _shown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer(_HistoryLoading.delay, () => setState(() => _shown = true));
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_shown) return const SizedBox.shrink();
+    return _FadeIn(
+      animate: true,
+      child: Center(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const PixelLoader.agent(),
+            const SizedBox(width: 8),
+            Text(
+              context.l10n.chatLoadingHistory,
+              style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

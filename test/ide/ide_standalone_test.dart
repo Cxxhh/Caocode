@@ -7,9 +7,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:caocode/chat/widgets/pixel_loader.dart';
+import 'package:caocode/chat/chat_screen.dart';
 import 'package:caocode/chat/chat_session.dart';
 import 'package:caocode/ide/ide_chat_title.dart';
-import 'package:caocode/ide/ide_quick_input.dart';
+import 'package:caocode/ide/ide_chat_history.dart';
 import 'package:caocode/ide/ide_workbench.dart';
 import 'package:caocode/main.dart';
 import 'package:caocode/workspace/workspace.dart';
@@ -255,7 +256,7 @@ void main() {
     await tester.tap(find.byTooltip('Agent History'));
     await tester.pump();
     final spinners = find.descendant(
-      of: find.byType(IdeQuickInput),
+      of: find.byType(IdeChatHistory),
       matching: find.byType(PixelLoader),
     );
     expect(spinners, findsOneWidget);
@@ -294,7 +295,7 @@ void main() {
     await tester.tap(find.byTooltip('Agent History'));
     await tester.pump();
     expect(
-      find.descendant(of: find.byType(IdeQuickInput), matching: dots),
+      find.descendant(of: find.byType(IdeChatHistory), matching: dots),
       findsOneWidget,
     );
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
@@ -325,6 +326,81 @@ void main() {
       find.descendant(of: title, matching: find.byType(PixelLoader)),
       findsNothing,
     );
+  });
+
+  testWidgets('the agent history floats over the chat, at its top right: '
+      'searched as typed, Enter opens the agent found, Escape or a click '
+      'outside goes back', (tester) async {
+    final workspace = await _pumpApp(tester);
+    final thread = workspace.current!;
+    final other = workspace.threads.firstWhere(
+      (t) =>
+          t != thread &&
+          t.project == thread.project &&
+          !t.archived &&
+          !t.untouched,
+    );
+    workspace.openInIde(thread);
+    await tester.pump();
+    await tester.pump();
+    final history = find.byType(IdeChatHistory);
+    final title = find.byType(IdeChatTitle);
+
+    await tester.tap(find.byTooltip('Agent History'));
+    await tester.pump();
+    await tester.pump();
+    expect(history, findsOneWidget);
+    // A panel under the tabs' right end, the chat still under it.
+    final panel = find
+        .descendant(of: history, matching: find.byType(Material))
+        .first;
+    expect(tester.getTopRight(panel).dy, tester.getBottomRight(title).dy + 6);
+    expect(tester.getTopRight(panel).dx, tester.getBottomRight(title).dx - 6);
+    expect(
+      tester.getSize(panel).width,
+      lessThanOrEqualTo(IdeChatHistory.width),
+    );
+    expect(find.byType(ChatScreen), findsWidgets);
+    expect(
+      find.descendant(of: history, matching: find.text(other.title)),
+      findsOneWidget,
+    );
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    expect(history, findsNothing);
+
+    await tester.tap(find.byTooltip('Agent History'));
+    await tester.pump();
+    await tester.pump();
+    await tester.tapAt(tester.getBottomLeft(history) + const Offset(10, -10));
+    await tester.pump();
+    expect(history, findsNothing);
+
+    await tester.tap(find.byTooltip('Agent History'));
+    await tester.pump();
+    await tester.pump();
+    await tester.enterText(
+      find.descendant(of: history, matching: find.byType(EditableText)),
+      other.title,
+    );
+    await tester.pump();
+    expect(
+      find.descendant(of: history, matching: find.text(thread.title)),
+      findsNothing,
+    );
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+    expect(history, findsNothing);
+    expect(workspace.ideChat(thread.project.path), same(other));
+
+    // Its button shows it, and hides it again.
+    await tester.tap(find.byTooltip('Agent History'));
+    await tester.pump();
+    expect(history, findsOneWidget);
+    await tester.tap(find.byTooltip('Agent History'));
+    await tester.pump();
+    expect(history, findsNothing);
   });
 
   testWidgets('a chat tab dragged goes where it is dropped, and stays there', (
@@ -416,6 +492,58 @@ void main() {
     expect(tabs, hasLength(1));
     expect(tabs.single.untouched, isTrue);
     expect(workspace.threads, containsAll([thread, ...others]));
+  });
+
+  testWidgets('a chat tab\'s right click, as the sidebar\'s menu: rename in '
+      'place, Pin, Archive and Delete', (tester) async {
+    final workspace = await _pumpApp(tester);
+    final thread = workspace.current!;
+    workspace.openInIde(thread);
+    await tester.pump();
+    await tester.pump();
+
+    final title = find.byType(IdeChatTitle);
+    Future<void> openMenu(AgentThread t) async {
+      final tab = find.descendant(of: title, matching: find.text(t.title));
+      await tester.ensureVisible(tab);
+      await tester.pumpAndSettle();
+      await tester.tap(tab, buttons: kSecondaryMouseButton);
+      await tester.pumpAndSettle();
+    }
+
+    // The menu carries the conversation's own actions.
+    await openMenu(thread);
+    for (final label in ['Rename', 'Pin', 'Archive', 'Delete']) {
+      expect(find.text(label), findsOneWidget, reason: label);
+    }
+
+    // Rename: an input in the tab, over the title.
+    await tester.tap(find.text('Rename'));
+    await tester.pumpAndSettle();
+    final field = find.descendant(of: title, matching: find.byType(TextField));
+    expect(field, findsOneWidget);
+    await tester.enterText(field, 'Renamed here');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(thread.title, 'Renamed here');
+    expect(
+      find.descendant(of: title, matching: find.text('Renamed here')),
+      findsOneWidget,
+    );
+
+    // Archive: it leaves the listed tabs.
+    await openMenu(thread);
+    await tester.tap(find.text('Archive'));
+    await tester.pumpAndSettle();
+    expect(thread.archived, isTrue);
+
+    // Delete: confirmed, the agent goes.
+    await openMenu(thread);
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete').last);
+    await tester.pumpAndSettle();
+    expect(workspace.threads, isNot(contains(thread)));
   });
 
   testWidgets('⌘W/Ctrl+W from the chat closes its tab shown, the next '

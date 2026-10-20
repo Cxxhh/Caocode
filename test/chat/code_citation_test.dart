@@ -375,6 +375,31 @@ void main() {}
       expect(find.byIcon(Codicons.copy), findsOneWidget);
     });
 
+    testWidgets('a quote is a card that copies its text', (tester) async {
+      String? copied;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copied = (call.arguments as Map)['text'] as String;
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      await pumpMarkdown(tester, '> A **demo** plan.\n>\n> Not run.');
+      expect(find.byType(MarkdownQuoteBlock), findsOneWidget);
+      await tester.tap(find.byIcon(Codicons.copy));
+      await tester.pump();
+      expect(copied, 'A demo plan.\n\nNot run.');
+      await tester.pump(const Duration(seconds: 2));
+    });
+
     for (final fence in ['dart', '10:49:lib/main.dart']) {
       testWidgets('code in $fence can be drag-copied after scrolling', (
         tester,

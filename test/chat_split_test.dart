@@ -426,6 +426,70 @@ void main() {
     await tester.pump();
   });
 
+  testWidgets(
+    'side by side, each pane has the side panel\'s rail of its own agent, '
+    'under its title bar, clear of its close button; a page picked there '
+    'focuses the pane and shows its agent\'s',
+    (tester) async {
+      // Room for the window's tools in the right pane beside the panel.
+      final workspace = await pumpApp(tester, width: 1800);
+      await dropAgent(tester, second, near(gridRect(tester), PaneSide.right));
+      await tester.tapAt(tester.getRect(pane(second)).center);
+      await tester.pumpAndSettle();
+      expect(workspace.current!.title, second);
+
+      final rails = tester.widgetList(find.byType(SidePanelRail)).toList();
+      expect(rails, hasLength(2));
+      Rect railOf(String title) {
+        final paneRect = tester.getRect(pane(title));
+        return [
+          for (final rail in find.byType(SidePanelRail).evaluate())
+            tester.getRect(find.byWidget(rail.widget)),
+        ].singleWhere((rect) => paneRect.contains(rect.center));
+      }
+
+      for (final title in [first, second]) {
+        final paneRect = tester.getRect(pane(title));
+        final rail = railOf(title);
+        expect(rail.right, paneRect.right - AgentSidePanelArea.railRight);
+        expect(rail.top - paneRect.top, AppMetrics.titleBarHeight + 4);
+        final close = tester.getRect(
+          find.descendant(
+            of: pane(title),
+            matching: find.bySemanticsLabel('Close pane'),
+          ),
+        );
+        expect(rail.overlaps(close), isFalse);
+      }
+
+      // The left pane's, not focused: it is, and the panel shows its agent.
+      final left = find.byWidgetPredicate(
+        (widget) =>
+            widget is SidePanelRail &&
+            tester
+                .getRect(pane(first))
+                .contains(tester.getCenter(find.byWidget(widget))),
+      );
+      await tester.tap(
+        find
+            .descendant(of: left, matching: find.byType(SidebarIconButton))
+            .first,
+      );
+      await tester.pumpAndSettle();
+      expect(workspace.current!.title, first);
+      final view = tester.widget<AgentSidePanelView>(
+        find.byType(AgentSidePanelView),
+      );
+      expect(view.session, same(workspace.current!.session));
+      // The panel shown, the rails give way to it.
+      expect(find.byType(SidePanelRail), findsNothing);
+    },
+    variant: TargetPlatformVariant(const {
+      TargetPlatform.macOS,
+      TargetPlatform.windows,
+    }),
+  );
+
   testWidgets('the lines drag, each shared by the panes either side of it', (
     tester,
   ) async {
@@ -565,11 +629,11 @@ void main() {
     expect(tester.getRect(pane(first)).width, ChatGridView.minPane.width);
   }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
 
-  testWidgets('the title and the buttons keep to the conversation\'s column, '
-      'alone or side by side', (tester) async {
+  testWidgets('the title keeps to the conversation\'s column and the buttons '
+      'to the pane\'s end, alone or side by side', (tester) async {
     await pumpApp(tester);
 
-    void expectInColumn(String title, Finder rightmost) {
+    void expectPlaced(String title, Finder rightmost) {
       final composer = tester.getRect(
         find.descendant(of: pane(title), matching: find.byType(ChatComposer)),
       );
@@ -585,21 +649,19 @@ void main() {
         tester
             .getTopRight(find.descendant(of: pane(title), matching: rightmost))
             .dx,
-        composer.right,
+        tester.getRect(pane(title)).right - 8,
       );
     }
 
     // A wide window: the column in the middle, well in from the sides.
     final composer = tester.getRect(find.byType(ChatComposer));
     expect(composer.left - gridRect(tester).left, greaterThan(100));
-    expectInColumn(first, find.byType(SidePanelToggle));
+    expectPlaced(first, find.byType(OpenInEditorButton));
 
     await dropAgent(tester, second, near(gridRect(tester), PaneSide.right));
-    expectInColumn(first, find.bySemanticsLabel('Close pane'));
-    // The window's tools at the right pane's end, after its close; the
-    // composer in the middle, though the side panel's rail is over the
-    // pane (at its top, never level with the composer).
-    expectInColumn(second, find.byType(SidePanelToggle));
+    expectPlaced(first, find.bySemanticsLabel('Close pane'));
+    // The window's tools at the right pane's end, after its close.
+    expectPlaced(second, find.byType(OpenInEditorButton));
   });
 
   testWidgets('dragging the sidebar\'s border or a line lays the chats out '

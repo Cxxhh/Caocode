@@ -13,7 +13,6 @@ import '../ide/ide_hover.dart';
 import '../ide/ide_input.dart';
 import '../ide/ide_menu.dart';
 import '../l10n/l10n.dart';
-import '../platform/app_platform.dart';
 import '../theme/codicons.dart';
 import '../theme/workbench_theme.dart' show themeColors;
 import 'project_workspace.dart';
@@ -164,9 +163,7 @@ class _WorkspaceDialogState extends State<WorkspaceDialog> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final colors = themeColors;
-    final fileManager = AppPlatform.isWindows
-        ? l10n.workspaceFileExplorer
-        : l10n.workspaceFinder;
+    final fileManager = l10n.fileManager;
     return _DialogFrame(
       title: widget.editing == null
           ? l10n.workspaceCreateTitle

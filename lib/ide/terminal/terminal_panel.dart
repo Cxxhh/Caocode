@@ -21,9 +21,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../chat/side_panel/terminal_preview.dart';
+import '../../kernel/kernel_types.dart';
 import '../../keybindings/keybinding_service.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/codicons.dart';
+import '../file_service.dart';
 import '../ide_hover.dart';
 import '../ide_menu.dart';
 import 'links/terminal_links.dart';
@@ -32,6 +35,7 @@ import 'terminal_profile_service.dart';
 import 'terminal_profiles.dart';
 import 'terminal_service.dart';
 import 'terminal_tabs.dart';
+import 'terminal_tasks.dart';
 import 'terminal_view.dart';
 
 /// VS Code's `DEFAULT_COMMANDS_TO_SKIP_SHELL`
@@ -168,8 +172,9 @@ const terminalCommandsToSkipShell = {
   'workbench.action.toggleAuxiliaryBar',
 };
 
-/// The TERMINAL tab's content: the active terminal's view and, with more
-/// than one terminal, their tabs.
+/// The TERMINAL tab's content: the active terminal's view (or the output
+/// of an agent's background command) and, with more than one terminal or
+/// any command, their tabs.
 class TerminalPanel extends StatelessWidget {
   const TerminalPanel({
     super.key,
@@ -179,9 +184,23 @@ class TerminalPanel extends StatelessWidget {
     this.shouldSkipShell,
     this.resolveKey,
     this.onOpenLink,
+    this.tasks,
+    this.files,
+    this.shownTask,
+    this.onShowTask,
   });
 
   final TerminalService terminals;
+
+  /// The background commands of the agent beside, listed with the
+  /// terminals; [files] reads what their output links to.
+  final TerminalTasks? tasks;
+  final IdeFileService? files;
+
+  /// The id of the command whose output shows; null for the active
+  /// terminal. [onShowTask] changes it.
+  final String? shownTask;
+  final ValueChanged<String?>? onShowTask;
 
   /// New Terminal, from the tabs.
   final VoidCallback onNew;
@@ -202,14 +221,30 @@ class TerminalPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: terminals,
+    listenable: Listenable.merge([terminals, ?tasks]),
     builder: (context, _) {
       final active = terminals.active;
+      final tasks = this.tasks;
+      final files = this.files;
+      final list = files == null ? const <KernelTask>[] : [...?tasks?.tasks];
+      final task = list.where((task) => task.id == shownTask).firstOrNull;
       return Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            child: active == null
+            child: task != null
+                ? TerminalPreview(
+                    key: ValueKey(('task', task.id)),
+                    task: task,
+                    command: tasks!.commandOf(task),
+                    files: files!,
+                    onStop: () => tasks.stop(task),
+                    root: tasks.root,
+                    linkStat: terminals.backend.linkStat,
+                    skipShell: skipShell,
+                    onOpenLink: onOpenLink,
+                  )
+                : active == null
                 ? const SizedBox.shrink()
                 : TerminalView(
                     active,
@@ -221,10 +256,19 @@ class TerminalPanel extends StatelessWidget {
                     onOpenLink: onOpenLink,
                   ),
           ),
-          if (terminals.instances.length > 1)
+          if (terminals.instances.length > 1 || list.isNotEmpty)
             SizedBox(
-              width: TerminalTabs.width,
-              child: TerminalTabs(terminals: terminals, onNew: onNew),
+              width: list.isEmpty
+                  ? TerminalTabs.width
+                  : TerminalTabs.groupedWidth,
+              child: TerminalTabs(
+                terminals: terminals,
+                onNew: onNew,
+                tasks: list,
+                shownTask: task?.id,
+                onShowTask: onShowTask,
+                onStopTask: tasks?.stop,
+              ),
             ),
         ],
       );

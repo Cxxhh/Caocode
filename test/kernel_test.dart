@@ -5,7 +5,8 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bao_remote/claude.dart' show ClaudeNotInstalled;
+import 'package:bao_remote/claude.dart'
+    show ClaudeHistoryPage, ClaudeNotInstalled;
 import 'package:caocode/chat/chat_models.dart';
 import 'package:caocode/chat/widgets/tool_call_row.dart';
 import 'package:caocode/chat/chat_session.dart';
@@ -18,12 +19,14 @@ import 'package:caocode/kernel/claude_code/claude_goal.dart';
 import 'package:caocode/kernel/claude_code/claude_storage_io.dart';
 import 'package:caocode/kernel/claude_code/cli_locator.dart';
 import 'package:caocode/kernel/claude_code/control_channel.dart';
+import 'package:caocode/kernel/claude_code/turn_stats.dart';
 import 'package:caocode/kernel/codex/codex_kernel.dart';
 import 'package:caocode/kernel/codex/codex_transport.dart';
 import 'package:caocode/kernel/commit_attribution.dart';
 import 'package:caocode/kernel/kernel_event.dart';
 import 'package:caocode/kernel/kernel_types.dart';
 import 'package:caocode/kernel/mock/mock_kernels.dart';
+import 'package:caocode/kernel/queued_messages.dart';
 import 'package:caocode/kernel/transcript.dart';
 
 /// Lines Claude Code 2.1.281 printed (recorded, with paths and account
@@ -111,6 +114,14 @@ class FakeCli implements ClaudeCodeTransport {
           'get_context_usage' => _context,
           _ => const <String, Object?>{},
         };
+    // As the CLI does: the message cancelled is told of before the answer.
+    if (subtype == 'cancel_async_message' && payload['cancelled'] == true) {
+      push({
+        'type': 'command_lifecycle',
+        'command_uuid': (message['request'] as Map)['message_uuid'],
+        'state': 'cancelled',
+      });
+    }
     push({
       'type': 'control_response',
       'response': {
@@ -151,6 +162,25 @@ class _UsageCli extends FakeCli {
         'response': replies[(_asked++).clamp(0, replies.length - 1)],
       },
     });
+  }
+}
+
+/// A CLI that answers `initialize` only once [initialized] is called.
+class _SlowStartCli extends FakeCli {
+  Map<String, Object?>? _initialize;
+
+  void initialized() {
+    if (_initialize case final message?) super.write(message);
+  }
+
+  @override
+  void write(Map<String, Object?> message) {
+    final request = message['request'];
+    if (request is Map && request['subtype'] == 'initialize') {
+      _initialize = message;
+      return;
+    }
+    super.write(message);
   }
 }
 
@@ -498,6 +528,93 @@ void main() {
       expect(transcript.edits, hasLength(3));
     });
 
+    test("an edit tells what its file was before, a subagent's too", () {
+      final events = <KernelEvent>[];
+      var seq = 0;
+      final translator = ClaudeTranslator(
+        emit: events.add,
+        nextSeq: () => ++seq,
+      );
+      void edit(
+        String id,
+        String name,
+        Map<String, Object?> result, {
+        String? parent,
+      }) {
+        translator
+          ..translate({
+            'type': 'assistant',
+            'parent_tool_use_id': parent,
+            'message': {
+              'id': 'msg-$id',
+              'role': 'assistant',
+              'content': [
+                {
+                  'type': 'tool_use',
+                  'id': id,
+                  'name': name,
+                  'input': {'file_path': result['filePath']},
+                },
+              ],
+            },
+          })
+          ..translate({
+            'type': 'user',
+            'parent_tool_use_id': parent,
+            'message': {
+              'role': 'user',
+              'content': [
+                {'type': 'tool_result', 'tool_use_id': id, 'content': 'ok'},
+              ],
+            },
+            'tool_use_result': {
+              ...result,
+              'structuredPatch': [
+                {
+                  'oldStart': 1,
+                  'oldLines': 1,
+                  'newStart': 1,
+                  'newLines': 1,
+                  'lines': ['-a', '+b'],
+                },
+              ],
+            },
+          });
+      }
+
+      edit('e1', 'Edit', {
+        'filePath': '/p/a.txt',
+        'oldString': 'a',
+        'originalFile': 'a\n',
+      });
+      edit('w1', 'Write', {
+        'type': 'create',
+        'filePath': '/p/new.txt',
+        'content': 'b\n',
+        'originalFile': null,
+      });
+      edit('e2', 'Edit', {
+        'filePath': '/p/sub.txt',
+        'oldString': 'a',
+        'originalFile': 'a\n',
+      }, parent: 'agent-1');
+      edit('e3', 'Edit', {'filePath': '/p/untold.txt', 'oldString': 'a'});
+      final edits = {
+        for (final event in events.whereType<FileEdited>())
+          event.change.path: event.original,
+      };
+      expect(edits.keys, [
+        '/p/a.txt',
+        '/p/new.txt',
+        '/p/sub.txt',
+        '/p/untold.txt',
+      ]);
+      expect((edits['/p/a.txt']! as OriginalText).text, 'a\n');
+      expect((edits['/p/new.txt']! as OriginalText).text, isNull);
+      expect((edits['/p/sub.txt']! as OriginalText).text, 'a\n');
+      expect(edits['/p/untold.txt'], isNull);
+    });
+
     test('each round of planning is one card; a plan sent back gives way '
         'to the next', () {
       final transcript = Transcript();
@@ -623,11 +740,91 @@ void main() {
       expect(transcript.edits.map((edit) => edit.change.path), [
         '/p/lib/a.dart',
       ]);
-      expect(translator.planPath, plan);
 
       // Put again unchanged after it was sent back: a round of its own.
       use('t7', 'ExitPlanMode', {'plan': '# Five lines'});
       expect(shown(transcript).last, 'plan v3 awaiting ×0');
+    });
+
+    test('a plan put to the user awaits their next message: sent back by '
+        'one, started by the one that says so', () {
+      const plan = '/Users/me/.claude/plans/quiet-river.md';
+      final transcript = Transcript();
+      var seq = 0;
+      final translator = ClaudeTranslator(
+        emit: transcript.apply,
+        nextSeq: () => ++seq,
+      );
+      void use(String id, String name, Map<String, Object?> input) =>
+          translator.translate({
+            'type': 'assistant',
+            'parent_tool_use_id': null,
+            'message': {
+              'id': 'msg-$id',
+              'role': 'assistant',
+              'content': [
+                {'type': 'tool_use', 'id': id, 'name': name, 'input': input},
+              ],
+            },
+          });
+      void result(String id, {String content = 'ok', bool error = false}) =>
+          translator.translate({
+            'type': 'user',
+            'parent_tool_use_id': null,
+            'message': {
+              'role': 'user',
+              'content': [
+                {
+                  'type': 'tool_result',
+                  'tool_use_id': id,
+                  'content': content,
+                  'is_error': error,
+                },
+              ],
+            },
+          });
+      void prompt(String id, List<String> texts) => translator.translate({
+        'type': 'user',
+        'uuid': id,
+        'parent_tool_use_id': null,
+        'message': {
+          'role': 'user',
+          'content': [
+            for (final text in texts) {'type': 'text', 'text': text},
+          ],
+        },
+      });
+      void putPlan(String id, String text) {
+        use('w$id', 'Write', {'file_path': plan, 'content': text});
+        result('w$id');
+        use('x$id', 'ExitPlanMode', {'plan': text});
+        result('x$id', content: ClaudeTranslator.planPresented, error: true);
+      }
+
+      putPlan('1', '# Grow the input');
+      expect(shown(transcript), ['plan v1 awaiting ×1']);
+      expect(translator.awaitingPlan?.round, 1);
+
+      // A message: what should change.
+      prompt('u1', ['Keep it short']);
+      expect(shown(transcript), ['plan v1 sentBack ×1', 'user: Keep it short']);
+      expect((transcript.itemAt(0) as PlanItem).feedback, 'Keep it short');
+      expect(translator.awaitingPlan, isNull);
+
+      // The next round, started: the note marks it, and is not shown.
+      putPlan('2', '# Grow the input a little');
+      expect(translator.awaitingPlan?.round, 2);
+      prompt('u2', [
+        'Carry out the plan',
+        ClaudeTranslator.planStartedNote(plan),
+      ]);
+      expect(shown(transcript), [
+        'plan v1 sentBack ×1',
+        'user: Keep it short',
+        'plan v2 approved ×1',
+        'user: Carry out the plan',
+      ]);
+      expect(translator.awaitingPlan, isNull);
     });
 
     test('a plan said, not written, is said in the conversation', () {
@@ -651,6 +848,35 @@ void main() {
       });
       expect((transcript.itemAt(0) as AssistantTextItem).text, '1. Do it');
       expect(transcript.plan, isNull);
+    });
+
+    test('the classifier billing warning is not shown, others are', () {
+      final transcript = Transcript();
+      var seq = 0;
+      final translator = ClaudeTranslator(
+        emit: transcript.apply,
+        nextSeq: () => ++seq,
+      );
+      for (final (uuid, content) in [
+        (
+          'w1',
+          "We're changing auto mode to no longer charge for classifier "
+              'requests in Claude Code. To fix it, ask your gateway to '
+              'implement: https://code.claude.com/docs/en/'
+              'auto-mode-classifier-billing',
+        ),
+        ('w2', 'Something else'),
+      ]) {
+        translator.translate({
+          'type': 'system',
+          'subtype': 'informational',
+          'level': 'warning',
+          'uuid': uuid,
+          'content': content,
+        });
+      }
+      expect(transcript.length, 1);
+      expect((transcript.itemAt(0) as NoticeItem).text, 'Something else');
     });
 
     test('replaying the kept session shows what streaming showed', () async {
@@ -758,71 +984,114 @@ void main() {
       kernel.dispose();
     });
 
-    test("a turn keeps its own tokens, speed and cost", () async {
+    test('a turn done is kept by its session and prompt, for its footer '
+        'later; one stopped is not', () async {
+      final kept = _KeptTurns();
+      ClaudeCodeKernel.turnStats = kept;
+      addTearDown(() => ClaudeCodeKernel.turnStats = null);
       final cli = FakeCli();
-      final (:kernel, :transcript, events: _) = claude(cli);
+      final (:kernel, transcript: _, events: _) = claude(cli);
       kernel.send(const KernelTurn(id: 'u1', text: 'hi'));
       await pumpEventQueue();
-      Future<void> stream(Map<String, Object?> event) async {
-        cli.push({'type': 'stream_event', 'event': event});
-        await pumpEventQueue();
-      }
-
-      Future<void> request(int output) async {
-        await stream({
-          'type': 'message_start',
-          'message': {
-            'id': 'm$output',
-            'usage': {
-              'input_tokens': 10,
-              'cache_read_input_tokens': 1000,
-              'output_tokens': 1,
-            },
-          },
-        });
-        await stream({
-          'type': 'content_block_start',
-          'index': 0,
-          'content_block': {'type': 'text', 'text': ''},
-        });
-        await Future<void>.delayed(const Duration(milliseconds: 20));
-        await stream({
-          'type': 'content_block_delta',
-          'index': 0,
-          'delta': {'type': 'text_delta', 'text': 'Hi.'},
-        });
-        await stream({'type': 'content_block_stop', 'index': 0});
-        await stream({
-          'type': 'message_delta',
-          'usage': {'output_tokens': output},
-        });
-        await stream({'type': 'message_stop'});
-      }
-
-      // The session's cost so far, before and after.
-      cli.push({'type': 'result', 'subtype': 'success', 'total_cost_usd': 1.0});
-      await pumpEventQueue();
-      kernel.send(const KernelTurn(id: 'u2', text: 'again'));
-      await pumpEventQueue();
-      await request(40);
-      await request(60);
+      cli.push({'type': 'system', 'subtype': 'init', 'session_id': 's1'});
       cli.push({
         'type': 'result',
         'subtype': 'success',
-        'total_cost_usd': 1.25,
-        'duration_api_ms': 999999,
+        'is_error': false,
+        'duration_ms': 65400,
+        'total_cost_usd': 0.5,
       });
       await pumpEventQueue();
-      final usage = (transcript.itemAt(
-        transcript.indexOf('u2')!,
-      ) as UserMessageItem).usage!;
-      expect(usage.inputTokens, 2020);
-      expect(usage.outputTokens, 100);
-      expect(usage.costUsd, closeTo(0.25, 1e-9));
-      // 100 tokens over at most twice 20ms and a little.
-      expect(usage.tokensPerSecond, greaterThan(500));
+      final record = kept.sessions['s1']!['u1']!;
+      expect(record.worked, const Duration(milliseconds: 65400));
+      expect(record.usage?.costUsd, closeTo(0.5, 1e-9));
+
+      kernel.send(const KernelTurn(id: 'u2', text: 'again'));
+      await pumpEventQueue();
+      kernel.cancel();
+      await pumpEventQueue();
+      expect(kept.sessions['s1']!.keys, ['u1']);
       kernel.dispose();
     });
+
+    test(
+      "a turn keeps its own tokens and cost, what it wrote shown live",
+      () async {
+        final cli = FakeCli();
+        final (:kernel, :transcript, events: _) = claude(cli);
+        kernel.send(const KernelTurn(id: 'u1', text: 'hi'));
+        await pumpEventQueue();
+        Future<void> stream(Map<String, Object?> event) async {
+          cli.push({'type': 'stream_event', 'event': event});
+          await pumpEventQueue();
+        }
+
+        Future<void> request(int output) async {
+          await stream({
+            'type': 'message_start',
+            'message': {
+              'id': 'm$output',
+              'usage': {
+                'input_tokens': 10,
+                'cache_read_input_tokens': 1000,
+                'output_tokens': 1,
+              },
+            },
+          });
+          await stream({
+            'type': 'content_block_start',
+            'index': 0,
+            'content_block': {'type': 'text', 'text': ''},
+          });
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          await stream({
+            'type': 'content_block_delta',
+            'index': 0,
+            'delta': {'type': 'text_delta', 'text': 'Hi.'},
+          });
+          await stream({'type': 'content_block_stop', 'index': 0});
+          await stream({
+            'type': 'message_delta',
+            'usage': {'output_tokens': output},
+          });
+          await stream({'type': 'message_stop'});
+        }
+
+        // The session's cost so far, before and after.
+        cli.push({
+          'type': 'result',
+          'subtype': 'success',
+          'total_cost_usd': 1.0,
+        });
+        await pumpEventQueue();
+        kernel.send(const KernelTurn(id: 'u2', text: 'again'));
+        await pumpEventQueue();
+        // Timed from its start as it goes.
+        expect(transcript.turnStartedAt, isNotNull);
+        await request(40);
+        expect(transcript.output?.tokens, 40);
+        await request(60);
+        expect(transcript.output?.tokens, 100);
+        cli.push({
+          'type': 'result',
+          'subtype': 'success',
+          'total_cost_usd': 1.25,
+          'duration_api_ms': 999999,
+        });
+        await pumpEventQueue();
+        final usage = (transcript.itemAt(
+          transcript.indexOf('u2')!,
+        ) as UserMessageItem).usage!;
+        expect(usage.inputTokens, 2020);
+        expect(usage.outputTokens, 100);
+        expect(usage.costUsd, closeTo(0.25, 1e-9));
+        // Its messages too short to time.
+        expect(usage.tokensPerSecond, isNull);
+        expect(transcript.output, isNull);
+        expect(transcript.turnStartedAt, isNull);
+        kernel.dispose();
+      },
+    );
 
     test('starts on first send, then writes the message', () async {
       final cli = FakeCli();
@@ -916,109 +1185,122 @@ void main() {
       kernel.dispose();
     });
 
-    test('denying says why; a plan is approved or sent back', () async {
-      final cli = FakeCli();
-      final (:kernel, :transcript, events: _) = claude(cli);
-      kernel.send(const KernelTurn(id: 'u1', text: 'go'));
-      await pumpEventQueue();
-      void ask(String id, String tool, Map<String, Object?> input) => cli.push({
-        'type': 'control_request',
-        'request_id': id,
-        'request': {
-          'subtype': 'can_use_tool',
-          'tool_name': tool,
-          'input': input,
-        },
-      });
-
-      ask('r1', 'Bash', {'command': 'rm -rf build', 'description': 'Clean'});
-      await pumpEventQueue();
-      final bash = transcript.pendingInteraction as ApprovalRequest;
-      expect((bash.preview as CommandPreview).command, 'rm -rf build');
-      expect(bash.alwaysAllowLabel, isNull);
-      kernel.answer(
-        'r1',
-        const ApprovalAnswer(ApprovalDecision.deny, message: 'Keep the build'),
-      );
-      expect(cli.responses.last, {
-        'behavior': 'deny',
-        'message': 'Keep the build',
-      });
-
-      ask('r2', 'ExitPlanMode', {'plan': '1. Do it'});
-      await pumpEventQueue();
-      expect(
-        (transcript.pendingInteraction as PlanReviewRequest).plan,
-        '1. Do it',
-      );
-      // Not written to a file: it shows in the request.
-      expect(
-        (transcript.pendingInteraction as PlanReviewRequest).planPath,
-        isNull,
-      );
-      kernel.answer(
-        'r2',
-        const PlanAnswer(PlanDecision.keepPlanning, feedback: 'Smaller steps'),
-      );
-      expect(cli.responses.last['behavior'], 'deny');
-      expect(cli.responses.last['message'], contains('Smaller steps'));
-
-      // Carried out with the approvals picked; written to its file, which
-      // shows it.
-      kernel.mode.select('plan');
-      kernel.permission.select('acceptEdits');
-      const planFile = '/home/me/.claude/plans/small-steps.md';
-      cli
-        ..push({
-          'type': 'assistant',
-          'parent_tool_use_id': null,
-          'message': {
-            'id': 'msg-plan',
-            'role': 'assistant',
-            'content': [
-              {
-                'type': 'tool_use',
-                'id': 'w1',
-                'name': 'Write',
-                'input': {'file_path': planFile, 'content': '1. Small'},
+    test(
+      'denying says why; a plan is put to the user, who starts it',
+      () async {
+        final cli = FakeCli();
+        final (:kernel, :transcript, events: _) = claude(cli);
+        kernel.send(const KernelTurn(id: 'u1', text: 'go'));
+        await pumpEventQueue();
+        void ask(String id, String tool, Map<String, Object?> input) =>
+            cli.push({
+              'type': 'control_request',
+              'request_id': id,
+              'request': {
+                'subtype': 'can_use_tool',
+                'tool_name': tool,
+                'input': input,
               },
-            ],
-          },
-        })
-        ..push({
-          'type': 'user',
-          'parent_tool_use_id': null,
-          'message': {
-            'role': 'user',
-            'content': [
-              {'type': 'tool_result', 'tool_use_id': 'w1', 'content': 'ok'},
-            ],
-          },
-          'tool_use_result': {'type': 'create', 'filePath': planFile},
+            });
+
+        ask('r1', 'Bash', {'command': 'rm -rf build', 'description': 'Clean'});
+        await pumpEventQueue();
+        final bash = transcript.pendingInteraction as ApprovalRequest;
+        expect((bash.preview as CommandPreview).command, 'rm -rf build');
+        expect(bash.alwaysAllowLabel, isNull);
+        kernel.answer(
+          'r1',
+          const ApprovalAnswer(
+            ApprovalDecision.deny,
+            message: 'Keep the build',
+          ),
+        );
+        expect(cli.responses.last, {
+          'behavior': 'deny',
+          'message': 'Keep the build',
         });
-      ask('r3', 'ExitPlanMode', {'plan': '1. Do it in small steps'});
-      await pumpEventQueue();
-      expect(
-        (transcript.pendingInteraction as PlanReviewRequest).planPath,
-        planFile,
-      );
-      expect(transcript.plan?.path, planFile);
-      expect(
-        (transcript.pendingInteraction as PlanReviewRequest).approveLabel,
-        'Yes, start · Accept edits',
-      );
-      expect(
-        (transcript.pendingInteraction as PlanReviewRequest).approvals?.id,
-        'acceptEdits',
-      );
-      kernel.answer('r3', const PlanAnswer(PlanDecision.approve));
-      expect(cli.responses.last['updatedPermissions'], [
-        {'type': 'setMode', 'mode': 'acceptEdits', 'destination': 'session'},
-      ]);
-      expect(kernel.mode.selected, 'agent');
-      expect(kernel.permission.selected, 'acceptEdits');
-      kernel.dispose();
-    });
+
+        // A plan is put to the user at once, and the turn left to end: the
+        // user starts it later, with the approvals picked.
+        kernel.mode.select('plan');
+        kernel.permission.select('acceptEdits');
+        const planFile = '/home/me/.claude/plans/small-steps.md';
+        void said(String id, String name, Map<String, Object?> input) =>
+            cli.push({
+              'type': 'assistant',
+              'parent_tool_use_id': null,
+              'message': {
+                'id': 'msg-$id',
+                'role': 'assistant',
+                'content': [
+                  {'type': 'tool_use', 'id': id, 'name': name, 'input': input},
+                ],
+              },
+            });
+        void result(String id, String content, {bool error = false}) =>
+            cli.push({
+              'type': 'user',
+              'parent_tool_use_id': null,
+              'message': {
+                'role': 'user',
+                'content': [
+                  {
+                    'type': 'tool_result',
+                    'tool_use_id': id,
+                    'content': content,
+                    'is_error': error,
+                  },
+                ],
+              },
+            });
+        said('w1', 'Write', {'file_path': planFile, 'content': '1. Small'});
+        result('w1', 'ok');
+        said('x1', 'ExitPlanMode', {'plan': '1. Small'});
+        ask('r2', 'ExitPlanMode', {'plan': '1. Small'});
+        await pumpEventQueue();
+        expect(transcript.pendingInteraction, isNull);
+        expect(cli.responses.last, {
+          'behavior': 'deny',
+          'message': ClaudeTranslator.planPresented,
+        });
+        result('x1', ClaudeTranslator.planPresented, error: true);
+        await pumpEventQueue();
+        expect(transcript.plan?.path, planFile);
+        expect(
+          transcript.liveItems
+              .map((entry) => entry.$2)
+              .whereType<PlanItem>()
+              .map((plan) => plan.status),
+          [PlanStatus.awaiting],
+        );
+        // Still planning until the user starts it.
+        expect(kernel.mode.selected, 'plan');
+
+        kernel.startBuilding();
+        expect(kernel.mode.selected, 'agent');
+        expect(kernel.permission.selected, 'acceptEdits');
+        expect(cli.requests('set_permission_mode').last['mode'], 'acceptEdits');
+        kernel.send(const KernelTurn(id: 'u2', text: 'Carry out the plan'));
+        await pumpEventQueue();
+        final content = (cli.users.last['message'] as Map)['content'] as List;
+        expect(content, [
+          {'type': 'text', 'text': 'Carry out the plan'},
+          {'type': 'text', 'text': ClaudeTranslator.planStartedNote(planFile)},
+        ]);
+        // Only the message that starts it says so.
+        kernel.send(const KernelTurn(id: 'u3', text: 'And test it'));
+        cli.push({
+          'type': 'command_lifecycle',
+          'command_uuid': 'u2',
+          'state': 'started',
+        });
+        await pumpEventQueue();
+        expect((cli.users.last['message'] as Map)['content'], [
+          {'type': 'text', 'text': 'And test it'},
+        ]);
+        kernel.dispose();
+      },
+    );
 
     test('full access answers questions itself; Don\'t ask refuses what '
         'it would ask', () async {
@@ -1129,13 +1411,17 @@ void main() {
           const ApprovalAnswer(ApprovalDecision.allowOnce),
         );
       }
+      // The plan is put to the user, not asked about.
       ask('r3', 'ExitPlanMode', {'plan': '1. Do it'});
       await pumpEventQueue();
-      expect(transcript.pendingInteraction, isA<PlanReviewRequest>());
-      kernel.answer('r3', const PlanAnswer(PlanDecision.keepPlanning));
+      expect(transcript.pendingInteraction, isNull);
+      expect(cli.responses.last, {
+        'behavior': 'deny',
+        'message': ClaudeTranslator.planPresented,
+      });
 
-      // Don't ask: what it would ask about is refused; questions and the
-      // plan are asked.
+      // Don't ask: what it would ask about is refused; questions are
+      // asked.
       kernel.permission.select('dontAsk');
       final answered = cli.responses.length;
       ask('r4', 'Bash', command);
@@ -1149,7 +1435,8 @@ void main() {
       kernel.answer('r5', const QuestionAnswer([], skipped: true));
       ask('r6', 'ExitPlanMode', {'plan': '1. Do it'});
       await pumpEventQueue();
-      expect(transcript.pendingInteraction, isA<PlanReviewRequest>());
+      expect(transcript.pendingInteraction, isNull);
+      expect(cli.responses.last['message'], ClaudeTranslator.planPresented);
       kernel.dispose();
     });
 
@@ -1321,12 +1608,17 @@ void main() {
       kernel
         ..send(const KernelTurn(id: 'u1', text: 'first'))
         ..send(const KernelTurn(id: 'u2', text: 'second'))
-        ..send(const KernelTurn(id: 'u3', text: 'third'));
+        ..send(const KernelTurn(id: 'u3', text: 'third'))
+        ..send(const KernelTurn(id: 'u4', text: 'fourth'));
       await pumpEventQueue();
-      expect(cli.users.map((m) => m['uuid']), ['u1', 'u2', 'u3']);
+      // One waits in the CLI at a time: it takes up all it queued as one
+      // turn.
+      expect(cli.users.map((m) => m['uuid']), ['u1', 'u2']);
+      // Each after the turn before it, not folded into it.
+      expect(cli.users.map((m) => m['priority']), everyElement('later'));
       List<String> queued() => [for (final (id, _) in transcript.queued) id];
       // Waiting apart, not in the conversation yet.
-      expect(queued(), ['u2', 'u3']);
+      expect(queued(), ['u2', 'u3', 'u4']);
       expect(transcript.indexOf('u2'), isNull);
       cli.push({
         'type': 'assistant',
@@ -1340,9 +1632,10 @@ void main() {
       });
       await pumpEventQueue();
 
-      expect(await kernel.cancelQueued('u3'), isTrue);
-      expect(cli.requests('cancel_async_message').single['message_uuid'], 'u3');
-      expect(queued(), ['u2']);
+      // Not given the CLI yet: taken back here.
+      expect(await kernel.cancelQueued('u4'), isTrue);
+      expect(cli.requests('cancel_async_message'), isEmpty);
+      expect(queued(), ['u2', 'u3']);
 
       cli
         ..push({'type': 'result', 'subtype': 'success', 'is_error': false})
@@ -1352,11 +1645,17 @@ void main() {
           'state': 'started',
         });
       await pumpEventQueue();
-      expect(queued(), isEmpty);
+      expect(queued(), ['u3']);
+      // The next given the CLI once the one before it is taken up.
+      expect(cli.users.map((m) => m['uuid']), ['u1', 'u2', 'u3']);
       // Taken up: after what the turn before it said while it waited.
       expect(transcript.indexOf('u2'), 2);
       expect(transcript.length, 3);
       expect(transcript.activeTurn, 'u2');
+
+      expect(await kernel.cancelQueued('u3'), isTrue);
+      expect(cli.requests('cancel_async_message').single['message_uuid'], 'u3');
+      expect(queued(), isEmpty);
 
       kernel
         ..cancel()
@@ -1366,6 +1665,24 @@ void main() {
       expect(transcript.activeTurn, isNull);
       kernel.dispose();
     });
+
+    test(
+      'messages sent while busy join the turn running when set to',
+      () async {
+        QueuedMessages.current = () => QueuedMessages.duringTurn;
+        addTearDown(
+          () => QueuedMessages.current = () => QueuedMessages.fallback,
+        );
+        final cli = FakeCli();
+        final (:kernel, transcript: _, events: _) = claude(cli);
+        kernel
+          ..send(const KernelTurn(id: 'u1', text: 'first'))
+          ..send(const KernelTurn(id: 'u2', text: 'second'));
+        await pumpEventQueue();
+        expect(cli.users.map((m) => m['priority']), ['next', 'next']);
+        kernel.dispose();
+      },
+    );
 
     test('a queued message sent now goes before those queued ahead of it, '
         'the turn running stopped for it', () async {
@@ -1381,11 +1698,13 @@ void main() {
         ..send(const KernelTurn(id: 'u3', text: 'third'));
       await pumpEventQueue();
 
-      // The next anyway: only the turn running is stopped.
+      // The next anyway, the one after it held: only the turn running is
+      // stopped, and it is taken up alone.
       kernel.sendQueuedNow('u2');
       await pumpEventQueue();
       expect(cli.requests('interrupt'), hasLength(1));
       expect(cli.requests('cancel_async_message'), isEmpty);
+      expect(cli.users.map((m) => m['uuid']), ['u1', 'u2']);
 
       cli.push({
         'type': 'command_lifecycle',
@@ -1393,21 +1712,24 @@ void main() {
         'state': 'started',
       });
       await pumpEventQueue();
+      expect(cli.users.map((m) => m['uuid']), ['u1', 'u2', 'u3']);
       kernel.send(const KernelTurn(id: 'u4', text: 'fourth'));
       await pumpEventQueue();
       kernel.sendQueuedNow('u4');
       await pumpEventQueue();
+      // Held, it is taken back here; the one in the CLI there.
       expect(
         cli.requests('cancel_async_message').map((r) => r['message_uuid']),
-        ['u4', 'u3'],
+        ['u3'],
       );
-      // Sent again, in its new place: it first, the turn stopped for it.
-      expect(cli.users.skip(4).map((m) => (m['message'] as Map)['content']), [
+      // Sent again, in its new place: it first, the turn stopped for it,
+      // the other held until it is taken up.
+      List<Object?> contents() => [
+        for (final m in cli.users.skip(3)) (m['message'] as Map)['content'],
+      ];
+      expect(contents(), [
         [
           {'type': 'text', 'text': 'fourth'},
-        ],
-        [
-          {'type': 'text', 'text': 'third'},
         ],
       ]);
       expect(cli.requests('interrupt'), hasLength(2));
@@ -1415,6 +1737,22 @@ void main() {
         [for (final (_, item) in transcript.queued) item.text],
         ['fourth', 'third'],
       );
+
+      cli.push({
+        'type': 'command_lifecycle',
+        'command_uuid': cli.users.last['uuid'],
+        'state': 'started',
+      });
+      await pumpEventQueue();
+      expect(contents(), [
+        [
+          {'type': 'text', 'text': 'fourth'},
+        ],
+        [
+          {'type': 'text', 'text': 'third'},
+        ],
+      ]);
+      expect([for (final (_, item) in transcript.queued) item.text], ['third']);
       kernel.dispose();
     });
 
@@ -1736,6 +2074,92 @@ void main() {
       kernel.dispose();
     });
 
+    test('out of view while it starts, the process is freed once started; '
+        'a title waiting is taken first, a message sent meanwhile answered '
+        'first', () async {
+      const result = {
+        'type': 'result',
+        'subtype': 'success',
+        'is_error': false,
+      };
+      ({ClaudeCodeKernel kernel, _SlowStartCli cli, Completer<void> spawned})
+      starting() {
+        final cli = _SlowStartCli();
+        final spawned = Completer<void>();
+        final kernel = ClaudeCodeKernel(
+          MockKernels.claudeCode,
+          const KernelContext(cwd: '/p'),
+          start: (_) async {
+            await spawned.future;
+            return cli;
+          },
+        );
+        return (kernel: kernel, cli: cli, spawned: spawned);
+      }
+
+      // Out of view before the process is there.
+      var (:kernel, :cli, :spawned) = starting();
+      kernel
+        ..rename('Named')
+        ..prepare()
+        ..release();
+      spawned.complete();
+      await pumpEventQueue();
+      expect(cli.closed, isFalse, reason: 'not yet initialized');
+      cli.initialized();
+      await pumpEventQueue();
+      expect(cli.requests('rename_session').single['title'], 'Named');
+      expect(cli.closed, isTrue);
+      kernel.dispose();
+
+      // Out of view while it initializes.
+      (:kernel, :cli, :spawned) = starting();
+      spawned.complete();
+      kernel.prepare();
+      await pumpEventQueue();
+      kernel.release();
+      expect(cli.closed, isFalse);
+      cli.initialized();
+      await pumpEventQueue();
+      expect(cli.closed, isTrue);
+      kernel.dispose();
+
+      // Back in view before it is ready: it stays.
+      (:kernel, :cli, :spawned) = starting();
+      spawned.complete();
+      kernel
+        ..prepare()
+        ..release()
+        ..prepare();
+      await pumpEventQueue();
+      cli.initialized();
+      await pumpEventQueue();
+      expect(cli.closed, isFalse);
+      kernel.dispose();
+
+      // A message sent as it started: freed once it is answered.
+      (:kernel, :cli, :spawned) = starting();
+      spawned.complete();
+      kernel
+        ..send(const KernelTurn(id: 'u1', text: 'hi'))
+        ..release();
+      await pumpEventQueue();
+      cli.initialized();
+      await pumpEventQueue();
+      expect(cli.users, hasLength(1));
+      expect(cli.closed, isFalse);
+      cli.push(result);
+      await pumpEventQueue();
+      cli.push({
+        'type': 'system',
+        'subtype': 'session_state_changed',
+        'state': 'idle',
+      });
+      await pumpEventQueue();
+      expect(cli.closed, isTrue);
+      kernel.dispose();
+    });
+
     test('undo rewinds the files since the turn; a rewind lands before '
         'the next message', () async {
       final cli = FakeCli(
@@ -1904,6 +2328,263 @@ void main() {
         containsAll([ContextKind.used, ContextKind.free, ContextKind.buffer]),
       );
       kernel.dispose();
+    });
+
+    test('says it is loading the history until it is read', () async {
+      final read = Completer<List<Map<String, Object?>>>();
+      final kernel = ClaudeCodeKernel(
+        MockKernels.claudeCode,
+        KernelContext(
+          cwd: '/p',
+          resume: SessionRecord(
+            id: 's',
+            title: 't',
+            updatedAt: DateTime(2026),
+            cwd: '/p',
+          ),
+        ),
+        start: (_) async => FakeCli(),
+        readHistory: (_) => read.future,
+      );
+      var told = 0;
+      kernel.events.listen((event) {
+        if (event is KernelInfoChanged) told++;
+      });
+      expect(kernel.loadingHistory, isTrue);
+      await pumpEventQueue();
+      expect(kernel.loadingHistory, isTrue);
+
+      read.complete(const []);
+      await pumpEventQueue();
+      expect(kernel.loadingHistory, isFalse);
+      expect(told, greaterThan(0));
+      kernel.dispose();
+    });
+
+    test('is done loading the history when it could not be read', () async {
+      final kernel = ClaudeCodeKernel(
+        MockKernels.claudeCode,
+        KernelContext(
+          cwd: '/p',
+          resume: SessionRecord(
+            id: 's',
+            title: 't',
+            updatedAt: DateTime(2026),
+            cwd: '/p',
+          ),
+        ),
+        start: (_) async => FakeCli(),
+        readHistory: (_) async => throw StateError('host unreachable'),
+      );
+      await pumpEventQueue();
+      expect(kernel.loadingHistory, isFalse);
+      kernel.dispose();
+    });
+
+    test('loads no history for a new session', () {
+      final kernel = ClaudeCodeKernel(
+        MockKernels.claudeCode,
+        const KernelContext(cwd: '/p'),
+        start: (_) async => FakeCli(),
+        readHistory: (_) async => const [],
+      );
+      expect(kernel.loadingHistory, isFalse);
+      kernel.dispose();
+    });
+
+    group('a long session is read from its end', () {
+      Map<String, Object?> prompt(String id) => {
+        'type': 'user',
+        'uuid': id,
+        'message': {'role': 'user', 'content': id},
+      };
+
+      Map<String, Object?> answer(String id, int written) => {
+        'type': 'assistant',
+        'uuid': 'a-$id',
+        'message': {
+          'id': 'm-$id',
+          'role': 'assistant',
+          'model': 'claude-opus-5-5',
+          'content': [
+            {'type': 'text', 'text': 'answer $id'},
+          ],
+          'usage': {
+            'input_tokens': 1,
+            'cache_read_input_tokens': 0,
+            'cache_creation_input_tokens': written,
+          },
+        },
+      };
+
+      ClaudeCodeKernel open(ClaudeHistoryPager pager) => ClaudeCodeKernel(
+        MockKernels.claudeCode,
+        KernelContext(
+          cwd: '/p',
+          resume: SessionRecord(
+            id: 's',
+            title: 't',
+            updatedAt: DateTime(2026),
+            cwd: '/p',
+          ),
+        ),
+        start: (_) async => FakeCli(),
+        readHistoryPage: pager,
+      );
+
+      List<String> prompts(Transcript transcript) => [
+        for (final (_, item) in transcript.liveItems)
+          if (item is UserMessageItem) item.text,
+      ];
+
+      test(
+        'replays the first page, and the earlier ones go before it',
+        () async {
+          final asked = <(int, String?)>[];
+          final kernel = open((session, {required turns, before}) async {
+            asked.add((turns, before));
+            return before == null
+                ? ClaudeHistoryPage([
+                    prompt('u3'),
+                    answer('u3', 300),
+                    prompt('u4'),
+                    answer('u4', 400),
+                  ], earlier: 'u3')
+                : ClaudeHistoryPage([
+                    prompt('u1'),
+                    answer('u1', 100),
+                    prompt('u2'),
+                    answer('u2', 200),
+                  ]);
+          });
+          final transcript = Transcript();
+          kernel.events.listen(transcript.apply);
+          await pumpEventQueue();
+          expect(asked, [(10, null)]);
+          expect(prompts(transcript), ['u3', 'u4']);
+          expect(kernel.hasEarlierHistory, isTrue);
+          expect(transcript.stats!.cache!.conversation.written, 700);
+          final lastSeq = transcript.lastSeq;
+
+          await kernel.loadEarlier();
+          await pumpEventQueue();
+          expect(asked.last, (20, 'u3'));
+          expect(prompts(transcript), ['u1', 'u2', 'u3', 'u4']);
+          expect(transcript.lastSeq, greaterThan(lastSeq));
+          expect(kernel.hasEarlierHistory, isFalse);
+          expect(kernel.loadingEarlier, isFalse);
+          // Counted once each, not again for the page read later.
+          expect(transcript.stats!.cache!.conversation.written, 1000);
+
+          // Nothing before: nothing is read.
+          await kernel.loadEarlier();
+          expect(asked, hasLength(2));
+          kernel.dispose();
+        },
+      );
+
+      test('turns kept show as their footers did, on every page; those '
+          'not kept as before', () async {
+        const usage = TurnUsage(
+          inputTokens: 1200,
+          outputTokens: 300,
+          tokensPerSecond: 61.25,
+          costUsd: 0.04,
+        );
+        final kept = _KeptTurns()
+          ..sessions['s'] = {
+            'u1': (worked: const Duration(seconds: 5), usage: null),
+            'u3': (worked: const Duration(seconds: 9), usage: usage),
+          };
+        ClaudeCodeKernel.turnStats = kept;
+        addTearDown(() => ClaudeCodeKernel.turnStats = null);
+        final kernel = open(
+          (session, {required turns, before}) async => before == null
+              ? ClaudeHistoryPage([
+                  prompt('u3'),
+                  answer('u3', 1),
+                  prompt('u4'),
+                  answer('u4', 1),
+                ], earlier: 'u3')
+              : ClaudeHistoryPage([prompt('u1'), answer('u1', 1)]),
+        );
+        final transcript = Transcript();
+        kernel.events.listen(transcript.apply);
+        await pumpEventQueue();
+        UserMessageItem message(String id) =>
+            transcript.itemAt(transcript.indexOf(id)!) as UserMessageItem;
+        expect(message('u3').worked, const Duration(seconds: 9));
+        expect(message('u3').usage?.tokensPerSecond, 61.25);
+        expect(message('u3').usage?.totalTokens, 1500);
+        expect(message('u4').usage, isNull);
+
+        await kernel.loadEarlier();
+        await pumpEventQueue();
+        expect(transcript.itemAt(0), isA<UserMessageItem>());
+        expect(
+          (transcript.itemAt(0) as UserMessageItem).worked,
+          const Duration(seconds: 5),
+        );
+        kernel.dispose();
+      });
+
+      test('asked again while it is read, it is the same reading', () async {
+        final read = Completer<ClaudeHistoryPage>();
+        var reads = 0;
+        final kernel = open((session, {required turns, before}) {
+          if (before == null) {
+            return Future.value(
+              ClaudeHistoryPage([prompt('u2'), answer('u2', 1)], earlier: 'u2'),
+            );
+          }
+          reads++;
+          return read.future;
+        });
+        final transcript = Transcript();
+        kernel.events.listen(transcript.apply);
+        await pumpEventQueue();
+
+        final first = kernel.loadEarlier();
+        final second = kernel.loadEarlier();
+        expect(kernel.loadingEarlier, isTrue);
+        expect(reads, 1);
+        read.complete(ClaudeHistoryPage([prompt('u1'), answer('u1', 1)]));
+        await Future.wait([first, second]);
+        await pumpEventQueue();
+        expect(reads, 1);
+        expect(prompts(transcript), ['u1', 'u2']);
+        expect(kernel.loadingEarlier, isFalse);
+        kernel.dispose();
+      });
+
+      test('a reading that fails can be tried again', () async {
+        var fail = true;
+        final kernel = open((session, {required turns, before}) async {
+          if (before == null) {
+            return ClaudeHistoryPage([prompt('u2')], earlier: 'u2');
+          }
+          if (fail) throw StateError('host unreachable');
+          return ClaudeHistoryPage([prompt('u1')]);
+        });
+        final transcript = Transcript();
+        kernel.events.listen(transcript.apply);
+        await pumpEventQueue();
+
+        await kernel.loadEarlier();
+        await pumpEventQueue();
+        expect(kernel.hasEarlierHistory, isTrue);
+        expect(
+          transcript.liveItems.map((e) => e.$1),
+          contains('history-error'),
+        );
+
+        fail = false;
+        await kernel.loadEarlier();
+        await pumpEventQueue();
+        expect(prompts(transcript), ['u1', 'u2']);
+        expect(kernel.hasEarlierHistory, isFalse);
+        kernel.dispose();
+      });
     });
 
     test('reports the prompt cache, from the session file then live', () async {
@@ -2377,6 +3058,26 @@ void main() {
       },
     );
 
+    test('not logged in on a host over SSH, it says the Mac\'s keychain '
+        'may be why, and what to do', () async {
+      late FakeCli cli;
+      final kernel = ClaudeCodeKernel(
+        MockKernels.claudeCode,
+        const KernelContext(cwd: 'ssh://home-imac/Users/me/p'),
+        start: (_) async => cli = FakeCli(),
+      );
+      kernel.send(const KernelTurn(id: 'u1', text: 'hi'));
+      await pumpEventQueue();
+      cli.push(
+        ClaudeExit.message(1, 'Error: Invalid API key · Please run /login'),
+      );
+      await pumpEventQueue();
+      expect(kernel.health.message, contains('home-imac'));
+      expect(kernel.health.message, contains('security unlock-keychain'));
+      expect(kernel.health.message, contains('CLAUDE_CODE_OAUTH_TOKEN'));
+      kernel.dispose();
+    });
+
     test('a model\'s context and effort are picked beside it, and read '
         'back from the CLI', () async {
       Map<String, Object?> model(
@@ -2607,6 +3308,12 @@ void main() {
       expect(modesSent(), ['plan', 'acceptEdits', 'acceptEdits']);
       kernel.send(const KernelTurn(id: 'u2', text: 'fix it'));
       kernel.send(const KernelTurn(id: 'u3', text: 'and test it'));
+      // Given the CLI once the one before it is taken up.
+      cli.push({
+        'type': 'command_lifecycle',
+        'command_uuid': 'u2',
+        'state': 'started',
+      });
       await pumpEventQueue();
       expect(notes(1), [contains('left Ask mode')]);
       expect(notes(2), isEmpty);
@@ -3543,6 +4250,19 @@ void main() {
       );
       kernel.dispose();
     });
+
+    test('a project folder that is gone is told as such', () async {
+      final kernel = ClaudeCodeKernel(
+        MockKernels.claudeCode,
+        const KernelContext(cwd: '/p'),
+        start: (_) async => throw const ClaudeFolderGone('/p'),
+      );
+      kernel.send(const KernelTurn(id: 'u1', text: 'hi'));
+      await pumpEventQueue();
+      expect(kernel.health.status, KernelHealthStatus.failed);
+      expect(kernel.health.missingFolder, '/p');
+      kernel.dispose();
+    });
   });
 
   test('full access is not the CLI\'s, which root cannot have', () async {
@@ -3890,6 +4610,37 @@ exec /bin/sh -c "\$command"
         const Duration(seconds: 5),
       );
       expect(asked['ASKED'], '-i');
+    }, skip: Platform.isWindows);
+
+    // A function bash exports (environment modules' `ml`) is a value of
+    // more than one line: cut at the first, the terminal's bash fails to
+    // read it in.
+    const function = '() {  eval "\$(lmod)"\n  x=1\n}';
+    const exportFunction = r'''
+FUNC="$(printf '() {  eval "$(lmod)"\n  x=1\n}')"; export FUNC''';
+
+    test('keeps a value of more than one line whole', () async {
+      shell(exportFunction);
+      final asked = await ClaudeEnvironment.of();
+      expect(asked['FUNC'], function);
+      expect(asked.keys.where((name) => name.contains(' ')), isEmpty);
+    }, skip: Platform.isWindows);
+
+    test('keeps it whole from an env that cannot print NUL-separated '
+        '(BusyBox\'s)', () async {
+      final bin = Directory('${root.path}/bin')..createSync();
+      final env = File('${bin.path}/env')
+        ..writeAsStringSync('''
+#!/bin/sh
+[ "\$1" = -0 ] && exit 1
+exec /usr/bin/env "\$@"
+''');
+      Process.runSync('chmod', ['+x', env.path]);
+      shell('$exportFunction; PATH="${bin.path}:\$PATH"; export PATH');
+      final asked = await ClaudeEnvironment.of();
+      expect(asked['FUNC'], function);
+      expect(asked.keys.where((name) => name.contains(' ')), isEmpty);
+      expect(asked['PATH'], startsWith(bin.path));
     }, skip: Platform.isWindows);
   });
 
@@ -4309,8 +5060,44 @@ exec /bin/sh -c "\$command"
         'turn': {'id': 'st1', 'status': 'completed'},
       });
       expect(events.last, isA<TurnEnded>());
-      final edited = events.whereType<FileEdited>().single.change;
-      expect((edited.path, edited.added, edited.removed), ('lib/a.dart', 1, 1));
+      final edited = events.whereType<FileEdited>().single;
+      expect(
+        (edited.change.path, edited.change.added, edited.change.removed),
+        ('lib/a.dart', 1, 1),
+      );
+      // What it was, by the patch taken back out.
+      expect(
+        (edited.original! as OriginalByPatch).diff,
+        '@@ -3 +3 @@\n a\n-b\n+c',
+      );
+    });
+
+    test('a file added or deleted tells what it was', () async {
+      kernel.send(const KernelTurn(id: 't1', text: 'hi'));
+      await pumpEventQueue();
+      notify('item/completed', {
+        'item': {
+          'type': 'fileChange',
+          'id': 'f',
+          'changes': [
+            {
+              'path': 'new.txt',
+              'kind': {'type': 'add'},
+              'diff': 'new\n',
+            },
+            {
+              'path': 'old.txt',
+              'kind': {'type': 'delete'},
+              'diff': 'old\n',
+            },
+          ],
+        },
+      });
+      final originals = [
+        for (final event in events.whereType<FileEdited>())
+          (event.original! as OriginalText).text,
+      ];
+      expect(originals, [null, 'old\n']);
     });
 
     test('a command running when the turn stops shows as failed', () async {
@@ -4376,4 +5163,17 @@ class _FakeServer implements CodexTransport {
 
   @override
   void close() => _out.close();
+}
+
+/// Turns kept in memory, by session and prompt.
+class _KeptTurns implements TurnStats {
+  final Map<String, Map<String, TurnRecord>> sessions = {};
+
+  @override
+  void write(String sessionId, String turnId, TurnRecord record) =>
+      (sessions[sessionId] ??= {})[turnId] = record;
+
+  @override
+  Future<Map<String, TurnRecord>> read(String sessionId) async =>
+      sessions[sessionId] ?? const {};
 }

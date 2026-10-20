@@ -193,20 +193,32 @@ class CodeTarget {
 
   /// [arg] from [cwd]; with [goto], `path:line[:col]`.
   static CodeTarget parse(String arg, String cwd, {bool goto = false}) {
-    int? line, column;
-    var path = arg;
-    if (goto) {
-      final match = RegExp(r'^(.*?)(?::(\d+))(?::(\d+))?$').firstMatch(arg);
-      // A Windows drive's colon (C:\…) is no line.
-      if (match != null && match.group(1)!.isNotEmpty) {
-        path = match.group(1)!;
-        line = int.tryParse(match.group(2)!);
-        column = int.tryParse(match.group(3) ?? '');
-      }
-    }
+    final target = (goto ? _split(arg) : null) ?? CodeTarget(arg);
     final context = _contextFor(cwd);
+    final path = target.path;
     final absolute = context.isAbsolute(path) ? path : context.join(cwd, path);
-    return CodeTarget(context.normalize(absolute), line: line, column: column);
+    return CodeTarget(
+      context.normalize(absolute),
+      line: target.line,
+      column: target.column,
+    );
+  }
+
+  /// This path read as `file:line[:col]`, as tools that start an editor
+  /// give it without `-g` (launch-editor's, for one it does not know; see
+  /// AppWindows.handleCode): null if it has no line at its end, or was
+  /// given one already.
+  CodeTarget? get atLine => line == null ? _split(path) : null;
+
+  static CodeTarget? _split(String arg) {
+    final match = RegExp(r'^(.*?)(?::(\d+))(?::(\d+))?$').firstMatch(arg);
+    // A Windows drive's colon (C:\…) is no line.
+    if (match == null || match.group(1)!.isEmpty) return null;
+    return CodeTarget(
+      match.group(1)!,
+      line: int.tryParse(match.group(2)!),
+      column: int.tryParse(match.group(3) ?? ''),
+    );
   }
 
   static p.Context _contextFor(String cwd) =>

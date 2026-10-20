@@ -13,6 +13,7 @@ import '../remote/remote_location.dart';
 import 'chat_feed.dart';
 import 'chat_models.dart';
 import 'composer/composer_draft.dart';
+import 'composer/paste_store.dart';
 import 'mock_conversation.dart';
 import 'open_editor.dart';
 import 'review/change_review.dart';
@@ -61,6 +62,7 @@ class ModelSettingChoice {
     required this.options,
     required this.selected,
     required this.onSelected,
+    this.toggle = false,
   });
 
   final KernelChoiceKind kind;
@@ -69,6 +71,11 @@ class ModelSettingChoice {
   /// What is in effect, or would stay so with the model picked; null
   /// while not known.
   final KernelOption? selected;
+
+  /// Whether this setting is on or off, shown and picked as a switch: what
+  /// it shows under an option is not a check but a switch, and picking it
+  /// leaves the menu open (see [ComposerPicker]).
+  final bool toggle;
 
   /// Picks the option, and the model with it.
   final ValueChanged<KernelOption> onSelected;
@@ -165,9 +172,6 @@ class ChatSession extends ChangeNotifier implements ChatFeed {
   Future<ChangeReviews?>? _reviewOpening;
   ChangeReviews? _review;
 
-  /// Gives the edits reported a moment to settle before a look.
-  Timer? _lookTimer;
-
   /// The review, while it holds: null before it opened, or once it failed
   /// (the changes are then those the kernel reported).
   ChangeReviews? get _activeReview => switch (_review) {
@@ -176,8 +180,7 @@ class ChatSession extends ChangeNotifier implements ChatFeed {
   };
 
   /// Opens the review of the project (each of its folders, in a
-  /// multi-folder workspace), the first time; and snapshots it, so that
-  /// the first message need not wait.
+  /// multi-folder workspace), the first time.
   void _startReview() {
     if (_reviewOpening != null) return;
     final open = _openReview;
@@ -196,10 +199,8 @@ class ChatSession extends ChangeNotifier implements ChatFeed {
           }
           _review = review
             ..session = sessionId
-            // A message sent while it opened.
-            ..working = isStreaming
             ..addListener(_reviewChanged);
-          unawaited(review.begin());
+          unawaited(review.refresh());
           notifyListeners();
           return review;
         }, onError: (Object _) => null);
@@ -214,19 +215,10 @@ class ChatSession extends ChangeNotifier implements ChatFeed {
     if (review == null) return;
     review.session = sessionId;
     switch (event) {
-      case TurnStarted():
-        review.working = true;
       case TurnEnded():
-        review.working = isStreaming;
-        _lookTimer?.cancel();
-        unawaited(review.observe());
-      case FileEdited(:final change):
-        review.report(change);
-        _lookTimer?.cancel();
-        _lookTimer = Timer(
-          const Duration(milliseconds: 400),
-          () => unawaited(review.observe(full: false)),
-        );
+        unawaited(review.refresh());
+      case FileEdited(:final change, :final original):
+        review.report(change, original: original);
       default:
     }
   }
@@ -254,6 +246,34 @@ class ChatSession extends ChangeNotifier implements ChatFeed {
   KernelDescriptor get kernel => _kernel.descriptor;
 
   KernelHealth get health => _kernel.health;
+
+  /// Whether the conversation it continues is still being read.
+  bool get loadingHistory => switch (_kernel) {
+    LoadsHistory(:final loadingHistory) => loadingHistory,
+    _ => false,
+  };
+
+  /// Whether there is more of that conversation before what was read.
+  bool get hasEarlierHistory => switch (_kernel) {
+    LoadsHistory(:final hasEarlierHistory) => hasEarlierHistory,
+    _ => false,
+  };
+
+  /// How many items were put before the others by [loadEarlier] so far: the
+  /// indexes of those there were moved by as many.
+  int get prependedCount => _transcript.prepended;
+
+  /// Whether that is being read.
+  bool get loadingEarlier => switch (_kernel) {
+    LoadsHistory(:final loadingEarlier) => loadingEarlier,
+    _ => false,
+  };
+
+  /// Reads some more of the conversation, before what was.
+  Future<void> loadEarlier() => switch (_kernel) {
+    final LoadsHistory kernel => kernel.loadEarlier(),
+    _ => Future.value(),
+  };
 
   /// The id the kernel keeps this conversation under, once known.
   String? get sessionId => _kernel.sessionId;
@@ -354,6 +374,7 @@ class ChatSession extends ChangeNotifier implements ChatFeed {
           selected: options
               .where((o) => o.id == setting.selectedFor(model))
               .firstOrNull,
+          toggle: setting.toggle,
           onSelected: (option) => setting.select(model, option.id),
         ),
   ];
@@ -363,6 +384,8 @@ class ChatSession extends ChangeNotifier implements ChatFeed {
       (KernelChoiceKind.context, kernel.contextSize),
     if (_kernel case final SelectsEffort kernel)
       (KernelChoiceKind.effort, kernel.effort),
+    if (_kernel case final SelectsFast kernel)
+      (KernelChoiceKind.fast, kernel.fast),
   ];
 
   /// The choice [kind] as it stands, e.g. for a new agent to start with.
@@ -370,7 +393,9 @@ class ChatSession extends ChangeNotifier implements ChatFeed {
     KernelChoiceKind.model => models?.selected.id,
     KernelChoiceKind.mode => modes?.selected.id,
     KernelChoiceKind.permission => permissions?.selected.id,
-    KernelChoiceKind.effort || KernelChoiceKind.context =>
+    KernelChoiceKind.effort ||
+    KernelChoiceKind.context ||
+    KernelChoiceKind.fast =>
       _modelSettings
           .where((setting) => setting.$1 == kind)
           .firstOrNull
@@ -511,8 +536,57 @@ class ChatSession extends ChangeNotifier implements ChatFeed {
   /// reported at: higher each time it writes it again.
   ({String path, int seq})? get plan => _transcript.plan;
 
+  /// The plan put to the user for them to start (see [startPlan]): the
+  /// last round's, until a message is sent after it.
+  PlanItem? get awaitingPlan {
+    if (_kernel is! StartsPlans) return null;
+    // Looked up once a change: asked on each, as the turn streams.
+    final key = (_transcript, _transcript.version, _transcript.length);
+    if (_awaitingPlan case (final at, final plan) when at == key) return plan;
+    PlanItem? found;
+    for (var i = _transcript.length - 1; i >= 0; i--) {
+      final item = _transcript.itemAt(i);
+      if (item is UserMessageItem) break;
+      if (item is PlanItem) {
+        if (item.status == PlanStatus.awaiting) found = item;
+        break;
+      }
+    }
+    _awaitingPlan = (key, found);
+    return found;
+  }
+
+  ((Transcript, int, int), PlanItem?)? _awaitingPlan;
+
+  /// Whether the plan awaiting can be started now: not while the turn
+  /// that put it is still under way.
+  bool get canStartPlan => awaitingPlan != null && !isStreaming;
+
+  /// Starts the plan awaiting: out of planning, into building with the
+  /// approvals and the model picked, [text] sent to say so.
+  void startPlan(String text) {
+    if (!canStartPlan) return;
+    (_kernel as StartsPlans).startBuilding();
+    send(ComposerMessage(text: text));
+  }
+
   /// Sequence of the last turn to end, to tell whether it was seen.
   int get lastTurnEndSeq => _transcript.lastTurnEndSeq;
+
+  /// What the agent said last, if it said anything after the last message
+  /// sent (this run, or in the history read).
+  String? get lastReply {
+    for (var i = _transcript.length - 1; i >= 0; i--) {
+      switch (_transcript.itemAt(i)) {
+        case UserMessageItem():
+          return null;
+        case AssistantTextItem(:final text) when text.trim().isNotEmpty:
+          return text;
+        default:
+      }
+    }
+    return null;
+  }
 
   /// Whether the last turn to end was stopped rather than done.
   bool get lastTurnInterrupted => _transcript.lastTurnInterrupted;
@@ -531,15 +605,21 @@ class ChatSession extends ChangeNotifier implements ChatFeed {
   ChatItem itemAt(int index) {
     if (index < _transcript.length) return _transcript.itemAt(index);
     // Waiting on its model unless its kernel says otherwise.
+    final output = _transcript.output;
     return switch (_transcript.activity?.kind) {
       KernelActivityKind.compacting => LiveStatusItem(
         'Compacting conversation',
         visible: _statusVisible,
+        output: output,
+        startedAt: _transcript.turnStartedAt,
       ),
       _ => LiveStatusItem(
         'Planning next move',
         whimsical: true,
         visible: _statusVisible,
+        output: output,
+        startedAt: _transcript.turnStartedAt,
+        cue: MusingCue.after(_last),
       ),
     };
   }
@@ -602,13 +682,39 @@ class ChatSession extends ChangeNotifier implements ChatFeed {
     return null;
   }
 
-  /// The subagent the tool call [id] started, in the conversation itself.
-  AgentItem? agentOf(String? id) {
-    if (id == null) return null;
+  /// The subagent [task] runs, wherever it shows: in the conversation
+  /// itself or in another subagent's (one a subagent started). With the ids
+  /// of those leading to it, outermost first and its own last: the path a
+  /// [SubagentFeed] takes.
+  ///
+  /// Found by the tool call that started it; where the kernel did not say
+  /// which, by its description, among those still running.
+  ({AgentItem agent, List<String> path})? agentOf(KernelTask task) {
+    final id = task.toolUseId;
+    bool matches(AgentItem agent) => id != null
+        ? agent.id == id
+        : agent.status == CommandStatus.running &&
+              agent.description == task.description;
+    ({AgentItem agent, List<String> path})? within(
+      AgentItem agent,
+      List<String> path,
+    ) {
+      final own = agent.id;
+      if (own == null) return null;
+      final here = [...path, own];
+      if (matches(agent)) return (agent: agent, path: here);
+      for (final child in agent.children.reversed) {
+        if (child is AgentItem) {
+          if (within(child, here) case final found?) return found;
+        }
+      }
+      return null;
+    }
+
+    if (id == null && task.kind != KernelTaskKind.agent) return null;
     for (var index = _transcript.length - 1; index >= 0; index--) {
-      if (_transcript.itemAt(index) case final AgentItem agent
-          when agent.id == id) {
-        return agent;
+      if (_transcript.itemAt(index) case final AgentItem agent) {
+        if (within(agent, const []) case final found?) return found;
       }
     }
     return null;
@@ -703,15 +809,22 @@ class ChatSession extends ChangeNotifier implements ChatFeed {
     });
   }
 
-  /// The files the agent read or changed, absolute: where a file it names
-  /// by a path gone wrong (relative to some other folder) may be.
+  /// The files the agent read or changed (or was given: a picture a tool
+  /// returned, saved), absolute: what its text may link to outside the
+  /// project, and where a file it names by a path gone wrong (relative to
+  /// some other folder) may be.
   List<String> get filesSeen => _cached(
     #filesSeen,
     () => {
       for (var i = 0; i < _transcript.length; i++)
-        if (_transcript.itemAt(i) case ToolCallItem(:final path?)
-            when path.isNotEmpty)
-          _absolute(path),
+        if (_transcript.itemAt(i) case ToolCallItem(
+          :final path,
+          :final imageFiles,
+        )) ...[
+          if (path != null && path.isNotEmpty) _absolute(path),
+          // The pictures the CLI saved for it: the agent may link them.
+          for (final file in imageFiles) _absolute(file),
+        ],
       for (final edit in _transcript.edits) _absolute(edit.change.path),
     }.toList(),
   );
@@ -793,6 +906,10 @@ class ChatSession extends ChangeNotifier implements ChatFeed {
   Future<String> Function()? originalOf(FileChange change) =>
       _activeReview?.original(change.path);
 
+  /// The review of the agent's changes while it holds (the editor keeps
+  /// and undoes them part by part with it); null without one.
+  ChangeReviews? get changeReview => _activeReview;
+
   final Map<Symbol, Object> _cache = {};
   int _cacheVersion = -1;
 
@@ -844,8 +961,8 @@ class ChatSession extends ChangeNotifier implements ChatFeed {
   }
 
   /// Sends [message]; [now], taken up at once, the turn running stopped
-  /// for it (rather than queued behind it). With a plan shown beside the
-  /// chat waiting on the user, it says what should change in it instead.
+  /// for it (rather than queued behind it). With a plan awaiting (see
+  /// [awaitingPlan]), it says what should change in it.
   ///
   /// [editor] gives the file open in the editor beside the chat, where
   /// there is one; the agent is told of it as it changes.
@@ -854,37 +971,24 @@ class ChatSession extends ChangeNotifier implements ChatFeed {
     bool now = false,
     OpenEditor? Function()? editor,
   }) {
-    if (pendingInteraction case PlanReviewRequest(planPath: _?)
-        when message.text.trim().isNotEmpty) {
-      answer(
-        PlanAnswer(PlanDecision.keepPlanning, feedback: message.text.trim()),
-      );
-      return;
-    }
     if (message.isEmpty || !canSend) return;
     final turn = KernelTurn(
       id: newTurnId(),
-      text: message.text.trim(),
+      // Pastes too long to send, kept in files the agent reads; a remote
+      // project's agent cannot, and is sent them.
+      text: switch (kernelContext.cwd) {
+        final cwd? when RemoteLocation.isRemote(cwd) => message.text.trim(),
+        _ => PasteStore.offload(message.text.trim()),
+      },
       mentions: message.mentions,
       images: acceptsImages ? message.images : const [],
       now: now,
       notes: editor == null ? const [] : _editorNotes(editor()),
     );
-    // A turn about to start, not one queued behind another: the project
-    // is snapshotted, so that what the agent does is told apart. Not
-    // waited on: the agent takes a while before it edits anything, and
-    // the looks its edits bring on are queued behind this one. (A review
-    // still opening takes its own snapshot as it opens.)
+    // A turn about to start: what was put back since the last is no
+    // longer pending.
     if (_review case final review? when !isStreaming) {
-      review.working = true;
-      // Taken late, it would count some of the agent's work as what was
-      // there: the review gives way to what the kernel reports.
-      unawaited(
-        review.begin().timeout(
-          const Duration(seconds: 30),
-          onTimeout: () => review.abandon('The snapshot took too long.'),
-        ),
-      );
+      unawaited(review.refresh());
     }
     _kernel.send(turn);
   }
@@ -983,7 +1087,6 @@ class ChatSession extends ChangeNotifier implements ChatFeed {
   void dispose() {
     _disposed = true;
     _quietTimer?.cancel();
-    _lookTimer?.cancel();
     _review
       ?..removeListener(_reviewChanged)
       ..dispose();

@@ -55,11 +55,11 @@ class ChatDrop {
 /// to order it among the others.
 abstract interface class ChatDragList {
   /// Whether [position] (in the window) is over the list; it shows where
-  /// [thread] would go there, if anywhere, until asked again.
-  bool hover(AgentThread thread, Offset position);
+  /// [threads] would go there, if anywhere, until asked again.
+  bool hover(List<AgentThread> threads, Offset position);
 
-  /// [thread] released at [position], over the list.
-  void drop(AgentThread thread, Offset position);
+  /// [threads] released at [position], over the list.
+  void drop(List<AgentThread> threads, Offset position);
 }
 
 /// An agent dragged from the sidebar onto the conversations, to show it
@@ -85,6 +85,10 @@ class ChatDrag extends ChangeNotifier {
   /// The agent dragged; null when there is no drag.
   AgentThread? get thread => _thread;
   AgentThread? _thread;
+
+  /// The selection at drag start, in sidebar order; empty while idle.
+  List<AgentThread> get threads => _threads;
+  List<AgentThread> _threads = const [];
 
   /// Where the pointer is, in the window.
   Offset get position => _position;
@@ -112,18 +116,27 @@ class ChatDrag extends ChangeNotifier {
   bool _overList = false;
 
   int? _pointer;
+  AppLifecycleListener? _lifecycle;
 
-  void start(AgentThread thread, int pointer, Offset position) {
+  void start(
+    AgentThread thread,
+    int pointer,
+    Offset position, {
+    List<AgentThread>? threads,
+  }) {
     if (_thread != null) _stop();
     _thread = thread;
+    _threads = List.unmodifiable(threads ?? [thread]);
     _pointer = pointer;
     _position = position;
     _room = null;
+    _lifecycle = AppLifecycleListener(onInactive: cancel);
     // Every event of the pointer, wherever it is (not only over the row
     // that started it, which may go: the drawer closes).
     GestureBinding.instance.pointerRouter.addGlobalRoute(_route);
     HardwareKeyboard.instance.addHandler(_key);
-    onStart?.call();
+    // A batch stays in the list, including when it is in a drawer.
+    if (_threads.length == 1) onStart?.call();
     _update();
     unawaited(
       WindowControls.growRoom().then((room) {
@@ -142,26 +155,36 @@ class ChatDrag extends ChangeNotifier {
   }
 
   void _route(PointerEvent event) {
-    if (event.pointer != _pointer || _thread == null) return;
+    if (_thread == null) return;
+    // Another press means the original release was lost; the drag's cursor
+    // layer must not keep swallowing the rest of the window's input.
+    if (event is PointerDownEvent) {
+      cancel();
+      return;
+    }
+    if (event.pointer != _pointer) return;
     switch (event) {
-      // A right click on the way: the button joins the one held.
+      case PointerHoverEvent():
+        cancel();
+      // A right click on the way, or a move with the primary button up.
       case PointerMoveEvent(:final buttons)
-          when buttons & kSecondaryMouseButton != 0:
+          when buttons & kPrimaryButton == 0 ||
+              buttons & kSecondaryMouseButton != 0:
         cancel();
       case PointerMoveEvent():
         _position = event.position;
         _update();
       case PointerUpEvent():
         final drop = _drop;
-        final (thread, overList, list) = (_thread!, _overList, this.list);
+        final (threads, overList, list) = (_threads, _overList, this.list);
         _stop();
         notifyListeners();
         if (overList) {
-          list?.drop(thread, event.position);
+          list?.drop(threads, event.position);
         } else if (drop != null && drop.fits) {
           onDrop(drop);
         }
-      case PointerCancelEvent():
+      case PointerCancelEvent() || PointerRemovedEvent():
         cancel();
     }
   }
@@ -176,19 +199,27 @@ class ChatDrag extends ChangeNotifier {
     return true;
   }
 
-  /// Asks the grid again where the agent would go.
+  /// Rechecks the drop when the sidebar scrolls under a stationary pointer.
+  void refresh() => _update();
+
+  /// Asks the list or grid again where the agents would go.
   void _update() {
     final thread = _thread;
     if (thread == null) return;
-    _overList = list?.hover(thread, _position) ?? false;
-    _drop = _overList ? null : resolve?.call(thread, _position);
+    _overList = list?.hover(_threads, _position) ?? false;
+    _drop = _overList || _threads.length != 1
+        ? null
+        : resolve?.call(thread, _position);
     notifyListeners();
   }
 
   void _stop() {
+    _lifecycle?.dispose();
+    _lifecycle = null;
     GestureBinding.instance.pointerRouter.removeGlobalRoute(_route);
     HardwareKeyboard.instance.removeHandler(_key);
     _thread = null;
+    _threads = const [];
     _pointer = null;
     _drop = null;
     _overList = false;
@@ -210,12 +241,14 @@ class ChatDragSource extends StatefulWidget {
     required this.drag,
     required this.thread,
     required this.child,
+    this.threads,
   });
 
   /// None for now (e.g. while the row is renamed): [child] as it is.
   final ChatDrag? drag;
   final AgentThread thread;
   final Widget child;
+  final List<AgentThread> Function()? threads;
 
   @override
   State<ChatDragSource> createState() => _ChatDragSourceState();
@@ -241,6 +274,7 @@ class _ChatDragSourceState extends State<ChatDragSource> {
                           widget.thread,
                           pointer,
                           details.globalPosition,
+                          threads: widget.threads?.call(),
                         );
                       }
                     },
@@ -256,6 +290,10 @@ class _ChatDragSourceState extends State<ChatDragSource> {
 /// [ChatDrag.threshold], not the mouse's 2 pixels: a click that slips a
 /// little still opens the agent.
 class _DragRecognizer extends PanGestureRecognizer {
+  // A two-finger pan scrolls the list; only a pressed pointer drags a chat.
+  @override
+  bool isPointerPanZoomAllowed(PointerPanZoomStartEvent event) => false;
+
   @override
   bool hasSufficientGlobalDistanceToAccept(
     PointerDeviceKind pointerDeviceKind,

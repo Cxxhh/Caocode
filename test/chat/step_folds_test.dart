@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:caocode/chat/chat_models.dart';
 import 'package:caocode/chat/step_folds.dart';
@@ -197,6 +199,107 @@ void main() {
       final done = [...live]..[3] = _grep;
       final settled = _fold(done, live: true);
       expect(settled.rowAt(3, done[3], (_) => false).item, isFalse);
+    });
+
+    test('pictures made break a run, and show out of a closed turn', () {
+      final picture = ToolCallItem(
+        kind: ToolKind.image,
+        target: 'a fox',
+        images: [ImageAttachment(bytes: Uint8List(4), mediaType: 'image/png')],
+      );
+      final turn = <ChatItem>[
+        _prompt(),
+        _read,
+        _grep,
+        picture,
+        _read,
+        _grep,
+        _answer,
+      ];
+      expect(_folds(turn), ['work 1-6', 'steps 1-3', 'steps 4-6']);
+      final folds = _fold(turn);
+      bool shown(int i) => folds.rowAt(i, turn[i], (_) => false).item;
+      expect(
+        [for (var i = 1; i < 7; i++) shown(i)],
+        [false, false, true, false, false, true],
+      );
+      // Not while it is made, nor when it failed.
+      for (final status in [ToolStatus.running, ToolStatus.failed]) {
+        final other = [...turn]
+          ..[3] = ToolCallItem(
+            kind: ToolKind.image,
+            target: 'a fox',
+            status: status,
+          );
+        expect(_fold(other).rowAt(3, other[3], (_) => false).item, isFalse);
+      }
+    });
+  });
+
+  group('thoughts one after another', () {
+    const empty = ThinkingItem(text: '', tokens: 0, seconds: 12);
+    const titled = ThinkingItem(
+      text: '**Plan**\nFirst.',
+      tokens: 5,
+      seconds: 3,
+    );
+
+    test('show as one, in the first one\'s row', () {
+      final items = <ChatItem>[_prompt(null), _read, empty, titled, empty];
+      final folds = _fold(items);
+      expect(
+        [
+          for (var i = 1; i < items.length; i++)
+            folds.rowAt(i, items[i], (_) => true).item,
+        ],
+        [true, true, false, false],
+      );
+      final shown = folds.shownAt(2, items[2]) as ThinkingItem;
+      expect(shown.text, '**Plan**\nFirst.');
+      expect(shown.seconds, 27);
+      expect(shown.tokens, 5);
+      // The others are as they are.
+      expect(folds.shownAt(1, items[1]), same(_read));
+      expect(folds.shownAt(3, items[3]), same(titled));
+    });
+
+    test('anything between them keeps them apart', () {
+      final items = <ChatItem>[_prompt(null), empty, _read, empty];
+      final folds = _fold(items);
+      expect(folds.shownAt(1, items[1]), same(empty));
+      expect(folds.rowAt(3, items[3], (_) => true).item, isTrue);
+    });
+
+    test('streaming while the last is, its time counting from the first', () {
+      final now = DateTime(2026, 10, 17, 12);
+      final live = ThinkingItem(text: '', tokens: 0, startedAt: now);
+      final merged = mergeThoughts([empty, empty, live]);
+      expect(merged.streaming, isTrue);
+      expect(merged.startedAt, now.subtract(const Duration(seconds: 24)));
+    });
+
+    test('a closed run under way shows them as it goes', () {
+      final live = ThinkingItem(text: '', tokens: 0, startedAt: DateTime(2026));
+      final items = <ChatItem>[
+        _prompt(null),
+        _read,
+        _grep,
+        empty,
+        live,
+        const LiveStatusItem('Planning next move', visible: false),
+      ];
+      final folds = _fold(items, live: true);
+      bool shown(int i) => folds.rowAt(i, items[i], (_) => false).item;
+      expect(
+        [for (var i = 1; i < 5; i++) shown(i)],
+        [false, false, true, false],
+      );
+    });
+
+    test('a turn ending in them ends at their row', () {
+      final items = [_prompt(), _read, empty, empty];
+      expect(_fold(items).turnEndingAt(2), 0);
+      expect(_fold(items).turnEndingAt(3), isNull);
     });
   });
 

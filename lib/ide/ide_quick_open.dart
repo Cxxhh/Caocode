@@ -14,7 +14,8 @@ import 'ide_quick_input.dart';
 import 'ide_workspace.dart';
 
 /// A cached listing of the project's files for Quick Open. The cache is shown
-/// at once and refreshed in the background each time Quick Open opens.
+/// at once and refreshed in the background each time Quick Open opens (a
+/// remote project's, once it is a while old).
 class IdeFileIndex extends ChangeNotifier {
   IdeFileIndex(
     this.files,
@@ -98,6 +99,9 @@ class IdeFileIndex extends ChangeNotifier {
   bool get loaded => _loaded;
   bool get loading => _pending != null;
 
+  /// Whether a filter is being matched off the UI isolate (see [bestFor]).
+  bool get searching => _finding != null;
+
   /// Whether [path] is one of [paths].
   bool contains(String path) => (_pathSet ??= _paths.toSet()).contains(path);
 
@@ -143,8 +147,83 @@ class IdeFileIndex extends ChangeNotifier {
     ];
   }
 
+  /// Above this many paths, a filter is matched off the UI isolate (see
+  /// [bestFor]): a key typed does not wait for every path to be scored.
+  static const backgroundAbove = 5000;
+
+  /// The paths best matching the filter last matched off the UI isolate:
+  /// indices into [paths], best first.
+  ({String filter, List<int> best})? _found;
+
+  /// The filter being matched off the UI isolate, if any.
+  String? _finding;
+
+  /// Counts the listings, so a match of an earlier one is dropped.
+  int _generation = 0;
+
+  /// Counts the matches asked for, and the last found: one found after a
+  /// later one is dropped.
+  int _requests = 0;
+  int _foundRequest = 0;
+
+  /// The paths best matching the filter last matched off the UI isolate,
+  /// whichever it was: shown, matched anew, while [bestFor] finds those of
+  /// the filter typed since.
+  List<int> get lastFound => _found?.best ?? const [];
+
+  /// The paths best matching [filter] (see [scoreFilePath]): indices into
+  /// [paths], best first, at most [limit]. Found off the UI isolate, null
+  /// until then; listeners hear when they are.
+  List<int>? bestFor(String filter, {required int limit}) {
+    if (_found case (filter: final found, :final best) when found == filter) {
+      return best;
+    }
+    if (_finding != filter) {
+      _finding = filter;
+      unawaited(_find(filter, limit));
+    }
+    return null;
+  }
+
+  Future<void> _find(String filter, int limit) async {
+    final generation = _generation;
+    final request = ++_requests;
+    final last = _lastMatches;
+    final candidates = last != null && filter.startsWith(_lastFilter)
+        ? last
+        : null;
+    final found = await compute(_bestPaths, (
+      filter: filter,
+      relative: _relative,
+      candidates: candidates,
+      limit: limit,
+    ));
+    if (_disposed || generation != _generation) return;
+    if (_finding == filter) _finding = null;
+    // Matched while a later filter was typed: still the nearest there is
+    // to show, unless that one was found first.
+    if (request < _foundRequest) return;
+    _foundRequest = request;
+    _found = (filter: filter, best: found.best);
+    _matched(filter, found.matched);
+    notifyListeners();
+  }
+
+  /// When the paths were last listed.
+  DateTime? _listedAt;
+
   /// Starts a new listing unless one is already running.
   Future<void> refresh() => _pending ??= _load();
+
+  /// As [refresh], unless the paths were listed less than [age] ago: a
+  /// remote project's are not listed again each time Quick Open opens.
+  Future<void> refreshIfOlder(Duration age) {
+    final listedAt = _listedAt;
+    if (listedAt != null && DateTime.now().difference(listedAt) < age) {
+      return Future.value();
+    }
+    return refresh();
+  }
 
   Future<void> _load() async {
     try {
@@ -154,8 +233,12 @@ class IdeFileIndex extends ChangeNotifier {
       _relative = [for (final path in listing.paths) relativeOf(path)];
       _truncated = listing.truncated;
       _loaded = true;
+      _listedAt = DateTime.now();
       _pathSet = null;
       _lastMatches = null;
+      _generation++;
+      _found = null;
+      _finding = null;
     } catch (_) {
       // Keep the previous listing; Quick Open still offers recent files.
     } finally {
@@ -169,6 +252,41 @@ class IdeFileIndex extends ChangeNotifier {
     _disposed = true;
     super.dispose();
   }
+}
+
+/// Of [relative] (at [candidates] only, if given), the indices of the paths
+/// matching [filter]: the best [limit], best first, and all that matched.
+/// Run off the UI isolate (see [IdeFileIndex.bestFor]).
+({List<int> best, List<int> matched}) _bestPaths(
+  ({
+    String filter,
+    List<String> relative,
+    List<int>? candidates,
+    int limit,
+  })
+  query,
+) {
+  final relative = query.relative;
+  final scored = <({int index, int score})>[];
+  final matched = <int>[];
+  for (final i
+      in query.candidates ?? Iterable<int>.generate(relative.length)) {
+    final result = scoreFilePath(query.filter, relative[i]);
+    if (result == null) continue;
+    matched.add(i);
+    scored.add((index: i, score: result.score));
+  }
+  scored.sort((a, b) {
+    final byScore = b.score.compareTo(a.score);
+    if (byScore != 0) return byScore;
+    final x = relative[a.index], y = relative[b.index];
+    final byLength = x.length.compareTo(y.length);
+    return byLength != 0 ? byLength : x.compareTo(y);
+  });
+  return (
+    best: [for (final entry in scored.take(query.limit)) entry.index],
+    matched: matched,
+  );
 }
 
 /// A Quick Open query: a file filter with an optional `:line[:column]`.
@@ -343,13 +461,30 @@ List<IdeQuickPickItem> fileQuickPicks(
     return true;
   }
 
-  final matches = <int>[];
-  for (final i in index._candidates(query.filter)) {
-    if (consider(index.paths[i], index.relativePaths[i])) matches.add(i);
-  }
-  index._matched(query.filter, matches);
-  for (final path in recent) {
-    if (!index.contains(path)) consider(path, relativeOf(path));
+  if (index.paths.length > IdeFileIndex.backgroundAbove) {
+    // Many: the best are found off the UI isolate, those of the filter
+    // found last shown (those still matching) until they are. Recently
+    // opened files are matched here, all of them, for their rank to count.
+    final recentSet = recent.toSet();
+    final best =
+        index.bestFor(query.filter, limit: limit) ?? index.lastFound;
+    for (final i in best) {
+      if (!recentSet.contains(index.paths[i])) {
+        consider(index.paths[i], index.relativePaths[i]);
+      }
+    }
+    for (final path in recentSet) {
+      consider(path, relativeOf(path));
+    }
+  } else {
+    final matches = <int>[];
+    for (final i in index._candidates(query.filter)) {
+      if (consider(index.paths[i], index.relativePaths[i])) matches.add(i);
+    }
+    index._matched(query.filter, matches);
+    for (final path in recent) {
+      if (!index.contains(path)) consider(path, relativeOf(path));
+    }
   }
   scored.sort((a, b) {
     final byScore = b.score.compareTo(a.score);
@@ -371,6 +506,8 @@ List<IdeQuickPickItem> fileQuickPicks(
       IdeQuickPickItem(
         label: index.loading && !index.loaded
             ? strings.quickOpenLoadingFiles
+            : index.searching
+            ? strings.quickOpenSearchingFiles
             : strings.quickOpenNoMatchingResults,
       ),
     );

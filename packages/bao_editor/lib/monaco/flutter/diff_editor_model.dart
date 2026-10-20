@@ -90,6 +90,13 @@ class DiffEditorModel extends ChangeNotifier {
     _timer = Timer(debounce, () => unawaited(_compute()));
   }
 
+  /// Computes the diff now rather than [debounce] after the last edit (one
+  /// whose result is to be shown at once).
+  void refresh() {
+    _timer?.cancel();
+    unawaited(_compute());
+  }
+
   Future<void> _compute() async {
     final originalSnapshot = _originalSnapshot;
     if (originalSnapshot == null || _disposed) return;

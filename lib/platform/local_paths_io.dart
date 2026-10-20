@@ -12,6 +12,10 @@ String? get homeDirectory {
 /// Whether [path] is a folder (following links), not a file or nothing.
 Future<bool> isDirectory(String path) => FileSystemEntity.isDirectory(path);
 
+/// Whether there is a file or folder at [path] (following links).
+Future<bool> exists(String path) async =>
+    await FileSystemEntity.type(path) != FileSystemEntityType.notFound;
+
 /// [path]'s text, the file deleted once read (a request the `code` command
 /// left for the app); null if it cannot be read.
 Future<String?> takeFile(String path) async {

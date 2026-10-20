@@ -276,8 +276,8 @@ void main() {
     expect(greeterColor(), isNot(typescript.foreground));
   });
 
-  testWidgets('status bar: a missing server offers to install it, a failed '
-      'one retries', (tester) async {
+  testWidgets('status bar: a missing server has no entry, a failed one '
+      'retries', (tester) async {
     final languages = FakeLanguageFeatures();
     languages.statuses[inRoot(_a)] = const [
       LanguageServerStatus(
@@ -293,7 +293,7 @@ void main() {
     ];
     await pumpLanguageWorkbench(tester, {_a: _source}, languages, open: [_a]);
 
-    expect(find.text('dart-analyzer not installed'), findsOneWidget);
+    expect(find.text('dart-analyzer not installed'), findsNothing);
     // Opening the file recommends the server only in the notification
     // center, without a toast.
     const recommendation =
@@ -302,14 +302,12 @@ void main() {
     await _toastIn(tester);
     expect(find.text(recommendation), findsNothing);
     expect(find.byIcon(Codicons.bellDot), findsOneWidget);
-    // The status bar entry recommends it in a toast.
-    await tester.tap(find.text('dart-analyzer not installed'));
-    await _toastIn(tester);
+    await tester.tap(find.byIcon(Codicons.bellDot));
+    await tester.pumpAndSettle();
     expect(find.text(recommendation), findsOneWidget);
     await tester.tap(find.text('Install'));
     await settle(tester);
     expect(languages.installed, ['dart-analyzer']);
-    expect(find.text(recommendation), findsNothing);
 
     languages.setStatus(inRoot(_a), const [
       LanguageServerStatus(
@@ -330,9 +328,7 @@ void main() {
     expect(languages.retried, ['lint']);
   });
 
-  testWidgets('a missing runtime explains instead of installing', (
-    tester,
-  ) async {
+  testWidgets('a missing runtime is not recommended', (tester) async {
     final languages = FakeLanguageFeatures();
     languages.statuses[inRoot(_a)] = const [
       LanguageServerStatus(
@@ -344,14 +340,9 @@ void main() {
     ];
     await pumpLanguageWorkbench(tester, {_a: _source}, languages, open: [_a]);
     // Not recommended: it cannot be installed.
-    expect(find.text('Install'), findsNothing);
-    await tester.tap(find.text('pyright not installed'));
     await _toastIn(tester);
-    expect(find.textContaining('needs node'), findsOneWidget);
-    expect(find.text('Install'), findsNothing);
-    await tester.tap(find.byTooltip('Clear Notification'));
-    await settle(tester);
-    expect(find.textContaining('needs node'), findsNothing);
+    expect(find.byIcon(Codicons.bellDot), findsNothing);
+    expect(find.text('pyright not installed'), findsNothing);
     expect(languages.installed, isEmpty);
   });
 
@@ -404,10 +395,7 @@ void main() {
     );
     await _toastIn(tester);
     expect(find.textContaining('recommended'), findsNothing);
-    // The status bar still offers it.
-    await tester.tap(find.text('dart-analyzer not installed'));
-    await _toastIn(tester);
-    expect(find.textContaining('recommended'), findsOneWidget);
+    expect(find.byIcon(Codicons.bellDot), findsNothing);
   });
 
   testWidgets('language commands are in the palette with their keybindings', (

@@ -245,6 +245,20 @@ void main() {
           '[Pasted text #1 +5 lines]\n```\na\nb\n```';
       expect(splitCodeAppendix(text).body, text);
     });
+
+    test('stashes read back by their number, with fences in them', () {
+      const stash = StashReference(
+        id: 12,
+        text: '# Idea\n\n```dart\nfoo();\n```',
+        title: 'Idea',
+      );
+      expect(stash.reference, '[Stash #12]');
+      final text = 'do ${stash.reference}${codeAppendix([stash])}';
+      final split = splitCodeAppendix(text);
+      expect(split.body, 'do [Stash #12]');
+      expect(split.references, {stash.reference: stash});
+      expect(StashReference.fromJson(stash.toJson()), stash);
+    });
   });
 
   testWidgets('@ opens no menu: typed, it stays text', (tester) async {

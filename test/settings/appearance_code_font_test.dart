@@ -1,4 +1,5 @@
 import 'package:bao_editor/monaco/flutter/editor_surface.dart';
+import 'package:caocode/chat/reply_scroll.dart';
 import 'package:caocode/chat/user_message_style.dart';
 import 'package:caocode/chat/widgets/chat_minimap.dart';
 import 'package:caocode/chat/widgets/pixel_loader.dart';
@@ -19,6 +20,7 @@ void main() {
     CodeFont.uiScale.value = CodeFont.defaultUiScale;
     CodeFont.terminalSize.value = null;
     UserMessageStyle.current.value = UserMessageStyle.sticky;
+    ReplyScroll.current.value = ReplyScroll.follow;
     ChatMinimap.enabled.value = true;
     ChatMinimap.glass.value = ChatMinimap.defaultGlass;
     ChatMinimap.elasticity.value = ChatMinimap.defaultElasticity;
@@ -58,8 +60,8 @@ void main() {
       'removed from it', (tester) async {
     final settings = await pumpPage(tester);
     // The color theme's dropdown comes first, then the user messages', the
-    // two loaders', then the code font's.
-    final dropdown = find.byType(SettingsDropdown).at(4);
+    // reply's scroll, the two loaders', then the code font's.
+    final dropdown = find.byType(SettingsDropdown).at(5);
     Future<void> choose(String label) async {
       await tester.tap(dropdown);
       await tester.pumpAndSettle();
@@ -102,6 +104,29 @@ void main() {
     expect(UserMessageStyle.current.value, UserMessageStyle.bubble);
     expect(settings.written.containsKey(UserMessageStyle.settingKey), isTrue);
     expect(settings.written[UserMessageStyle.settingKey], isNull);
+    await leave(tester);
+  });
+
+  testWidgets('where a conversation stays as a reply comes is kept in '
+      'settings.json; the default is removed from it', (tester) async {
+    final settings = await pumpPage(tester);
+    final dropdown = find.byType(SettingsDropdown).at(2);
+    Future<void> choose(String label) async {
+      await tester.tap(dropdown);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(label).last);
+      await tester.pumpAndSettle();
+    }
+
+    expect(find.text('Automatic'), findsOneWidget);
+    await choose('Stay at its start');
+    expect(ReplyScroll.current.value, ReplyScroll.start);
+    expect(settings.written[ReplyScroll.settingKey], 'start');
+
+    await choose('Automatic');
+    expect(ReplyScroll.current.value, ReplyScroll.follow);
+    expect(settings.written.containsKey(ReplyScroll.settingKey), isTrue);
+    expect(settings.written[ReplyScroll.settingKey], isNull);
     await leave(tester);
   });
 
@@ -164,8 +189,8 @@ void main() {
     tester,
   ) async {
     final settings = await pumpPage(tester);
-    // After the color theme's and the user messages': the agent's, then
-    // the subagent's.
+    // After the color theme's, the user messages' and the reply's scroll:
+    // the agent's, then the subagent's.
     Future<void> choose(int dropdown, String label) async {
       await tester.tap(find.byType(SettingsDropdown).at(dropdown));
       await tester.pumpAndSettle();
@@ -174,7 +199,7 @@ void main() {
     }
 
     expect(find.text('Fill and empty'), findsNWidgets(2));
-    await choose(2, 'Pixel rain');
+    await choose(3, 'Pixel rain');
     expect(PixelLoaderRole.agent.style.value, PixelLoaderStyle.rain);
     expect(PixelLoaderRole.subagent.style.value, PixelLoaderStyle.fill);
     expect(settings.written['chat.agentLoadingStyle'], 'rain');
@@ -198,7 +223,7 @@ void main() {
     expect(settings.written['chat.subagentLoadingSpeed'], isNull);
 
     // The ring keeps its own pace: no slider for it.
-    await choose(2, 'Ring (classic)');
+    await choose(3, 'Ring (classic)');
     expect(settings.written['chat.agentLoadingStyle'], 'circle');
     expect(
       find.byWidgetPredicate(
@@ -208,13 +233,13 @@ void main() {
       ),
       findsNothing,
     );
-    await choose(2, 'Fill and empty');
+    await choose(3, 'Fill and empty');
     expect(settings.written.containsKey('chat.agentLoadingStyle'), isTrue);
     expect(settings.written['chat.agentLoadingStyle'], isNull);
     await leave(tester);
   });
 
-  testWidgets('the terminal follows the interface text size until Custom '
+  testWidgets('the terminal follows the interface size until Custom '
       'is chosen, which shows a size slider; following again removes it', (
     tester,
   ) async {
@@ -227,7 +252,7 @@ void main() {
           widget is SettingsSlider &&
           widget.semanticLabel.startsWith('Terminal font size'),
     );
-    expect(shown('Follow Interface Text Size'), findsOneWidget);
+    expect(shown('Follow Interface Size'), findsOneWidget);
     expect(slider(), findsNothing);
     Future<void> choose(String label) async {
       await tester.ensureVisible(dropdown);
@@ -254,7 +279,7 @@ void main() {
     expect(settings.written[CodeFont.terminalSizeSettingKey], 16);
     expect(tester.widget<SettingsSlider>(slider()).label, '16');
 
-    await choose('Follow Interface Text Size');
+    await choose('Follow Interface Size');
     expect(CodeFont.terminalSize.value, isNull);
     expect(
       settings.written.containsKey(CodeFont.terminalSizeSettingKey),

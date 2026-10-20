@@ -8,7 +8,9 @@
 // 6a598d4a13031703d483d103c1d934a36ad27971: `scanWorkspaceFolders`,
 // `traverseWorkspaceFolder`), with its settings
 // `git.autoRepositoryDetection`, `git.repositoryScanMaxDepth` and
-// `git.repositoryScanIgnoredFolders`.
+// `git.repositoryScanIgnoredFolders`; and the submodules of those found
+// (`git.detectSubmodules`, `git.detectSubmodulesLimit`, as
+// `Repository.submodules` opens them).
 //
 // Deviations: a subfolder is one when it is a working tree's top level
 // (upstream opens the repository of each, a folder in the workspace
@@ -31,6 +33,8 @@ class IdeRepositoryScan {
     this.subFolders = true,
     this.maxDepth = 1,
     this.ignoredFolders = const ['node_modules'],
+    this.detectSubmodules = true,
+    this.submodulesLimit = 10,
   });
 
   /// settings.json's choices, upstream's defaults for those not set or
@@ -52,6 +56,14 @@ class IdeRepositoryScan {
         final List<Object?> folders => folders.whereType<String>().toList(),
         _ => defaults.ignoredFolders,
       },
+      detectSubmodules: switch (settings['git.detectSubmodules']) {
+        final bool detect => detect,
+        _ => defaults.detectSubmodules,
+      },
+      submodulesLimit: switch (settings['git.detectSubmodulesLimit']) {
+        final int limit when limit >= 0 => limit,
+        _ => defaults.submodulesLimit,
+      },
     );
   }
 
@@ -65,21 +77,71 @@ class IdeRepositoryScan {
 
   /// The names of folders not looked in (`git.repositoryScanIgnoredFolders`).
   final List<String> ignoredFolders;
+
+  /// Whether the submodules of the repositories found are repositories of
+  /// their own too (`git.detectSubmodules`), at most [submodulesLimit] of
+  /// each (`git.detectSubmodulesLimit`).
+  final bool detectSubmodules;
+  final int submodulesLimit;
 }
 
 /// The repositories under [folder] [scan] finds: the subfolders, as far
-/// down as it goes, that are a working tree's top level. [list] lists a
-/// folder, [isRepositoryTop] asks Git about one, and [paths] spells the
-/// paths of [folder]'s host.
+/// down as it goes, that are a working tree's top level; then, with
+/// [submodulesOf], the submodules of [folder]'s repository and of those,
+/// however deep, checked out. [list] lists a folder, [isRepositoryTop] asks
+/// Git about one, [submodulesOf] the submodules' folders of the repository
+/// a folder is in, and [paths] spells the paths of [folder]'s host.
 Future<List<String>> scanRepositories(
   String folder,
   IdeRepositoryScan scan, {
   required Future<List<IdeFile>> Function(String directory) list,
   required Future<bool> Function(String folder) isRepositoryTop,
+  Future<List<String>> Function(String repository)? submodulesOf,
   p.Context? paths,
 }) async {
-  if (!scan.subFolders || scan.maxDepth == 0) return const [];
   final context = paths ?? p.context;
+  final found = await _scanSubfolders(
+    folder,
+    scan,
+    list: list,
+    isRepositoryTop: isRepositoryTop,
+    context: context,
+  );
+  if (submodulesOf == null || !scan.detectSubmodules) return found;
+  // Each repository's submodules, theirs in turn: [folder]'s own first.
+  final known = {folder, ...found};
+  final pending = [folder, ...found];
+  while (pending.isNotEmpty) {
+    final repository = pending.removeAt(0);
+    final List<String> submodules;
+    try {
+      submodules = await submodulesOf(repository);
+    } catch (_) {
+      continue;
+    }
+    for (final submodule in submodules.take(scan.submodulesLimit)) {
+      // Those of a repository [folder] is in, outside it, are not its.
+      if (!context.isWithin(folder, submodule)) continue;
+      if (!known.add(submodule)) continue;
+      // Not checked out: an empty folder, in the repository around it.
+      if (!await isRepositoryTop(submodule)) continue;
+      found.add(submodule);
+      pending.add(submodule);
+    }
+  }
+  return found;
+}
+
+/// The subfolders of [folder] [scan] finds that are a working tree's top
+/// level (see [scanRepositories]).
+Future<List<String>> _scanSubfolders(
+  String folder,
+  IdeRepositoryScan scan, {
+  required Future<List<IdeFile>> Function(String directory) list,
+  required Future<bool> Function(String folder) isRepositoryTop,
+  required p.Context context,
+}) async {
+  if (!scan.subFolders || scan.maxDepth == 0) return [];
   final ignored = {for (final name in scan.ignoredFolders) name.toLowerCase()};
   final candidates = <String>[];
   final pending = [(path: folder, depth: 0)];

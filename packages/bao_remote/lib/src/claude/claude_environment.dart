@@ -94,7 +94,7 @@ abstract final class ClaudeEnvironment {
       process = await Process.start(shell, [
         ...flags,
         '-c',
-        'echo $marker; env; echo $marker',
+        'echo $marker; env -0 2>/dev/null || env; echo $marker',
       ], mode: ProcessStartMode.detachedWithStdio);
       // Nothing to read: an rc file that asks something is told so at once.
       unawaited(process.stdin.close().catchError((_) {}));
@@ -104,18 +104,49 @@ abstract final class ClaudeEnvironment {
         marker,
       ).timeout(const Duration(seconds: 8));
       if (printed == null) return null;
-      final environment = <String, String>{};
-      for (final line in const LineSplitter().convert(printed)) {
-        final equals = line.indexOf('=');
-        if (equals > 0) {
-          environment[line.substring(0, equals)] = line.substring(equals + 1);
-        }
-      }
+      final environment = _parse(printed);
       return environment.containsKey('PATH') ? environment : null;
     } on Object {
       process?.kill(ProcessSignal.sigkill);
       return null;
     }
+  }
+
+  /// The variables `env` printed: NUL-separated with `-0`, as a value may
+  /// hold newlines (a function bash exports, `BASH_FUNC_ml%%=() { …`, as
+  /// environment modules do); one per line from an `env` without it
+  /// (BusyBox's), where a line not starting `NAME=` goes on the value
+  /// before it.
+  static Map<String, String> _parse(String printed) {
+    final environment = <String, String>{};
+    if (printed.contains('\x00')) {
+      final entries = printed.split('\x00')
+        // After the last: the newline before the marker.
+        ..removeLast();
+      for (final (i, entry) in entries.indexed) {
+        // Before the first: the newline after the marker.
+        final variable = i == 0 && entry.startsWith('\n')
+            ? entry.substring(1)
+            : entry;
+        final equals = variable.indexOf('=');
+        if (equals > 0) {
+          environment[variable.substring(0, equals)] = variable.substring(
+            equals + 1,
+          );
+        }
+      }
+      return environment;
+    }
+    String? last;
+    for (final line in const LineSplitter().convert(printed)) {
+      if (RegExp(r'^[^\s=]+=').matchAsPrefix(line) case final name?) {
+        last = line.substring(0, name.end - 1);
+        environment[last] = line.substring(name.end);
+      } else if (last != null) {
+        environment[last] = '${environment[last]}\n$line';
+      }
+    }
+    return environment;
   }
 
   /// What [output] prints between the first two [marker]s, read up to the

@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import '../../ide/ide_button.dart';
 import '../../ide/ide_hover.dart';
 import '../../ide/ide_input.dart';
+import '../../ide/ide_menu.dart';
 import '../../ide/ide_spinning.dart';
 import '../../l10n/l10n.dart';
 import '../../models/model_provider.dart';
@@ -14,6 +15,7 @@ import '../../models/upstream.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/codicons.dart';
 import '../../theme/workbench_theme.dart' show themeColors;
+import 'settings_dropdown.dart';
 
 /// Asks [provider]'s upstream for its models, with [key].
 typedef ModelLister = Future<List<RemoteModel>> Function(
@@ -295,7 +297,7 @@ class _FetchModelsDialogState extends State<FetchModelsDialog> {
     try {
       final listed = [
         ...await widget.list(widget.provider, await widget.keyOf()),
-      ]..sort((a, b) => a.id.compareTo(b.id));
+      ]..sort((a, b) => compareModelNames(a.id, b.id));
       await shown;
       if (mounted) setState(() => _listed = listed);
     } on Object catch (error) {
@@ -623,6 +625,18 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   );
   late bool _images = widget.model?.images ?? true;
 
+  /// What it is for, as picked; null to go by its name.
+  late ModelKind? _kind = widget.model?.kindSet;
+
+  /// What it is for: as picked, else as its name tells.
+  ModelKind get _shownKind => _kind ?? guessModelKind(_id.text.trim());
+
+  /// [_shownKind] as kept: null where its name tells it.
+  ModelKind? get _keptKind {
+    final kind = _shownKind;
+    return kind == guessModelKind(_id.text.trim()) ? null : kind;
+  }
+
   /// The model's own efforts and contexts; null for the defaults.
   late List<String>? _efforts = widget.model?.efforts;
   late List<int>? _contexts = widget.model?.contexts;
@@ -636,6 +650,10 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         if (_tried) setState(() {});
       });
     }
+    // What it is for, as the name typed tells, until one is picked.
+    _id.addListener(() {
+      if (_kind == null && !_tried) setState(() {});
+    });
   }
 
   @override
@@ -699,6 +717,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
               contexts: _contexts,
               images: _images,
               custom: true,
+              kind: _keptKind,
             )
           : model.copyWith(
               label: () => label.isEmpty ? null : label,
@@ -706,6 +725,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
               efforts: () => _efforts,
               contexts: () => _contexts,
               images: _images,
+              kind: () => _keptKind,
             ),
     );
   }
@@ -799,64 +819,104 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
               ),
             ),
             _field(
-              l10n.modelsContextWindow,
-              IdeInputBox(
-                controller: _context,
-                placeholder: l10n.modelsContextWindowHint,
-                semanticsLabel: l10n.modelsContextWindow,
-                onSubmitted: (_) => _save(),
-                validation: contextError == null
-                    ? null
-                    : IdeInputValidation(contextError),
-              ),
-            ),
-            _field(
-              l10n.modelsEffortOptions,
-              _OptionList<String>(
-                options: _efforts ?? ProviderModel.defaultEfforts,
-                description: l10n.modelsEffortOptionsDescription,
-                label: effortLabel,
-                parse: _parseEffort,
-                addHint: l10n.modelsEffortAddHint,
-                invalid: l10n.modelsEffortInvalid,
-                onChanged: (efforts) => setState(
-                  () =>
-                      _efforts = _sameAs(efforts, ProviderModel.defaultEfforts),
+              l10n.modelsKind,
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: SettingsDropdown(
+                  current: _kindName(l10n, _shownKind),
+                  semanticLabel:
+                      '${l10n.modelsKind}: ${_kindName(l10n, _shownKind)}',
+                  entries: () => [
+                    for (final kind in ModelKind.values)
+                      IdeMenuAction(
+                        _kindName(l10n, kind),
+                        checked: kind == _shownKind,
+                        onSelected: () => setState(() => _kind = kind),
+                      ),
+                  ],
                 ),
               ),
             ),
-            _field(
-              l10n.modelsContextOptions,
-              _OptionList<int>(
-                options: _contexts ?? ProviderModel.defaultContexts,
-                description: l10n.modelsContextOptionsDescription,
-                label: formatTokens,
-                parse: (text) => switch (parseTokens(text)) {
-                  final tokens? when tokens > 0 => tokens,
-                  _ => null,
-                },
-                addHint: l10n.modelsContextAddHint,
-                invalid: l10n.modelsContextInvalid,
-                sorted: true,
-                onChanged: (contexts) => setState(
-                  () => _contexts = _sameAs(
-                    contexts,
-                    ProviderModel.defaultContexts,
+            if (_shownKind.generatesImages)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Text(
+                  l10n.modelsKindDescription,
+                  style: _text(
+                    context,
+                    size: 12,
+                  ).copyWith(color: AppColors.textMuted),
+                ),
+              )
+            else ...[
+              _field(
+                l10n.modelsContextWindow,
+                IdeInputBox(
+                  controller: _context,
+                  placeholder: l10n.modelsContextWindowHint,
+                  semanticsLabel: l10n.modelsContextWindow,
+                  onSubmitted: (_) => _save(),
+                  validation: contextError == null
+                      ? null
+                      : IdeInputValidation(contextError),
+                ),
+              ),
+              _field(
+                l10n.modelsEffortOptions,
+                _OptionList<String>(
+                  options: _efforts ?? ProviderModel.defaultEfforts,
+                  description: l10n.modelsEffortOptionsDescription,
+                  label: effortLabel,
+                  parse: _parseEffort,
+                  addHint: l10n.modelsEffortAddHint,
+                  invalid: l10n.modelsEffortInvalid,
+                  onChanged: (efforts) => setState(
+                    () => _efforts = _sameAs(
+                      efforts,
+                      ProviderModel.defaultEfforts,
+                    ),
                   ),
                 ),
               ),
-            ),
-            _check(
-              l10n.modelsNoImages,
-              !_images,
-              (value) => setState(() => _images = !value),
-            ),
+              _field(
+                l10n.modelsContextOptions,
+                _OptionList<int>(
+                  options: _contexts ?? ProviderModel.defaultContexts,
+                  description: l10n.modelsContextOptionsDescription,
+                  label: formatTokens,
+                  parse: (text) => switch (parseTokens(text)) {
+                    final tokens? when tokens > 0 => tokens,
+                    _ => null,
+                  },
+                  addHint: l10n.modelsContextAddHint,
+                  invalid: l10n.modelsContextInvalid,
+                  sorted: true,
+                  onChanged: (contexts) => setState(
+                    () => _contexts = _sameAs(
+                      contexts,
+                      ProviderModel.defaultContexts,
+                    ),
+                  ),
+                ),
+              ),
+              _check(
+                l10n.modelsNoImages,
+                !_images,
+                (value) => setState(() => _images = !value),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 }
+
+String _kindName(AppLocalizations l10n, ModelKind kind) => switch (kind) {
+  ModelKind.chat => l10n.modelsKindChat,
+  ModelKind.image => l10n.modelsKindImage,
+  ModelKind.imageChat => l10n.modelsKindImageChat,
+};
 
 /// Options a model offers in the picker, each removed by its ×, others
 /// added by typing them; back to the defaults with Reset.
